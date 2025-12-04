@@ -1,0 +1,88 @@
+## Interface: 110207
+## Interface-Retail: 110207
+
+## Title: XP Bar Enhanced
+## Notes: Enhanced XP bar with quest XP tracking and comprehensive statistics
+
+## Author: Ciaanh
+## Version: 1.0.0
+
+## SavedVariables: XPBarEnhancedDB
+## IconTexture: 4675649
+## Category: Quests & Leveling
+## X-Category: Quests & Leveling
+## X-Website: https://github.com/Ciaanh/XPBarEnhanced
+## X-Curse-Project-ID: 1372659
+## X-License: MIT
+## X-Localizations: enUS
+## X-Compatibility: Retail
+## X-Embeds: LibStub, AceLocale-3.0
+## DefaultState: enabled
+
+# Libraries
+libs\LibStub\LibStub.lua
+libs\AceLocale-3.0\AceLocale-3.0.lua
+
+# Localization
+locales\enUS.lua
+
+# Core Systems
+XPBarEnhanced.lua
+
+core\config\defaults.lua
+
+core\AddOnLifecycle.lua
+core\AddOnCommands.lua
+
+core\Utils.lua
+core\Colors.lua
+
+# Calculation helpers (shared by Session, ContextBuilder)
+core\calculations\XPCalculations.lua
+core\calculations\TimeCalculations.lua
+
+core\services\QuestXP.lua
+core\TextFormatter.lua
+core\EventBus.lua
+
+core\config\Config.lua
+core\config\ConfigHelper.lua
+
+core\services\Database.lua
+core\services\Session.lua
+core\services\ContextBuilder.lua
+
+# UI Features
+ui\MinimapButton.lua
+
+# Base and Mixins (must load before StyleBuilder)
+ui\mixins\BaseMixin.lua
+ui\mixins\LayoutMixin.lua
+ui\mixins\PaintMixin.lua
+ui\mixins\VisualsMixin.lua
+ui\mixins\TextMixin.lua
+ui\mixins\InteractionMixin.lua
+ui\mixins\TooltipMixin.lua
+ui\mixins\PositionMixin.lua
+
+ui\mixins\animation\AnimationUtils.lua
+ui\mixins\animation\AnimationManager.lua
+ui\mixins\animation\AnimationBase.lua
+
+# Style system (after mixins so globals are defined)
+ui\StyleBuilder.lua
+ui\BarManager.lua
+
+#  Frames
+ui\options\OptionsPanelTemplates.xml
+ui\options\OptionMetadata.lua
+ui\options\ControlHelpers.lua
+ui\options\OptionsPanel.xml
+
+ui\stats\StatsFrame.xml
+
+#  Styles
+ui\styles\flat\FlatBarTemplate.xml
+ui\styles\classic\ClassicBarTemplate.xml
+ui\styles\vertical\VerticalBarTemplate.xml
+ui\styles\circular\CircularBarTemplate.xml

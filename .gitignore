@@ -1,0 +1,12 @@
+# WoW AddOn files
+*.bak
+*.orig
+*.swp
+*~
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+
+assets/refs
