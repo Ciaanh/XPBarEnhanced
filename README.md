@@ -2,7 +2,7 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail only** · Interface 110207 · Version 1.0.0
+**Retail only** · Interface 120000 · Version 1.0.1
 
 ## Features
 
