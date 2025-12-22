@@ -35,6 +35,7 @@ local defaults = {
     idleOpacity = 0.0,
     fadeInSpeed = 0.3,
     fadeOutSpeed = 0.5,
+    classicBarDraggable = true,
     textFontFace = "Fonts\\FRIZQT__.TTF",
     textFontSize = 12,
     textFontOutline = "NONE",

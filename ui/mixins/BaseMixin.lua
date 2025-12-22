@@ -321,6 +321,13 @@ function BaseMixin:TriggerBarRefresh(context)
 		error("Style must implement RenderBar(context) method")
 	end
 
+	-- Check if player reached max level and hide bar
+	local Addon = XPBarEnhanced
+	if Addon.Utils and Addon.Utils.IsPlayerAtMaxLevel and Addon.Utils.IsPlayerAtMaxLevel() then
+		self:Hide()
+		return
+	end
+
 	local ev = context and context.event
 
 	-- determine if this update should force render

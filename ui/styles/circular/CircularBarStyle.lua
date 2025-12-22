@@ -263,6 +263,8 @@ function CircularBarStyleTemplate:AnimateBarEffect(iterationData, eventContext)
         self.GainFlash:SetAlpha(flashData.currentAlpha)
         self.GainFlash:Show()
     else
+        -- Force hide and reset alpha when flash is inactive or nil
+        self.GainFlash:SetAlpha(0)
         self.GainFlash:Hide()
     end
 end

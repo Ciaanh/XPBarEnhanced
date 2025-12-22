@@ -65,10 +65,20 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_classicBarDraggable" inherits="ConfigCheckboxTemplate" hidden="true">
+                                        <Anchors>
+                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_barLocked" relativePoint="BOTTOMLEFT" x="0" y="0"/>
+                                            <Anchor point="RIGHT"/>
+                                        </Anchors>
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="classicBarDraggable" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
 
                                     <Frame parentKey="OverlayFeaturesHeader" inherits="ConfigSectionHeader">
                                         <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_barLocked" relativePoint="BOTTOMLEFT" x="0" y="-20"/>
+                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_classicBarDraggable" relativePoint="BOTTOMLEFT" x="0" y="-20"/>
                                             <Anchor point="RIGHT"/>
                                         </Anchors>
                                     </Frame>

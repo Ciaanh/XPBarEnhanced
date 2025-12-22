@@ -27,16 +27,29 @@ local ClassicBarStyleTemplate = {}
 -- DEFAULT CONFIG
 -------------------------------------------------------------------
 
-local DefaultConfig = {
-    interaction = {enabled = true},
-    tooltip = {enabled = true},
-    animation = {
-        enableAnimations = true,
-        flashOnGain = true
-    },
-    position = {mode = "STATIC", positionKey = "ClassicBar"},
-    style = {}
-}
+local function GetClassicBarConfig()
+    local Addon = XPBarEnhanced
+    local isDraggable = Addon.db and Addon.db.classicBarDraggable
+    if isDraggable == nil then
+        isDraggable = true -- Default to draggable
+    end
+
+    return {
+        interaction = {enabled = true},
+        tooltip = {enabled = true},
+        animation = {
+            enableAnimations = true,
+            flashOnGain = true
+        },
+        position = {
+            mode = isDraggable and "DRAGGABLE" or "STATIC",
+            positionKey = "ClassicBar"
+        },
+        style = {}
+    }
+end
+
+local DefaultConfig = GetClassicBarConfig()
 
 -------------------------------------------------------------------
 -- STYLE CREATION

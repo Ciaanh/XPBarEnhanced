@@ -663,6 +663,25 @@ function XPBarEnhancedOptionsMixin:Refresh()
                         rowFrame:Show()
                     end
                 end
+            elseif key == "classicBarDraggable" then
+                -- Only show classicBarDraggable when Classic style is selected
+                local rowKey = "Row_" .. key
+                local rowFrame =
+                    self.ContentFrame and self.ContentFrame.OptionsContainer and
+                    self.ContentFrame.OptionsContainer[rowKey]
+
+                local isClassicMode = (currentBarStyle == "classic")
+                if isClassicMode then
+                    checkbox:Show()
+                    if rowFrame then
+                        rowFrame:Show()
+                    end
+                else
+                    checkbox:Hide()
+                    if rowFrame then
+                        rowFrame:Hide()
+                    end
+                end
             end
         elseif checkbox and checkbox.Slider then
             -- It's a slider control
@@ -857,6 +876,8 @@ function Options:OnOptionChanged(key)
         -- Update Blizzard bar visibility (handled by Config side effects)
         -- No additional action needed here
     elseif key == "barLocked" then
+    elseif key == "classicBarDraggable" then
+        -- Handled by Config side effects - just refresh UI
     elseif
         key == "enableAnimations" or key == "flashOnGain" or key == "twoPhaseOnLevelUp"
      then
