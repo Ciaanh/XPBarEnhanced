@@ -300,6 +300,18 @@ function Config:ApplyOptionSideEffects(key)
             Addon.BarManager:SetStyle(newStyle)
         end
     end
+
+    -- Classic bar draggable mode changed
+    if key == "classicBarDraggable" then
+        local currentStyle = Addon.db and Addon.db.barStyle
+        if currentStyle == "classic" and Addon.BarManager and Addon.BarManager.GetCurrentFrame then
+            local bar = Addon.BarManager:GetCurrentFrame()
+            if bar and bar.UpdatePositionMode then
+                local newMode = Addon.db.classicBarDraggable and "DRAGGABLE" or "STATIC"
+                bar:UpdatePositionMode(newMode)
+            end
+        end
+    end
 end
 
 -------------------------------------------------------------------

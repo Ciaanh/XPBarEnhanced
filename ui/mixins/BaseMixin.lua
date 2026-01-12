@@ -76,6 +76,19 @@ function BaseMixin:OnLoad()
 	-- Register common events
 	self:RegisterCommonEvents()
 
+	-- Wire up mouse event handlers (InteractionMixin)
+	if self.OnMouseDown then
+		self:SetScript("OnMouseDown", function(frame, button)
+			frame:OnMouseDown(button)
+		end)
+	end
+
+	if self.OnMouseUp then
+		self:SetScript("OnMouseUp", function(frame, button)
+			frame:OnMouseUp(button)
+		end)
+	end
+
 	-- Call BuildVisuals if style provides it
 	if self.BuildVisuals then
 		self:BuildVisuals()
@@ -319,6 +332,13 @@ function BaseMixin:TriggerBarRefresh(context)
 	-- Validate required methods
 	if not self.RenderBar then
 		error("Style must implement RenderBar(context) method")
+	end
+
+	-- Check if player reached max level and hide bar
+	local Addon = XPBarEnhanced
+	if Addon.Utils and Addon.Utils.IsPlayerAtMaxLevel and Addon.Utils.IsPlayerAtMaxLevel() then
+		self:Hide()
+		return
 	end
 
 	local ev = context and context.event

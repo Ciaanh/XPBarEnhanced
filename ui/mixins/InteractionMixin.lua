@@ -31,7 +31,9 @@ function InteractionMixin:OnMouseDown(button)
 		if self.GetPositionMode then
 			local positionMode = self:GetPositionMode()
 			local locked = Addon.db and Addon.db.barLocked or false
-			if positionMode == "DRAGGABLE" and self:IsMovable() and not locked then
+			local isMovable = self:IsMovable()
+			
+			if positionMode == "DRAGGABLE" and isMovable and not locked then
 				self:StartMoving()
 				self.__isDragging = true
 				return

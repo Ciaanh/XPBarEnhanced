@@ -72,6 +72,13 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     elseif Addon.BarManager and Addon.BarManager.OnEnteringWorld then
         Addon.BarManager:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
+
+    -- Delayed check to ensure Blizzard bar stays hidden after load
+    C_Timer.After(0.5, function()
+        if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
+            Addon.BarManager:ApplyDefaultXPBarVisibility()
+        end
+    end)
 end
 
 function eventHandlers:OnPlayerLevelUp(level)

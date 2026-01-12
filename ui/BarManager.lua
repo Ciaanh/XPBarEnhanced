@@ -40,28 +40,22 @@ function BarManager:Initialize()
     self:ApplyDefaultXPBarVisibility()
 end
 
-local function IsPlayerAtMaxLevel()
-    local level = UnitLevel("player") or 0
+local function IsPlayerAtMaxLevel(currentLevel)
+    local level = currentLevel or UnitLevel("player") or 0
     local maxLevel = GetMaxPlayerLevel() or 80
     return level >= maxLevel
 end
 
 function BarManager:ApplyDefaultXPBarVisibility()
-    -- Hide Blizzard main bar components whenever we are using a custom style
+    -- Hide Blizzard main bar container whenever we are using a custom style
     -- (classic, flat, vertical, circular)
     if self:IsCustomStyle(self.currentStyle) then
-        if _G.MainMenuExpBar and _G.MainMenuExpBar.Hide then
-            _G.MainMenuExpBar:Hide()
-        end
-        if _G.MainStatusTrackingBarContainer and _G.MainStatusTrackingBarContainer.Hide then
+        if _G.MainStatusTrackingBarContainer then
             _G.MainStatusTrackingBarContainer:Hide()
         end
     else
         -- Otherwise, restore Blizzard defaults
-        if _G.MainMenuExpBar and _G.MainMenuExpBar.Show then
-            _G.MainMenuExpBar:Show()
-        end
-        if _G.MainStatusTrackingBarContainer and _G.MainStatusTrackingBarContainer.Show then
+        if _G.MainStatusTrackingBarContainer then
             _G.MainStatusTrackingBarContainer:Show()
         end
     end
@@ -181,9 +175,11 @@ function BarManager:OnEnteringWorld()
     return false
 end
 
-function BarManager:OnLevelUp()
+function BarManager:OnLevelUp(newLevel)
     -- Re-evaluate style in case player hit max level (will hide bar if at max)
-    self:SetStyle(Addon.db.barStyle)
+    -- Use the level passed from PLAYER_LEVEL_UP event for accuracy
+    local level = newLevel or (UnitLevel("player") or 0) + 1
+    self:SetStyle(IsPlayerAtMaxLevel(level) and "none" or Addon.db.barStyle)
 end
 
 function BarManager:OnRestedChanged()

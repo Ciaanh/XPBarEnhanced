@@ -25,6 +25,12 @@ local optionDetails = {
         description = Addon.L["OPT_BAR_LOCKED_DESC"],
         commandKeys = {"lock", "locked"}
     },
+    classicBarDraggable = {
+        key = "classicBarDraggable",
+        label = Addon.L["OPT_CLASSIC_DRAGGABLE"] or "Classic Bar Draggable",
+        description = Addon.L["OPT_CLASSIC_DRAGGABLE_DESC"] or "Allow the Classic bar to be dragged and positioned manually. When disabled, the Classic bar will be anchored to Blizzard's default position.",
+        commandKeys = {"classicdraggable", "classicdrag"}
+    },
     showRestedOverlay = {
         key = "showRestedOverlay",
         label = Addon.L["OPT_SHOW_RESTED_OVERLAY"],
@@ -149,6 +155,7 @@ local optionDetails = {
 local optionOrder = {
     "barStyle",
     "barLocked",
+    "classicBarDraggable",
     "showRestedOverlay",
     "showQuestXP",
     "showCompleteQuestOverlay",

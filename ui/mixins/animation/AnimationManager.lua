@@ -29,6 +29,7 @@ function AnimationManager:Initialize()
 
 	-- Start paused (no bars to animate)
 	self.driver:Hide()
+	self.isActive = false
 end
 
 --- Register a bar for animation
@@ -419,24 +420,33 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 		local fadeOutDuration = constants.GAIN_FLASH_FADE_OUT_DURATION
 		local maxAlpha = constants.GAIN_FLASH_MAX_ALPHA
 
+		-- Safety timeout: force end flash after 3 seconds to prevent stuck states
+		local MAX_FLASH_DURATION = 3.0
+		local flashActive = flashElapsed < flashDuration and flashElapsed < MAX_FLASH_DURATION
+
 		-- Calculate flash alpha with three phases: fade in, hold, fade out
 		local flashAlpha = 0
 		local phase = "none"
 
-		if flashElapsed < fadeInDuration then
-			flashAlpha = (flashElapsed / fadeInDuration) * maxAlpha
-			phase = "fade_in"
-		elseif flashElapsed < fadeInDuration + holdDuration then
-			flashAlpha = maxAlpha
-			phase = "hold"
-		elseif flashElapsed < fadeInDuration + holdDuration + fadeOutDuration then
-			local fadeOutProgress = (flashElapsed - fadeInDuration - holdDuration) / fadeOutDuration
-			flashAlpha = maxAlpha * (1 - fadeOutProgress)
-			phase = "fade_out"
+		if flashActive then
+			if flashElapsed < fadeInDuration then
+				flashAlpha = (flashElapsed / fadeInDuration) * maxAlpha
+				phase = "fade_in"
+			elseif flashElapsed < fadeInDuration + holdDuration then
+				flashAlpha = maxAlpha
+				phase = "hold"
+			elseif flashElapsed < fadeInDuration + holdDuration + fadeOutDuration then
+				local fadeOutProgress = (flashElapsed - fadeInDuration - holdDuration) / fadeOutDuration
+				flashAlpha = maxAlpha * (1 - fadeOutProgress)
+				phase = "fade_out"
+			end
+		else
+			-- Flash expired or timed out - force alpha to 0
+			flashAlpha = 0
 		end
 
 		flashData = {
-			active = flashElapsed < flashDuration,
+			active = flashActive,
 			currentAlpha = flashAlpha,
 			startTime = anim.flashStartTime,
 			duration = flashDuration,
@@ -586,11 +596,12 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 	if not anim.isAnimating and not anim.isFlashing then
 		anim.eventContext = nil
 	end
-end
 
------------------------------------
--- Initialize on load
------------------------------------
+	-- Keep driver active if flash is still running (even if bar animation completed)
+	if anim.isFlashing then
+		return true -- Signal to keep bar registered
+	end
+end
 AnimationManager:Initialize()
 
 -----------------------------------

@@ -187,4 +187,45 @@ function PositionMixin:ResetPosition()
 	end
 end
 
+--- Update position mode dynamically (for live switching)
+---@param newMode string "STATIC" or "DRAGGABLE"
+function PositionMixin:UpdatePositionMode(newMode)
+	if newMode ~= POSITION_MODE.STATIC and newMode ~= POSITION_MODE.DRAGGABLE then
+		error("Invalid position mode: " .. tostring(newMode))
+	end
+
+	local oldMode = self.__position_mode
+	if oldMode == newMode then
+		return -- No change needed
+	end
+
+	-- Update mode
+	self.__position_mode = newMode
+
+	-- When switching from STATIC to DRAGGABLE, capture current position
+	if oldMode == POSITION_MODE.STATIC and newMode == POSITION_MODE.DRAGGABLE then
+		-- Save current STATIC position as initial draggable position
+		local point, relativeTo, relativePoint, x, y = self:GetPoint(1)
+		if point then
+			if not Addon.db.barPositions then
+				Addon.db.barPositions = {}
+			end
+			Addon.db.barPositions[self.__position_key] = {
+				point = point,
+				relativeTo = "UIParent",
+				relativePoint = relativePoint or point,
+				x = x or 0,
+				y = y or 0
+			}
+		end
+		-- Enable dragging
+		self:EnableDragging(true)
+	elseif oldMode == POSITION_MODE.DRAGGABLE and newMode == POSITION_MODE.STATIC then
+		-- Switching to STATIC: disable dragging and apply static anchor
+		self:EnableMouse(false)
+		self:SetMovable(false)
+		self:ApplyStaticPosition()
+	end
+end
+
 return PositionMixin
