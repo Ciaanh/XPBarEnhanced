@@ -2,6 +2,20 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [1.0.1] - 2026-01-11
+
+### Fixed
+
+- **Max Level Bar Visibility**: Fixed issue where the XP bar wasn't hidden when reaching max level (80). Now correctly detects level-up and switches to Blizzard bar at max level
+- **Classic Bar Draggability**: Fixed classic bar not being draggable even when `classicBarDraggable` setting was enabled. Added missing mouse event handler registration in frame initialization
+- **Position Mode Detection**: Improved level-up event handling to use the actual level parameter from `PLAYER_LEVEL_UP` event instead of calculating it
+
+### Technical
+
+- Removed dead code for `MainMenuExpBar` frame which doesn't exist in retail WoW
+- Added `OnMouseDown` and `OnMouseUp` script handler registration in `BaseMixin:OnLoad()` to properly wire up interaction events
+- Enhanced position mixin to accept optional level parameter for accurate max level detection
+
 ## [1.0.0] - 2024-12-04
 
 ### Added
