@@ -76,6 +76,19 @@ function BaseMixin:OnLoad()
 	-- Register common events
 	self:RegisterCommonEvents()
 
+	-- Wire up mouse event handlers (InteractionMixin)
+	if self.OnMouseDown then
+		self:SetScript("OnMouseDown", function(frame, button)
+			frame:OnMouseDown(button)
+		end)
+	end
+
+	if self.OnMouseUp then
+		self:SetScript("OnMouseUp", function(frame, button)
+			frame:OnMouseUp(button)
+		end)
+	end
+
 	-- Call BuildVisuals if style provides it
 	if self.BuildVisuals then
 		self:BuildVisuals()
