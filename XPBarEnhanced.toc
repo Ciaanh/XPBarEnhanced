@@ -1,11 +1,11 @@
-## Interface: 120000
-## Interface-Retail: 120000
+## Interface: 120001
+## Interface-Retail: 120001
 
 ## Title: XP Bar Enhanced
 ## Notes: Enhanced XP bar with quest XP tracking and comprehensive statistics
 
 ## Author: Ciaanh
-## Version: 1.0.1
+## Version: 1.0.2
 
 ## SavedVariables: XPBarEnhancedDB
 ## IconTexture: 4675649
