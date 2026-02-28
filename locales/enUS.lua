@@ -160,6 +160,12 @@ L["OPT_TWO_PHASE_LEVEL_UP"] = "Two-phase level-up animation"
 L["OPT_TWO_PHASE_LEVEL_UP_DESC"] = "When leveling up, animate the bar filling to 100% first, then reset and animate to your new XP."
 
 -- Circular bar options
+L["OPT_CIRCULAR_SIZE"] = "Ring size"
+L["OPT_CIRCULAR_SIZE_DESC"] = "Size of the circular progress ring. Text remains the same size at all ring sizes."
+L["OPT_CIRCULAR_SIZE_SMALL"] = "Small"
+L["OPT_CIRCULAR_SIZE_MEDIUM"] = "Medium"
+L["OPT_CIRCULAR_SIZE_LARGE"] = "Large"
+L["OPT_CIRCULAR_SIZE_HUGE"] = "Huge"
 L["OPT_CIRCULAR_SEGMENTS"] = "Segment count"
 L["OPT_CIRCULAR_SEGMENTS_DESC"] = "Number of segments in the circular progress ring. Lower values give a chunky look, higher values appear smoother."
 L["OPT_CIRCULAR_USE_TEXTURE"] = "Use textured segments"

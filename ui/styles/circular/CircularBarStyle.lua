@@ -42,6 +42,17 @@ local CIRCULAR_BAR_STYLE = {
 -- Reference segment count for base width (segments are wider with fewer count)
 local REFERENCE_SEGMENT_COUNT = 100
 
+-- Predefined size presets mapping to scale factors
+local CIRCULAR_SIZE_SCALES = {
+    small = 0.75,
+    medium = 1.0,
+    large = 1.5,
+    huge = 2.0
+}
+
+-- Base frame size at 1.0 scale (matches XML template)
+local BASE_FRAME_SIZE = 256
+
 -------------------------------------------------------------------
 -- STYLE TEMPLATE
 -------------------------------------------------------------------
@@ -72,6 +83,20 @@ end
 -------------------------------------------------------------------
 -- SEGMENT CREATION AND POSITIONING
 -------------------------------------------------------------------
+
+--- Get the configured size scale factor (from saved settings)
+-- @return number: Scale factor for ring size (0.75 to 2.0)
+function CircularBarStyleTemplate:GetCircularScale()
+    local Addon = XPBarEnhanced
+    local size = "medium"
+    if Addon and Addon.db then
+        local saved = Addon.db.circularSize
+        if type(saved) == "string" and CIRCULAR_SIZE_SCALES[saved] then
+            size = saved
+        end
+    end
+    return CIRCULAR_SIZE_SCALES[size] or 1.0
+end
 
 --- Get the configured number of segments to display (from saved settings)
 -- @return number: Number of segments to display (clamped to 20-100)
@@ -150,11 +175,17 @@ end
 function CircularBarStyleTemplate:RepositionSegments()
     local displayCount = self:GetDisplaySegmentCount()
     local clockwise = -1
-    local placementRadius = CIRCULAR_BAR_STYLE.RING_RADIUS_PX
+    local scale = self:GetCircularScale()
+    local placementRadius = CIRCULAR_BAR_STYLE.RING_RADIUS_PX * scale
 
-    -- Calculate segment width based on count (wider for fewer segments)
-    local segmentWidth = self:GetSegmentWidth(displayCount)
-    local segmentHeight = CIRCULAR_BAR_STYLE.SEGMENT_HEIGHT_PX
+    -- Resize frame to match scale (BorderRing and GainFlash auto-resize via setAllPoints;
+    -- CenterBG is re-pinned to fixed size by FixStaticElements called below)
+    local frameSize = BASE_FRAME_SIZE * scale
+    self:SetSize(frameSize, frameSize)
+
+    -- Calculate segment width based on count (wider for fewer segments), then apply scale
+    local segmentWidth = self:GetSegmentWidth(displayCount) * scale
+    local segmentHeight = CIRCULAR_BAR_STYLE.SEGMENT_HEIGHT_PX * scale
 
     -- Update texture for all segments based on current setting
     local texturePath = self:GetSegmentTexturePath()
@@ -204,9 +235,23 @@ function CircularBarStyleTemplate:RepositionSegments()
         end
     end
 
+    -- Re-pin CenterBG to its fixed size so it does not scale with the frame
+    self:FixStaticElements()
+
     -- Re-apply current progress colors after repositioning
     if self.Refresh then
         self:Refresh()
+    end
+end
+
+--- Keep CenterBG at its original 256x256 size centered on the frame.
+-- Called after every frame resize so the background image never scales
+-- regardless of the selected ring size preset.
+function CircularBarStyleTemplate:FixStaticElements()
+    if self.CenterBG then
+        self.CenterBG:ClearAllPoints()
+        self.CenterBG:SetSize(BASE_FRAME_SIZE, BASE_FRAME_SIZE)
+        self.CenterBG:SetPoint("CENTER", self, "CENTER", 0, 0)
     end
 end
 

@@ -328,9 +328,18 @@
                                             <Anchor point="RIGHT"/>
                                         </Anchors>
                                     </Frame>
-                                    <Frame parentKey="Row_circularSegments" inherits="ConfigSliderTemplate">
+                                    <Frame parentKey="Row_circularSize" inherits="ConfigDropdownTemplate">
                                         <Anchors>
                                             <Anchor point="TOPLEFT" relativeKey="$parent.CircularHeader" relativePoint="BOTTOMLEFT" x="16" y="-8"/>
+                                            <Anchor point="RIGHT"/>
+                                        </Anchors>
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="circularSize" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+                                    <Frame parentKey="Row_circularSegments" inherits="ConfigSliderTemplate">
+                                        <Anchors>
+                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_circularSize" relativePoint="BOTTOMLEFT" x="0" y="0"/>
                                             <Anchor point="RIGHT"/>
                                         </Anchors>
                                         <KeyValues>

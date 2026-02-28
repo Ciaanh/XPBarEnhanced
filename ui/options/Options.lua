@@ -763,7 +763,7 @@ function XPBarEnhancedOptionsMixin:Refresh()
     end
 
     -- Conditional visibility for circular-only settings
-    local circularKeys = {"circularSegments", "circularUseTexture"}
+    local circularKeys = {"circularSize", "circularSegments", "circularUseTexture"}
     local container = self.ContentFrame and self.ContentFrame.OptionsContainer
     for _, key in ipairs(circularKeys) do
         local rowKey = "Row_" .. key
@@ -894,6 +894,14 @@ function Options:OnOptionChanged(key)
         end
     elseif key == "circularUseTexture" then
         -- Update texture on segments and reposition
+        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
+            local bar = Addon.BarManager:GetCurrentFrame()
+            if bar and bar.RepositionSegments then
+                bar:RepositionSegments()
+            end
+        end
+    elseif key == "circularSize" then
+        -- Resize ring and reposition segments
         if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
             local bar = Addon.BarManager:GetCurrentFrame()
             if bar and bar.RepositionSegments then
