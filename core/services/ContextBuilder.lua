@@ -223,7 +223,7 @@ function ContextBuilder.UpdateSessionWithGain(xpGained)
 	end
 
 	local currentXP = UnitXP("player") or 0
-	local xpPerHour = ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
+	local xpPerHour = ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP, preferSessionTime)
 
 	return sessionStart, sessionXP, sessionDuration, xpPerHour
 end
