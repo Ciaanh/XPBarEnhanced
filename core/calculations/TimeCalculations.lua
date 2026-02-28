@@ -12,6 +12,7 @@ local TimeCalc = Addon.TimeCalculations
 -------------------------------------------------------------------
 
 --- Calculate XP per hour based on session data
+--- Automatically detects when level time includes significant idle time and prefers session calculation
 ---@param sessionStart number Session start timestamp (from time())
 ---@param sessionXP number Total XP gained in session
 ---@param realLevelTime number|nil Real level time from TIME_PLAYED_MSG (optional)
@@ -26,15 +27,39 @@ function TimeCalc.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, cur
         return 0
     end
 
-    -- If we have real level time from TIME_PLAYED_MSG and current XP, use that for accuracy
+    -- Calculate both rates and compare them
+    local sessionRate = 0
+    local levelRate = 0
+    
+    if sessionXP and sessionXP > 0 then
+        sessionRate = (sessionXP / elapsed) * 3600
+    end
+    
     if realLevelTime and realLevelTime > 0 and currentXP and currentXP > 0 then
-        -- XP per hour based on actual time at this level
-        return (currentXP / realLevelTime) * 3600
+        levelRate = (currentXP / realLevelTime) * 3600
+    end
+
+    -- If we have both rates, compare them
+    -- If session rate is significantly higher (2.5x+), it indicates level time includes idle time
+    -- In that case, prefer session-based calculation for more accurate estimates
+    if sessionRate > 0 and levelRate > 0 then
+        if sessionRate >= levelRate * 2.5 then
+            -- Session rate is much higher: level time has significant idle time
+            return sessionRate
+        else
+            -- Rates are similar: trust level time
+            return levelRate
+        end
+    end
+
+    -- If we only have level time, use it
+    if levelRate > 0 then
+        return levelRate
     end
 
     -- Fall back to session-based calculation
-    if sessionXP and sessionXP > 0 then
-        return (sessionXP / elapsed) * 3600
+    if sessionRate > 0 then
+        return sessionRate
     end
 
     return 0

@@ -2,6 +2,17 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [1.0.3] - 2026-02-28
+
+### Fixed
+
+- **Time-to-Level Estimates**: Improved accuracy of XP/hour and time-to-level calculations by automatically detecting when level time includes significant idle time. When session-based rate is 2.5x or higher than level-based rate, the addon now uses session time for estimates, eliminating inflated times for new expansion levels
+
+### Technical
+
+- Enhanced `TimeCalculations.CalculateXPPerHour()` to intelligently compare session-based and level-based calculation methods
+- Automatically switches to session time when idle time is detected, preventing inaccurate estimates without requiring manual configuration
+
 ## [1.0.1] - 2026-01-11
 
 ### Fixed
