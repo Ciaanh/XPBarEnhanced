@@ -77,8 +77,14 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     elseif Addon.BarManager and Addon.BarManager.OnEnteringWorld then
         Addon.BarManager:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
-    -- Note: No C_Timer.After workaround needed — InstallBlizzardBarHooks() in
-    -- BarManager:Initialize() prevents Blizzard's bar from re-showing after load.
+    -- Blizzard's StatusTrackingBarManager re-shows its containers via internal
+    -- code paths on PLAYER_ENTERING_WORLD. Re-apply our visibility rules after
+    -- all other handlers have run (C_Timer.After(0) defers to next frame).
+    C_Timer.After(0, function()
+        if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
+            Addon.BarManager:ApplyDefaultXPBarVisibility()
+        end
+    end)
 end
 
 function eventHandlers:OnPlayerLevelUp(level)

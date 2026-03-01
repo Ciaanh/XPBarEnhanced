@@ -79,12 +79,7 @@ function BarManager:ApplyDefaultXPBarVisibility()
 end
 
 function BarManager:DebugContainerState()
-    local main = _G.MainStatusTrackingBarContainer
-    local secondary = _G.SecondaryStatusTrackingBarContainer
-    print("|cFF00FF00[XPBarEnhanced]|r Container state:")
-    print("  Main:", main and (main:IsShown() and "SHOWN" or "HIDDEN") or "NIL")
-    print("  Secondary:", secondary and (secondary:IsShown() and "SHOWN" or "HIDDEN") or "NIL")
-    print("  Custom style:", self.currentStyle or "none")
+    -- debug logging removed (was too verbose on every visibility update)
 end
 
 -- Install hooksecurefunc hooks to prevent Blizzard's bar from re-showing
@@ -100,7 +95,6 @@ function BarManager:InstallBlizzardBarHooks()
             hooksecurefunc(container, "Show", function()
                 if self:IsCustomStyle(self.currentStyle) then
                     container:Hide()
-                    print("|cFF00FF00[XPBarEnhanced]|r Suppressed Blizzard bar re-show:", container:GetName())
                 end
             end)
         end
@@ -108,7 +102,6 @@ function BarManager:InstallBlizzardBarHooks()
             hooksecurefunc(container, "SetShown", function(_, shown)
                 if shown and self:IsCustomStyle(self.currentStyle) then
                     container:Hide()
-                    print("|cFF00FF00[XPBarEnhanced]|r Suppressed Blizzard bar SetShown:", container:GetName())
                 end
             end)
         end

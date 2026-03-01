@@ -28,18 +28,16 @@ function EditMode:Initialize()
 		return
 	end
 
-	-- Hook Edit Mode enter/exit
-	if EditModeManagerFrame.EnterEditMode then
-		hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function()
-			self:OnEnterEditMode()
-		end)
-	end
-
-	if EditModeManagerFrame.ExitEditMode then
-		hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function()
-			self:OnExitEditMode()
-		end)
-	end
+	-- Hook EditModeManagerFrame Show/Hide rather than EnterEditMode/ExitEditMode.
+	-- EnterEditMode/ExitEditMode may be inherited via metatable and not table-accessible,
+	-- causing hooksecurefunc to silently fail. Show/Hide are standard Frame API methods
+	-- that are always directly accessible on any frame object.
+	hooksecurefunc(EditModeManagerFrame, "Show", function()
+		self:OnEnterEditMode()
+	end)
+	hooksecurefunc(EditModeManagerFrame, "Hide", function()
+		self:OnExitEditMode()
+	end)
 
 	self.initialized = true
 	print("|cFF00FF00[XPBarEnhanced]|r Edit Mode: integration initialized")
@@ -67,10 +65,33 @@ function EditMode:OnEnterEditMode()
 	bar:EnableMouse(true)
 
 	-- Show a visual indicator that the bar is in Edit Mode
-	if not self.editOverlay then
-		self.editOverlay = bar:CreateTexture(nil, "OVERLAY")
+	-- Use a Frame (not Texture) at HIGH strata so it renders above all bar layers
+	if self.editOverlay then
+		-- Re-parent to the current bar in case style changed
+		self.editOverlay:SetParent(bar)
 		self.editOverlay:SetAllPoints(bar)
-		self.editOverlay:SetColorTexture(0.2, 0.6, 1.0, 0.15)
+	else
+		self.editOverlay = CreateFrame("Frame", nil, bar)
+		self.editOverlay:SetAllPoints(bar)
+		self.editOverlay:SetFrameStrata("HIGH")
+
+		local bg = self.editOverlay:CreateTexture(nil, "BACKGROUND")
+		bg:SetAllPoints()
+		bg:SetColorTexture(0.2, 0.6, 1.0, 0.25)
+
+		local border = self.editOverlay:CreateTexture(nil, "BORDER")
+		border:SetPoint("TOPLEFT", -1, 1)
+		border:SetPoint("BOTTOMRIGHT", 1, -1)
+		border:SetColorTexture(0.3, 0.7, 1.0, 0.6)
+		local inner = self.editOverlay:CreateTexture(nil, "ARTWORK")
+		inner:SetPoint("TOPLEFT", 1, -1)
+		inner:SetPoint("BOTTOMRIGHT", -1, 1)
+		inner:SetColorTexture(0.2, 0.6, 1.0, 0.25)
+
+		local label = self.editOverlay:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		label:SetPoint("CENTER")
+		label:SetText("Edit Mode")
+		label:SetTextColor(1, 1, 1, 0.8)
 	end
 	self.editOverlay:Show()
 
@@ -112,6 +133,14 @@ function EditMode:OnExitEditMode()
 		bar:SetMovable(false)
 		bar:EnableMouse(self.wasMouseEnabled or false)
 	end
+
+	-- Re-hide the Blizzard bar: during Edit Mode, Blizzard re-shows its containers.
+	-- Deferred to next frame so Blizzard's exit-mode cleanup completes first.
+	C_Timer.After(0, function()
+		if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
+			Addon.BarManager:ApplyDefaultXPBarVisibility()
+		end
+	end)
 end
 
 -------------------------------------------------------------------
