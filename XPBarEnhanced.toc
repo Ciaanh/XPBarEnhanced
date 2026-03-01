@@ -5,7 +5,7 @@
 ## Notes: Enhanced XP bar with quest XP tracking and comprehensive statistics
 
 ## Author: Ciaanh
-## Version: 1.0.4
+## Version: 1.0.5
 
 ## SavedVariables: XPBarEnhancedDB
 ## IconTexture: 4675649
@@ -51,7 +51,6 @@ core\config\ConfigHelper.lua
 core\services\Database.lua
 core\services\Session.lua
 core\services\ContextBuilder.lua
-core\services\ReputationService.lua
 
 # UI Features
 ui\MinimapButton.lua
@@ -88,5 +87,3 @@ ui\styles\flat\FlatBarTemplate.xml
 ui\styles\classic\ClassicBarTemplate.xml
 ui\styles\vertical\VerticalBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
-ui\styles\reputation\ReputationBarTemplate.xml
-ui\styles\segmented\SegmentedBarTemplate.xml

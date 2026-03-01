@@ -20,7 +20,7 @@ function XPBarTextMixin:UpdateTextVisibility(context)
 		local cvarValue = GetCVarBool("xpBarText")
 		if cvarValue ~= nil then
 			blizzardTextEnabled = cvarValue
-			print("|cFF00FF00[XPBarEnhanced]|r xpBarText CVar:", cvarValue and "ON" or "OFF")
+			-- print("|cFF00FF00[XPBarEnhanced]|r xpBarText CVar:", cvarValue and "ON" or "OFF")
 		end
 	end
 
