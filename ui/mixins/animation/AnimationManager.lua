@@ -1,7 +1,7 @@
 -- XP Bar Enhanced -  Animation Manager
 -- Core animation driver for  bar styles
 
-local AddonName, Addon = ...
+local Addon = XPBarEnhanced
 local AnimationUtils = Addon.AnimationUtils
 
 -----------------------------------

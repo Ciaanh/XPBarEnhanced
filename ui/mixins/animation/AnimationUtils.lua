@@ -1,7 +1,7 @@
 -- XP Bar Enhanced -  Animation Utilities
 -- Helper functions for  animation system (copied from V1, independent implementation)
 
-local AddonName, Addon = ...
+local Addon = XPBarEnhanced
 
 -----------------------------------
 -- Animation Constants

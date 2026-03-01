@@ -40,7 +40,7 @@ function EditMode:Initialize()
 	end)
 
 	self.initialized = true
-	print("|cFF00FF00[XPBarEnhanced]|r Edit Mode: integration initialized")
+	--print("|cFF00FF00[XPBarEnhanced]|r Edit Mode: integration initialized")
 end
 
 -------------------------------------------------------------------

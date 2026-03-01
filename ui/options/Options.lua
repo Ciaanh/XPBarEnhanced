@@ -856,7 +856,9 @@ function Options:Open()
     local category = self.category
     if Settings and Settings.OpenToCategory and category then
         local id = category.GetID and category:GetID() or category.ID or category
-        Settings.OpenToCategory(id)
+        -- Defer via C_Timer to break addon taint from the click call stack;
+        -- OpenSettingsPanel() is protected and cannot be called from tainted code.
+        C_Timer.After(0, function() Settings.OpenToCategory(id) end)
     elseif InterfaceOptionsFrame_OpenToCategory then
         InterfaceOptionsFrame_OpenToCategory(panel)
         InterfaceOptionsFrame_OpenToCategory(panel)
