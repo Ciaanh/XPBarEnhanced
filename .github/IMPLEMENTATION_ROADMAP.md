@@ -12,7 +12,7 @@ This document is the master index for all planned improvements to XPBarEnhanced,
 ## How to Use This Roadmap
 
 1. **Follow steps in order** — Each step has dependencies listed. Complete validation gates before moving to the next step.
-2. **Enable debug logging** — Run `/run XPBarEnhancedDB.debugMode = true` then `/reload` to see debug prints in chat.
+2. **Debug logging is always ON** — All debug prints are unconditional during active development and appear automatically in chat.
 3. **Test after each step** — Each guide has a manual testing checklist. Complete all items before proceeding.
 4. **Validation gates are mandatory** — If ANY gate check fails, fix it before moving on.
 
@@ -121,22 +121,11 @@ These add new features and improve native integration.
 
 ---
 
-## Debug Mode
+## Debug Logging
 
-All steps include debug logging gated by `debugMode`. To enable:
+All steps include **unconditional** debug logging during active development. Debug prints appear automatically as green `[XPBarEnhanced]` messages in the default chat window — no configuration needed.
 
-```
-/run XPBarEnhancedDB.debugMode = true
-/reload
-```
-
-To disable:
-```
-/run XPBarEnhancedDB.debugMode = false
-/reload
-```
-
-Debug output appears as green `[XPBarEnhanced]` messages in the default chat window.
+Once development is complete, these prints can be removed or gated behind a toggle in a cleanup pass.
 
 ---
 
