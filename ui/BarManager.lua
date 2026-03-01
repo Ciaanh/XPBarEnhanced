@@ -12,7 +12,9 @@ local StyleTemplateNameMap = {
     classic = "ClassicBarTemplate",
     flat = "FlatBarTemplate",
     vertical = "VerticalBarTemplate",
-    circular = "CircularBarTemplate"
+    circular = "CircularBarTemplate",
+    reputation = "ReputationBarTemplate",
+    segmented = "SegmentedBarTemplate"
 }
 
 -- Helper: true if style key corresponds to a custom addon style (not Blizzard's bar)
@@ -127,8 +129,11 @@ function BarManager:SetStyle(nextStyle)
     end
 
     -- If player is at max level or XP gain is disabled, force Blizzard bar
-    if IsPlayerAtMaxLevel() or (IsXPUserDisabled and IsXPUserDisabled()) then
-        nextStyle = "none"
+    -- Exception: "reputation" style is specifically designed for max-level players
+    if nextStyle ~= "reputation" then
+        if IsPlayerAtMaxLevel() or (IsXPUserDisabled and IsXPUserDisabled()) then
+            nextStyle = "none"
+        end
     end
 
     if previousStyle == nextStyle then
@@ -231,7 +236,14 @@ function BarManager:OnLevelUp(newLevel)
     -- Re-evaluate style in case player hit max level (will hide bar if at max)
     -- Use the level passed from PLAYER_LEVEL_UP event for accuracy
     local level = newLevel or (UnitLevel("player") or 0) + 1
-    self:SetStyle(IsPlayerAtMaxLevel(level) and "none" or Addon.db.barStyle)
+    local db = Addon.db or {}
+    local userStyle = db.barStyle or "classic"
+    -- At max level: allow reputation style, otherwise fall back to "none"
+    if IsPlayerAtMaxLevel(level) and userStyle ~= "reputation" then
+        self:SetStyle("none")
+    else
+        self:SetStyle(userStyle)
+    end
 end
 
 function BarManager:OnRestedChanged()

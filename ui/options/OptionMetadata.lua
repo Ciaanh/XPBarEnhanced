@@ -15,7 +15,9 @@ local optionDetails = {
             {value = "classic", label = Addon.L["OPT_BAR_STYLE_CLASSIC"]},
             {value = "flat", label = Addon.L["OPT_BAR_STYLE_FLAT"]},
             {value = "vertical", label = Addon.L["OPT_BAR_STYLE_VERTICAL"]},
-            {value = "circular", label = Addon.L["OPT_BAR_STYLE_CIRCULAR"]}
+            {value = "circular", label = Addon.L["OPT_BAR_STYLE_CIRCULAR"]},
+            {value = "reputation", label = Addon.L["OPT_BAR_STYLE_REPUTATION"]},
+            {value = "segmented", label = Addon.L["OPT_BAR_STYLE_SEGMENTED"]}
         },
         commandKeys = {"style", "mode", "barstyle"}
     },

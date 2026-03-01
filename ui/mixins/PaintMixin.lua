@@ -93,6 +93,67 @@ function XPBarPaintMixin:ApplyBarTexture(texture, barName)
 	end
 end
 
+--- Apply atlas texture to status bar with file-based fallback
+--- Uses Blizzard's atlas system for resolution-independent textures.
+--- Falls back to file texture if the atlas is unavailable (older clients).
+---@param atlasName string Atlas name (e.g. "UI-HUD-ExperienceBar-Fill-XP")
+---@param fallbackFile string|nil File path fallback if atlas unavailable
+---@param barName string|nil StatusBar name (default: "StatusBar")
+---@return boolean applied True if atlas was applied, false if fell back to file
+function XPBarPaintMixin:ApplyBarAtlasOrTexture(atlasName, fallbackFile, barName)
+	barName = barName or "StatusBar"
+	local bar = self[barName]
+
+	if not bar or not bar.SetStatusBarTexture then
+		return false
+	end
+
+	-- Try atlas first (available in Retail 10.0+)
+	if atlasName and C_Texture and C_Texture.GetAtlasInfo then
+		local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
+		if atlasInfo then
+			local statusBarTexture = bar:GetStatusBarTexture()
+			if statusBarTexture and statusBarTexture.SetAtlas then
+				statusBarTexture:SetAtlas(atlasName)
+				print("|cFF00FF00[XPBarEnhanced]|r Applied atlas texture:", atlasName)
+				return true
+			end
+		end
+	end
+
+	-- Fallback to file-based texture
+	if fallbackFile then
+		bar:SetStatusBarTexture(fallbackFile)
+	end
+	return false
+end
+
+--- Apply atlas to a plain Texture element with file-based fallback
+---@param element table Texture element (e.g. self.RestedOverlay)
+---@param atlasName string Atlas name
+---@param fallbackFile string|nil File path fallback
+---@return boolean applied True if atlas was applied
+function XPBarPaintMixin:ApplyAtlasOrTexture(element, atlasName, fallbackFile)
+	if not element then
+		return false
+	end
+
+	-- Try atlas first
+	if atlasName and C_Texture and C_Texture.GetAtlasInfo then
+		local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
+		if atlasInfo and element.SetAtlas then
+			element:SetAtlas(atlasName)
+			return true
+		end
+	end
+
+	-- Fallback to file-based texture
+	if fallbackFile and element.SetTexture then
+		element:SetTexture(fallbackFile)
+	end
+	return false
+end
+
 -------------------------------------------------------------------
 -- VISUAL BUILD & STYLE METHODS
 -------------------------------------------------------------------

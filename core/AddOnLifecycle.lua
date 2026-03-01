@@ -58,6 +58,11 @@ function eventHandlers:OnPlayerLogin()
     if options and options.Initialize then
         options:Initialize()
     end
+
+    -- Initialize Edit Mode integration (hooks into Blizzard Edit Mode if available)
+    if Addon.EditMode and Addon.EditMode.Initialize then
+        Addon.EditMode:Initialize()
+    end
 end
 
 function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
