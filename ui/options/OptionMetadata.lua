@@ -133,6 +133,19 @@ local optionDetails = {
         description = Addon.L["OPT_TWO_PHASE_LEVEL_UP_DESC"],
         commandKeys = {"twophase", "levelupanimation"}
     },
+    circularSize = {
+        key = "circularSize",
+        type = "dropdown",
+        label = Addon.L["OPT_CIRCULAR_SIZE"],
+        description = Addon.L["OPT_CIRCULAR_SIZE_DESC"],
+        options = {
+            {value = "small", label = Addon.L["OPT_CIRCULAR_SIZE_SMALL"]},
+            {value = "medium", label = Addon.L["OPT_CIRCULAR_SIZE_MEDIUM"]},
+            {value = "large", label = Addon.L["OPT_CIRCULAR_SIZE_LARGE"]},
+            {value = "huge", label = Addon.L["OPT_CIRCULAR_SIZE_HUGE"]}
+        },
+        commandKeys = {"size", "circlesize", "circularsize"}
+    },
     circularSegments = {
         key = "circularSegments",
         type = "slider",
@@ -173,6 +186,7 @@ local optionOrder = {
     "enableAnimations",
     "flashOnGain",
     "twoPhaseOnLevelUp",
+    "circularSize",
     "circularSegments",
     "circularUseTexture"
 }

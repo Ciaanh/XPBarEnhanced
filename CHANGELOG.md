@@ -2,6 +2,25 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [1.0.4] - 2026-03-01
+
+### Added
+
+- **Circular Bar Size Presets**: New size selector for the circular progress ring with four preset options:
+  - Small (0.75× scale)
+  - Medium (default, 1.0× scale)
+  - Large (1.5× scale)
+  - Huge (2.0× scale)
+- Selective scaling: Ring segments, border, and glow effects scale with the preset size; center background image remains fixed at its original size for optimal visual presentation
+
+### Technical
+
+- Added `CIRCULAR_SIZE_SCALES` lookup mapping preset names to scale factors
+- Added `GetCircularScale()` method to read saved size preference
+- Modified `RepositionSegments()` to apply scale factors to ring geometry
+- Added `FixStaticElements()` method to keep CenterBG at fixed 256×256 size regardless of ring scale
+- Dropdown control in Circular Bar options section for intuitive size selection
+
 ## [1.0.3] - 2026-02-28
 
 ### Fixed

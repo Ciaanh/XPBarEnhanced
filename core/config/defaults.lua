@@ -6,6 +6,7 @@ local Addon = XPBarEnhanced
 local defaults = {
     barStyle = "classic",
     barLocked = false,
+    circularSize = "medium",
     circularSegments = 50,
     circularUseTexture = true,
     showPercentage = true,
