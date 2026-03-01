@@ -72,13 +72,8 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     elseif Addon.BarManager and Addon.BarManager.OnEnteringWorld then
         Addon.BarManager:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
-
-    -- Delayed check to ensure Blizzard bar stays hidden after load
-    C_Timer.After(0.5, function()
-        if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
-            Addon.BarManager:ApplyDefaultXPBarVisibility()
-        end
-    end)
+    -- Note: No C_Timer.After workaround needed — InstallBlizzardBarHooks() in
+    -- BarManager:Initialize() prevents Blizzard's bar from re-showing after load.
 end
 
 function eventHandlers:OnPlayerLevelUp(level)
@@ -138,6 +133,13 @@ function eventHandlers:OnEnableXPGain()
     if Addon.Database and Addon.Database.SetXPGainDisabled then
         Addon.Database:SetXPGainDisabled(false)
     end
+    -- Re-evaluate bar style (may need to show custom bar again)
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        local db = Addon.db or {}
+        Addon.BarManager.currentStyle = nil  -- Force re-evaluation
+        Addon.BarManager:SetStyle(db.barStyle or "classic")
+    end
+    print("|cFF00FF00[XPBarEnhanced]|r XP gain re-enabled, restoring custom bar")
 end
 
 function eventHandlers:OnDisableXPGain()
@@ -145,6 +147,25 @@ function eventHandlers:OnDisableXPGain()
     if Addon.Database and Addon.Database.SetXPGainDisabled then
         Addon.Database:SetXPGainDisabled(true)
     end
+    -- Re-evaluate bar style (may need to hide custom bar)
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        Addon.BarManager.currentStyle = nil  -- Force re-evaluation
+        Addon.BarManager:SetStyle("none")
+    end
+    print("|cFF00FF00[XPBarEnhanced]|r XP gain disabled, switching to Blizzard bar")
+end
+
+function eventHandlers:OnPlayerMaxLevelUpdate()
+    -- Max level changed (expansion pre-patch, etc.) — re-evaluate bar visibility
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        local db = Addon.db or {}
+        Addon.BarManager.currentStyle = nil  -- Force re-evaluation
+        Addon.BarManager:SetStyle(db.barStyle or "classic")
+    end
+    if Addon.EventBus and Addon.EventBus.Emit then
+        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    end
+    print("|cFF00FF00[XPBarEnhanced]|r PLAYER_MAX_LEVEL_UPDATE: re-evaluating bar visibility")
 end
 
 function eventHandlers:OnPlayerLogout()
@@ -161,7 +182,8 @@ local eventMap = {
     PLAYER_ENTERING_WORLD = "OnPlayerEnteringWorld",
     ENABLE_XP_GAIN = "OnEnableXPGain",
     DISABLE_XP_GAIN = "OnDisableXPGain",
-    PLAYER_LOGOUT = "OnPlayerLogout"
+    PLAYER_LOGOUT = "OnPlayerLogout",
+    PLAYER_MAX_LEVEL_UPDATE = "OnPlayerMaxLevelUpdate",
 }
 
 eventFrame:SetScript(

@@ -9,7 +9,8 @@ local AnimationUtils = Addon.AnimationUtils
 -----------------------------------
 local AnimationManager = {
 	registeredBars = {}, -- Array of bars currently animating
-	driver = nil -- Frame with OnUpdate
+	driver = nil, -- Frame with OnUpdate
+	pendingAnimations = {} -- Accumulation state: { [bar] = { targetRatio, xpContext, config, timestamp } }
 }
 
 --- Initialize the animation driver frame
@@ -67,13 +68,61 @@ function AnimationManager:Unregister(bar)
 	end
 end
 
---- Start animation to target ratio
--- Handles retargeting, level-up detection, and animation initiation
+--- Start animation to target ratio (with accumulation batching)
+-- Buffers rapid XP events for 150ms and processes only the final target.
+-- Level-up events bypass accumulation for immediate two-phase handling.
 -- @param bar table: Bar instance with animation state
 -- @param targetRatio number: Target ratio (0.0-1.0)
--- @param xpContext table: XP context { xpBefore, xpAfter, xpMax, xpGained, restedXP, isResting, hasRestedXP, level, timestamp }
--- @param config table: Animation config { enableAnimations, flashOnGain }
+-- @param xpContext table: XP context
+-- @param config table: Animation config
 function AnimationManager:AnimateTo(bar, targetRatio, xpContext, config)
+	local now = GetTime()
+	local ACCUMULATION_TIMEOUT = AnimationUtils.GetConstants().ACCUMULATION_TIMEOUT or 0.15
+
+	-- Level-up events bypass accumulation (need immediate two-phase handling)
+	local isLevelUp = xpContext and AnimationUtils.DetectLevelUp(xpContext)
+	if isLevelUp then
+		-- Flush any pending accumulation for this bar first
+		if self.pendingAnimations[bar] then
+			self.pendingAnimations[bar] = nil
+		end
+		self:ProcessAnimateTo(bar, targetRatio, xpContext, config)
+		return
+	end
+
+	-- Accumulation batching: if an animation is already pending for this bar,
+	-- update the pending target instead of immediately processing.
+	local pending = self.pendingAnimations[bar]
+	if pending then
+		-- Update pending target (later call wins for accumulated gain)
+		pending.targetRatio = targetRatio
+		pending.xpContext = xpContext
+		pending.config = config
+		-- Don't reset timestamp — timeout runs from the FIRST event in the batch
+		print("|cFF00FF00[XPBarEnhanced]|r Accumulating XP event, target:",
+			string.format("%.3f", targetRatio))
+		return
+	end
+
+	-- No pending animation: start accumulation timer
+	self.pendingAnimations[bar] = {
+		targetRatio = targetRatio,
+		xpContext = xpContext,
+		config = config,
+		timestamp = now
+	}
+
+	C_Timer.After(ACCUMULATION_TIMEOUT, function()
+		local pendingData = self.pendingAnimations[bar]
+		if pendingData then
+			self.pendingAnimations[bar] = nil
+			self:ProcessAnimateTo(bar, pendingData.targetRatio, pendingData.xpContext, pendingData.config)
+		end
+	end)
+end
+
+--- Internal: process a single AnimateTo call (the original accumulated or immediate logic)
+function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 	local now = GetTime()
 
 	-- CRITICAL: Preserve incoming xpContext for flash decision BEFORE any aggregation
@@ -337,7 +386,12 @@ function AnimationManager:OnUpdate(elapsed)
 
 	-- Update each registered bar
 	for i, bar in ipairs(self.registeredBars) do
-		if not bar.animation or (not bar.animation.isAnimating and not bar.animation.isFlashing) then
+		if not bar.animation then
+			table.insert(barsToRemove, bar)
+		elseif bar.animation.holdStartTime then
+			-- Bar is in level-up hold phase — keep registered and poll for timer expiry
+			self:UpdateBarAnimation(bar, now)
+		elseif not bar.animation.isAnimating and not bar.animation.isFlashing then
 			-- Bar finished animation and flash, mark for removal
 			table.insert(barsToRemove, bar)
 		else
@@ -540,8 +594,30 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 		-- Check if there's a pending second phase (from two-phase level-up animation)
 		if anim.pendingSecondPhase then
 			local phase2 = anim.pendingSecondPhase
-			anim.pendingSecondPhase = nil -- Clear the pending state
-			anim.isLevelUpPhase1 = false -- Clear Phase 1 flag
+			local holdDuration = AnimationUtils.GetConstants().LEVELUP_HOLD_DURATION or 0.4
+
+			-- HOLD: keep bar at 100% for a brief moment before starting phase 2
+			if not anim.holdStartTime then
+				anim.holdStartTime = now
+				anim.isAnimating = false -- Stop main animation tick
+				-- Re-register so OnUpdate continues checking the hold timer
+				self:Register(bar)
+				print("|cFF00FF00[XPBarEnhanced]|r Level-up hold started (" .. holdDuration .. "s)")
+				return
+			end
+
+			local holdElapsed = now - anim.holdStartTime
+			if holdElapsed < holdDuration then
+				-- Still holding at 100%
+				return
+			end
+
+			-- Hold complete — start phase 2
+			anim.holdStartTime = nil
+			anim.pendingSecondPhase = nil
+			anim.isLevelUpPhase1 = false
+
+			print("|cFF00FF00[XPBarEnhanced]|r Level-up phase 2 starting")
 
 			-- Reset bar to 0 immediately
 			if bar.SetCurrentRatio then

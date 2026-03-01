@@ -337,10 +337,18 @@ function XPBarContextBuilder.BuildContext(event, ...)
 		local level = args[1] or coreState.level
 		eventContext.level = level
 		eventContext.previousLevel = (level and level - 1) or (coreState.level and coreState.level - 1)
-		eventContext.hasLeveledUp = false
-		eventContext.shouldAnimate = false
-		eventContext.hasGainedXP = false
-		eventContext.shouldFlash = false
+		-- Allow level-up animation flags to propagate from ComputeXPGained() above.
+		-- Only set hasLeveledUp/shouldAnimate if ComputeXPGained did not already detect it
+		-- (handles the case where PLAYER_LEVEL_UP fires before PLAYER_XP_UPDATE).
+		if not eventContext.hasLeveledUp then
+			eventContext.hasLeveledUp = true
+		end
+		if not eventContext.shouldAnimate then
+			eventContext.shouldAnimate = true
+		end
+		if not eventContext.shouldFlash then
+			eventContext.shouldFlash = true
+		end
 	elseif event == "UPDATE_EXHAUSTION" or event == "PLAYER_UPDATE_RESTING" then
 		eventContext.source = "RESTED_UPDATE"
 		eventContext.hasGainedXP = false

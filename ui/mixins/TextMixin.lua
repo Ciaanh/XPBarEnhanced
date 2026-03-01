@@ -13,21 +13,34 @@ local L = Addon.L or {}
 
 --- Update text element visibility based on config
 function XPBarTextMixin:UpdateTextVisibility(context)
+	-- Respect Blizzard's global xpBarText CVar as a master toggle for on-bar text.
+	-- When the CVar is OFF, hide LevelText/XPText/PercentText regardless of addon settings.
+	local blizzardTextEnabled = true
+	if GetCVarBool then
+		local cvarValue = GetCVarBool("xpBarText")
+		if cvarValue ~= nil then
+			blizzardTextEnabled = cvarValue
+			print("|cFF00FF00[XPBarEnhanced]|r xpBarText CVar:", cvarValue and "ON" or "OFF")
+		end
+	end
+
 	if self.LevelText then
 		local show = Addon.ConfigHelper.GetShowLevelText(context)
-		self.LevelText:SetShown(show)
+		self.LevelText:SetShown(show and blizzardTextEnabled)
 	end
 
 	if self.XPText then
 		local show = Addon.ConfigHelper.GetShowXPText(context)
-		self.XPText:SetShown(show)
+		self.XPText:SetShown(show and blizzardTextEnabled)
 	end
 
 	if self.PercentText then
 		local show = Addon.ConfigHelper.GetShowPercentage(context)
-		self.PercentText:SetShown(show)
+		self.PercentText:SetShown(show and blizzardTextEnabled)
 	end
 
+	-- Below-bar texts are not gated by xpBarText CVar
+	-- (they are separate UI elements outside the bar frame)
 	if self.RateText then
 		local showXPPerHour = Addon.ConfigHelper.GetShowXPPerHourText(context)
 		local showTimeToLevel = Addon.ConfigHelper.GetShowTimeToLevelText(context)

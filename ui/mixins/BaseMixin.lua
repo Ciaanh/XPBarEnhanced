@@ -239,6 +239,7 @@ function BaseMixin:RegisterCommonEvents()
 	self:RegisterEvent("UPDATE_EXHAUSTION")
 	self:RegisterEvent("PLAYER_UPDATE_RESTING")
 	self:RegisterEvent("TIME_PLAYED_MSG")
+	self:RegisterEvent("CVAR_UPDATE")
 end
 
 --- Register quest-related events (called by behavior mixin or style)
@@ -259,6 +260,7 @@ function BaseMixin:UnsubscribeFromEvents()
 	self:UnregisterEvent("UPDATE_EXHAUSTION")
 	self:UnregisterEvent("PLAYER_UPDATE_RESTING")
 	self:UnregisterEvent("TIME_PLAYED_MSG")
+	self:UnregisterEvent("CVAR_UPDATE")
 
 	-- If mixin registered quest events, unregister them too
 	self:UnregisterEvent("QUEST_ACCEPTED")
@@ -287,6 +289,18 @@ end
 ---@param ... any Event arguments
 function BaseMixin:OnEvent(event, ...)
 	if event == "TIME_PLAYED_MSG" then
+		return
+	end
+
+	-- Handle CVAR_UPDATE for xpBarText (Step 2.3 will add full text visibility logic)
+	if event == "CVAR_UPDATE" then
+		local cvarName = ...
+		if cvarName == "xpBarText" then
+			local context = XPBarContextBuilder.BuildContext("CVAR_UPDATE")
+			if self.UpdateTextVisibility then
+				self:UpdateTextVisibility(context)
+			end
+		end
 		return
 	end
 

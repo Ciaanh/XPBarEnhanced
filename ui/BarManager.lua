@@ -25,6 +25,9 @@ function BarManager:Initialize()
     local defaultStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
     local style = db.barStyle or defaultStyle
 
+    -- Install hooks before SetStyle so they are in place when bars are hidden
+    self:InstallBlizzardBarHooks()
+
     self:SetStyle(style)
 
     -- Ensure lock state is applied at startup
@@ -41,22 +44,71 @@ function BarManager:Initialize()
 end
 
 local function IsPlayerAtMaxLevel(currentLevel)
+    -- Prefer IsPlayerAtEffectiveMaxLevel() which accounts for expansion state
+    if IsPlayerAtEffectiveMaxLevel then
+        return IsPlayerAtEffectiveMaxLevel()
+    end
+    -- Fallback for older API
     local level = currentLevel or UnitLevel("player") or 0
     local maxLevel = GetMaxPlayerLevel() or 80
     return level >= maxLevel
 end
 
 function BarManager:ApplyDefaultXPBarVisibility()
-    -- Hide Blizzard main bar container whenever we are using a custom style
+    -- Hide both Blizzard bar containers whenever we are using a custom style
     -- (classic, flat, vertical, circular)
     if self:IsCustomStyle(self.currentStyle) then
         if _G.MainStatusTrackingBarContainer then
             _G.MainStatusTrackingBarContainer:Hide()
         end
+        if _G.SecondaryStatusTrackingBarContainer then
+            _G.SecondaryStatusTrackingBarContainer:Hide()
+        end
     else
         -- Otherwise, restore Blizzard defaults
         if _G.MainStatusTrackingBarContainer then
             _G.MainStatusTrackingBarContainer:Show()
+        end
+        if _G.SecondaryStatusTrackingBarContainer then
+            _G.SecondaryStatusTrackingBarContainer:Show()
+        end
+    end
+    self:DebugContainerState()
+end
+
+function BarManager:DebugContainerState()
+    local main = _G.MainStatusTrackingBarContainer
+    local secondary = _G.SecondaryStatusTrackingBarContainer
+    print("|cFF00FF00[XPBarEnhanced]|r Container state:")
+    print("  Main:", main and (main:IsShown() and "SHOWN" or "HIDDEN") or "NIL")
+    print("  Secondary:", secondary and (secondary:IsShown() and "SHOWN" or "HIDDEN") or "NIL")
+    print("  Custom style:", self.currentStyle or "none")
+end
+
+-- Install hooksecurefunc hooks to prevent Blizzard's bar from re-showing
+-- while a custom style is active. Called once during Initialize().
+function BarManager:InstallBlizzardBarHooks()
+    local containers = {
+        _G.MainStatusTrackingBarContainer,
+        _G.SecondaryStatusTrackingBarContainer,
+    }
+
+    for _, container in ipairs(containers) do
+        if container and container.Show then
+            hooksecurefunc(container, "Show", function()
+                if self:IsCustomStyle(self.currentStyle) then
+                    container:Hide()
+                    print("|cFF00FF00[XPBarEnhanced]|r Suppressed Blizzard bar re-show:", container:GetName())
+                end
+            end)
+        end
+        if container and container.SetShown then
+            hooksecurefunc(container, "SetShown", function(_, shown)
+                if shown and self:IsCustomStyle(self.currentStyle) then
+                    container:Hide()
+                    print("|cFF00FF00[XPBarEnhanced]|r Suppressed Blizzard bar SetShown:", container:GetName())
+                end
+            end)
         end
     end
 end
@@ -74,8 +126,8 @@ function BarManager:SetStyle(nextStyle)
         nextStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
     end
 
-    -- If player is at max level, force Blizzard bar (non-custom) regardless of selected style
-    if IsPlayerAtMaxLevel() then
+    -- If player is at max level or XP gain is disabled, force Blizzard bar
+    if IsPlayerAtMaxLevel() or (IsXPUserDisabled and IsXPUserDisabled()) then
         nextStyle = "none"
     end
 
