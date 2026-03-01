@@ -49,6 +49,13 @@ end
 
 --- Called when player enters Edit Mode
 function EditMode:OnEnterEditMode()
+	-- Guard against EditModeManagerFrame:Show() firing multiple times
+	-- (Blizzard can re-show the frame internally during Edit Mode updates)
+	if self._inEditMode then
+		return
+	end
+	self._inEditMode = true
+
 	print("|cFF00FF00[XPBarEnhanced]|r Edit Mode entered")
 
 	local bar = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
@@ -89,9 +96,9 @@ function EditMode:OnEnterEditMode()
 		inner:SetColorTexture(0.2, 0.6, 1.0, 0.25)
 
 		local label = self.editOverlay:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-		label:SetPoint("CENTER")
+		label:SetPoint("TOPRIGHT", -4, -3)
 		label:SetText("Edit Mode")
-		label:SetTextColor(1, 1, 1, 0.8)
+		label:SetTextColor(1, 1, 1, 0.9)
 	end
 	self.editOverlay:Show()
 
@@ -103,6 +110,8 @@ end
 
 --- Called when player exits Edit Mode
 function EditMode:OnExitEditMode()
+	self._inEditMode = false
+
 	print("|cFF00FF00[XPBarEnhanced]|r Edit Mode exited")
 
 	local bar = Addon.BarManager and Addon.BarManager:GetCurrentFrame()

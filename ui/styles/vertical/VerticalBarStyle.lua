@@ -80,11 +80,11 @@ function VerticalBarStyleTemplate:UpdateBarColors(context, barName)
         return
     end
 
+    local Colors = XPBarEnhanced.Colors
     -- Select color based on whether player has rested XP
-    local XPBarColors = _G.XPBarColors
     local hasRestedXP = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
-    local colorKey = hasRestedXP and Color.XpBarRested or Color.XpBar
-    local color = XPBarColors:GetUserColor(colorKey)
+    local colorKey = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
+    local color = Colors:Get(colorKey)
 
     -- Use SetStatusBarColor for StatusBar widget
     self.StatusBar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)

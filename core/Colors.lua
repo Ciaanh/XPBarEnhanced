@@ -98,18 +98,4 @@ function Colors:ResetAll()
     Addon.db.colors = nil
 end
 
--------------------------------------------------------------------
--- Compatibility Layer (for XPBarMixinBase)
--------------------------------------------------------------------
-
--- Global compatibility object for old XPBarMixinBase code
-_G.XPBarColors = {
-    GetUserColor = function(self, colorKey)
-        return Addon.Colors:Get(colorKey)
-    end
-}
-
--- Global Color key constants (for XPBarMixinBase)
-_G.Color = Colors.Key
-
 return Colors

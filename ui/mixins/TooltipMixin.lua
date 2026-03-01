@@ -10,23 +10,11 @@
 XPBarTooltipMixin = {}
 
 local TooltipMixin = XPBarTooltipMixin
-local XPBarColors = _G.XPBarColors
-
--- track the current tooltip owner so Refresh can re-open it when needed
-TooltipMixin.currentTooltipOwner = nil
-
--------------------------------------------------------------------
--- UTIL / DEPENDENCY HELPERS
--------------------------------------------------------------------
-
 local Addon = XPBarEnhanced
 local L = Addon and Addon.L or {}
 
 local function GetGlobalDB()
-	if Addon and Addon.db and Addon.db.profile then
-		return Addon.db.profile
-	end
-	return {}
+	return Addon and Addon.db or {}
 end
 
 function TooltipMixin:FormatNumber(n)
@@ -83,8 +71,9 @@ end
 local function GetTooltipColors()
 	local leftR, leftG, leftB = 0.7, 0.7, 0.7
 	local rightR, rightG, rightB = 1, 1, 1
-	if XPBarColors and Color and XPBarColors.GetUserColor then
-		local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(Color.XpBar) or nil
+	local Addon = XPBarEnhanced
+	if Addon and Addon.Colors and Addon.Colors.Get then
+		local c = Addon.Colors:Get(Addon.Colors.Key.XpBar)
 		if c then
 			rightR, rightG, rightB = c.r or rightR, c.g or rightG, c.b or rightB
 		end
@@ -145,10 +134,10 @@ function TooltipMixin:AddXPSection(content, context, cfg)
 	-- left uses muted label color; right should reflect the bar's primary color (or rested color when appropriate)
 	local leftR, leftG, leftB = 0.7, 0.7, 0.7
 	local rightR, rightG, rightB = 1, 1, 1
-	if XPBarColors and Color and XPBarColors.GetUserColor then
+	if Addon.Colors and Addon.Colors.Get then
 		local hasRestedXP = context and (context.hasRestedXP or (context.restedXP and context.restedXP > 0))
-		local key = hasRestedXP and Color.XpBarRested or Color.XpBar
-		local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(key) or nil
+		local key = hasRestedXP and Addon.Colors.Key.XpBarRested or Addon.Colors.Key.XpBar
+		local c = Addon.Colors:Get(key)
 		if c then
 			rightR, rightG, rightB = c.r or rightR, c.g or rightG, c.b or rightB
 		end
@@ -205,8 +194,9 @@ function TooltipMixin:AddRestedSection(content, context, cfg)
 	-- Rested color should reflect the rested overlay color
 	local leftR, leftG, leftB = 0.7, 0.7, 0.7
 	local rightR, rightG, rightB = 0, 0.8, 1
-	if XPBarColors and Color and XPBarColors.GetUserColor then
-		local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(Color.Rested) or nil
+	local Colors = Addon.Colors
+	if Colors then
+		local c = Colors:Get(Colors.Key.Rested)
 		if c then
 			rightR, rightG, rightB = c.r or rightR, c.g or rightG, c.b or rightB
 		end
@@ -272,8 +262,9 @@ function TooltipMixin:AddQuestSection(content, context, cfg)
 
 	if totalComplete and totalComplete > 0 then
 		local cR, cG, cB = 0, 1, 0
-		if XPBarColors and Color and XPBarColors.GetUserColor then
-			local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(Color.QuestComplete) or nil
+		local Colors = Addon.Colors
+		if Colors then
+			local c = Colors:Get(Colors.Key.QuestComplete)
 			if c then
 				cR, cG, cB = c.r or cR, c.g or cG, c.b or cB
 			end
@@ -308,8 +299,9 @@ function TooltipMixin:AddQuestSection(content, context, cfg)
 
 	if totalIncomplete and totalIncomplete > 0 then
 		local cR, cG, cB = 1, 0.8, 0
-		if XPBarColors and Color and XPBarColors.GetUserColor then
-			local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(Color.QuestIncomplete) or nil
+		local Colors = Addon.Colors
+		if Colors then
+			local c = Colors:Get(Colors.Key.QuestIncomplete)
 			if c then
 				cR, cG, cB = c.r or cR, c.g or cG, c.b or cB
 			end

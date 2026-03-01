@@ -8,13 +8,19 @@ local BarManager = Addon.BarManager
 local StyleBuilder = XPBarStyleBuilder
 local EventNames = Addon.EventNames
 
+local function SafeCallErrorHandler(err)
+    if CallErrorHandler then
+        CallErrorHandler(err)
+    else
+        print(tostring(err))
+    end
+end
+
 local StyleTemplateNameMap = {
     classic = "ClassicBarTemplate",
     flat = "FlatBarTemplate",
     vertical = "VerticalBarTemplate",
     circular = "CircularBarTemplate",
-    reputation = "ReputationBarTemplate",
-    segmented = "SegmentedBarTemplate"
 }
 
 -- Helper: true if style key corresponds to a custom addon style (not Blizzard's bar)
@@ -122,11 +128,8 @@ function BarManager:SetStyle(nextStyle)
     end
 
     -- If player is at max level or XP gain is disabled, force Blizzard bar
-    -- Exception: "reputation" style is specifically designed for max-level players
-    if nextStyle ~= "reputation" then
-        if IsPlayerAtMaxLevel() or (IsXPUserDisabled and IsXPUserDisabled()) then
-            nextStyle = "none"
-        end
+    if IsPlayerAtMaxLevel() or (IsXPUserDisabled and IsXPUserDisabled()) then
+        nextStyle = "none"
     end
 
     if previousStyle == nextStyle then
@@ -199,13 +202,8 @@ end
 
 -- Update animation settings for views (emit broadcast for views to reconfigure)
 function BarManager:UpdateAnimationSettings()
-    -- If an AnimationManager exists, call configured update; otherwise, broadcast for view updates
     if Addon.AnimationManager and Addon.AnimationManager.UpdateSettings then
-        pcall(
-            function()
-                Addon.AnimationManager:UpdateSettings()
-            end
-        )
+        xpcall(Addon.AnimationManager.UpdateSettings, SafeCallErrorHandler, Addon.AnimationManager)
         return true
     end
     return false
@@ -215,11 +213,7 @@ end
 function BarManager:OnEnteringWorld()
     -- Invalidate Quest cache and notify listeners
     if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-        pcall(
-            function()
-                Addon.QuestXP:InvalidateQuestCache()
-            end
-        )
+        xpcall(Addon.QuestXP.InvalidateQuestCache, SafeCallErrorHandler, Addon.QuestXP)
         return true
     end
     return false
@@ -231,8 +225,7 @@ function BarManager:OnLevelUp(newLevel)
     local level = newLevel or (UnitLevel("player") or 0) + 1
     local db = Addon.db or {}
     local userStyle = db.barStyle or "classic"
-    -- At max level: allow reputation style, otherwise fall back to "none"
-    if IsPlayerAtMaxLevel(level) and userStyle ~= "reputation" then
+    if IsPlayerAtMaxLevel(level) then
         self:SetStyle("none")
     else
         self:SetStyle(userStyle)
@@ -250,11 +243,7 @@ function BarManager:Shutdown()
     self.barFrames = self.barFrames or {}
     for style, frame in pairs(self.barFrames) do
         if frame and frame.Hide then
-            pcall(
-                function()
-                    frame:Hide()
-                end
-            )
+            xpcall(frame.Hide, SafeCallErrorHandler, frame)
         end
     end
     self.currentFrame = nil

@@ -1,7 +1,7 @@
 -- XP Bar Enhanced -  Animation Base Mixin
 -- Common animation behavior for  bar styles
 
-local AddonName, Addon = ...
+local Addon = XPBarEnhanced
 
 -----------------------------------
 -- Animation Base Mixin
@@ -172,10 +172,10 @@ function AnimationBase:AnimateBarEffect(iterationData, eventContext)
 		return
 	end
 	if flashData and flashData.active and flashData.currentAlpha and flashData.currentAlpha > 0 then
-		local XPBarColors = _G.XPBarColors
+		local colors = Addon and Addon.Colors
 		local hasRestedXP = eventContext and eventContext.hasRestedXP
-		local colorKey = hasRestedXP and Color.Rested or Color.XpBar
-		local color = XPBarColors and XPBarColors.GetUserColor and XPBarColors:GetUserColor(colorKey)
+		local colorKey = colors and (hasRestedXP and colors.Key.Rested or colors.Key.XpBar)
+		local color = colorKey and colors:Get(colorKey)
 		if color then
 			gainFlash:SetColorTexture(color.r, color.g, color.b, flashData.currentAlpha)
 		else

@@ -276,11 +276,14 @@ end
 -- CONTEXT BUILDING
 -------------------------------------------------------------------
 
--- Events that should consume XP changes
+-- Events that should consume (advance) the XP delta tracker.
+-- EventBus broadcasts ("XPBAR:BROADCAST_UPDATE") are the primary delivery
+-- path when Session drives all XP events, so they must also consume the delta.
 local XP_CONSUMING_EVENTS = {
 	["PLAYER_XP_UPDATE"] = true,
 	["PLAYER_LEVEL_UP"] = true,
-	["PLAYER_ENTERING_WORLD"] = true
+	["PLAYER_ENTERING_WORLD"] = true,
+	["XPBAR:BROADCAST_UPDATE"] = true,
 }
 
 function XPBarContextBuilder.BuildContext(event, ...)

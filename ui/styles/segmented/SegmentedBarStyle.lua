@@ -13,7 +13,7 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
 end
 
 local Addon = XPBarEnhanced
-local XPBarColors = _G.XPBarColors
+local Colors = Addon.Colors
 
 -------------------------------------------------------------------
 -- CONSTANTS
@@ -40,7 +40,12 @@ function SegmentedBarStyleTemplate:CreateSegments()
 
     self.segments = {}
 
-    local totalWidth = container:GetWidth()
+    -- Use the parent frame's declared width; container:GetWidth() returns 0
+    -- during OnLoad because anchor-based sizing hasn't resolved yet.
+    local totalWidth = self:GetWidth()
+    if totalWidth == 0 then
+        totalWidth = 565
+    end
     local totalGaps = (NUM_SEGMENTS - 1) * SEGMENT_GAP
     local segmentWidth = math.floor((totalWidth - totalGaps) / NUM_SEGMENTS)
 
@@ -62,6 +67,27 @@ function SegmentedBarStyleTemplate:CreateSegments()
     end
 end
 
+--- Called by the animation system each frame with the interpolated ratio.
+--- Rebuilds a lightweight context so RenderBar can colour segments correctly.
+function SegmentedBarStyleTemplate:UpdateGainedBar(currentRatio, eventContext)
+    if not self.segments or #self.segments == 0 then
+        return
+    end
+
+    -- Build a minimal context for RenderBar using the interpolated ratio.
+    local ctx = eventContext or {}
+    local renderCtx = {
+        ratio        = currentRatio,
+        currentXP    = ctx.currentXP,
+        xpMax        = ctx.xpMax,
+        restedXP     = ctx.restedXP,
+        hasRestedXP  = ctx.hasRestedXP,
+        completeQuestXP    = ctx.completeQuestXP,
+        incompleteQuestXP  = ctx.incompleteQuestXP,
+    }
+    self:RenderBar(renderCtx)
+end
+
 --- Override RenderBar to fill segments based on XP ratio and overlays.
 function SegmentedBarStyleTemplate:RenderBar(context)
     if not self.segments or #self.segments == 0 then
@@ -72,46 +98,44 @@ function SegmentedBarStyleTemplate:RenderBar(context)
         return
     end
 
-    local ratio = context.ratio or 0
+    -- Derive ratio from currentXP/xpMax when the caller hasn't pre-computed it.
+    -- ContextBuilder never sets a "ratio" field; it always provides currentXP + xpMax.
+    local ratio = context.ratio
+    if not ratio then
+        local currentXP = context.currentXP or 0
+        local xpMax = context.xpMax or 1
+        ratio = xpMax > 0 and (currentXP / xpMax) or 0
+    end
     local filledCount = ratio * NUM_SEGMENTS
 
     -- Determine bar fill color (rested vs normal)
     local hasRestedXP = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
     local fillColor
-    if XPBarColors then
-        local colorKey = hasRestedXP and Color.XpBarRested or Color.XpBar
-        fillColor = XPBarColors:GetUserColor(colorKey)
-    else
-        fillColor = {r = 0.58, g = 0.0, b = 0.55, a = 1.0}
-    end
+    local colorKey = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
+    fillColor = Colors:Get(colorKey)
 
     -- Calculate rested XP segment coverage
     local restedRatio = 0
-    if context.restedXP and context.maxXP and context.maxXP > 0 and context.currentXP then
-        restedRatio = (context.currentXP + context.restedXP) / context.maxXP
+    if context.restedXP and context.xpMax and context.xpMax > 0 and context.currentXP then
+        restedRatio = (context.currentXP + context.restedXP) / context.xpMax
     end
     local restedSegments = restedRatio * NUM_SEGMENTS
 
     -- Get rested overlay color
-    local restedColor
-    if XPBarColors then
-        restedColor = XPBarColors:GetUserColor(Color.Rested)
-    else
-        restedColor = {r = 0.07, g = 0.58, b = 0.95, a = 0.5}
-    end
+    local restedColor = Colors:Get(Colors.Key.Rested)
 
     -- Calculate quest XP segment coverage
     local questCompleteRatio = 0
     local questIncompleteRatio = 0
     local db = Addon.db or {}
 
-    if db.showQuestXP and context.maxXP and context.maxXP > 0 and context.currentXP then
-        if db.showCompleteQuestOverlay and context.completedQuestXP and context.completedQuestXP > 0 then
-            questCompleteRatio = (context.currentXP + context.completedQuestXP) / context.maxXP
+    if db.showQuestXP and context.xpMax and context.xpMax > 0 and context.currentXP then
+        if db.showCompleteQuestOverlay and context.completeQuestXP and context.completeQuestXP > 0 then
+            questCompleteRatio = (context.currentXP + context.completeQuestXP) / context.xpMax
         end
         if db.showIncompleteQuestOverlay and context.incompleteQuestXP and context.incompleteQuestXP > 0 then
-            local questBase = context.currentXP + (context.completedQuestXP or 0)
-            questIncompleteRatio = (questBase + context.incompleteQuestXP) / context.maxXP
+            local questBase = context.currentXP + (context.completeQuestXP or 0)
+            questIncompleteRatio = (questBase + context.incompleteQuestXP) / context.xpMax
         end
     end
 
@@ -119,14 +143,8 @@ function SegmentedBarStyleTemplate:RenderBar(context)
     local questIncompleteSegments = questIncompleteRatio * NUM_SEGMENTS
 
     -- Get quest overlay colors
-    local questCompleteColor, questIncompleteColor
-    if XPBarColors then
-        questCompleteColor = XPBarColors:GetUserColor(Color.QuestComplete)
-        questIncompleteColor = XPBarColors:GetUserColor(Color.QuestIncomplete)
-    else
-        questCompleteColor = {r = 1.0, g = 0.65, b = 0.0, a = 0.85}
-        questIncompleteColor = {r = 0.5, g = 1.0, b = 0.2, a = 0.85}
-    end
+    local questCompleteColor = Colors:Get(Colors.Key.QuestComplete)
+    local questIncompleteColor = Colors:Get(Colors.Key.QuestIncomplete)
 
     -- Render each segment
     for i = 1, NUM_SEGMENTS do
@@ -167,8 +185,8 @@ function SegmentedBarStyleTemplate:FullUpdate(context)
     self:RenderBar(context)
 
     -- Update text elements (delegate to text mixin)
-    if self.UpdateAllText then
-        self:UpdateAllText(context)
+    if self.UpdateTexts then
+        self:UpdateTexts(context)
     end
 end
 

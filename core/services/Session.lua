@@ -80,19 +80,21 @@ function Session:SetupEventFrame()
 
     local frame = CreateFrame("Frame")
     frame:RegisterEvent("PLAYER_XP_UPDATE")
-    frame:RegisterEvent("PLAYER_LEVEL_UP")
+    -- PLAYER_LEVEL_UP is handled exclusively by AddOnLifecycle:OnPlayerLevelUp
+    -- (which calls Session:OnLevelUp). Do NOT register here to avoid double-dispatch.
     frame:RegisterEvent("TIME_PLAYED_MSG")
     frame:RegisterEvent("QUEST_TURNED_IN")
     frame:RegisterEvent("QUEST_LOG_UPDATE")
+    -- Rested state changes are also handled centrally here so bars
+    -- only need to subscribe to EventBus instead of raw WoW events.
+    frame:RegisterEvent("UPDATE_EXHAUSTION")
+    frame:RegisterEvent("PLAYER_UPDATE_RESTING")
 
     frame:SetScript(
         "OnEvent",
         function(_, event, ...)
             if event == "PLAYER_XP_UPDATE" then
                 Session:OnXPUpdate()
-            elseif event == "PLAYER_LEVEL_UP" then
-                local level = ...
-                Session:OnLevelUp(level)
             elseif event == "TIME_PLAYED_MSG" then
                 local totalTime, levelTime = ...
                 Session:OnTimePlayed(totalTime, levelTime)
@@ -102,6 +104,8 @@ function Session:SetupEventFrame()
             elseif event == "QUEST_LOG_UPDATE" then
                 -- keep lastXP/maxXP/current cache fresh just in case
                 Session:RefreshSessionTimes()
+            elseif event == "UPDATE_EXHAUSTION" or event == "PLAYER_UPDATE_RESTING" then
+                Session:OnRestedChanged()
             end
         end
     )
@@ -154,6 +158,11 @@ function Session:OnXPUpdate()
     session.lastXP = currentXP
     session.maxXP = maxXP
     session.lastUpdate = time()
+
+    -- Session is the single source of XP events; broadcast to all registered bars
+    if Addon.EventBus and Addon.EventBus.Emit then
+        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    end
 end
 
 function Session:OnLevelUp(level)
@@ -171,6 +180,23 @@ function Session:OnLevelUp(level)
     -- Update current level state
     session.lastXP = UnitXP("player")
     session.maxXP = UnitXPMax("player")
+    session.lastUpdate = time()
+
+    -- Notify dependent systems (consolidated from defunct AddOnLifecycle handlers)
+    if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
+        xpcall(Addon.QuestXP.InvalidateQuestCache, CallErrorHandler or print, Addon.QuestXP)
+    end
+    if Addon.BarManager and Addon.BarManager.OnLevelUp then
+        xpcall(Addon.BarManager.OnLevelUp, CallErrorHandler or print, Addon.BarManager, level)
+    end
+    if Addon.Stats and Addon.Stats.OnLevelUp then
+        xpcall(Addon.Stats.OnLevelUp, CallErrorHandler or print, Addon.Stats, level)
+    end
+
+    -- Broadcast update to all bars
+    if Addon.EventBus and Addon.EventBus.Emit then
+        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    end
 end
 
 function Session:OnTimePlayed(totalTime, levelTime)
@@ -186,6 +212,12 @@ function Session:OnTimePlayed(totalTime, levelTime)
 
     -- Clear the ticker
     self:ClearTimePlayedRequest()
+
+    -- Notify Stats module (consolidated from defunct AddOnLifecycle handler)
+    local stats = Addon.Stats
+    if stats and stats.OnTimePlayed then
+        xpcall(stats.OnTimePlayed, CallErrorHandler or print, stats, totalTime, levelTime)
+    end
 end
 
 -- Ensure completed-quest cache and session XP are refreshed after a quest is turned in.
@@ -223,9 +255,14 @@ function Session:OnQuestTurnedIn(questID)
 
         -- Invalidate/rebuild the centralized QuestXP cache to ensure totals reflect the new quest state.
         if Addon.QuestXP and Addon.QuestXP.Rebuild then
-            pcall(Addon.QuestXP.Rebuild, Addon.QuestXP, 0.1)
+            xpcall(Addon.QuestXP.Rebuild, CallErrorHandler or print, Addon.QuestXP, 0.1)
         elseif Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-            pcall(Addon.QuestXP.InvalidateQuestCache, Addon.QuestXP)
+            xpcall(Addon.QuestXP.InvalidateQuestCache, CallErrorHandler or print, Addon.QuestXP)
+        end
+
+        -- Broadcast quest state change to all bars
+        if Addon.EventBus and Addon.EventBus.Emit then
+            Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
         end
     end
 
@@ -234,6 +271,13 @@ function Session:OnQuestTurnedIn(questID)
         C_Timer.After(0.1, RefreshCompletedQuests)
     else
         RefreshCompletedQuests()
+    end
+end
+
+function Session:OnRestedChanged()
+    -- Rested/exhaustion state changed; notify all bars via EventBus
+    if Addon.EventBus and Addon.EventBus.Emit then
+        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
     end
 end
 

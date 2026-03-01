@@ -5,7 +5,6 @@
 XPBarPaintMixin = {}
 
 local Addon = XPBarEnhanced
-local XPBarColors = _G.XPBarColors
 
 -------------------------------------------------------------------
 -- COLOR APPLICATION METHODS
@@ -25,8 +24,8 @@ function XPBarPaintMixin:UpdateBarColors(context, barName)
 	-- Select color based on whether player has rested XP (not just in resting area)
 	-- Use hasRestedXP field if available, otherwise check restedXP > 0
 	local hasRestedXP = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
-	local colorKey = hasRestedXP and Color.XpBarRested or Color.XpBar
-	local color = XPBarColors:GetUserColor(colorKey)
+	local colorKey = hasRestedXP and Addon.Colors.Key.XpBarRested or Addon.Colors.Key.XpBar
+	local color = Addon.Colors:Get(colorKey)
 	bar:SetStatusBarColor(color.r, color.g, color.b, color.a)
 end
 
@@ -41,7 +40,7 @@ function XPBarPaintMixin:UpdateRestedBarColor(overlayName)
 		return
 	end
 
-	local color = XPBarColors:GetUserColor(Color.Rested)
+	local color = Addon.Colors:Get(Addon.Colors.Key.Rested)
 	overlay:SetVertexColor(color.r, color.g, color.b, color.a)
 end
 
@@ -55,7 +54,7 @@ function XPBarPaintMixin:UpdateQuestCompleteBarColor(overlayName)
 		return
 	end
 
-	local color = XPBarColors:GetUserColor(Color.QuestComplete)
+	local color = Addon.Colors:Get(Addon.Colors.Key.QuestComplete)
 	overlay:SetVertexColor(color.r, color.g, color.b, color.a)
 end
 
@@ -69,7 +68,7 @@ function XPBarPaintMixin:UpdateQuestIncompleteBarColor(overlayName)
 		return
 	end
 
-	local color = XPBarColors:GetUserColor(Color.QuestIncomplete)
+	local color = Addon.Colors:Get(Addon.Colors.Key.QuestIncomplete)
 	overlay:SetVertexColor(color.r, color.g, color.b, color.a)
 end
 
@@ -175,11 +174,7 @@ function XPBarPaintMixin:BuildVisuals()
 		self.GainFlash = self.GainFlash or (self.StatusBar and self.StatusBar.GainFlash)
 	else
 		-- Attempt to alias frame-level overlays if style put them on the frame
-		self.RestedOverlay = self.RestedOverlay or self.RestedOverlay
-		self.QuestOverlayComplete = self.QuestOverlayComplete or self.QuestOverlayComplete
-		self.QuestOverlayIncomplete = self.QuestOverlayIncomplete or self.QuestOverlayIncomplete
-		self.ExhaustionTick = self.ExhaustionTick or self.ExhaustionTick
-		self.GainFlash = self.GainFlash or self.GainFlash
+		-- (self.X = self.X is a no-op; keep only meaningful fallback aliases)
 	end
 
 	-- Alias ON-BAR text children. Prefer an explicit container; fall back to the frame
@@ -223,23 +218,19 @@ end
 --- Initialize all colors from user configuration
 ---  Architecture: Called once during BuildVisuals to override XML defaults
 function XPBarPaintMixin:InitializeColors()
-	if not XPBarColors then
-		return
-	end
-
 	-- Initialize overlay colors (read from user config, not XML)
 	if self.RestedOverlay then
-		local color = XPBarColors:GetUserColor(Color.Rested)
+		local color = Addon.Colors:Get(Addon.Colors.Key.Rested)
 		self.RestedOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
 	end
 
 	if self.QuestOverlayComplete then
-		local color = XPBarColors:GetUserColor(Color.QuestComplete)
+		local color = Addon.Colors:Get(Addon.Colors.Key.QuestComplete)
 		self.QuestOverlayComplete:SetVertexColor(color.r, color.g, color.b, color.a)
 	end
 
 	if self.QuestOverlayIncomplete then
-		local color = XPBarColors:GetUserColor(Color.QuestIncomplete)
+		local color = Addon.Colors:Get(Addon.Colors.Key.QuestIncomplete)
 		self.QuestOverlayIncomplete:SetVertexColor(color.r, color.g, color.b, color.a)
 	end
 

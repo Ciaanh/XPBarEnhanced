@@ -2,6 +2,38 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [1.0.5] - 2026-03-01
+
+### Fixed
+
+- **Bar Update Rendering**: Fixed critical bug where broadcast updates weren't triggering full re-renders. The `forceRender` flag now correctly matches the actual EventBus event name (`XPBAR:BROADCAST_UPDATE`) instead of incomplete string
+- **Level-Up Event Dispatch**: Eliminated duplicate level-up processing that was being triggered three times per event. Session now owns all level-up dependencies (QuestXP, BarManager, Stats) and broadcasts once via EventBus
+
+### Changed
+
+- **Removed Deprecated Global Shims**: Completely removed `_G.XPBarColors` and `_G.Color` globals that provided backward compatibility. All style files and mixins now use the canonical `Addon.Colors:Get()` / `Addon.Colors.Key` API
+  - VerticalBarStyle: Updated `UpdateBarColors` to use `Addon.Colors`
+  - SegmentedBarStyle: Updated `RenderBar` color lookups to use `Addon.Colors`
+  - CircularBarStyle: Updated `UpdateSegmentColors` to use `Addon.Colors`
+  - TooltipMixin: Updated `AddRestedSection` and `AddQuestSection` to use `Addon.Colors`
+
+### Removed
+
+- **Dead Code Cleanup**: Removed 4 unused event handlers from `AddOnLifecycle` that were never dispatched:
+  - `OnPlayerXPUpdate` (XP updates handled by Session)
+  - `OnUpdateExhaustion` (rested updates handled by Session)
+  - `OnPlayerUpdateResting` (rested updates handled by Session)
+  - `OnTimePlayedMsg` (time played handled by Session)
+- **Removed No-Op Stub**: Deleted `BaseMixin:RegisterQuestEvents()` which was kept for backward compatibility but had no callers
+- **Removed Duplicate Event Registration**: Session event frame no longer registers `PLAYER_LEVEL_UP` (handled exclusively by AddOnLifecycle)
+
+### Technical
+
+- EventBus now correctly processes broadcast updates as full-render triggers alongside manual refresh, full update, and cvar-update events
+- All color lookups use immutable `Addon.Colors` context instead of mutable globals
+- Session is now the single authoritative source for XP, rested, and level-up events; AddOnLifecycle coordinates dependents and broadcasts via EventBus
+- Reduced event handler dispatch complexity from 3× to 1× per level-up
+
 ## [1.0.4] - 2026-03-01
 
 ### Added

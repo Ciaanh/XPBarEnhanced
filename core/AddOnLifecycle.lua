@@ -13,14 +13,13 @@ function eventHandlers:OnAddonLoaded(name)
         return
     end
 
-    -- Initialize core systems
-    if Addon.Database and Addon.Database.Initialize then
-        Addon.Database:Initialize()
-    end
+    -- Fail fast: core modules must be present; missing files indicate a load-order bug
+    assert(Addon.Database, "XPBarEnhanced: Database module not loaded (check .toc order)")
+    assert(Addon.Config,   "XPBarEnhanced: Config module not loaded (check .toc order)")
 
-    if Addon.Config and Addon.Config.Initialize then
-        Addon.Config:Initialize()
-    end
+    -- Initialize core systems
+    Addon.Database:Initialize()
+    Addon.Config:Initialize()
 
     -- Set database reference
     Addon.db = XPBarEnhancedDB or {}
@@ -88,54 +87,11 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
 end
 
 function eventHandlers:OnPlayerLevelUp(level)
+    -- Session:OnLevelUp handles all dependents (QuestXP, BarManager, Stats) and
+    -- emits the EventBus broadcast.  Session's own eventFrame also fires OnLevelUp
+    -- so we must NOT duplicate any of that work here; just forward to Session once.
     if Addon.Session and Addon.Session.OnLevelUp then
         Addon.Session:OnLevelUp(level)
-    end
-    if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-        Addon.QuestXP:InvalidateQuestCache()
-    end
-    -- Always call BarManager to check if we hit max level and need to hide the bar
-    if Addon.BarManager and Addon.BarManager.OnLevelUp then
-        Addon.BarManager:OnLevelUp(level)
-    end
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
-    end
-    local stats = Addon.Stats
-    if stats and stats.OnLevelUp then
-        stats:OnLevelUp(level)
-    end
-end
-
-function eventHandlers:OnPlayerXPUpdate()
-    -- Deprecated: this top-level event handler is intentionally no longer
-    -- registered. XP update events are handled by dedicated modules.
-    -- Kept as a no-op for backward compatibility in case external code calls it.
-end
-
-function eventHandlers:OnUpdateExhaustion()
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
-    elseif Addon.BarManager and Addon.BarManager.OnRestedChanged then
-        Addon.BarManager:OnRestedChanged()
-    end
-end
-
-function eventHandlers:OnPlayerUpdateResting()
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
-    elseif Addon.BarManager and Addon.BarManager.OnRestedChanged then
-        Addon.BarManager:OnRestedChanged()
-    end
-end
-
-function eventHandlers:OnTimePlayedMsg(totalTime, levelTime)
-    if Addon.Session and Addon.Session.OnTimePlayed then
-        Addon.Session:OnTimePlayed(totalTime, levelTime)
-    end
-    local stats = Addon.Stats
-    if stats and stats.OnTimePlayed then
-        stats:OnTimePlayed(totalTime, levelTime)
     end
 end
 
@@ -150,7 +106,6 @@ function eventHandlers:OnEnableXPGain()
         Addon.BarManager.currentStyle = nil  -- Force re-evaluation
         Addon.BarManager:SetStyle(db.barStyle or "classic")
     end
-    print("|cFF00FF00[XPBarEnhanced]|r XP gain re-enabled, restoring custom bar")
 end
 
 function eventHandlers:OnDisableXPGain()
@@ -163,11 +118,10 @@ function eventHandlers:OnDisableXPGain()
         Addon.BarManager.currentStyle = nil  -- Force re-evaluation
         Addon.BarManager:SetStyle("none")
     end
-    print("|cFF00FF00[XPBarEnhanced]|r XP gain disabled, switching to Blizzard bar")
 end
 
 function eventHandlers:OnPlayerMaxLevelUpdate()
-    -- Max level changed (expansion pre-patch, etc.) — re-evaluate bar visibility
+    -- Max level changed (expansion pre-patch, etc.) - re-evaluate bar visibility
     if Addon.BarManager and Addon.BarManager.SetStyle then
         local db = Addon.db or {}
         Addon.BarManager.currentStyle = nil  -- Force re-evaluation
@@ -176,7 +130,6 @@ function eventHandlers:OnPlayerMaxLevelUpdate()
     if Addon.EventBus and Addon.EventBus.Emit then
         Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
     end
-    print("|cFF00FF00[XPBarEnhanced]|r PLAYER_MAX_LEVEL_UPDATE: re-evaluating bar visibility")
 end
 
 function eventHandlers:OnPlayerLogout()
@@ -191,6 +144,7 @@ local eventMap = {
     ADDON_LOADED = "OnAddonLoaded",
     PLAYER_LOGIN = "OnPlayerLogin",
     PLAYER_ENTERING_WORLD = "OnPlayerEnteringWorld",
+    PLAYER_LEVEL_UP = "OnPlayerLevelUp",
     ENABLE_XP_GAIN = "OnEnableXPGain",
     DISABLE_XP_GAIN = "OnDisableXPGain",
     PLAYER_LOGOUT = "OnPlayerLogout",
@@ -202,10 +156,7 @@ eventFrame:SetScript(
     function(self, event, ...)
         local handlerName = eventMap[event]
         if handlerName and eventHandlers[handlerName] then
-            local success, err = pcall(eventHandlers[handlerName], eventHandlers, ...)
-            if not success then
-                error("Event handler failed for " .. event .. ": " .. tostring(err))
-            end
+            xpcall(eventHandlers[handlerName], CallErrorHandler or print, eventHandlers, ...)
         end
     end
 )

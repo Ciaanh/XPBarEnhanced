@@ -385,12 +385,12 @@ end
 --- Apply colors to segments based on their type
 -- @param hasRestedXP boolean: Whether player has rested XP available
 function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha)
-    local XPBarColors = _G.XPBarColors
-    local colorNormal = XPBarColors:GetUserColor(Color.XpBar)
-    local colorRested = XPBarColors:GetUserColor(Color.Rested)
-    local colorXpBarRested = XPBarColors:GetUserColor(Color.XpBarRested)
-    local colorQuestComplete = XPBarColors:GetUserColor(Color.QuestComplete)
-    local colorQuestIncomplete = XPBarColors:GetUserColor(Color.QuestIncomplete)
+    local Colors = XPBarEnhanced.Colors
+    local colorNormal = Colors:Get(Colors.Key.XpBar)
+    local colorRested = Colors:Get(Colors.Key.Rested)
+    local colorXpBarRested = Colors:Get(Colors.Key.XpBarRested)
+    local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
+    local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
 
     -- Use provided parameter only; no fallback to persistent cached values
     hasRestedXP = hasRestedXP == true
