@@ -10,6 +10,7 @@ local defaults = {
     circularSegments = 50,
     circularUseTexture = true,
     showPercentage = true,
+    showMilestoneTicks = false,
     showQuestXP = true,
     showQuestPercent = true,
     showXPPerHourText = true,

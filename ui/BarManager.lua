@@ -17,10 +17,11 @@ local function SafeCallErrorHandler(err)
 end
 
 local StyleTemplateNameMap = {
-    classic = "ClassicBarTemplate",
-    flat = "FlatBarTemplate",
+    classic  = "ClassicBarTemplate",
+    flat     = "FlatBarTemplate",
     vertical = "VerticalBarTemplate",
     circular = "CircularBarTemplate",
+    terminal = "TerminalBarTemplate",
 }
 
 -- Helper: true if style key corresponds to a custom addon style (not Blizzard's bar)

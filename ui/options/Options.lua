@@ -265,6 +265,11 @@ function XPBarEnhancedOptionsMixin:OnLoad()
             container.AnimationHeader.Title:SetText(ResolveLocale("OPT_HEADER_ANIMATION"))
         end
 
+        -- Flat Bar section
+        if container.FlatBarHeader and container.FlatBarHeader.Title then
+            container.FlatBarHeader.Title:SetText(ResolveLocale("OPT_HEADER_FLAT_BAR"))
+        end
+
         -- Circular Bar section
         if container.CircularHeader and container.CircularHeader.Title then
             container.CircularHeader.Title:SetText(ResolveLocale("OPT_HEADER_CIRCULAR"))
@@ -681,6 +686,21 @@ function XPBarEnhancedOptionsMixin:Refresh()
                     if rowFrame then
                         rowFrame:Hide()
                     end
+                end
+            elseif key == "showMilestoneTicks" then
+                local rowKey = "Row_" .. key
+                local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+                local rowFrame = container and container[rowKey]
+                local header   = container and container.FlatBarHeader
+                local isFlatMode = (barStyle == "flat")
+                if isFlatMode then
+                    checkbox:Show()
+                    if rowFrame then rowFrame:Show() end
+                    if header   then header:Show()   end
+                else
+                    checkbox:Hide()
+                    if rowFrame then rowFrame:Hide() end
+                    if header   then header:Hide()   end
                 end
             end
         elseif checkbox and checkbox.Slider then

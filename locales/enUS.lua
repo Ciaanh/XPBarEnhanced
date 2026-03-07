@@ -67,6 +67,14 @@ L["TT_LEVEL_FMT"] = "Level %d"
 -- Tooltip hints
 L["TT_HINT_CONFIG"] = "Right-click to configure XP Bar"
 
+-- Terminal style legend
+L["TT_TERMINAL_LEGEND"]    = "Terminal Legend"
+L["TT_TERMINAL_EARNED"]    = "█ Green: Earned XP"
+L["TT_TERMINAL_QUEST_DONE"]= "█ Amber: Quest XP (completed)"
+L["TT_TERMINAL_QUEST_TODO"]= "▒ Amber: Quest XP (in progress)"
+L["TT_TERMINAL_RESTED"]    = "▓ Teal: Rested bonus"
+L["TT_TERMINAL_EMPTY"]     = "░ Dim: Not earned"
+
 -- Modifier display names
 L["KEY_SHIFT"] = "Shift"
 L["KEY_CTRL"] = "Ctrl"
@@ -88,6 +96,8 @@ L["OPT_SHOW_INCOMPLETE_OVERLAY_DESC"] =
     "Display the yellow semi-transparent overlay showing XP from incomplete quests (doesn't reduce bar width)."
 L["OPT_PERCENTAGE"] = "Show percentage"
 L["OPT_PERCENTAGE_DESC"] = "Display current percentage progress as text overlaid on the XP bar itself."
+L["OPT_SHOW_MILESTONE_TICKS"] = "Show milestone ticks"
+L["OPT_SHOW_MILESTONE_TICKS_DESC"] = "Overlay small tick marks and percent labels at 25%, 50%, 75%, and 100% on the Flat bar. Ticks before the current position take on the bar color; remaining ticks are dimmed."
 L["OPT_QUEST_PERCENT"] = "Include quest XP in percentage"
 L["OPT_QUEST_PERCENT_DESC"] =
     "Show percentage with quest XP included. Example: '75% (80%)' where 80% includes completed quest XP ready to turn in. Requires 'Show percentage ON the bar' to be enabled."
@@ -117,13 +127,14 @@ L["OPT_TEXT_BELOW_BAR"] = "Text BELOW the Bar"
 
 -- Options
 L["OPT_BAR_STYLE"] = "Bar Style"
-L["OPT_BAR_STYLE_DESC"] = "Choose which XP bar to display: None (Blizzard only), Classic (Blizzard-style), Flat (Draggable), Vertical (Falling animation), or Circular (Progress ring)."
+L["OPT_BAR_STYLE_DESC"] = "Choose which XP bar to display: None (Blizzard only), Classic (Blizzard-style), Flat (Draggable), Vertical (Falling animation), Circular (Progress ring), or Terminal (ASCII progress bar)."
 L["OPT_BAR_STYLE_NONE"] = "None (Blizzard only)"
 L["OPT_BAR_STYLE_CLASSIC"] = "Classic (Blizzard-style)"
 L["OPT_BAR_STYLE_FLAT"] = "Flat (Custom draggable)"
 L["OPT_BAR_STYLE_VERTICAL"] = "Vertical (Falling XP)"
 L["OPT_BAR_STYLE_CIRCULAR"] = "Circular (Progress ring)"
 L["OPT_BAR_STYLE_TEST"] = "Test (CommonProgressBar)"
+L["OPT_BAR_STYLE_TERMINAL"] = "Terminal (ASCII progress bar)"
 L["OPT_HIDE_BLIZZARD_BAR"] = "Hide Blizzard bar in Flat mode"
 L["OPT_HIDE_BLIZZARD_BAR_DESC"] = "When using Flat bar style, also hide the Blizzard XP bar. Uncheck to see both bars."
 L["OPT_BAR_LOCKED"] = "Lock bar position"
@@ -150,6 +161,7 @@ L["OPT_HEADER_TEXT_DISPLAY"] = "Text Display"
 L["OPT_HEADER_ANIMATION"] = "Animation"
 L["OPT_HEADER_COLORS"] = "Colors"
 L["OPT_HEADER_CIRCULAR"] = "Circular Bar"
+L["OPT_HEADER_FLAT_BAR"] = "Flat Bar"
 
 -- Animation options
 L["OPT_ENABLE_ANIMATIONS"] = "Enable animations"

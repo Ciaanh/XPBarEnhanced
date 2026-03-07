@@ -87,3 +87,4 @@ ui\styles\flat\FlatBarTemplate.xml
 ui\styles\classic\ClassicBarTemplate.xml
 ui\styles\vertical\VerticalBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
+ui\styles\terminal\TerminalBarTemplate.xml

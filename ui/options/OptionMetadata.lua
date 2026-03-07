@@ -16,6 +16,7 @@ local optionDetails = {
             {value = "flat", label = Addon.L["OPT_BAR_STYLE_FLAT"]},
             {value = "vertical", label = Addon.L["OPT_BAR_STYLE_VERTICAL"]},
             {value = "circular", label = Addon.L["OPT_BAR_STYLE_CIRCULAR"]},
+            {value = "terminal", label = Addon.L["OPT_BAR_STYLE_TERMINAL"]},
         },
         commandKeys = {"style", "mode", "barstyle"}
     },
@@ -60,6 +61,12 @@ local optionDetails = {
         label = Addon.L["OPT_PERCENTAGE"],
         description = Addon.L["OPT_PERCENTAGE_DESC"],
         commandKeys = {"percentage"}
+    },
+    showMilestoneTicks = {
+        key = "showMilestoneTicks",
+        label = Addon.L["OPT_SHOW_MILESTONE_TICKS"],
+        description = Addon.L["OPT_SHOW_MILESTONE_TICKS_DESC"],
+        commandKeys = {"milestoneticks", "ticks"}
     },
     showQuestPercent = {
         key = "showQuestPercent",
@@ -174,6 +181,7 @@ local optionOrder = {
     "showCompleteQuestOverlay",
     "showIncompleteQuestOverlay",
     "showPercentage",
+    "showMilestoneTicks",
     "showQuestPercent",
     "showLevelText",
     "showXPText",
