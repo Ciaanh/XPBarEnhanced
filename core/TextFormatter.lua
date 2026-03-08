@@ -129,7 +129,13 @@ local function colorText(text, colorKey)
 end
 
 function TextFormatter:GetQuestSummaryText(completeXP, incompleteXP, totalXP, maxXP, restedXP, opts)
-    local decimals = (opts and opts.decimals) or 0
+    -- Backward-compatible: callers may pass either opts table or numeric decimals
+    local decimals = 0
+    if type(opts) == "number" then
+        decimals = opts
+    elseif type(opts) == "table" then
+        decimals = opts.decimals or 0
+    end
 
     local db = Addon.db or {}
     local questOverlaysEnabled = db.showQuestXP ~= false

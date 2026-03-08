@@ -248,7 +248,8 @@ function VerticalBarStyleTemplate:UpdateRestedBarLayout(context)
     self.RestedOverlay:SetShown(visible)
 end
 
---- Override percent text (respects showQuestPercent & visibility like other styles)
+--- Override percent text to match circular center text behavior
+--- (simple current percent only; no quest-percent augmentation)
 function VerticalBarStyleTemplate:UpdatePercentText(context)
     if not self.PercentText then
         return
@@ -269,34 +270,23 @@ function VerticalBarStyleTemplate:UpdatePercentText(context)
         return
     end
 
-    local currentXP = context.currentXP or 0
-    local maxXP = context.xpMax or 1
-    local decimals = context.percentDecimals or 1
+    local currentXP = (context and context.currentXP) or 0
+    local maxXP = (context and context.xpMax) or 1
 
-    -- Determine whether to include quest XP in percent (respect settings)
-    local showQuestPercent = false
-    if Addon.ConfigHelper and Addon.ConfigHelper.GetShowQuestPercent then
-        showQuestPercent = Addon.ConfigHelper.GetShowQuestPercent(context)
+    -- Keep decimals source consistent with circular style (DB-backed)
+    local decimals = 1
+    if Addon and Addon.Database then
+        local db = Addon.Database:GetDB()
+        if db then
+            decimals = db.percentDecimals or 1
+        end
     elseif context then
-        showQuestPercent = context.showQuestPercent
+        decimals = context.percentDecimals or 1
     end
 
-    local questXP = 0
-    if showQuestPercent then
-        questXP = (context.completeQuestXP or 0) + (context.incompleteQuestXP or 0)
-    end
-
-    -- Delegate formatting to the shared formatter for consistent behavior
-    if Addon.TextFormatter and Addon.TextFormatter.GetPercentText then
-        local text = Addon.TextFormatter:GetPercentText(currentXP, maxXP, decimals, showQuestPercent, questXP)
-        self.PercentText:SetText(text or "")
-        self.PercentText:Show()
-    else
-        -- Fallback: show simple percent of current XP only
-        local percent = maxXP > 0 and ((currentXP / maxXP) * 100) or 0
-        self.PercentText:SetFormattedText("%." .. decimals .. "f%%", percent)
-        self.PercentText:Show()
-    end
+    local percent = (maxXP > 0) and (currentXP / maxXP * 100) or 0
+    self.PercentText:SetText(string.format("%." .. decimals .. "f%%", percent))
+    self.PercentText:Show()
 end
 
 -------------------------------------------------------------------
