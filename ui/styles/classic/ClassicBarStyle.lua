@@ -103,7 +103,10 @@ local function GetClassicBarConfig()
             mode = isDraggable and "DRAGGABLE" or "STATIC",
             positionKey = "ClassicBar"
         },
-        style = {}
+        style = {},
+        capabilities = {
+            exhaustionTick = true,
+        }
     }
 end
 

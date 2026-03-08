@@ -9,6 +9,7 @@ local Addon = XPBarEnhanced
 
 ---@class XPBarInteractionMixin
 XPBarInteractionMixin = {}
+Addon.UI.Mixins.Interaction = XPBarInteractionMixin
 
 local InteractionMixin = XPBarInteractionMixin
 

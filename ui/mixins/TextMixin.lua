@@ -5,6 +5,8 @@
 XPBarTextMixin = {}
 
 local Addon = XPBarEnhanced
+Addon.UI.Mixins.Text = XPBarTextMixin
+
 local L = Addon.L or {}
 
 -------------------------------------------------------------------

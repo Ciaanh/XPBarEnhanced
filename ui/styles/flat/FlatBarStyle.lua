@@ -107,8 +107,8 @@ end
 --- Override UpdateGainedBar to keep ticks in sync with every render/animation tick.
 function FlatBarStyleTemplate:UpdateGainedBar(currentRatio, context)
 	-- Base: set StatusBar value and apply bar color
-	if BarDisplayMixin and BarDisplayMixin.UpdateGainedBar then
-		BarDisplayMixin.UpdateGainedBar(self, currentRatio, context)
+	if XPBarDisplayMixin and XPBarDisplayMixin.UpdateGainedBar then
+		XPBarDisplayMixin.UpdateGainedBar(self, currentRatio, context)
 	end
 	self:UpdateMilestoneTicks(currentRatio, context)
 end

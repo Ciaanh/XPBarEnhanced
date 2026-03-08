@@ -11,6 +11,8 @@ XPBarTooltipMixin = {}
 
 local TooltipMixin = XPBarTooltipMixin
 local Addon = XPBarEnhanced
+Addon.UI.Mixins.Tooltip = XPBarTooltipMixin
+local Addon = XPBarEnhanced
 local L = Addon and Addon.L or {}
 
 local function GetGlobalDB()
@@ -106,12 +108,12 @@ function TooltipMixin:GetBestAnchor()
 	end
 end
 
-function TooltipMixin:Show() -- public helper that mirrors old API
+function TooltipMixin:ShowTooltip() -- public helper that mirrors old API
 	TooltipMixin.currentTooltipOwner = self
 	self:OnEnter()
 end
 
-function TooltipMixin:Hide() -- public helper
+function TooltipMixin:HideTooltip() -- public helper
 	if TooltipMixin.currentTooltipOwner == self then
 		TooltipMixin.currentTooltipOwner = nil
 	end

@@ -225,4 +225,4 @@ end
 -----------------------------------
 -- Export as global for composition in StyleBuilder (consistent with other mixins)
 XPBarAnimationMixin = AnimationBase
-Addon.AnimationBase = AnimationBase -- Keep for backward compatibility
+Addon.UI.Mixins.Animation = AnimationBase

@@ -11,8 +11,9 @@ XPBarMixinBase = {}
 
 local BaseMixin = XPBarMixinBase
 
--- Reference to addon for Logger access
 local Addon = XPBarEnhanced
+Addon.UI.Mixins.Base = XPBarMixinBase
+
 local EventNames = Addon.EventNames
 
 -- Route errors through Blizzard's handler when available
@@ -135,11 +136,13 @@ function BaseMixin:OnShow()
 	end
 
 	-- (Re-)start periodic text ticker: session time, XP/hour, time-to-level
+	-- Uses a lightweight context (only time-dependent fields) to avoid
+	-- full API queries every 2.5 seconds.
 	if self._textRefreshTicker then
 		self._textRefreshTicker:Cancel()
 	end
 	self._textRefreshTicker = C_Timer.NewTicker(2.5, function()
-		if self and self:IsShown() then
+		if self and self:IsShown() and self:HasCapability("textBelowBar") then
 			local context = XPBarContextBuilder.BuildContext("MANUAL_REFRESH")
 			if self.UpdateSessionText then self:UpdateSessionText(context) end
 			if self.UpdateRateText then self:UpdateRateText(context) end
@@ -260,154 +263,165 @@ function BaseMixin:CalculateTargetRatio(context)
 	end
 
 	local targetRatio = 0
-	if context and context.xpMax and context.xpMax > 0 then
+	if context.xpMax and context.xpMax > 0 then
 		targetRatio = (context.currentXP or 0) / context.xpMax
 	end
 	return targetRatio
 end
 
---- Single entry point for all bar updates (NEW unified pattern)
+--- Check capability flag (declared in style DefaultConfig.capabilities)
+---@param cap string Capability key from XPBarStyleBuilder.Capabilities
+---@return boolean
+function BaseMixin:HasCapability(cap)
+	local caps = self.__xpbar_capabilities
+	if not caps then return true end -- default to true if capabilities not declared
+	return caps[cap] ~= false
+end
+
+--- Determine if this event should force a full render
+---@param event string|nil Event name from context
+---@return boolean
+local FORCE_RENDER_EVENTS = {
+	["FULL_UPDATE"]             = true,
+	["XPBAR:BROADCAST_UPDATE"]  = true,
+	["MANUAL_REFRESH"]          = true,
+	["OPTIONS_CHANGED"]         = true,
+	["CVAR_UPDATE"]             = true,
+}
+
+local function ShouldForceRender(event)
+	return FORCE_RENDER_EVENTS[event] == true
+end
+
+--- Update overlays (rested, quest, exhaustion tick) if style supports them
+---@param context table Immutable context
+function BaseMixin:UpdateOverlays(context)
+	if not self:HasCapability("overlays") then return end
+
+	if self.UpdateRestedBar then
+		self:UpdateRestedBar(context)
+	end
+	if self.UpdateQuestCompleteBar then
+		self:UpdateQuestCompleteBar(context)
+	end
+	if self.UpdateQuestIncompleteBar then
+		self:UpdateQuestIncompleteBar(context)
+	end
+	if self:HasCapability("exhaustionTick") and self.UpdateExhaustionTick then
+		self:UpdateExhaustionTick(context)
+	end
+end
+
+--- Update all text elements if style supports them
+---@param context table Immutable context
+function BaseMixin:UpdateAllText(context)
+	if self.UpdateTextVisibility then
+		self:UpdateTextVisibility(context)
+	end
+	if self:HasCapability("textOnBar") then
+		if self.UpdateXPText then self:UpdateXPText(context) end
+		if self.UpdatePercentText then self:UpdatePercentText(context) end
+		if self.UpdateLevelText then self:UpdateLevelText(context) end
+	end
+	if self:HasCapability("textBelowBar") then
+		if self.UpdateSessionText then self:UpdateSessionText(context) end
+		if self.UpdateRateText then self:UpdateRateText(context) end
+	end
+end
+
+--- Handle partial update path (no XP change, only overlays/text)
+---@param context table Immutable context
+function BaseMixin:HandlePartialUpdate(context)
+	if context.restedChanged then
+		self:UpdateOverlays(context)
+	end
+	if context.questsChanged and self:HasCapability("overlays") then
+		if self.UpdateQuestCompleteBar then self:UpdateQuestCompleteBar(context) end
+		if self.UpdateQuestIncompleteBar then self:UpdateQuestIncompleteBar(context) end
+	end
+	self:UpdateAllText(context)
+end
+
+--- Handle animated update path
+---@param context table Immutable context
+function BaseMixin:HandleAnimatedUpdate(context)
+	local targetRatio = self:CalculateTargetRatio(context)
+	local config = {
+		enableAnimations   = context.enableAnimations ~= false and true,
+		flashOnGain        = context.flashOnGain ~= false and true,
+		twoPhaseOnLevelUp  = context.twoPhaseOnLevelUp ~= false and true,
+	}
+
+	-- Update overlays before animation to avoid stale visuals
+	self:UpdateOverlays(context)
+
+	self:StartAnimation(targetRatio, context, config)
+end
+
+--- Handle immediate (non-animated) render path
+---@param context table Immutable context
+---@param forceRender boolean Whether to interrupt running animations
+function BaseMixin:HandleImmediateUpdate(context, forceRender)
+	if self.animation and self.animation.isAnimating and forceRender then
+		if self.CleanupAnimation then
+			self:CleanupAnimation()
+		end
+		if self.animation then
+			self.animation.isAnimating = false
+		end
+	end
+
+	if not (self.animation and self.animation.isAnimating) then
+		self:RenderBar(context)
+	end
+end
+
+--- Single entry point for all bar updates
 --- Orchestrates animation vs immediate render based on context
 ---@param context table Immutable context from ContextBuilder with event flags
 function BaseMixin:TriggerBarRefresh(context)
-	-- Explicit context required
 	if not context then
 		error("TriggerBarRefresh requires an explicit immutable context")
 	end
-
-	-- Validate required methods
 	if not self.RenderBar then
 		error("Style must implement RenderBar(context) method")
 	end
 
-	-- Check if player reached max level and hide bar
+	-- Hide bar at max level (UnitXPMax returns 0 when no more XP can be earned)
 	local Addon = XPBarEnhanced
-	if Addon.Utils and Addon.Utils.IsPlayerAtMaxLevel and Addon.Utils.IsPlayerAtMaxLevel() then
+	if (context.xpMax ~= nil and context.xpMax <= 0) or (UnitXPMax("player") or 1) <= 0 then
 		self:Hide()
 		return
 	end
 
-	local ev = context and context.event
+	local ev = context.event
+	local forceRender = ShouldForceRender(ev)
 
-	-- determine if this update should force render
-	local forceRender = false
-	if ev == "FULL_UPDATE" or ev == "XPBAR:BROADCAST_UPDATE" or ev == "MANUAL_REFRESH" or ev == "OPTIONS_CHANGED" or ev == "CVAR_UPDATE" then
-		forceRender = true
-	end
-
-	-- Short-circuit: ignore pure no-change PLAYER_XP_UPDATE (avoid snapping / redundant renders)
+	-- Short-circuit: no-change PLAYER_XP_UPDATE → update only overlays and text
 	if ev == "PLAYER_XP_UPDATE" and not forceRender and not context.hasGainedXP and not context.hasLeveledUp then
-		-- Update only overlays and text; do not call RenderBar or affect animation state
-		if context.restedChanged and self.UpdateRestedBar then
-			self:UpdateRestedBar(context)
-		end
-		if context.questsChanged and self.UpdateQuestCompleteBar then
-			self:UpdateQuestCompleteBar(context)
-		end
-		if context.questsChanged and self.UpdateQuestIncompleteBar then
-			self:UpdateQuestIncompleteBar(context)
-		end
-		if context.restedChanged and self.UpdateExhaustionTick then
-			self:UpdateExhaustionTick(context)
-		end
-
-		if self.UpdateTextVisibility then
-			self:UpdateTextVisibility(context)
-		end
-		if self.UpdateSessionText then
-			self:UpdateSessionText(context)
-		end
-		if self.UpdateRateText then
-			self:UpdateRateText(context)
-		end
-		if self.UpdateXPText then
-			self:UpdateXPText(context)
-		end
-		if self.UpdatePercentText then
-			self:UpdatePercentText(context)
-		end
-		if self.UpdateLevelText then
-			self:UpdateLevelText(context)
-		end
-
+		self:HandlePartialUpdate(context)
 		return
 	end
 
-	-- ORCHESTRATION: Decide between animation vs immediate render
+	-- Decide between animation vs immediate render
 	if context.shouldAnimate and self.StartAnimation then
-		-- Animated update path
-		local targetRatio = self:CalculateTargetRatio(context)
-
-		-- Build config from context (populated via BuildDBConfig in ContextBuilder)
-		-- Context is the source of truth for all settings
-		local config = {
-			enableAnimations = context.enableAnimations,
-			flashOnGain = context.flashOnGain,
-			twoPhaseOnLevelUp = context.twoPhaseOnLevelUp
-		}
-
-		-- Apply defaults only if not explicitly set in context
-		if config.enableAnimations == nil then
-			config.enableAnimations = true
-		end
-		if config.flashOnGain == nil then
-			config.flashOnGain = true
-		end
-		if config.twoPhaseOnLevelUp == nil then
-			config.twoPhaseOnLevelUp = true
-		end
-
-		-- Before starting animation, update overlays (if present)
-		-- This mirrors the non-animated RenderBar flow
-		-- and avoids stale visuals during animation.
-		if self.UpdateRestedBar then
-			self:UpdateRestedBar(context)
-		end
-		if self.UpdateQuestCompleteBar then
-			self:UpdateQuestCompleteBar(context)
-		end
-		if self.UpdateQuestIncompleteBar then
-			self:UpdateQuestIncompleteBar(context)
-		end
-		if self.UpdateExhaustionTick then
-			self:UpdateExhaustionTick(context)
-		end
-
-		-- Start animation - AnimationManager will call AnimateBarPosition on each tick
-		self:StartAnimation(targetRatio, context, config)
+		self:HandleAnimatedUpdate(context)
 	else
-		-- Immediate render path.
-		-- If an animation is currently running, a forced update (full/broadcast/manual)
-		-- will stop it and render immediately.
-		if self.animation and self.animation.isAnimating and forceRender then
-			-- If the style provides a cleanup hook, call it to stop animations
-			if self.CleanupAnimation then
-				self:CleanupAnimation()
-			end
-			-- Ensure animation flag cleared
-			if self.animation then
-				self.animation.isAnimating = false
-			end
-		end
-
-		if not (self.animation and self.animation.isAnimating) then
-			self:RenderBar(context)
-		end
+		self:HandleImmediateUpdate(context, forceRender)
 	end
 end
 
 -------------------------------------------------------------------
--- ACTION METHODS
--- Visual methods provided by XPBarTextMixin (injected in OnLoad)
--- Styles can override these methods - injection only fills missing methods
+-- ABSTRACT METHODS
+-- Styles must override RenderBar. Other methods have default
+-- implementations from behavior mixins but are listed here
+-- for documentation (following Blizzard's StatusTrackingBarMixin
+-- pattern of error-throwing abstract methods).
 -------------------------------------------------------------------
 
--- UpdateTextVisibility, UpdateTexts, UpdateXPText, UpdatePercentText,
--- UpdateLevelText, UpdateRateText, UpdateSessionText, UpdateQuestSummaryText
--- → Provided by XPBarTextMixin
-
--------------------------------------------------------------------
--- ABSTRACT VISUAL METHODS (END) - now in mixins
--------------------------------------------------------------------
+--- Override this in your style: render all visuals from context.
+function BaseMixin:RenderBar(context)
+	error("Style must implement RenderBar(context)")
+end
 
 return BaseMixin

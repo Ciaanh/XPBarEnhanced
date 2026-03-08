@@ -23,8 +23,8 @@ local VerticalBarStyleTemplate = {}
 -------------------------------------------------------------------
 
 function VerticalBarStyleTemplate:OnLoad()
-    -- Circular bar specific setup
-    self.RateText = self.OverlayFrameTextContainer.RateText
+    -- Vertical bar specific setup
+    self.RateText = self.OverlayFrameTextContainer and self.OverlayFrameTextContainer.RateText
 
     if XPBarMixinBase and XPBarMixinBase.OnLoad then
         XPBarMixinBase.OnLoad(self)
@@ -261,8 +261,8 @@ function VerticalBarStyleTemplate:UpdatePercentText(context)
     if context then
         showPercent = context.showPercent or context.showPercentage
     end
-    if Addon.ConfigHelper and Addon.ConfigHelper.GetShowPercentText then
-        showPercent = Addon.ConfigHelper:GetShowPercentText(context)
+    if Addon.ConfigHelper and Addon.ConfigHelper.GetShowPercentage then
+        showPercent = Addon.ConfigHelper.GetShowPercentage(context)
     end
     if showPercent == false then
         self.PercentText:Hide()
@@ -276,7 +276,7 @@ function VerticalBarStyleTemplate:UpdatePercentText(context)
     -- Determine whether to include quest XP in percent (respect settings)
     local showQuestPercent = false
     if Addon.ConfigHelper and Addon.ConfigHelper.GetShowQuestPercent then
-        showQuestPercent = Addon.ConfigHelper:GetShowQuestPercent(context)
+        showQuestPercent = Addon.ConfigHelper.GetShowQuestPercent(context)
     elseif context then
         showQuestPercent = context.showQuestPercent
     end
@@ -312,7 +312,10 @@ local DefaultConfig = {
         flashOnGain = true
     },
     position = {mode = "DRAGGABLE", positionKey = "VerticalBar"},
-    style = {}
+    style = {},
+    capabilities = {
+        textBelowBar = false,
+    }
 }
 
 -------------------------------------------------------------------

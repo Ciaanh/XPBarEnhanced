@@ -97,7 +97,9 @@ function QuestXP:InvalidateQuestCache()
     questCache.perQuest = {}
     questCache.totals = nil
     questCache.timestamp = 0
-    Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_INVALIDATED)
+    if Addon.EventBus then
+        Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_INVALIDATED)
+    end
 end
 
 -------------------------------------------------------------------

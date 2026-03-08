@@ -159,6 +159,9 @@ end
 
 local TerminalBarStyleTemplate = {}
 
+-- Reusable table for UpdateGainedBar → RenderBar to avoid per-frame allocation
+local _renderCtx = {}
+
 -------------------------------------------------------------------
 -- RENDERING
 -------------------------------------------------------------------
@@ -166,16 +169,15 @@ local TerminalBarStyleTemplate = {}
 --- Called by the animation system every frame with the interpolated ratio.
 function TerminalBarStyleTemplate:UpdateGainedBar(currentRatio, eventContext)
     local ctx = eventContext or {}
-    self:RenderBar({
-        ratio             = currentRatio,
-        currentXP         = ctx.currentXP,
-        xpMax             = ctx.xpMax,
-        restedXP          = ctx.restedXP,
-        hasRestedXP       = ctx.hasRestedXP,
-        completeQuestXP   = ctx.completeQuestXP,
-        incompleteQuestXP = ctx.incompleteQuestXP,
-        level             = ctx.level,
-    })
+    _renderCtx.ratio             = currentRatio
+    _renderCtx.currentXP         = ctx.currentXP
+    _renderCtx.xpMax             = ctx.xpMax
+    _renderCtx.restedXP          = ctx.restedXP
+    _renderCtx.hasRestedXP       = ctx.hasRestedXP
+    _renderCtx.completeQuestXP   = ctx.completeQuestXP
+    _renderCtx.incompleteQuestXP = ctx.incompleteQuestXP
+    _renderCtx.level             = ctx.level
+    self:RenderBar(_renderCtx)
 end
 
 --- Rebuild both terminal lines from a context table.
@@ -214,7 +216,7 @@ function TerminalBarStyleTemplate:RenderBar(context)
     -- Rested XP (dark teal ▓ — after quest segments)
     local restedEnd    = questIncompleteEnd
     local hasRestedXP  = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
-    if db.showRestedOverlay and hasRestedXP
+    if db.showRestedOverlay ~= false and hasRestedXP
        and context.restedXP and context.xpMax and context.xpMax > 0 then
         local chars = math.floor(context.restedXP / context.xpMax * BAR_CHARS + 0.5)
         restedEnd = math.min(BAR_CHARS, questIncompleteEnd + chars)
@@ -504,13 +506,6 @@ function TerminalBarStyleTemplate:BuildVisuals()
     end
 end
 
-function TerminalBarStyleTemplate:FullUpdate(context)
-    if not context then
-        context = XPBarContextBuilder and XPBarContextBuilder.BuildContext("MANUAL_REFRESH") or {}
-    end
-    self:RenderBar(context)
-end
-
 -- Suppress paint-mixin overlay and text methods (terminal manages its own display)
 function TerminalBarStyleTemplate:UpdateBarColors() end
 function TerminalBarStyleTemplate:UpdateRestedBarColor() end
@@ -528,6 +523,14 @@ local DefaultConfig = {
     animation   = {enableAnimations = true, flashOnGain = true},
     position    = {mode = "DRAGGABLE", positionKey = "TerminalBar"},
     style       = {},
+    capabilities = {
+        statusBar      = false,
+        overlays       = false,
+        exhaustionTick = false,
+        textOnBar      = false,
+        textBelowBar   = false,
+        barColors      = false,
+    },
 }
 
 -------------------------------------------------------------------

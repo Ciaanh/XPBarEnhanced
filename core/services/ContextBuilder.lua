@@ -70,6 +70,7 @@ end
 XPBarContextBuilder = {}
 
 local ContextBuilder = XPBarContextBuilder
+XPBarEnhanced.ContextBuilder = ContextBuilder
 
 -------------------------------------------------------------------
 -- INTERNAL HELPERS
@@ -197,33 +198,30 @@ function ContextBuilder.UpdateSessionWithGain(xpGained)
 	local AddonGlobal = _G["XPBarEnhanced"]
 	local sessionStart = time()
 	local sessionXP = 0
-
-	if AddonGlobal and AddonGlobal.Session then
-		local session = AddonGlobal.Session:GetCurrent()
-		if session and session.sessionStart then
-			sessionStart = session.sessionStart
-		end
-		if session and session.gainedXP then
-			sessionXP = session.gainedXP
-		end
-	end
-
-	local sessionDuration = time() - sessionStart
-
 	local realLevelTime = 0
+
 	if AddonGlobal and AddonGlobal.Session then
 		local session = AddonGlobal.Session:GetCurrent()
-		if session and session.realLevelTime then
-			realLevelTime = session.realLevelTime
-			if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-				local elapsed = time() - session.lastTimePlayedRequest
-				realLevelTime = realLevelTime + elapsed
+		if session then
+			if session.sessionStart then
+				sessionStart = session.sessionStart
+			end
+			if session.gainedXP then
+				sessionXP = session.gainedXP
+			end
+			if session.realLevelTime then
+				realLevelTime = session.realLevelTime
+				if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
+					local elapsed = time() - session.lastTimePlayedRequest
+					realLevelTime = realLevelTime + elapsed
+				end
 			end
 		end
 	end
 
+	local sessionDuration = time() - sessionStart
 	local currentXP = UnitXP("player") or 0
-	local xpPerHour = ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP, preferSessionTime)
+	local xpPerHour = ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
 
 	return sessionStart, sessionXP, sessionDuration, xpPerHour
 end
@@ -396,8 +394,13 @@ end
 -------------------------------------------------------------------
 
 function ContextBuilder.Initialize()
-	ContextBuilder._lastXP = UnitXP("player") or 0
-	ContextBuilder._lastMaxXP = UnitXPMax("player") or 1
+	-- UnitXP may return nil/0 before PLAYER_LOGIN fires; keep _lastXP nil in that
+	-- case so ComputeXPGained defaults it to currentXP (zero gain on first event).
+	local xp = UnitXP("player")
+	if xp and xp > 0 then
+		ContextBuilder._lastXP = xp
+		ContextBuilder._lastMaxXP = UnitXPMax("player") or 1
+	end
 end
 
 function ContextBuilder.ResetSession()

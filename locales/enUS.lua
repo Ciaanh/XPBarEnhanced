@@ -25,7 +25,6 @@ L["TT_RESTED_XP"] = "Rested XP"
 L["TT_QUEST_XP"] = "Quest XP"
 L["TT_STATUS"] = "Status"
 L["TT_FULLY_RESTED"] = "Fully Rested"
-L["TT_RESTED"] = "Rested"
 L["TT_RESTED_TO_LEVEL"] = "Rested (to level)"
 L["TT_RESTED_LOW_WARNING"] = "Almost out of rest! Visit an inn or city to rest."
 L["TT_NORMAL"] = "Normal"
@@ -72,7 +71,7 @@ L["TT_TERMINAL_LEGEND"]    = "Terminal Legend"
 L["TT_TERMINAL_EARNED"]    = "█ Green: Earned XP"
 L["TT_TERMINAL_QUEST_DONE"]= "█ Amber: Quest XP (completed)"
 L["TT_TERMINAL_QUEST_TODO"]= "▒ Amber: Quest XP (in progress)"
-L["TT_TERMINAL_RESTED"]    = "▓ Teal: Rested bonus"
+L["TT_TERMINAL_RESTED"]    = "▒ Teal: Rested bonus"
 L["TT_TERMINAL_EMPTY"]     = "░ Dim: Not earned"
 
 -- Modifier display names
@@ -122,8 +121,7 @@ L["OPT_HIDE_DEFAULT"] = "Hide default XP bar"
 L["OPT_HIDE_DEFAULT_DESC"] = "Hide Blizzard's default experience bar when the addon loads."
 
 -- Subsection headers
-L["OPT_TEXT_ON_BAR"] = "Text ON the Bar"
-L["OPT_TEXT_BELOW_BAR"] = "Text BELOW the Bar"
+-- (see "Text Display Section Headers" below for the canonical definitions)
 
 -- Options
 L["OPT_BAR_STYLE"] = "Bar Style"

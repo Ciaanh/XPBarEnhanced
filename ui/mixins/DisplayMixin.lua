@@ -1,13 +1,14 @@
--- XPBarEnhanced - BarDisplayMixin
+-- XPBarEnhanced - XPBarDisplayMixin
 -- Provides overlay update methods (layout + color combined)
 -- Used by style RenderBar methods to update individual overlays
 
-BarDisplayMixin = {}
+XPBarDisplayMixin = {}
 
 local Addon = XPBarEnhanced
+Addon.UI.Mixins.Display = XPBarDisplayMixin
 
 --- Update rested overlay (layout + color)
-function BarDisplayMixin:UpdateRestedBar(context, overlayName)
+function XPBarDisplayMixin:UpdateRestedBar(context, overlayName)
     if self.UpdateRestedBarLayout then
         self:UpdateRestedBarLayout(context, overlayName)
     end
@@ -17,7 +18,7 @@ function BarDisplayMixin:UpdateRestedBar(context, overlayName)
 end
 
 --- Update quest complete overlay (layout + color)
-function BarDisplayMixin:UpdateQuestCompleteBar(context, overlayName)
+function XPBarDisplayMixin:UpdateQuestCompleteBar(context, overlayName)
     if self.UpdateQuestCompleteBarLayout then
         self:UpdateQuestCompleteBarLayout(context, overlayName)
     end
@@ -27,7 +28,7 @@ function BarDisplayMixin:UpdateQuestCompleteBar(context, overlayName)
 end
 
 --- Update quest incomplete overlay (layout + color)
-function BarDisplayMixin:UpdateQuestIncompleteBar(context, overlayName)
+function XPBarDisplayMixin:UpdateQuestIncompleteBar(context, overlayName)
     if self.UpdateQuestIncompleteBarLayout then
         self:UpdateQuestIncompleteBarLayout(context, overlayName)
     end
@@ -37,14 +38,15 @@ function BarDisplayMixin:UpdateQuestIncompleteBar(context, overlayName)
 end
 
 --- Update exhaustion tick position
-function BarDisplayMixin:UpdateExhaustionTick(context, tickName)
+function XPBarDisplayMixin:UpdateExhaustionTick(context, tickName)
     if self.UpdateExhaustionTickLayout then
         self:UpdateExhaustionTickLayout(context, tickName)
     end
 end
 
 -- Shared render base used by multiple styles. Calls UpdateGainedBar then overlay and text updates.
-function BarDisplayMixin:RenderBar(context)
+-- Uses capability declarations to skip irrelevant updates per style.
+function XPBarDisplayMixin:RenderBar(context)
     if not context then
         error("RenderBar requires an explicit immutable context")
     end
@@ -53,39 +55,37 @@ function BarDisplayMixin:RenderBar(context)
         self:UpdateGainedBar(targetRatio, context)
     end
 
-    if self.UpdateRestedBar then
-        self:UpdateRestedBar(context)
+    -- Overlays (rested, quest, exhaustion tick)
+    if self:HasCapability("overlays") then
+        if self.UpdateRestedBar then self:UpdateRestedBar(context) end
+        if self.UpdateQuestCompleteBar then self:UpdateQuestCompleteBar(context) end
+        if self.UpdateQuestIncompleteBar then self:UpdateQuestIncompleteBar(context) end
     end
-    if self.UpdateQuestCompleteBar then
-        self:UpdateQuestCompleteBar(context)
-    end
-    if self.UpdateQuestIncompleteBar then
-        self:UpdateQuestIncompleteBar(context)
-    end
-    if self.UpdateExhaustionTick then
+    if self:HasCapability("exhaustionTick") and self.UpdateExhaustionTick then
         self:UpdateExhaustionTick(context)
     end
 
+    -- Text
     if self.UpdateTexts then
         self:UpdateTexts(context)
     end
 end
 
 -- Shared RenderFrame logic for StatusBar-based styles
-function BarDisplayMixin:UpdateGainedBar(currentRatio, context)
-    if self.StatusBar and currentRatio then
+function XPBarDisplayMixin:UpdateGainedBar(currentRatio, context)
+    if self:HasCapability("statusBar") and self.StatusBar and currentRatio then
         self.StatusBar:SetValue(currentRatio)
     end
     if self.SetCurrentRatio then
         self:SetCurrentRatio(currentRatio)
     end
-    if self.UpdateBarColors then
+    if self:HasCapability("barColors") and self.UpdateBarColors then
         self:UpdateBarColors(context)
     end
 end
 
 -- Exhaustion tick tooltip behavior: small mixin used by Exhaustion tick buttons
-ExhaustionTickMixin = {}
+XPBarExhaustionTickMixin = {}
 
 ---Find closest ancestor frame representing a bar (provides state and context methods)
 local function FindBarAncestor(frame)
@@ -99,7 +99,7 @@ local function FindBarAncestor(frame)
     return nil
 end
 
-function ExhaustionTickMixin:OnEnter()
+function XPBarExhaustionTickMixin:OnEnter()
     local bar = FindBarAncestor(self)
     if not bar then
         return
@@ -133,10 +133,10 @@ function ExhaustionTickMixin:OnEnter()
     tt:Show()
 end
 
-function ExhaustionTickMixin:OnLeave()
+function XPBarExhaustionTickMixin:OnLeave()
     if GameTooltip then
         GameTooltip:Hide()
     end
 end
 
-return BarDisplayMixin
+return XPBarDisplayMixin

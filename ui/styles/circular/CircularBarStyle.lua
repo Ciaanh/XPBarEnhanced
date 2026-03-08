@@ -535,25 +535,14 @@ end
 -- OVERRIDES for circular layout
 -------------------------------------------------------------------
 
--- Override UpdateRestedBar to store rested data for segment coloring
-function CircularBarStyleTemplate:UpdateRestedBar(context)
-    local targetRatio = self:CalculateTargetRatio(context)
-    self:SetArcProgress(targetRatio, context)
-end
+-- These are no-ops: SetArcProgress is called once with the correct ratio in
+-- UpdateGainedBar, which is the canonical render entry point for circular bar.
+-- Calling it in each overlay method caused 4x renders per frame with stale ratios.
+function CircularBarStyleTemplate:UpdateRestedBar(context) end
 
-function CircularBarStyleTemplate:UpdateQuestCompleteBar(context)
-    if not context then
-        return
-    end
+function CircularBarStyleTemplate:UpdateQuestCompleteBar(context) end
 
-    local targetRatio = self:CalculateTargetRatio(context)
-    self:SetArcProgress(targetRatio, context)
-end
-
-function CircularBarStyleTemplate:UpdateQuestIncompleteBar(context)
-    local targetRatio = self:CalculateTargetRatio(context)
-    self:SetArcProgress(targetRatio, context)
-end
+function CircularBarStyleTemplate:UpdateQuestIncompleteBar(context) end
 
 --- Override UpdateVisuals to trigger text updates
 function CircularBarStyleTemplate:UpdateVisuals(context)
@@ -799,7 +788,13 @@ local DefaultConfig = {
         flashOnGain = true
     },
     position = {mode = "DRAGGABLE", positionKey = "CircularBar"},
-    style = {}
+    style = {},
+    capabilities = {
+        statusBar      = false,
+        overlays       = false,
+        exhaustionTick = false,
+        textBelowBar   = false,
+    }
 }
 
 -------------------------------------------------------------------

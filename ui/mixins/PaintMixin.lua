@@ -5,6 +5,7 @@
 XPBarPaintMixin = {}
 
 local Addon = XPBarEnhanced
+Addon.UI.Mixins.Paint = XPBarPaintMixin
 
 -------------------------------------------------------------------
 -- COLOR APPLICATION METHODS
@@ -114,7 +115,6 @@ function XPBarPaintMixin:ApplyBarAtlasOrTexture(atlasName, fallbackFile, barName
 			local statusBarTexture = bar:GetStatusBarTexture()
 			if statusBarTexture and statusBarTexture.SetAtlas then
 				statusBarTexture:SetAtlas(atlasName)
-				print("|cFF00FF00[XPBarEnhanced]|r Applied atlas texture:", atlasName)
 				return true
 			end
 		end

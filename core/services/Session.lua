@@ -39,8 +39,8 @@ local function ensureSessionDefaults(session)
     session.sessionStart = session.sessionStart or time()
     session.sessionXP = session.sessionXP or 0
     session.gainedXP = session.gainedXP or 0
-    session.lastXP = session.lastXP or UnitXP("player")
-    session.maxXP = session.maxXP or UnitXPMax("player")
+    session.lastXP = session.lastXP or UnitXP("player") or 0
+    session.maxXP = session.maxXP or UnitXPMax("player") or 0
     session.realTotalTime = session.realTotalTime or 0
     session.realLevelTime = session.realLevelTime or 0
     session.lastTimePlayedRequest = session.lastTimePlayedRequest or 0
@@ -132,7 +132,7 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
     -- Request time played if time text options are enabled
-    if Addon.db.showLevelTimeText or Addon.db.showSessionTimeText then
+    if Addon.db and (Addon.db.showLevelTimeText or Addon.db.showSessionTimeText) then
         self:RequestTimePlayed()
     end
 end

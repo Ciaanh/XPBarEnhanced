@@ -15,7 +15,7 @@ function TextFormatter:AbbreviateNumber(num, decimals)
     if num < 1000 then
         return tostring(math.floor(num))
     elseif num < 1000000 then
-        return string.format("%sK", tostring(math.floor(num / 1000)))
+        return string.format("%." .. decimals .. "fK", num / 1000)
     elseif num < 1000000000 then
         return string.format("%.2fM", num / 1000000)
     else
@@ -129,7 +129,7 @@ local function colorText(text, colorKey)
 end
 
 function TextFormatter:GetQuestSummaryText(completeXP, incompleteXP, totalXP, maxXP, restedXP, opts)
-    decimals = decimals or 0
+    local decimals = (opts and opts.decimals) or 0
 
     local db = Addon.db or {}
     local questOverlaysEnabled = db.showQuestXP ~= false

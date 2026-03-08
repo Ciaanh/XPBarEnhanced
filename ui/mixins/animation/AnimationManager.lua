@@ -99,8 +99,6 @@ function AnimationManager:AnimateTo(bar, targetRatio, xpContext, config)
 		pending.xpContext = xpContext
 		pending.config = config
 		-- Don't reset timestamp — timeout runs from the FIRST event in the batch
-		print("|cFF00FF00[XPBarEnhanced]|r Accumulating XP event, target:",
-			string.format("%.3f", targetRatio))
 		return
 	end
 
@@ -175,8 +173,6 @@ function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 
 		return
 	end
-
-	local now = GetTime()
 
 	-- Detect level-up
 	if AnimationUtils.DetectLevelUp(xpContext) then
@@ -602,7 +598,6 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 				anim.isAnimating = false -- Stop main animation tick
 				-- Re-register so OnUpdate continues checking the hold timer
 				self:Register(bar)
-				print("|cFF00FF00[XPBarEnhanced]|r Level-up hold started (" .. holdDuration .. "s)")
 				return
 			end
 
@@ -616,8 +611,6 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 			anim.holdStartTime = nil
 			anim.pendingSecondPhase = nil
 			anim.isLevelUpPhase1 = false
-
-			print("|cFF00FF00[XPBarEnhanced]|r Level-up phase 2 starting")
 
 			-- Reset bar to 0 immediately
 			if bar.SetCurrentRatio then

@@ -9,6 +9,7 @@ local Addon = XPBarEnhanced
 
 ---@class XPBarPositionMixin
 XPBarPositionMixin = {}
+Addon.UI.Mixins.Position = XPBarPositionMixin
 
 local PositionMixin = XPBarPositionMixin
 

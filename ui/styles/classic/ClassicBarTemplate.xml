@@ -4,11 +4,11 @@
 
     <!-- XP Bar Enhanced - Classic Bar Template  -->
     <!-- Blizzard-style XP bar with border frame and atlas textures -->
-    <!-- No container wrapper - border as texture layer on main frame -->
+    <!-- Inherits script handlers from XPBarBaseTemplate -->
 
     <Script file="ClassicBarStyle.lua"/>
 
-    <Frame name="ClassicBarTemplate" virtual="true" mixin="ClassicBarXPBarMixin" frameStrata="LOW" enableMouse="true" fixedFrameStrata="true">
+    <Frame name="ClassicBarTemplate" virtual="true" inherits="XPBarBaseTemplate" mixin="ClassicBarXPBarMixin">
         <Size x="566" y="12"/>
         <Frames>
             <!-- Border frame - separate frame on top of StatusBar -->
@@ -35,11 +35,10 @@
                 <Anchors>
                     <Anchor point="CENTER" x="0" y="0"/>
                 </Anchors>
-                <!-- StatusBar texture: file path -->
                 <BarTexture file="Interface\AddOns\XPBarEnhanced\assets\xp-bar"/>
                 <BarColor r="1" g="1" b="1"/>
                 <Layers>
-                    <!-- Rested XP overlay (solid texture for customization) previously Interface\Buttons\WHITE8X8-->
+                    <!-- Rested XP overlay -->
                     <Layer level="BACKGROUND" textureSubLevel="0">
                         <Texture parentKey="RestedOverlay" hidden="true" file="Interface\AddOns\XPBarEnhanced\assets\xp-bar">
                             <Size x="0" y="11"/>
@@ -72,7 +71,7 @@
                         </Texture>
                     </Layer>
 
-                    <!-- Flash effect overlay - MOVED from main frame to StatusBar for proper rendering -->
+                    <!-- Flash effect overlay -->
                     <Layer level="OVERLAY" textureSubLevel="7">
                         <Texture parentKey="GainFlash" hidden="true" alphaMode="BLEND">
                             <Anchors>
@@ -85,7 +84,7 @@
 
                 <Frames>
                     <!-- Exhaustion Tick (rested XP marker) -->
-                    <Button parentKey="ExhaustionTick" hidden="true" frameStrata="MEDIUM" mixin="ExhaustionTickMixin">
+                    <Button parentKey="ExhaustionTick" hidden="true" frameStrata="MEDIUM" mixin="XPBarExhaustionTickMixin">
                         <Size x="10" y="14"/>
                         <Anchors>
                             <Anchor point="CENTER" relativeKey="$parent.RestedOverlay" relativePoint="RIGHT" x="0" y="1"/>
@@ -100,15 +99,14 @@
                 </Frames>
             </StatusBar>
 
-            <!-- Overlay frame for ON-BAR text (separate from StatusBar for proper layering) -->
-            <Frame parentKey="OverlayFrameTextContainer" frameStrata="MEDIUM" setAllPoints="true">
+            <!-- On-bar text container (style-specific sizing for Classic bar dimensions) -->
+            <Frame parentKey="OverlayFrameTextContainer" frameStrata="MEDIUM">
                 <Size x="571" y="11"/>
                 <Anchors>
                     <Anchor point="CENTER" x="0" y="0"/>
                 </Anchors>
                 <Layers>
                     <Layer level="ARTWORK" textureSubLevel="5">
-                        <!-- Level text - left side -->
                         <FontString parentKey="LevelText" inherits="TextStatusBarText" hidden="true">
                             <Anchors>
                                 <Anchor point="LEFT" x="8" y="0"/>
@@ -120,7 +118,6 @@
                             </Shadow>
                         </FontString>
 
-                        <!-- XP text - center -->
                         <FontString parentKey="XPText" inherits="TextStatusBarText" hidden="true">
                             <Anchors>
                                 <Anchor point="CENTER" x="0" y="0"/>
@@ -132,7 +129,6 @@
                             </Shadow>
                         </FontString>
 
-                        <!-- Percent text - right side -->
                         <FontString parentKey="PercentText" inherits="TextStatusBarText" hidden="true">
                             <Anchors>
                                 <Anchor point="RIGHT" x="-8" y="0"/>
@@ -147,7 +143,7 @@
                 </Layers>
             </Frame>
 
-            <!-- BELOW-BAR text container (matches BaseMixin expectations) -->
+            <!-- Below-bar text (overrides base template: different y-offset for Classic) -->
             <Frame parentKey="BelowBarTextContainer" frameStrata="MEDIUM">
                 <Size x="565" y="30"/>
                 <Anchors>
@@ -155,7 +151,6 @@
                 </Anchors>
                 <Layers>
                     <Layer level="ARTWORK">
-                        <!-- Rate text (XP/hour + time to level) - below bar on left -->
                         <FontString parentKey="RateText" inherits="GameFontNormal" hidden="true">
                             <Anchors>
                                 <Anchor point="TOPLEFT" x="0" y="0"/>
@@ -163,7 +158,6 @@
                             <Color r="0.8" g="0.8" b="0.8"/>
                         </FontString>
 
-                        <!-- Session text (session time + level time) - below bar on right -->
                         <FontString parentKey="SessionText" inherits="GameFontNormal" hidden="true">
                             <Anchors>
                                 <Anchor point="TOPRIGHT" x="0" y="0"/>
@@ -171,7 +165,6 @@
                             <Color r="0.8" g="0.8" b="0.8"/>
                         </FontString>
 
-                        <!-- Quest summary text (quests + rested) - below bar center -->
                         <FontString parentKey="QuestSummaryText" inherits="GameFontNormal" hidden="true">
                             <Anchors>
                                 <Anchor point="TOP" x="0" y="30"/>
@@ -182,7 +175,7 @@
                 </Layers>
             </Frame>
 
-            <!-- Border frame - separate frame on top of StatusBar -->
+            <!-- Border frame - on top of StatusBar -->
             <Frame parentKey="BorderFrame" frameStrata="MEDIUM" enableMouse="false">
                 <Anchors>
                     <Anchor point="TOPLEFT"/>
@@ -200,15 +193,6 @@
                 </Layers>
             </Frame>
         </Frames>
-        <Scripts>
-            <OnLoad method="OnLoad"/>
-            <OnEvent method="OnEvent"/>
-            <OnShow method="OnShow"/>
-            <OnHide method="OnHide"/>
-            <OnEnter method="OnEnter"/>
-            <OnLeave method="OnLeave"/>
-            <OnMouseUp method="OnMouseUp"/>
-        </Scripts>
     </Frame>
 
 </Ui>
