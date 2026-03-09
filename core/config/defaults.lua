@@ -42,6 +42,7 @@ local defaults = {
     textFontSize = 12,
     textFontOutline = "NONE",
     textFontShadow = false,
+    terminalUseCustomColors = false,
     colors = {
         xpBar = {r = 0.58, g = 0.0, b = 0.55, a = 1},
         xpBarRested = {r = 0.0, g = 0.44, b = 1.0, a = 1},

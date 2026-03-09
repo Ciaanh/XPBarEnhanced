@@ -28,6 +28,11 @@ function AnimationManager:Initialize()
 		end
 	)
 
+	-- Pre-allocate reusable per-frame tables to reduce GC pressure
+	self._barsToRemove = {}
+	self._iterationData = {}
+	self._flashData = {}
+
 	-- Start paused (no bars to animate)
 	self.driver:Hide()
 	self.isActive = false
@@ -378,18 +383,21 @@ end
 -- @param elapsed number: Time since last frame (unused, we use GetTime())
 function AnimationManager:OnUpdate(elapsed)
 	local now = GetTime()
-	local barsToRemove = {}
+	local barsToRemove = self._barsToRemove
+	local removeCount = 0
 
 	-- Update each registered bar
 	for i, bar in ipairs(self.registeredBars) do
 		if not bar.animation then
-			table.insert(barsToRemove, bar)
+			removeCount = removeCount + 1
+			barsToRemove[removeCount] = bar
 		elseif bar.animation.holdStartTime then
 			-- Bar is in level-up hold phase — keep registered and poll for timer expiry
 			self:UpdateBarAnimation(bar, now)
 		elseif not bar.animation.isAnimating and not bar.animation.isFlashing then
 			-- Bar finished animation and flash, mark for removal
-			table.insert(barsToRemove, bar)
+			removeCount = removeCount + 1
+			barsToRemove[removeCount] = bar
 		else
 			-- Update bar animation (will update bar position and/or flash)
 			self:UpdateBarAnimation(bar, now)
@@ -397,8 +405,9 @@ function AnimationManager:OnUpdate(elapsed)
 	end
 
 	-- Remove bars that completed
-	for _, bar in ipairs(barsToRemove) do
-		self:Unregister(bar)
+	for i = 1, removeCount do
+		self:Unregister(barsToRemove[i])
+		barsToRemove[i] = nil
 	end
 end
 
@@ -495,17 +504,17 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 			flashAlpha = 0
 		end
 
-		flashData = {
-			active = flashActive,
-			currentAlpha = flashAlpha,
-			startTime = anim.flashStartTime,
-			duration = flashDuration,
-			elapsed = flashElapsed,
-			phase = phase,
-			fadeInDuration = fadeInDuration,
-			holdDuration = holdDuration,
-			fadeOutDuration = fadeOutDuration
-		}
+		local fd = self._flashData
+		fd.active = flashActive
+		fd.currentAlpha = flashAlpha
+		fd.startTime = anim.flashStartTime
+		fd.duration = flashDuration
+		fd.elapsed = flashElapsed
+		fd.phase = phase
+		fd.fadeInDuration = fadeInDuration
+		fd.holdDuration = holdDuration
+		fd.fadeOutDuration = fadeOutDuration
+		flashData = fd
 	end
 
 	-- Calculate quest overlay alpha reduction during flash
@@ -519,31 +528,24 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 		questOverlayAlpha = reductionFactor
 	end
 
-	-- Build iteration data (calculated per frame, zero allocation)
-	local iterationData = {
-		-- Core interpolated values
-		currentRatio = currentRatio,
-		targetRatio = anim.targetRatio,
-		startRatio = anim.startRatio,
-		progress = progress,
-		easedProgress = easedProgress,
-		-- Timing information
-		startTime = anim.startTime,
-		currentTime = now,
-		elapsedTime = elapsedTime,
-		duration = anim.duration,
-		-- Flash data (nil if not flashing)
-		flashData = flashData,
-		isFlashing = anim.isFlashing,
-		-- Quest overlay alpha multiplier (nil if not flashing)
-		questOverlayAlpha = questOverlayAlpha,
-		questOverlayCompleteInitialAlpha = anim.questOverlayCompleteInitialAlpha,
-		questOverlayIncompleteInitialAlpha = anim.questOverlayIncompleteInitialAlpha,
-		-- Level-up phase 1 flag (hides overlays during fill-to-100% animation)
-		isLevelUpPhase1 = anim.isLevelUpPhase1 or false,
-		-- Configuration
-		config = config
-	}
+	-- Build iteration data (repopulate pre-allocated table to avoid per-frame allocation)
+	local iterationData = self._iterationData
+	iterationData.currentRatio = currentRatio
+	iterationData.targetRatio = anim.targetRatio
+	iterationData.startRatio = anim.startRatio
+	iterationData.progress = progress
+	iterationData.easedProgress = easedProgress
+	iterationData.startTime = anim.startTime
+	iterationData.currentTime = now
+	iterationData.elapsedTime = elapsedTime
+	iterationData.duration = anim.duration
+	iterationData.flashData = flashData
+	iterationData.isFlashing = anim.isFlashing
+	iterationData.questOverlayAlpha = questOverlayAlpha
+	iterationData.questOverlayCompleteInitialAlpha = anim.questOverlayCompleteInitialAlpha
+	iterationData.questOverlayIncompleteInitialAlpha = anim.questOverlayIncompleteInitialAlpha
+	iterationData.isLevelUpPhase1 = anim.isLevelUpPhase1 or false
+	iterationData.config = config
 
 	-- Use stored event context (single immutable context, no aggregation)
 	local eventContext = anim.eventContext

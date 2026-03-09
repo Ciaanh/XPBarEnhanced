@@ -180,9 +180,15 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         end
     end
 
-    -- Set subsection header text (localized)
+    -- Apply VerticalLayoutMixin so hidden rows collapse automatically — no manual
+    -- anchor chains needed. fixedWidth locks the container's width so Layout()
+    -- only auto-sizes the height.
     local container = scrollChild.OptionsContainer
     if container then
+        Mixin(container, LayoutMixin, VerticalLayoutMixin)
+        container.fixedWidth = 520
+
+        -- Set subsection header text (localized)
         if container.TextOnBarHeader and container.TextOnBarHeader.Title then
             container.TextOnBarHeader.Title:SetText(ResolveLocale("OPT_TEXT_ON_BAR"))
         end
@@ -263,16 +269,6 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         -- Animation section
         if container.AnimationHeader and container.AnimationHeader.Title then
             container.AnimationHeader.Title:SetText(ResolveLocale("OPT_HEADER_ANIMATION"))
-        end
-
-        -- Flat Bar section
-        if container.FlatBarHeader and container.FlatBarHeader.Title then
-            container.FlatBarHeader.Title:SetText(ResolveLocale("OPT_HEADER_FLAT_BAR"))
-        end
-
-        -- Circular Bar section
-        if container.CircularHeader and container.CircularHeader.Title then
-            container.CircularHeader.Title:SetText(ResolveLocale("OPT_HEADER_CIRCULAR"))
         end
 
         -- Colors section
@@ -545,7 +541,7 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
                 ColorPickerFrame.Content and ColorPickerFrame.Content.ColorPicker and
                     ColorPickerFrame.Content.ColorPicker.GetColorAlpha
              then
-                opacity = ColorPickerFrame.Content.ColorPicker
+                opacity = ColorPickerFrame.Content.ColorPicker:GetColorAlpha()
             end
 
             -- Fallback to the static opacity field if GetColorAlpha doesn't exist
@@ -675,7 +671,7 @@ function XPBarEnhancedOptionsMixin:Refresh()
                     self.ContentFrame and self.ContentFrame.OptionsContainer and
                     self.ContentFrame.OptionsContainer[rowKey]
 
-                local isClassicMode = (currentBarStyle == "classic")
+                local isClassicMode = (barStyle == "classic")
                 if isClassicMode then
                     checkbox:Show()
                     if rowFrame then
@@ -691,16 +687,13 @@ function XPBarEnhancedOptionsMixin:Refresh()
                 local rowKey = "Row_" .. key
                 local container = self.ContentFrame and self.ContentFrame.OptionsContainer
                 local rowFrame = container and container[rowKey]
-                local header   = container and container.FlatBarHeader
                 local isFlatMode = (barStyle == "flat")
                 if isFlatMode then
                     checkbox:Show()
                     if rowFrame then rowFrame:Show() end
-                    if header   then header:Show()   end
                 else
                     checkbox:Hide()
                     if rowFrame then rowFrame:Hide() end
-                    if header   then header:Hide()   end
                 end
             end
         elseif checkbox and checkbox.Slider then
@@ -782,27 +775,28 @@ function XPBarEnhancedOptionsMixin:Refresh()
         end
     end
 
-    -- Conditional visibility for circular-only settings
-    local circularKeys = {"circularSize", "circularSegments", "circularUseTexture"}
+    -- Style-specific sections: show/hide rows, then reflow.
+    -- VerticalLayoutMixin skips hidden children automatically — no anchor
+    -- manipulation needed.
     local container = self.ContentFrame and self.ContentFrame.OptionsContainer
-    for _, key in ipairs(circularKeys) do
-        local rowKey = "Row_" .. key
-        local rowFrame = container and container[rowKey]
-        if rowFrame then
-            if isCircularMode then
-                rowFrame:Show()
-            else
-                rowFrame:Hide()
-            end
+    local isTerminalMode = (barStyle == "terminal")
+
+    if container then
+        -- Circular rows
+        local circularRowKeys = {"circularSize", "circularSegments", "circularUseTexture"}
+        for _, key in ipairs(circularRowKeys) do
+            local rowFrame = container["Row_" .. key]
+            if rowFrame then rowFrame:SetShown(isCircularMode) end
         end
-    end
-    -- Also show/hide the Circular header
-    if container and container.CircularHeader then
-        if isCircularMode then
-            container.CircularHeader:Show()
-        else
-            container.CircularHeader:Hide()
+
+        -- Terminal rows
+        if container.Row_terminalUseCustomColors then
+            container.Row_terminalUseCustomColors:SetShown(isTerminalMode)
         end
+
+        -- Reflow and update scroll height
+        container:Layout()
+        self:RefreshScrollLayout()
     end
 
     -- Refresh radio groups
@@ -930,6 +924,9 @@ function Options:OnOptionChanged(key)
                 bar:RepositionSegments()
             end
         end
+    elseif key == "terminalUseCustomColors" then
+        -- Terminal colors changed, refresh the bar rendering
+        -- (no specific bar method needed — Refresh will re-render with new colors)
     elseif
         key == "showQuestXP" or key == "showQuestPercent" or key == "questOverlaysEnabled" or
             key == "showCompleteQuestOverlay" or
@@ -940,9 +937,6 @@ function Options:OnOptionChanged(key)
     -- General refresh
     self:Refresh()
 
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED)
-    end
     if Addon.EventBus and Addon.EventBus.Emit then
         Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
     end

@@ -169,6 +169,12 @@ local optionDetails = {
         label = Addon.L["OPT_CIRCULAR_USE_TEXTURE"],
         description = Addon.L["OPT_CIRCULAR_USE_TEXTURE_DESC"],
         commandKeys = {"texture", "circletexture"}
+    },
+    terminalUseCustomColors = {
+        key = "terminalUseCustomColors",
+        label = Addon.L["OPT_TERMINAL_USE_CUSTOM_COLORS"],
+        description = Addon.L["OPT_TERMINAL_USE_CUSTOM_COLORS_DESC"],
+        commandKeys = {"terminalcustomcolors", "terminalcolors"}
     }
 }
 
@@ -196,7 +202,8 @@ local optionOrder = {
     "twoPhaseOnLevelUp",
     "circularSize",
     "circularSegments",
-    "circularUseTexture"
+    "circularUseTexture",
+    "terminalUseCustomColors"
 }
 
 local colorOptionsList = {

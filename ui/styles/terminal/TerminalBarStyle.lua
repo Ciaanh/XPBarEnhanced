@@ -49,8 +49,8 @@ end
 
 local C_EARNED = Hex(0.00, 1.00, 0.00)  -- phosphor green
 local C_RESTED = Hex(0.00, 0.85, 0.80)  -- teal
-local C_QUEST  = Hex(1.00, 0.75, 0.00)  -- amber (complete quest)
-local C_QUEST_INC = Hex(0.80, 0.40, 0.00)  -- dark orange (incomplete quest)
+local C_QUEST  = Hex(1.00, 0.55, 0.00)  -- darker orange (complete quest)
+local C_QUEST_INC = Hex(1.00, 0.85, 0.00)  -- bright gold (incomplete quest)
 local C_EMPTY  = Hex(0.18, 0.18, 0.18)  -- very dim gray
 local C_LABEL  = Hex(0.00, 0.65, 0.00)  -- dimmer green (brackets, pct, level)
 local C_STATS  = Hex(0.00, 0.48, 0.00)  -- even dimmer (stats prompt line)
@@ -70,13 +70,45 @@ local function BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, res
     local parts     = {}
     local lastColor = nil
 
+    -- Determine if using custom colors (from user-defined color settings)
+    -- or hardcoded terminal colors
+    local db = Addon.db or {}
+    local useCustomColors = db.terminalUseCustomColors == true
+
+    -- Resolve colors for this rendering
+    local useEarned, useQuest, useQuestInc, useRested, useEmpty
+    if useCustomColors then
+        -- Use user-defined colors from the Colors system
+        local Colors = Addon and Addon.Colors
+        if Colors then
+            local colorNormal = Colors:Get(Colors.Key.XpBar)
+            local colorXpBarRested = Colors:Get(Colors.Key.XpBarRested)
+            local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
+            local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
+            local colorRested = Colors:Get(Colors.Key.Rested)
+
+            useEarned = colorNormal and Hex(colorNormal.r or 0, colorNormal.g or 0, colorNormal.b or 0) or C_EARNED
+            useQuest = colorQuestComplete and Hex(colorQuestComplete.r or 0, colorQuestComplete.g or 0, colorQuestComplete.b or 0) or C_QUEST
+            useQuestInc = colorQuestIncomplete and Hex(colorQuestIncomplete.r or 0, colorQuestIncomplete.g or 0, colorQuestIncomplete.b or 0) or C_QUEST_INC
+            useRested = colorRested and Hex(colorRested.r or 0, colorRested.g or 0, colorRested.b or 0) or C_RESTED
+        else
+            -- Fallback to hardcoded if Colors system is unavailable
+            useEarned, useQuest, useQuestInc, useRested = C_EARNED, C_QUEST, C_QUEST_INC, C_RESTED
+        end
+    else
+        -- Use hardcoded terminal colors (default aesthetic)
+        useEarned, useQuest, useQuestInc, useRested = C_EARNED, C_QUEST, C_QUEST_INC, C_RESTED
+    end
+
+    useEmpty = C_EMPTY  -- Empty is always dim (never customized)
+
     for i = 1, BAR_CHARS do
         local ch, col
-        if     i <= filled             then ch, col = CH_FULL,  C_EARNED
-        elseif i <= questCompleteEnd   then ch, col = CH_DARK,  C_QUEST
-        elseif i <= questIncompleteEnd then ch, col = CH_MED,   C_QUEST_INC
-        elseif i <= restedEnd          then ch, col = CH_MED,  C_RESTED
-        else                                ch, col = CH_EMPTY, C_EMPTY
+        if     i <= filled             then ch, col = CH_FULL,  useEarned
+        elseif i <= questCompleteEnd   then ch, col = CH_MED,  useQuest
+        elseif i <= questIncompleteEnd then ch, col = CH_MED,   useQuestInc
+        elseif i <= restedEnd          then ch, col = CH_MED,  useRested
+        else                                ch, col = CH_EMPTY, useEmpty
         end
 
         if col ~= lastColor then
@@ -306,6 +338,28 @@ local function BuildTerminalTooltipText(context)
     local sep = C_STATS .. string.rep(CH_SEP, 42) .. "|r"
     local lines = {}
 
+    -- Resolve colors for this tooltip (same logic as bar rendering)
+    local useCustomColors = db.terminalUseCustomColors == true
+    local colorEarned, colorQuest, colorQuestInc, colorRested
+    if useCustomColors then
+        local Colors = Addon and Addon.Colors
+        if Colors then
+            local colorNormal = Colors:Get(Colors.Key.XpBar)
+            local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
+            local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
+            local colorRestedUser = Colors:Get(Colors.Key.Rested)
+
+            colorEarned = colorNormal and Hex(colorNormal.r or 0, colorNormal.g or 0, colorNormal.b or 0) or C_EARNED
+            colorQuest = colorQuestComplete and Hex(colorQuestComplete.r or 0, colorQuestComplete.g or 0, colorQuestComplete.b or 0) or C_QUEST
+            colorQuestInc = colorQuestIncomplete and Hex(colorQuestIncomplete.r or 0, colorQuestIncomplete.g or 0, colorQuestIncomplete.b or 0) or C_QUEST_INC
+            colorRested = colorRestedUser and Hex(colorRestedUser.r or 0, colorRestedUser.g or 0, colorRestedUser.b or 0) or C_RESTED
+        else
+            colorEarned, colorQuest, colorQuestInc, colorRested = C_EARNED, C_QUEST, C_QUEST_INC, C_RESTED
+        end
+    else
+        colorEarned, colorQuest, colorQuestInc, colorRested = C_EARNED, C_QUEST, C_QUEST_INC, C_RESTED
+    end
+
     -- Header
     local level = context.level or (UnitLevel and UnitLevel("player")) or "?"
     lines[#lines+1] = C_LABEL .. "> XP_BAR_ENHANCED" .. string.rep(" ", 8) .. "Lv." .. tostring(level) .. "|r"
@@ -316,10 +370,10 @@ local function BuildTerminalTooltipText(context)
         local pct  = context.currentXP / context.xpMax * 100
         local rem  = context.xpMax - context.currentXP
         lines[#lines+1] = C_STATS .. "current:   |r"
-            .. C_EARNED .. FormatXP(context.currentXP, false) .. " / " .. FormatXP(context.xpMax, false)
+            .. colorEarned .. FormatXP(context.currentXP, false) .. " / " .. FormatXP(context.xpMax, false)
             .. C_STATS  .. string.format("  (%.1f%%)", pct) .. "|r"
         lines[#lines+1] = C_STATS .. "remaining: |r"
-            .. C_EARNED .. FormatXP(rem, false) .. "|r"
+            .. colorEarned .. FormatXP(rem, false) .. "|r"
     end
 
     -- Rested
@@ -327,7 +381,7 @@ local function BuildTerminalTooltipText(context)
         local rpct = context.restedXP / context.xpMax * 100
         lines[#lines+1] = ""
         lines[#lines+1] = C_STATS .. "rested:    |r"
-            .. C_RESTED .. FormatXP(context.restedXP, false)
+            .. colorRested .. FormatXP(context.restedXP, false)
             .. C_STATS  .. string.format("  (%.1f%%)", rpct) .. "|r"
     end
 
@@ -342,13 +396,13 @@ local function BuildTerminalTooltipText(context)
         if cq > 0 and showCQ then
             local pct = context.xpMax and context.xpMax > 0 and (cq / context.xpMax * 100) or 0
             lines[#lines+1] = C_STATS .. "  complete:   |r"
-                .. C_QUEST .. FormatXP(cq)
+                .. colorQuest .. FormatXP(cq)
                 .. C_STATS .. string.format("  (%.1f%%)", pct) .. "|r"
         end
         if iq > 0 and showIQ then
             local pct = context.xpMax and context.xpMax > 0 and (iq / context.xpMax * 100) or 0
             lines[#lines+1] = C_STATS .. "  incomplete: |r"
-                .. C_QUEST .. FormatXP(iq)
+                .. colorQuestInc .. FormatXP(iq)
                 .. C_STATS .. string.format("  (%.1f%%)", pct) .. "|r"
         end
     end
@@ -358,17 +412,17 @@ local function BuildTerminalTooltipText(context)
     if Addon.Session and Addon.Session.GetXPPerHour then
         local xphr = Addon.Session:GetXPPerHour()
         if xphr and xphr > 0 then
-            parts[#parts+1] = C_STATS .. "xp/hr:|r" .. C_EARNED .. FormatXP(xphr) .. "|r"
+            parts[#parts+1] = C_STATS .. "xp/hr:|r" .. colorEarned .. FormatXP(xphr) .. "|r"
         end
     end
     if Addon.Session and Addon.Session.GetTimeToLevel then
         local fmt = FormatTime(Addon.Session:GetTimeToLevel())
-        if fmt then parts[#parts+1] = C_STATS .. "eta:|r" .. C_EARNED .. fmt .. "|r" end
+        if fmt then parts[#parts+1] = C_STATS .. "eta:|r" .. colorEarned .. fmt .. "|r" end
     end
     local session = Addon.Session and Addon.Session.GetCurrent and Addon.Session:GetCurrent()
     if session and session.sessionStart then
         local fmt = FormatTime(time() - session.sessionStart)
-        if fmt then parts[#parts+1] = C_STATS .. "sess:|r" .. C_EARNED .. fmt .. "|r" end
+        if fmt then parts[#parts+1] = C_STATS .. "sess:|r" .. colorEarned .. fmt .. "|r" end
     end
     if #parts > 0 then
         lines[#lines+1] = ""
@@ -376,14 +430,14 @@ local function BuildTerminalTooltipText(context)
         lines[#lines+1] = "  " .. table.concat(parts, C_STATS .. "  |  |r")
     end
 
-    -- Legend
+    -- Legend (using resolved colors from bar, not hardcoded constants)
     lines[#lines+1] = ""
     lines[#lines+1] = C_LABEL .. "> legend|r"
     lines[#lines+1] = "  "
-        .. C_EARNED .. CH_FULL  .. " earned|r  "
-        .. C_QUEST  .. CH_DARK  .. " quest:done|r  "
-        .. C_QUEST_INC .. CH_MED   .. " quest:todo|r  "
-        .. C_RESTED .. CH_MED   .. " rested|r  "
+        .. colorEarned .. CH_FULL  .. " earned|r  "
+        .. colorQuest  .. CH_MED  .. " quest:done|r  "
+        .. colorQuestInc .. CH_MED   .. " quest:todo|r  "
+        .. colorRested .. CH_MED   .. " rested|r  "
         .. C_EMPTY  .. CH_EMPTY .. " free|r"
 
     -- Footer

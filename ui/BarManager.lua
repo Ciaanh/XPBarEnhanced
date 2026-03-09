@@ -141,7 +141,7 @@ function BarManager:SetStyle(nextStyle)
     if nextStyle == "none" then
         -- Hide any custom frames and restore Blizzard bar visibility
         for key, frame in pairs(self.barFrames) do
-            if frame and frame.Hide then
+            if frame and frame.SetShown then
                 frame:SetShown(false)
             end
         end
@@ -152,7 +152,7 @@ function BarManager:SetStyle(nextStyle)
 
     -- Hide any other frames except the selected style to ensure only one visible
     for key, frame in pairs(self.barFrames) do
-        if key ~= nextStyle and frame and frame.Hide then
+        if key ~= nextStyle and frame and frame.SetShown then
             frame:SetShown(false)
         end
     end

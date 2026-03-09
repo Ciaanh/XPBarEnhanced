@@ -181,6 +181,10 @@ L["OPT_CIRCULAR_SEGMENTS_DESC"] = "Number of segments in the circular progress r
 L["OPT_CIRCULAR_USE_TEXTURE"] = "Use textured segments"
 L["OPT_CIRCULAR_USE_TEXTURE_DESC"] = "Use a textured appearance for segments instead of solid color. Gives a more detailed look to the circular bar."
 
+-- Terminal bar options
+L["OPT_TERMINAL_USE_CUSTOM_COLORS"] = "Use custom bar colors"
+L["OPT_TERMINAL_USE_CUSTOM_COLORS_DESC"] = "When disabled, the Terminal bar uses hardcoded authentic terminal colors (phosphor green, amber, teal). When enabled, Terminal bar will use your custom color settings from the Colors panel."
+
 -- Color options
 L["COLOR_XP_BAR"] = "XP Bar Fill"
 L["COLOR_XP_BAR_DESC"] = "Primary color of the experience bar."

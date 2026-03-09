@@ -114,8 +114,14 @@ end
 
 ---Emit an event to all listeners
 ---@param eventName string The event name to emit
----@return XPBarContext context The context object passed to all handlers
+---@return XPBarContext|nil context The context object passed to all handlers, or nil if no listeners
 function EventBus:Emit(eventName)
+    -- Skip expensive context build when no listeners are registered for this event
+    local listenersForEvent = self.listeners and self.listeners[eventName]
+    if not listenersForEvent or not next(listenersForEvent) then
+        return nil
+    end
+
     -- Build a fresh immutable context
     local context = nil
     if XPBarContextBuilder and XPBarContextBuilder.BuildContext then
@@ -125,11 +131,6 @@ function EventBus:Emit(eventName)
 
     if context == nil then
         error("EventBus:Emit requires a valid context")
-    end
-
-    local listenersForEvent = self.listeners and self.listeners[eventName]
-    if not listenersForEvent then
-        return context
     end
 
     -- Increment re-entrancy depth so Register() knows to defer new subscriptions

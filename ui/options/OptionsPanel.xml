@@ -34,226 +34,244 @@
                             </Layer>
                         </Layers>
                         <Frames>
+                            <!--
+                                OptionsContainer uses VerticalLayoutMixin (applied in Options.lua:OnLoad).
+                                Children declare layoutIndex so the mixin stacks them top-to-bottom,
+                                skipping hidden frames automatically — no manual anchor chains needed.
+                                Per-child attributes:
+                                  layoutIndex  – stacking order (required)
+                                  expand       – fill container width (replaces Anchor RIGHT)
+                                  topPadding   – extra space before this child (replaces negative y offset)
+                                  leftPadding  – left indent (replaces positive x offset)
+                            -->
                             <Frame parentKey="OptionsContainer">
                                 <Anchors>
                                     <Anchor point="TOPLEFT" relativeKey="$parent.SubtitleText" relativePoint="BOTTOMLEFT" x="0" y="-12"/>
                                 </Anchors>
                                 <Size x="520" y="1750"/>
                                 <Frames>
+
+                                    <!-- ==================== Bar Settings ==================== -->
+
                                     <Frame parentKey="BarSettingsHeader" inherits="ConfigSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" x="12" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
-                                    </Frame>
-                                    <Frame parentKey="Row_barStyle" inherits="ConfigDropdownTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.BarSettingsHeader" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
-                                            <KeyValue key="configKey" value="barStyle" type="string"/>
+                                            <KeyValue key="layoutIndex" value="1" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="12" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
+                                    <Frame parentKey="Row_barStyle" inherits="ConfigDropdownTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="barStyle" type="string"/>
+                                            <KeyValue key="layoutIndex" value="2" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <Frame parentKey="Row_barLocked" inherits="ConfigCheckboxTemplate" hidden="true">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_barStyle" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="barLocked" type="string"/>
+                                            <KeyValue key="layoutIndex" value="3" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
 
                                     <Frame parentKey="Row_classicBarDraggable" inherits="ConfigCheckboxTemplate" hidden="true">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_barLocked" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="classicBarDraggable" type="string"/>
+                                            <KeyValue key="layoutIndex" value="4" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="FlatBarHeader" inherits="ConfigSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_classicBarDraggable" relativePoint="BOTTOMLEFT" x="0" y="-20"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
-                                    </Frame>
+                                    <!-- ==================== Flat Bar ==================== -->
+
                                     <Frame parentKey="Row_showMilestoneTicks" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.FlatBarHeader" relativePoint="BOTTOMLEFT" x="16" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showMilestoneTicks" type="string"/>
+                                            <KeyValue key="layoutIndex" value="6" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="CircularHeader" inherits="ConfigSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showMilestoneTicks" relativePoint="BOTTOMLEFT" x="-16" y="-20"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
-                                    </Frame>
+                                    <!-- ==================== Circular Bar ==================== -->
+
                                     <Frame parentKey="Row_circularSize" inherits="ConfigDropdownTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.CircularHeader" relativePoint="BOTTOMLEFT" x="16" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="circularSize" type="string"/>
-                                        </KeyValues>
-                                    </Frame>
-                                    <Frame parentKey="Row_circularSegments" inherits="ConfigSliderTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_circularSize" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="circularSegments" type="string"/>
-                                        </KeyValues>
-                                    </Frame>
-                                    <Frame parentKey="Row_circularUseTexture" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_circularSegments" relativePoint="BOTTOMLEFT" x="-16" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="circularUseTexture" type="string"/>
+                                            <KeyValue key="layoutIndex" value="8" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_circularSegments" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="circularSegments" type="string"/>
+                                            <KeyValue key="layoutIndex" value="9" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_circularUseTexture" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="circularUseTexture" type="string"/>
+                                            <KeyValue key="layoutIndex" value="10" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <!-- ==================== Terminal Bar ==================== -->
+
+                                    <Frame parentKey="Row_terminalUseCustomColors" inherits="ConfigCheckboxTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="terminalUseCustomColors" type="string"/>
+                                            <KeyValue key="layoutIndex" value="12" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <!-- ==================== Overlay / Display Features ==================== -->
+
                                     <Frame parentKey="OverlayFeaturesHeader" inherits="ConfigSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_circularUseTexture" relativePoint="BOTTOMLEFT" x="0" y="-20"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="13" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
+                                        </KeyValues>
                                     </Frame>
 
                                     <Frame parentKey="Row_showRestedOverlay" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.OverlayFeaturesHeader" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showRestedOverlay" type="string"/>
+                                            <KeyValue key="layoutIndex" value="14" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
+                                    <!-- ==================== Quest Features ==================== -->
 
                                     <Frame parentKey="QuestFeaturesHeader" inherits="ConfigSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showRestedOverlay" relativePoint="BOTTOMLEFT" x="0" y="-20"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="15" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
+                                        </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showQuestXP" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.QuestFeaturesHeader" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showQuestXP" type="string"/>
+                                            <KeyValue key="layoutIndex" value="16" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showCompleteQuestOverlay" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showQuestXP" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showCompleteQuestOverlay" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showIncompleteQuestOverlay" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showCompleteQuestOverlay" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showIncompleteQuestOverlay" type="string"/>
+                                            <KeyValue key="layoutIndex" value="18" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
+
+                                    <!-- ==================== Text Display ==================== -->
 
                                     <Frame parentKey="TextDisplayHeader" inherits="ConfigSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showIncompleteQuestOverlay" relativePoint="BOTTOMLEFT" x="0" y="-20"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="19" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
+                                        </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_abbreviateNumbers" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.TextDisplayHeader" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="abbreviateNumbers" type="string"/>
+                                            <KeyValue key="layoutIndex" value="20" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
+
+                                    <!-- Text On Bar sub-section -->
 
                                     <Frame parentKey="TextOnBarHeader" inherits="ConfigSubSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_abbreviateNumbers" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="21" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showLevelText" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.TextOnBarHeader" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showLevelText" type="string"/>
+                                            <KeyValue key="layoutIndex" value="22" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showXPText" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showLevelText" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showXPText" type="string"/>
+                                            <KeyValue key="layoutIndex" value="23" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showRemainingXP" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showXPText" relativePoint="BOTTOMLEFT" x="16" y="-6"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showRemainingXP" type="string"/>
+                                            <KeyValue key="layoutIndex" value="24" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="6" type="number"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showPercentage" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showRemainingXP" relativePoint="BOTTOMLEFT" x="-16" y="-6"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showPercentage" type="string"/>
+                                            <KeyValue key="layoutIndex" value="25" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="6" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showQuestPercent" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showPercentage" relativePoint="BOTTOMLEFT" x="16" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showQuestPercent" type="string"/>
+                                            <KeyValue key="layoutIndex" value="26" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
+                                    <!-- Text Below Bar sub-section -->
 
                                     <Frame parentKey="TextBelowBarHeader" inherits="ConfigSubSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showQuestPercent" relativePoint="BOTTOMLEFT" x="-16" y="-16"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="27" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="16" type="number"/>
+                                        </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="TextLeftLabelHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.TextBelowBarHeader" relativePoint="BOTTOMLEFT" x="16" y="-16"/>
-                                        </Anchors>
                                         <Size x="500" y="18"/>
                                         <Layers>
                                             <Layer level="ARTWORK">
@@ -265,47 +283,34 @@
                                                 </FontString>
                                             </Layer>
                                         </Layers>
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="28" type="number"/>
+                                            <KeyValue key="topPadding" value="16" type="number"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showXPPerHourText" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.TextLeftLabelHeader" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showXPPerHourText" type="string"/>
+                                            <KeyValue key="layoutIndex" value="29" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showTimeToLevelText" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showXPPerHourText" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showTimeToLevelText" type="string"/>
+                                            <KeyValue key="layoutIndex" value="30" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
                                     </Frame>
 
-                                    <!-- <Frame parentKey="TextMiddleLabelHeader">
-                                                <Anchors>
-                                                    <Anchor point="TOPLEFT" relativeKey="$parent.Row_showTimeToLevelText" relativePoint="BOTTOMLEFT" x="0" y="-16"/>
-                                                </Anchors>
-                                                <Size x="500" y="18"/>
-                                                <Layers>
-                                                    <Layer level="ARTWORK">
-                                                        <FontString parentKey="Text" inherits="GameFontNormalSmall">
-                                                            <Anchors>
-                                                                <Anchor point="TOPLEFT"/>
-                                                            </Anchors>
-                                                            <Color r="0.8" g="0.8" b="0.8"/>
-                                                        </FontString>
-                                                    </Layer>
-                                                </Layers>
-                                            </Frame> -->
+                                    <!-- <TextMiddleLabelHeader commented out in original, omitted -->
 
                                     <Frame parentKey="TextRightLabelHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showTimeToLevelText" relativePoint="BOTTOMLEFT" x="0" y="-16"/>
-                                        </Anchors>
                                         <Size x="500" y="18"/>
                                         <Layers>
                                             <Layer level="ARTWORK">
@@ -317,116 +322,129 @@
                                                 </FontString>
                                             </Layer>
                                         </Layers>
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="31" type="number"/>
+                                            <KeyValue key="topPadding" value="16" type="number"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showSessionTimeText" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.TextRightLabelHeader" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showSessionTimeText" type="string"/>
+                                            <KeyValue key="layoutIndex" value="32" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="Row_showLevelTimeText" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showSessionTimeText" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showLevelTimeText" type="string"/>
+                                            <KeyValue key="layoutIndex" value="33" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
+                                    <!-- ==================== Animations ==================== -->
 
                                     <Frame parentKey="AnimationHeader" inherits="ConfigSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_showLevelTimeText" relativePoint="BOTTOMLEFT" x="-16" y="-20"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
-                                    </Frame>
-                                    <Frame parentKey="Row_enableAnimations" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.AnimationHeader" relativePoint="BOTTOMLEFT" x="16" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
-                                            <KeyValue key="configKey" value="enableAnimations" type="string"/>
-                                        </KeyValues>
-                                    </Frame>
-                                    <Frame parentKey="Row_flashOnGain" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_enableAnimations" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="flashOnGain" type="string"/>
-                                        </KeyValues>
-                                    </Frame>
-                                    <Frame parentKey="Row_twoPhaseOnLevelUp" inherits="ConfigCheckboxTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_flashOnGain" relativePoint="BOTTOMLEFT" x="0" y="0"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="twoPhaseOnLevelUp" type="string"/>
+                                            <KeyValue key="layoutIndex" value="34" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="ColorsHeader" inherits="ConfigSectionHeader">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.Row_twoPhaseOnLevelUp" relativePoint="BOTTOMLEFT" x="-16" y="-20"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
+                                    <Frame parentKey="Row_enableAnimations" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="enableAnimations" type="string"/>
+                                            <KeyValue key="layoutIndex" value="35" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
                                     </Frame>
+
+                                    <Frame parentKey="Row_flashOnGain" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="flashOnGain" type="string"/>
+                                            <KeyValue key="layoutIndex" value="36" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_twoPhaseOnLevelUp" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="twoPhaseOnLevelUp" type="string"/>
+                                            <KeyValue key="layoutIndex" value="37" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <!-- ==================== Colors ==================== -->
+
+                                    <Frame parentKey="ColorsHeader" inherits="ConfigSectionHeader">
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="38" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <Frame parentKey="ColorRow_xpBar" inherits="ConfigColorPickerTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.ColorsHeader" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="xpBar" type="string"/>
                                             <KeyValue key="previewType" value="statusbar" type="string"/>
+                                            <KeyValue key="layoutIndex" value="39" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="ColorRow_xpBarRested" inherits="ConfigColorPickerTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.ColorRow_xpBar" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="xpBarRested" type="string"/>
                                             <KeyValue key="previewType" value="statusbar" type="string"/>
+                                            <KeyValue key="layoutIndex" value="40" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="ColorRow_questComplete" inherits="ConfigColorPickerTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.ColorRow_xpBarRested" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="questComplete" type="string"/>
                                             <KeyValue key="previewType" value="texture" type="string"/>
+                                            <KeyValue key="layoutIndex" value="41" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="ColorRow_questIncomplete" inherits="ConfigColorPickerTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.ColorRow_questComplete" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="questIncomplete" type="string"/>
                                             <KeyValue key="previewType" value="texture" type="string"/>
+                                            <KeyValue key="layoutIndex" value="42" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                     <Frame parentKey="ColorRow_rested" inherits="ConfigColorPickerTemplate">
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" relativeKey="$parent.ColorRow_questIncomplete" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                            <Anchor point="RIGHT"/>
-                                        </Anchors>
                                         <KeyValues>
                                             <KeyValue key="configKey" value="rested" type="string"/>
                                             <KeyValue key="previewType" value="texture" type="string"/>
+                                            <KeyValue key="layoutIndex" value="43" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
                                     </Frame>
+
                                 </Frames>
                             </Frame>
 

@@ -12,7 +12,6 @@ XPBarTooltipMixin = {}
 local TooltipMixin = XPBarTooltipMixin
 local Addon = XPBarEnhanced
 Addon.UI.Mixins.Tooltip = XPBarTooltipMixin
-local Addon = XPBarEnhanced
 local L = Addon and Addon.L or {}
 
 local function GetGlobalDB()
@@ -493,6 +492,36 @@ function TooltipMixin:GetHintText()
 end
 
 -------------------------------------------------------------------
+-- SECTION CONTENT BUILDER (shared between OnEnter and GetTooltipContent)
+-------------------------------------------------------------------
+
+local function BuildTooltipContent(self, context, tooltipConfig)
+	local content = {title = string.format(L["TT_LEVEL_FMT"], tonumber(context.level) or 1), lines = {}}
+	self:AddXPSection(content, context, tooltipConfig)
+	self:AddRestedSection(content, context, tooltipConfig)
+	if context.isResting then
+		table.insert(content.lines, " ")
+		table.insert(
+			content.lines,
+			{
+				left = (L["TT_STATUS"]) .. ":",
+				right = L["TT_RESTING"],
+				leftR = 0.7,
+				leftG = 0.7,
+				leftB = 0.7,
+				rightR = 0,
+				rightG = 1,
+				rightB = 0
+			}
+		)
+	end
+	self:AddQuestSection(content, context, tooltipConfig)
+	self:AddSessionSection(content, context, tooltipConfig)
+	self:AddHintSection(content, context, tooltipConfig)
+	return content
+end
+
+-------------------------------------------------------------------
 -- TOOLTIP HANDLERS (OnEnter/OnLeave)
 -------------------------------------------------------------------
 
@@ -524,41 +553,8 @@ function TooltipMixin:OnEnter()
 		return
 	end
 
-	-- Build content using unified API that preserves section parity
-	local content = {title = string.format(L["TT_LEVEL_FMT"], tonumber(context.level) or 1), lines = {}}
-
-	-- XP / remaining
-	self:AddXPSection(content, context, tooltipConfig)
-
-	-- Rested
-	self:AddRestedSection(content, context, tooltipConfig)
-
-	-- Resting status
-	if context.isResting then
-		table.insert(content.lines, " ")
-		table.insert(
-			content.lines,
-			{
-				left = (L["TT_STATUS"]) .. ":",
-				right = L["TT_RESTING"],
-				leftR = 0.7,
-				leftG = 0.7,
-				leftB = 0.7,
-				rightR = 0,
-				rightG = 1,
-				rightB = 0
-			}
-		)
-	end
-
-	-- Quest section
-	self:AddQuestSection(content, context, tooltipConfig)
-
-	-- Session stats
-	self:AddSessionSection(content, context, tooltipConfig)
-
-	-- Hints
-	self:AddHintSection(content, context, tooltipConfig)
+	-- Build content using unified section builders
+	local content = BuildTooltipContent(self, context, tooltipConfig)
 
 	-- If no content lines and user opted not to show an empty tooltip, return
 	if not content.lines or #content.lines == 0 then
@@ -614,30 +610,7 @@ function TooltipMixin:GetTooltipContent()
 	-- Try to obtain a centralized context first (call directly if available)
 	local context = XPBarContextBuilder:BuildContext("TOOLTIP")
 	if context and type(context) == "table" then
-		-- build content like classic did (use helper builders)
-		local content = {title = string.format(L["TT_LEVEL_FMT"], tonumber(context.level) or 1), lines = {}}
-		self:AddXPSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		self:AddRestedSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		if context.isResting then
-			table.insert(content.lines, " ")
-			table.insert(
-				content.lines,
-				{
-					left = (L["TT_STATUS"]) .. ":",
-					right = L["TT_RESTING"],
-					leftR = 0.7,
-					leftG = 0.7,
-					leftB = 0.7,
-					rightR = 0,
-					rightG = 1,
-					rightB = 0
-				}
-			)
-		end
-		self:AddQuestSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		self:AddSessionSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		self:AddHintSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		return content
+		return BuildTooltipContent(self, context, self.__xpbar_config and self.__xpbar_config.tooltip)
 	end
 
 	-- fallback: nil to let OnEnter attempt its own fallback

@@ -12,6 +12,8 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
     )
 end
 
+local Addon = XPBarEnhanced
+
 -------------------------------------------------------------------
 -- STYLE TEMPLATE
 -------------------------------------------------------------------
@@ -47,8 +49,6 @@ function VerticalBarStyleTemplate:UpdateLevelText(context)
 end
 
 function VerticalBarStyleTemplate:UpdateRateText(context)
-    local Addon = XPBarEnhanced
-
     if not self.RateText or not Addon.TextFormatter then
         return
     end
@@ -80,7 +80,7 @@ function VerticalBarStyleTemplate:UpdateBarColors(context, barName)
         return
     end
 
-    local Colors = XPBarEnhanced.Colors
+    local Colors = Addon.Colors
     -- Select color based on whether player has rested XP
     local hasRestedXP = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
     local colorKey = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
@@ -141,7 +141,6 @@ function VerticalBarStyleTemplate:UpdateQuestIncompleteBarLayout(context, overla
         return
     end
 
-    local Addon = XPBarEnhanced
     local completeQuestXP = context.completeQuestXP or 0
     local incompleteQuestXP = context.incompleteQuestXP or 0
 
@@ -194,7 +193,6 @@ function VerticalBarStyleTemplate:UpdateRestedBarLayout(context)
         return
     end
 
-    local Addon = XPBarEnhanced
     local restedXP = context.restedXP or 0
     local showRested = Addon.ConfigHelper.GetShowRestedOverlay(context)
 
@@ -254,8 +252,6 @@ function VerticalBarStyleTemplate:UpdatePercentText(context)
     if not self.PercentText then
         return
     end
-
-    local Addon = XPBarEnhanced
 
     -- Respect explicit visibility flags first (context wins); fallback to ConfigHelper if present
     local showPercent = nil
