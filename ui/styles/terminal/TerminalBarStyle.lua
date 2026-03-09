@@ -104,7 +104,7 @@ local function BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, res
 
     for i = 1, BAR_CHARS do
         local ch, col
-        if     i <= filled             then ch, col = CH_FULL,  useEarned
+        if     i <= filled             then ch, col = CH_DARK,  useEarned
         elseif i <= questCompleteEnd   then ch, col = CH_MED,  useQuest
         elseif i <= questIncompleteEnd then ch, col = CH_MED,   useQuestInc
         elseif i <= restedEnd          then ch, col = CH_MED,  useRested
@@ -434,7 +434,7 @@ local function BuildTerminalTooltipText(context)
     lines[#lines+1] = ""
     lines[#lines+1] = C_LABEL .. "> legend|r"
     lines[#lines+1] = "  "
-        .. colorEarned .. CH_FULL  .. " earned|r  "
+        .. colorEarned .. CH_DARK  .. " earned|r  "
         .. colorQuest  .. CH_MED  .. " quest:done|r  "
         .. colorQuestInc .. CH_MED   .. " quest:todo|r  "
         .. colorRested .. CH_MED   .. " rested|r  "

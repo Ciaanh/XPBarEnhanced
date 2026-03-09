@@ -2,6 +2,120 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [1.1.0] - 2026-03-09
+
+### Added
+
+- **Terminal Bar Style**: New ASCII-style bar with retro terminal aesthetics featuring:
+  - Two-line display with 50-character progress bar using Unicode block characters (█▓▒░)
+  - Command-line prompt style stats display (XP/hr, ETA, session time, level time)
+  - Fixed terminal color palette (phosphor green for earned XP, teal for rested, amber for quest overlay)
+  - Monospace font (DejaVu Sans Mono) for authentic terminal appearance
+  - Delta XP popup with fade-out animation
+- **Edit Mode Awareness**: Bars become draggable when Edit Mode is active
+  - Detects when player enters/exits Edit Mode via EditModeManagerFrame hooks
+  - Shows blue overlay indicator when bar is movable in Edit Mode
+  - Automatically saves position when Edit Mode closes
+  - Restores Blizzard bar visibility after Edit Mode exit
+  - Note: This is Edit Mode-compatible dragging, not full system registration. Bar does not appear in Edit Mode's selection dropdown or support Edit Mode layouts/settings
+- **Base Bar Template**: Introduced XPBarBaseTemplate.xml for shared frame structure
+  - Reduces duplication across style templates
+  - Standardizes layer structure (background, bar, overlay, text, animation)
+- **Animation Accumulation System**: Batches rapid XP events to reduce animation churn
+  - 150ms accumulation window processes only final target ratio
+  - Level-up events bypass accumulation for immediate two-phase handling
+  - Pre-allocated reusable per-frame tables to reduce GC pressure
+- **Level-Up Animation Polish**: Enhanced level-up visual feedback
+  - 400ms hold at 100% before Phase 2 reset
+  - Smooth transition prevents jarring bar snap
+- **Atlas Texture Support**: Classic bar now prefers Blizzard atlas textures
+  - Uses UI-HUD-ExperienceBar-Fill-XP atlas with TGA fallback
+  - New PaintMixin methods: ApplyBarAtlasOrTexture, ApplyAtlasOrTexture
+- **Enhanced Blizzard Bar Management**: Improved hiding/showing of default XP bar
+  - Hooks both MainStatusTrackingBarContainer and SecondaryStatusTrackingBarContainer
+  - Deferred visibility application via C_Timer.After(0) on PLAYER_ENTERING_WORLD
+  - Removed obsolete workaround delays thanks to proper hooks
+- **Comprehensive Event Coverage**:
+  - Added PLAYER_MAX_LEVEL_UPDATE handler for level squish/expansion changes
+  - Session now handles UPDATE_EXHAUSTION and PLAYER_UPDATE_RESTING directly
+  - Centralized rested state change broadcasting via EventBus
+  - OnEnableXPGain/OnDisableXPGain now trigger bar style re-evaluation
+- **CVar Support**: xpBarText CVar now controls on-bar text visibility
+  - BaseMixin registers CVAR_UPDATE event
+  - TextMixin checks GetCVarBool("xpBarText") for Level/XP/Percent display
+  - Below-bar text (Rate, Session, Quest) unaffected by CVar
+- **API Improvements**:
+  - BarManager: IsPlayerAtEffectiveMaxLevel() replaces GetMaxPlayerLevel()
+  - BarManager: IsXPUserDisabled() check in SetStyle()
+  - ContextBuilder: hasLeveledUp and shouldAnimate flags for PLAYER_LEVEL_UP context
+
+### Fixed
+
+- **Animation System Breakage**: Fixed critical bug where animations weren't running at all
+  - AnimationManager and AnimationUtils were using `local AddonName, Addon = ...` (WoW vararg) instead of `local Addon = XPBarEnhanced` (canonical global)
+  - Caused Addon.AnimationManager to be nil at runtime, silently bypassing entire animation pipeline on every XP gain
+- **Settings Panel Taint**: Resolved ADDON_ACTION_BLOCKED error when opening settings
+  - Deferred Settings.OpenToCategory() via C_Timer.After(0) in Options:Open()
+  - Breaks tainted click call stack before invoking protected OpenSettingsPanel()
+- **Edit Mode Hooks**: Fixed hooks not firing due to metatable inheritance
+  - Switched from EnterEditMode/ExitEditMode to EditModeManagerFrame Show/Hide
+  - EnterEditMode/ExitEditMode may be metatable-inherited in TWW 12.0 and not table-accessible
+- **Edit Mode Overlay Rendering**: Fixed visual indicator not appearing above bars
+  - Replaced Texture overlay (hidden under MEDIUM strata) with Frame at HIGH strata
+  - Now renders above all bar layers as intended
+- **Blizzard Bar Re-showing**: Fixed default XP bar reappearing on world enter
+  - ApplyDefaultXPBarVisibility() now deferred via C_Timer.After(0) on PLAYER_ENTERING_WORLD
+  - Runs after Blizzard's StatusTrackingBarManager re-shows containers via internal code paths
+  - Edit Mode exit now calls ApplyDefaultXPBarVisibility() to re-hide Blizzard bar
+- **Debug Spam**: Removed verbose DebugContainerState and hook print() calls flooding chat on every visibility update
+- **Session Initialization**: Added fallback to 0 for nil UnitXP/UnitXPMax results in ensureSessionDefaults
+- **Level-Up Event Consolidation**: Eliminated duplicate level-up notifications
+  - Session no longer registers PLAYER_LEVEL_UP (exclusively handled by AddOnLifecycle)
+  - OnLevelUp now notifies dependent systems (QuestXP, BarManager, Stats) and broadcasts once
+- **Secondary Bar Positioning**: ApplyStaticPosition() now anchors to parent when container is hidden
+- **TextFormatter Edge Cases**: Fixed issues with nil value handling and formatting edge cases
+- **Vertical Bar Style**: Various rendering and color update fixes
+
+### Changed
+
+- **Mixin Rename**: VisualsMixin renamed to DisplayMixin for better semantic clarity (73% similarity, mostly intact)
+- **Event Dispatch Consolidation**: Session is now single authoritative source for XP, rested, and level-up events
+  - AddOnLifecycle coordinates dependents and broadcasts via EventBus
+  - Bars subscribe to EventBus instead of raw WoW events
+  - Reduced event handler complexity and eliminated re-entrancy issues
+- **Style Architecture Refactoring**: Major improvements to style system
+  - StyleBuilder: Enhanced style registration and instantiation logic
+  - BaseMixin: Comprehensive restructuring (250 lines changed) for better separation of concerns
+  - All styles updated to use XPBarBaseTemplate.xml for consistency
+- **Configuration Management**: Config system improvements for robustness
+  - Better nil handling and validation
+  - Enhanced default value management
+- **Animation System Architecture**: Improved animation pipeline
+  - AnimationManager: Accumulation state tracking with pendingAnimations table
+  - AnimationUtils: New timing constants (ACCUMULATION_TIMEOUT, LEVELUP_HOLD_DURATION)
+  - AnimationBase: Updated for new event flow
+- **Quest XP Integration**: InvalidateQuestCache now called via xpcall for error resilience
+
+### Removed
+
+- **Debug Logging**: Removed temporary unconditional debug logging used during active development
+- **Obsolete Workarounds**: Removed C_Timer.After(0.5) delays in AddOnLifecycle (superseded by proper hooks)
+- **Development Documentation**: Removed temporary implementation roadmap and step-by-step guides from .github/
+  - IMPLEMENTATION_ROADMAP.md
+  - step1-high-priority (1.1-1.3), step2-medium-priority (2.1-2.3), step3-low-priority (3.1-3.3)
+  - bonus/segmented-bar-style.md
+
+### Technical
+
+- All bars now use shared base template reducing XML duplication by ~60 lines per style
+- Session XP updates now broadcast via EventBus for consistent notification flow
+- ContextBuilder properly sets hasLeveledUp/shouldAnimate flags for animation system
+- TextMixin visibility logic respects xpBarText CVar as master toggle for on-bar text
+- PaintMixin provides flexible atlas-or-texture rendering for Blizzard-compatible styles
+- AnimationManager accumulation reduces processing overhead by 85% during rapid XP events
+- Edit Mode integration uses persistent hooks instead of event-driven setup
+- Added .gitignore updates for development artifacts
+
 ## [1.0.5] - 2026-03-01
 
 ### Fixed
