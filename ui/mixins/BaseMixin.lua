@@ -390,7 +390,15 @@ function BaseMixin:TriggerBarRefresh(context)
 	-- Hide bar at max level (UnitXPMax returns 0 when no more XP can be earned)
 	local Addon = XPBarEnhanced
 	if (context.xpMax ~= nil and context.xpMax <= 0) or (UnitXPMax("player") or 1) <= 0 then
-		self:Hide()
+		local manager = Addon and Addon.BarManager
+		if manager and manager.GetCurrentFrame and manager:GetCurrentFrame() == self and manager.SetStyle then
+			manager:SetStyle("none")
+		else
+			if self.CleanupAnimation then
+				self:CleanupAnimation()
+			end
+			self:Hide()
+		end
 		return
 	end
 

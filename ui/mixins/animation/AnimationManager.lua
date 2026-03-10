@@ -60,6 +60,8 @@ end
 --- Unregister a bar from animation
 -- @param bar table: Bar instance to unregister
 function AnimationManager:Unregister(bar)
+	self.pendingAnimations[bar] = nil
+
 	for i, registeredBar in ipairs(self.registeredBars) do
 		if registeredBar == bar then
 			table.remove(self.registeredBars, i)

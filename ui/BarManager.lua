@@ -53,13 +53,24 @@ function BarManager:Initialize()
 end
 
 local function IsPlayerAtMaxLevel(currentLevel)
+    local level = currentLevel or UnitLevel("player") or 0
+    local maxLevel = (GetMaxPlayerLevel and GetMaxPlayerLevel()) or 80
+
+    -- When PLAYER_LEVEL_UP provides the new level, trust it immediately.
+    -- IsPlayerAtEffectiveMaxLevel() can lag one frame behind the event.
+    if currentLevel and level >= maxLevel then
+        return true
+    end
+
     -- Prefer IsPlayerAtEffectiveMaxLevel() which accounts for expansion state
     if IsPlayerAtEffectiveMaxLevel then
-        return IsPlayerAtEffectiveMaxLevel()
+        local atEffectiveMax = IsPlayerAtEffectiveMaxLevel()
+        if atEffectiveMax then
+            return true
+        end
     end
+
     -- Fallback for older API
-    local level = currentLevel or UnitLevel("player") or 0
-    local maxLevel = GetMaxPlayerLevel() or 80
     return level >= maxLevel
 end
 
@@ -226,7 +237,9 @@ function BarManager:OnLevelUp(newLevel)
     local level = newLevel or (UnitLevel("player") or 0) + 1
     local db = Addon.db or {}
     local userStyle = db.barStyle or "classic"
-    if IsPlayerAtMaxLevel(level) then
+
+    -- UnitXPMax() reaches 0 as soon as the player can no longer earn XP.
+    if (UnitXPMax("player") or 0) <= 0 or IsPlayerAtMaxLevel(level) then
         self:SetStyle("none")
     else
         self:SetStyle(userStyle)
