@@ -25,7 +25,6 @@ L["TT_RESTED_XP"] = "Rested XP"
 L["TT_QUEST_XP"] = "Quest XP"
 L["TT_STATUS"] = "Status"
 L["TT_FULLY_RESTED"] = "Fully Rested"
-L["TT_RESTED"] = "Rested"
 L["TT_RESTED_TO_LEVEL"] = "Rested (to level)"
 L["TT_RESTED_LOW_WARNING"] = "Almost out of rest! Visit an inn or city to rest."
 L["TT_NORMAL"] = "Normal"
@@ -67,6 +66,14 @@ L["TT_LEVEL_FMT"] = "Level %d"
 -- Tooltip hints
 L["TT_HINT_CONFIG"] = "Right-click to configure XP Bar"
 
+-- Terminal style legend
+L["TT_TERMINAL_LEGEND"]    = "Terminal Legend"
+L["TT_TERMINAL_EARNED"]    = "█ Green: Earned XP"
+L["TT_TERMINAL_QUEST_DONE"]= "█ Amber: Quest XP (completed)"
+L["TT_TERMINAL_QUEST_TODO"]= "▒ Amber: Quest XP (in progress)"
+L["TT_TERMINAL_RESTED"]    = "▒ Teal: Rested bonus"
+L["TT_TERMINAL_EMPTY"]     = "░ Dim: Not earned"
+
 -- Modifier display names
 L["KEY_SHIFT"] = "Shift"
 L["KEY_CTRL"] = "Ctrl"
@@ -88,6 +95,8 @@ L["OPT_SHOW_INCOMPLETE_OVERLAY_DESC"] =
     "Display the yellow semi-transparent overlay showing XP from incomplete quests (doesn't reduce bar width)."
 L["OPT_PERCENTAGE"] = "Show percentage"
 L["OPT_PERCENTAGE_DESC"] = "Display current percentage progress as text overlaid on the XP bar itself."
+L["OPT_SHOW_MILESTONE_TICKS"] = "Show milestone ticks"
+L["OPT_SHOW_MILESTONE_TICKS_DESC"] = "Overlay small tick marks and percent labels at 25%, 50%, 75%, and 100% on the Flat bar. Ticks before the current position take on the bar color; remaining ticks are dimmed."
 L["OPT_QUEST_PERCENT"] = "Include quest XP in percentage"
 L["OPT_QUEST_PERCENT_DESC"] =
     "Show percentage with quest XP included. Example: '75% (80%)' where 80% includes completed quest XP ready to turn in. Requires 'Show percentage ON the bar' to be enabled."
@@ -112,22 +121,25 @@ L["OPT_HIDE_DEFAULT"] = "Hide default XP bar"
 L["OPT_HIDE_DEFAULT_DESC"] = "Hide Blizzard's default experience bar when the addon loads."
 
 -- Subsection headers
-L["OPT_TEXT_ON_BAR"] = "Text ON the Bar"
-L["OPT_TEXT_BELOW_BAR"] = "Text BELOW the Bar"
+-- (see "Text Display Section Headers" below for the canonical definitions)
 
 -- Options
 L["OPT_BAR_STYLE"] = "Bar Style"
-L["OPT_BAR_STYLE_DESC"] = "Choose which XP bar to display: None (Blizzard only), Classic (Blizzard-style), Flat (Draggable), Vertical (Falling animation), or Circular (Progress ring)."
+L["OPT_BAR_STYLE_DESC"] = "Choose which XP bar to display: None (Blizzard only), Classic (Blizzard-style), Flat (Draggable), Vertical (Falling animation), Circular (Progress ring), Minimap Ring, or Terminal (ASCII progress bar)."
 L["OPT_BAR_STYLE_NONE"] = "None (Blizzard only)"
 L["OPT_BAR_STYLE_CLASSIC"] = "Classic (Blizzard-style)"
 L["OPT_BAR_STYLE_FLAT"] = "Flat (Custom draggable)"
 L["OPT_BAR_STYLE_VERTICAL"] = "Vertical (Falling XP)"
 L["OPT_BAR_STYLE_CIRCULAR"] = "Circular (Progress ring)"
+L["OPT_BAR_STYLE_MINIMAP_RING"] = "Minimap Ring"
 L["OPT_BAR_STYLE_TEST"] = "Test (CommonProgressBar)"
+L["OPT_BAR_STYLE_TERMINAL"] = "Terminal (ASCII progress bar)"
 L["OPT_HIDE_BLIZZARD_BAR"] = "Hide Blizzard bar in Flat mode"
 L["OPT_HIDE_BLIZZARD_BAR_DESC"] = "When using Flat bar style, also hide the Blizzard XP bar. Uncheck to see both bars."
 L["OPT_BAR_LOCKED"] = "Lock bar position"
 L["OPT_BAR_LOCKED_DESC"] = "Prevent the Flat bar from being moved with Shift+Drag. Applies only to Flat bar style."
+L["OPT_SHOW_MINIMAP_BUTTON"] = "Show minimap button"
+L["OPT_SHOW_MINIMAP_BUTTON_DESC"] = "Display the XP Bar Enhanced button on the minimap for quick access to stats and options."
 L["OPT_CLASSIC_DRAGGABLE"] = "Classic bar draggable"
 L["OPT_CLASSIC_DRAGGABLE_DESC"] = "Allow the Classic bar to be dragged and positioned manually. When disabled, the Classic bar will be anchored to Blizzard's default position."
 L["OPT_RESET_BAR_POSITION"] = "Reset Bar Position"
@@ -150,6 +162,7 @@ L["OPT_HEADER_TEXT_DISPLAY"] = "Text Display"
 L["OPT_HEADER_ANIMATION"] = "Animation"
 L["OPT_HEADER_COLORS"] = "Colors"
 L["OPT_HEADER_CIRCULAR"] = "Circular Bar"
+L["OPT_HEADER_FLAT_BAR"] = "Flat Bar"
 
 -- Animation options
 L["OPT_ENABLE_ANIMATIONS"] = "Enable animations"
@@ -170,6 +183,24 @@ L["OPT_CIRCULAR_SEGMENTS"] = "Segment count"
 L["OPT_CIRCULAR_SEGMENTS_DESC"] = "Number of segments in the circular progress ring. Lower values give a chunky look, higher values appear smoother."
 L["OPT_CIRCULAR_USE_TEXTURE"] = "Use textured segments"
 L["OPT_CIRCULAR_USE_TEXTURE_DESC"] = "Use a textured appearance for segments instead of solid color. Gives a more detailed look to the circular bar."
+
+L["OPT_MINIMAP_RING_PADDING"] = "Minimap ring padding"
+L["OPT_MINIMAP_RING_PADDING_DESC"] = "Extra distance between the minimap edge and the XP ring segments."
+L["OPT_MINIMAP_RING_SEGMENTS"] = "Minimap ring segments"
+L["OPT_MINIMAP_RING_SEGMENTS_DESC"] = "Number of visible segments in the minimap ring. Lower values look chunkier; higher values appear smoother."
+L["OPT_MINIMAP_RING_COLLECT_BUTTONS"] = "Collect addon minimap buttons"
+L["OPT_MINIMAP_RING_COLLECT_BUTTONS_DESC"] = "Collapse addon minimap buttons into an XP Bar Enhanced bag button to keep the ring clear. Blizzard minimap buttons are ignored."
+L["OPT_MINIMAP_RING_BAG_ANGLE"] = "Bag button angle"
+L["OPT_MINIMAP_RING_BAG_ANGLE_DESC"] = "Angle in degrees used to place the minimap button bag around the ring. 0 is right, 90 is top."
+
+L["OPT_MINIMAP_RING_SEGMENT_WIDTH"] = "Segment width"
+L["OPT_MINIMAP_RING_SEGMENT_WIDTH_DESC"] = "Base width of each ring segment in pixels. The value auto-scales with segment count so spacing stays consistent."
+L["OPT_MINIMAP_RING_SEGMENT_HEIGHT"] = "Segment height"
+L["OPT_MINIMAP_RING_SEGMENT_HEIGHT_DESC"] = "Radial height (thickness) of each ring segment in pixels."
+
+-- Terminal bar options
+L["OPT_TERMINAL_USE_CUSTOM_COLORS"] = "Use custom bar colors"
+L["OPT_TERMINAL_USE_CUSTOM_COLORS_DESC"] = "When disabled, the Terminal bar uses hardcoded authentic terminal colors (phosphor green, amber, teal). When enabled, Terminal bar will use your custom color settings from the Colors panel."
 
 -- Color options
 L["COLOR_XP_BAR"] = "XP Bar Fill"

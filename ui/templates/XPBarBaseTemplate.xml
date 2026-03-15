@@ -1,0 +1,59 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\Blizzard_SharedXML\UI.xsd">
+
+    <!-- XP Bar Enhanced - Shared Base Template -->
+    <!-- Common structure inherited by horizontal bar styles (Classic, Flat, Terminal). -->
+    <!-- Provides: below-bar text container and common script handlers. -->
+    <!-- Each style defines its own StatusBar, overlays, and on-bar text container. -->
+
+    <Frame name="XPBarBaseTemplate" virtual="true" frameStrata="LOW" enableMouse="true" fixedFrameStrata="true">
+        <Frames>
+            <!-- BELOW-BAR text container (shared by all horizontal styles) -->
+            <Frame parentKey="BelowBarTextContainer" frameStrata="MEDIUM">
+                <Size x="565" y="30"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" x="0" y="-2"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <!-- Rate text (XP/hour + time to level) -->
+                        <FontString parentKey="RateText" inherits="GameFontNormal" hidden="true">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" x="0" y="0"/>
+                            </Anchors>
+                            <Color r="0.8" g="0.8" b="0.8"/>
+                        </FontString>
+
+                        <!-- Session text (session time + level time) -->
+                        <FontString parentKey="SessionText" inherits="GameFontNormal" hidden="true">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" x="0" y="0"/>
+                            </Anchors>
+                            <Color r="0.8" g="0.8" b="0.8"/>
+                        </FontString>
+
+                        <!-- Quest summary text -->
+                        <FontString parentKey="QuestSummaryText" inherits="GameFontNormal" hidden="true">
+                            <Anchors>
+                                <Anchor point="TOP" x="0" y="-12"/>
+                            </Anchors>
+                            <Color r="0.8" g="0.8" b="0.8"/>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+        </Frames>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+            <OnEvent method="OnEvent"/>
+            <OnShow method="OnShow"/>
+            <OnHide method="OnHide"/>
+            <OnEnter method="OnEnter"/>
+            <OnLeave method="OnLeave"/>
+            <OnMouseDown method="OnMouseDown"/>
+            <OnMouseUp method="OnMouseUp"/>
+        </Scripts>
+    </Frame>
+
+</Ui>

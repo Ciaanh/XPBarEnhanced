@@ -70,6 +70,7 @@ end
 XPBarContextBuilder = {}
 
 local ContextBuilder = XPBarContextBuilder
+XPBarEnhanced.ContextBuilder = ContextBuilder
 
 -------------------------------------------------------------------
 -- INTERNAL HELPERS
@@ -197,33 +198,30 @@ function ContextBuilder.UpdateSessionWithGain(xpGained)
 	local AddonGlobal = _G["XPBarEnhanced"]
 	local sessionStart = time()
 	local sessionXP = 0
-
-	if AddonGlobal and AddonGlobal.Session then
-		local session = AddonGlobal.Session:GetCurrent()
-		if session and session.sessionStart then
-			sessionStart = session.sessionStart
-		end
-		if session and session.gainedXP then
-			sessionXP = session.gainedXP
-		end
-	end
-
-	local sessionDuration = time() - sessionStart
-
 	local realLevelTime = 0
+
 	if AddonGlobal and AddonGlobal.Session then
 		local session = AddonGlobal.Session:GetCurrent()
-		if session and session.realLevelTime then
-			realLevelTime = session.realLevelTime
-			if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-				local elapsed = time() - session.lastTimePlayedRequest
-				realLevelTime = realLevelTime + elapsed
+		if session then
+			if session.sessionStart then
+				sessionStart = session.sessionStart
+			end
+			if session.gainedXP then
+				sessionXP = session.gainedXP
+			end
+			if session.realLevelTime then
+				realLevelTime = session.realLevelTime
+				if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
+					local elapsed = time() - session.lastTimePlayedRequest
+					realLevelTime = realLevelTime + elapsed
+				end
 			end
 		end
 	end
 
+	local sessionDuration = time() - sessionStart
 	local currentXP = UnitXP("player") or 0
-	local xpPerHour = ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP, preferSessionTime)
+	local xpPerHour = ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
 
 	return sessionStart, sessionXP, sessionDuration, xpPerHour
 end
@@ -276,11 +274,14 @@ end
 -- CONTEXT BUILDING
 -------------------------------------------------------------------
 
--- Events that should consume XP changes
+-- Events that should consume (advance) the XP delta tracker.
+-- EventBus broadcasts ("XPBAR:BROADCAST_UPDATE") are the primary delivery
+-- path when Session drives all XP events, so they must also consume the delta.
 local XP_CONSUMING_EVENTS = {
 	["PLAYER_XP_UPDATE"] = true,
 	["PLAYER_LEVEL_UP"] = true,
-	["PLAYER_ENTERING_WORLD"] = true
+	["PLAYER_ENTERING_WORLD"] = true,
+	["XPBAR:BROADCAST_UPDATE"] = true,
 }
 
 function XPBarContextBuilder.BuildContext(event, ...)
@@ -337,10 +338,18 @@ function XPBarContextBuilder.BuildContext(event, ...)
 		local level = args[1] or coreState.level
 		eventContext.level = level
 		eventContext.previousLevel = (level and level - 1) or (coreState.level and coreState.level - 1)
-		eventContext.hasLeveledUp = false
-		eventContext.shouldAnimate = false
-		eventContext.hasGainedXP = false
-		eventContext.shouldFlash = false
+		-- Allow level-up animation flags to propagate from ComputeXPGained() above.
+		-- Only set hasLeveledUp/shouldAnimate if ComputeXPGained did not already detect it
+		-- (handles the case where PLAYER_LEVEL_UP fires before PLAYER_XP_UPDATE).
+		if not eventContext.hasLeveledUp then
+			eventContext.hasLeveledUp = true
+		end
+		if not eventContext.shouldAnimate then
+			eventContext.shouldAnimate = true
+		end
+		if not eventContext.shouldFlash then
+			eventContext.shouldFlash = true
+		end
 	elseif event == "UPDATE_EXHAUSTION" or event == "PLAYER_UPDATE_RESTING" then
 		eventContext.source = "RESTED_UPDATE"
 		eventContext.hasGainedXP = false
@@ -385,8 +394,13 @@ end
 -------------------------------------------------------------------
 
 function ContextBuilder.Initialize()
-	ContextBuilder._lastXP = UnitXP("player") or 0
-	ContextBuilder._lastMaxXP = UnitXPMax("player") or 1
+	-- UnitXP may return nil/0 before PLAYER_LOGIN fires; keep _lastXP nil in that
+	-- case so ComputeXPGained defaults it to currentXP (zero gain on first event).
+	local xp = UnitXP("player")
+	if xp and xp > 0 then
+		ContextBuilder._lastXP = xp
+		ContextBuilder._lastMaxXP = UnitXPMax("player") or 1
+	end
 end
 
 function ContextBuilder.ResetSession()

@@ -12,6 +12,8 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
     )
 end
 
+local Addon = XPBarEnhanced
+
 -------------------------------------------------------------------
 -- STYLE TEMPLATE
 -------------------------------------------------------------------
@@ -23,8 +25,8 @@ local VerticalBarStyleTemplate = {}
 -------------------------------------------------------------------
 
 function VerticalBarStyleTemplate:OnLoad()
-    -- Circular bar specific setup
-    self.RateText = self.OverlayFrameTextContainer.RateText
+    -- Vertical bar specific setup
+    self.RateText = self.OverlayFrameTextContainer and self.OverlayFrameTextContainer.RateText
 
     if XPBarMixinBase and XPBarMixinBase.OnLoad then
         XPBarMixinBase.OnLoad(self)
@@ -47,8 +49,6 @@ function VerticalBarStyleTemplate:UpdateLevelText(context)
 end
 
 function VerticalBarStyleTemplate:UpdateRateText(context)
-    local Addon = XPBarEnhanced
-
     if not self.RateText or not Addon.TextFormatter then
         return
     end
@@ -80,11 +80,11 @@ function VerticalBarStyleTemplate:UpdateBarColors(context, barName)
         return
     end
 
+    local Colors = Addon.Colors
     -- Select color based on whether player has rested XP
-    local XPBarColors = _G.XPBarColors
     local hasRestedXP = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
-    local colorKey = hasRestedXP and Color.XpBarRested or Color.XpBar
-    local color = XPBarColors:GetUserColor(colorKey)
+    local colorKey = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
+    local color = Colors:Get(colorKey)
 
     -- Use SetStatusBarColor for StatusBar widget
     self.StatusBar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
@@ -141,7 +141,6 @@ function VerticalBarStyleTemplate:UpdateQuestIncompleteBarLayout(context, overla
         return
     end
 
-    local Addon = XPBarEnhanced
     local completeQuestXP = context.completeQuestXP or 0
     local incompleteQuestXP = context.incompleteQuestXP or 0
 
@@ -194,7 +193,6 @@ function VerticalBarStyleTemplate:UpdateRestedBarLayout(context)
         return
     end
 
-    local Addon = XPBarEnhanced
     local restedXP = context.restedXP or 0
     local showRested = Addon.ConfigHelper.GetShowRestedOverlay(context)
 
@@ -248,55 +246,43 @@ function VerticalBarStyleTemplate:UpdateRestedBarLayout(context)
     self.RestedOverlay:SetShown(visible)
 end
 
---- Override percent text (respects showQuestPercent & visibility like other styles)
+--- Override percent text to match circular center text behavior
+--- (simple current percent only; no quest-percent augmentation)
 function VerticalBarStyleTemplate:UpdatePercentText(context)
     if not self.PercentText then
         return
     end
-
-    local Addon = XPBarEnhanced
 
     -- Respect explicit visibility flags first (context wins); fallback to ConfigHelper if present
     local showPercent = nil
     if context then
         showPercent = context.showPercent or context.showPercentage
     end
-    if Addon.ConfigHelper and Addon.ConfigHelper.GetShowPercentText then
-        showPercent = Addon.ConfigHelper:GetShowPercentText(context)
+    if Addon.ConfigHelper and Addon.ConfigHelper.GetShowPercentage then
+        showPercent = Addon.ConfigHelper.GetShowPercentage(context)
     end
     if showPercent == false then
         self.PercentText:Hide()
         return
     end
 
-    local currentXP = context.currentXP or 0
-    local maxXP = context.xpMax or 1
-    local decimals = context.percentDecimals or 1
+    local currentXP = (context and context.currentXP) or 0
+    local maxXP = (context and context.xpMax) or 1
 
-    -- Determine whether to include quest XP in percent (respect settings)
-    local showQuestPercent = false
-    if Addon.ConfigHelper and Addon.ConfigHelper.GetShowQuestPercent then
-        showQuestPercent = Addon.ConfigHelper:GetShowQuestPercent(context)
+    -- Keep decimals source consistent with circular style (DB-backed)
+    local decimals = 1
+    if Addon and Addon.Database then
+        local db = Addon.Database:GetDB()
+        if db then
+            decimals = db.percentDecimals or 1
+        end
     elseif context then
-        showQuestPercent = context.showQuestPercent
+        decimals = context.percentDecimals or 1
     end
 
-    local questXP = 0
-    if showQuestPercent then
-        questXP = (context.completeQuestXP or 0) + (context.incompleteQuestXP or 0)
-    end
-
-    -- Delegate formatting to the shared formatter for consistent behavior
-    if Addon.TextFormatter and Addon.TextFormatter.GetPercentText then
-        local text = Addon.TextFormatter:GetPercentText(currentXP, maxXP, decimals, showQuestPercent, questXP)
-        self.PercentText:SetText(text or "")
-        self.PercentText:Show()
-    else
-        -- Fallback: show simple percent of current XP only
-        local percent = maxXP > 0 and ((currentXP / maxXP) * 100) or 0
-        self.PercentText:SetFormattedText("%." .. decimals .. "f%%", percent)
-        self.PercentText:Show()
-    end
+    local percent = (maxXP > 0) and (currentXP / maxXP * 100) or 0
+    self.PercentText:SetText(string.format("%." .. decimals .. "f%%", percent))
+    self.PercentText:Show()
 end
 
 -------------------------------------------------------------------
@@ -312,7 +298,10 @@ local DefaultConfig = {
         flashOnGain = true
     },
     position = {mode = "DRAGGABLE", positionKey = "VerticalBar"},
-    style = {}
+    style = {},
+    capabilities = {
+        textBelowBar = false,
+    }
 }
 
 -------------------------------------------------------------------

@@ -1,7 +1,7 @@
 -- XP Bar Enhanced -  Animation Utilities
 -- Helper functions for  animation system (copied from V1, independent implementation)
 
-local AddonName, Addon = ...
+local Addon = XPBarEnhanced
 
 -----------------------------------
 -- Animation Constants
@@ -17,7 +17,11 @@ local ANIMATION_CONSTANTS = {
 	GAIN_FLASH_HOLD_DURATION = 0.5, -- Hold at max alpha (500ms)
 	GAIN_FLASH_MAX_ALPHA = 0.6, -- Maximum flash opacity (60%)
 	-- Thresholds
-	ANIMATION_THRESHOLD = 0.001 -- Minimum change to animate (0.1%)
+	ANIMATION_THRESHOLD = 0.001, -- Minimum change to animate (0.1%)
+	-- Accumulation batching
+	ACCUMULATION_TIMEOUT = 0.15, -- 150ms window to batch rapid XP updates
+	-- Level-up hold
+	LEVELUP_HOLD_DURATION = 0.4  -- Hold at 100% before phase 2 (400ms)
 }
 
 -----------------------------------

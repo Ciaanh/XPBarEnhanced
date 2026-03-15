@@ -30,7 +30,8 @@ function Config:Initialize()
                     classic = Addon.db.barPosition,
                     flat = Addon.db.barPosition,
                     vertical = Addon.db.barPosition,
-                    circular = Addon.db.barPosition
+                    circular = Addon.db.barPosition,
+                    minimap_ring = Addon.db.barPosition
                 }
             else
                 -- Ensure table exists so code can write per-style entries
@@ -70,6 +71,7 @@ function Config:SetOptionKey(key, value, silent)
     end
 
     local oldValue = Addon.db[key]
+    if oldValue == newValue then return end
     Addon.db[key] = newValue
 
     self:ApplyOptionSideEffects(key)
@@ -208,7 +210,7 @@ function Config:GetColorOptionByKey(key)
 end
 
 function Config:GetColorOptionList()
-    return colorOptionsList
+    return self.colorOptionsList
 end
 
 -------------------------------------------------------------------
@@ -328,7 +330,7 @@ function Config:ShowHelp()
     print("     Customize colors and features from the options panel.")
     print("  |cFFFFD700/xpbe reset|r - Reset all settings to defaults")
     print("  |cFFFFD700/xpbe resetstats|r - Clear all tracked statistics")
-    print("  |cFFFFD700/xpbe style <none|classic|flat>|r - Change bar style")
+    print("  |cFFFFD700/xpbe style <none|classic|flat|vertical|circular|minimap_ring|terminal>|r - Change bar style")
 end
 
 function Config:Reset()

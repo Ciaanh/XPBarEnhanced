@@ -9,7 +9,14 @@ local defaults = {
     circularSize = "medium",
     circularSegments = 50,
     circularUseTexture = true,
+    minimapRingPadding = 10,
+    minimapRingSegments = 100,
+    minimapRingCollectButtons = false,
+    minimapRingBagAngle = 200,
+    minimapRingSegmentWidth = 8,
+    minimapRingSegmentHeight = 24,
     showPercentage = true,
+    showMilestoneTicks = false,
     showQuestXP = true,
     showQuestPercent = true,
     showXPPerHourText = true,
@@ -37,10 +44,12 @@ local defaults = {
     fadeInSpeed = 0.3,
     fadeOutSpeed = 0.5,
     classicBarDraggable = true,
+    showMinimapButton = true,
     textFontFace = "Fonts\\FRIZQT__.TTF",
     textFontSize = 12,
     textFontOutline = "NONE",
     textFontShadow = false,
+    terminalUseCustomColors = false,
     colors = {
         xpBar = {r = 0.58, g = 0.0, b = 0.55, a = 1},
         xpBarRested = {r = 0.0, g = 0.44, b = 1.0, a = 1},
@@ -58,7 +67,7 @@ local defaults = {
     barPositions = {
         classic = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 12},
         flat = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
-        circular = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
+        circular = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
     }
 }
 

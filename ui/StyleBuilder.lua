@@ -9,12 +9,15 @@
 XPBarStyleBuilder = {}
 
 local StyleBuilder = XPBarStyleBuilder
+local Addon = XPBarEnhanced
+Addon.StyleBuilder = StyleBuilder
 
 -------------------------------------------------------------------
 -- REGISTRY of created style mixins
 -------------------------------------------------------------------
 ---
 XPBarStyles = XPBarStyles or {}
+Addon.Styles = XPBarStyles
 
 function XPBarStyleBuilder:RegisterStyle(key, mixin)
 	mixin.__xpbar_key = key
@@ -24,6 +27,31 @@ end
 function XPBarStyleBuilder:GetStyleMixin(key)
 	return XPBarStyles[key]
 end
+
+-------------------------------------------------------------------
+-- CAPABILITY CONSTANTS
+-- Declare what features a style supports. Replaces scattered
+-- "if self.X then" guards with explicit declarations.
+-------------------------------------------------------------------
+
+XPBarStyleBuilder.Capabilities = {
+	statusBar      = "statusBar",       -- has visible StatusBar widget
+	overlays       = "overlays",        -- has rested/quest overlay textures
+	exhaustionTick = "exhaustionTick",  -- has ExhaustionTick marker
+	textOnBar      = "textOnBar",       -- has LevelText/XPText/PercentText
+	textBelowBar   = "textBelowBar",    -- has RateText/SessionText/QuestSummaryText
+	barColors      = "barColors",       -- responds to user color changes
+}
+
+-- Default capabilities for standard horizontal bars
+local DEFAULT_CAPABILITIES = {
+	statusBar      = true,
+	overlays       = true,
+	exhaustionTick = false,
+	textOnBar      = true,
+	textBelowBar   = true,
+	barColors      = true,
+}
 
 -------------------------------------------------------------------
 -- BUILDER API
@@ -61,6 +89,18 @@ function StyleBuilder:Create(baseMixin, styleTemplate, config)
 	-- Store config on composed mixin for runtime access
 	composedMixin.__xpbar_config = config
 
+	-- Merge capabilities (style declares overrides, rest defaults to true)
+	local caps = {}
+	for k, v in pairs(DEFAULT_CAPABILITIES) do
+		caps[k] = v
+	end
+	if config.capabilities then
+		for k, v in pairs(config.capabilities) do
+			caps[k] = v
+		end
+	end
+	composedMixin.__xpbar_capabilities = caps
+
 	return composedMixin
 end
 
@@ -69,49 +109,50 @@ end
 ---@return table behaviorMixins Array of behavior mixin tables
 function StyleBuilder:BuildBehaviorList(config)
 	local behaviors = {}
+	local Mixins = Addon.UI.Mixins
 
 	-- Layout mixin (always first - pure calculations, no dependencies)
-	if XPBarLayoutMixin then
-		table.insert(behaviors, XPBarLayoutMixin)
+	if Mixins.Layout then
+		table.insert(behaviors, Mixins.Layout)
 	end
 
 	-- Paint mixin (colors/textures, no layout dependencies)
-	if XPBarPaintMixin then
-		table.insert(behaviors, XPBarPaintMixin)
+	if Mixins.Paint then
+		table.insert(behaviors, Mixins.Paint)
 	end
 
-	-- Visuals mixin (aggregator coordinating Layout + Paint)
-	if BarDisplayMixin then
-		table.insert(behaviors, BarDisplayMixin)
+	-- Display mixin (aggregator coordinating Layout + Paint)
+	if Mixins.Display then
+		table.insert(behaviors, Mixins.Display)
 	end
 
 	-- Text mixin (text content and visibility)
-	if XPBarTextMixin then
-		table.insert(behaviors, XPBarTextMixin)
+	if Mixins.Text then
+		table.insert(behaviors, Mixins.Text)
 	end
 
-	-- Animation mixin ( animation system)
-	if XPBarAnimationMixin then
-		table.insert(behaviors, XPBarAnimationMixin)
+	-- Animation mixin (animation system)
+	if Mixins.Animation then
+		table.insert(behaviors, Mixins.Animation)
 	end
 
 	-- Interaction mixin (optional, default enabled)
 	if config.interaction ~= false then
-		if XPBarInteractionMixin then
-			table.insert(behaviors, XPBarInteractionMixin)
+		if Mixins.Interaction then
+			table.insert(behaviors, Mixins.Interaction)
 		end
 	end
 
 	-- Tooltip mixin (optional, default enabled)
 	if config.tooltip ~= false then
-		if XPBarTooltipMixin then
-			table.insert(behaviors, XPBarTooltipMixin)
+		if Mixins.Tooltip then
+			table.insert(behaviors, Mixins.Tooltip)
 		end
 	end
 
 	-- Position mixin (always included, mode determined by config)
-	if XPBarPositionMixin then
-		table.insert(behaviors, XPBarPositionMixin)
+	if Mixins.Position then
+		table.insert(behaviors, Mixins.Position)
 	end
 
 	return behaviors
@@ -128,7 +169,6 @@ function StyleBuilder:ValidateConfig(config)
 
 	if type(config) ~= "table" then
 		error("StyleBuilder:ValidateConfig - config must be a table")
-		return false
 	end
 
 	-- Validate position config
@@ -160,7 +200,6 @@ function StyleBuilder:CreateFrameForStyle(styleKey, config, templateName)
 	local mixin = self:GetStyleMixin(styleKey)
 	if not mixin then
 		error("CreateFrameForStyle: style not registered: " .. tostring(styleKey))
-		return nil
 	end
 
 	if not templateName then
@@ -171,7 +210,6 @@ function StyleBuilder:CreateFrameForStyle(styleKey, config, templateName)
 	local frame = CreateFrame("Frame", nil, UIParent, templateName)
 	if not frame then
 		error("CreateFrameForStyle: failed to create frame from template: " .. tostring(templateName))
-		return nil
 	end
 
 	-- Apply mixin if XML template didn't already do so

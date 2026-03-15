@@ -5,6 +5,7 @@
 XPBarLayoutMixin = {}
 
 local Addon = XPBarEnhanced
+Addon.UI.Mixins.Layout = XPBarLayoutMixin
 
 -------------------------------------------------------------------
 -- LAYOUT CALCULATION HELPERS

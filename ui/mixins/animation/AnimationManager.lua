@@ -1,7 +1,7 @@
 -- XP Bar Enhanced -  Animation Manager
 -- Core animation driver for  bar styles
 
-local AddonName, Addon = ...
+local Addon = XPBarEnhanced
 local AnimationUtils = Addon.AnimationUtils
 
 -----------------------------------
@@ -9,7 +9,8 @@ local AnimationUtils = Addon.AnimationUtils
 -----------------------------------
 local AnimationManager = {
 	registeredBars = {}, -- Array of bars currently animating
-	driver = nil -- Frame with OnUpdate
+	driver = nil, -- Frame with OnUpdate
+	pendingAnimations = {} -- Accumulation state: { [bar] = { targetRatio, xpContext, config, timestamp } }
 }
 
 --- Initialize the animation driver frame
@@ -26,6 +27,11 @@ function AnimationManager:Initialize()
 			self:OnUpdate(elapsed)
 		end
 	)
+
+	-- Pre-allocate reusable per-frame tables to reduce GC pressure
+	self._barsToRemove = {}
+	self._iterationData = {}
+	self._flashData = {}
 
 	-- Start paused (no bars to animate)
 	self.driver:Hide()
@@ -54,6 +60,8 @@ end
 --- Unregister a bar from animation
 -- @param bar table: Bar instance to unregister
 function AnimationManager:Unregister(bar)
+	self.pendingAnimations[bar] = nil
+
 	for i, registeredBar in ipairs(self.registeredBars) do
 		if registeredBar == bar then
 			table.remove(self.registeredBars, i)
@@ -67,13 +75,59 @@ function AnimationManager:Unregister(bar)
 	end
 end
 
---- Start animation to target ratio
--- Handles retargeting, level-up detection, and animation initiation
+--- Start animation to target ratio (with accumulation batching)
+-- Buffers rapid XP events for 150ms and processes only the final target.
+-- Level-up events bypass accumulation for immediate two-phase handling.
 -- @param bar table: Bar instance with animation state
 -- @param targetRatio number: Target ratio (0.0-1.0)
--- @param xpContext table: XP context { xpBefore, xpAfter, xpMax, xpGained, restedXP, isResting, hasRestedXP, level, timestamp }
--- @param config table: Animation config { enableAnimations, flashOnGain }
+-- @param xpContext table: XP context
+-- @param config table: Animation config
 function AnimationManager:AnimateTo(bar, targetRatio, xpContext, config)
+	local now = GetTime()
+	local ACCUMULATION_TIMEOUT = AnimationUtils.GetConstants().ACCUMULATION_TIMEOUT or 0.15
+
+	-- Level-up events bypass accumulation (need immediate two-phase handling)
+	local isLevelUp = xpContext and AnimationUtils.DetectLevelUp(xpContext)
+	if isLevelUp then
+		-- Flush any pending accumulation for this bar first
+		if self.pendingAnimations[bar] then
+			self.pendingAnimations[bar] = nil
+		end
+		self:ProcessAnimateTo(bar, targetRatio, xpContext, config)
+		return
+	end
+
+	-- Accumulation batching: if an animation is already pending for this bar,
+	-- update the pending target instead of immediately processing.
+	local pending = self.pendingAnimations[bar]
+	if pending then
+		-- Update pending target (later call wins for accumulated gain)
+		pending.targetRatio = targetRatio
+		pending.xpContext = xpContext
+		pending.config = config
+		-- Don't reset timestamp — timeout runs from the FIRST event in the batch
+		return
+	end
+
+	-- No pending animation: start accumulation timer
+	self.pendingAnimations[bar] = {
+		targetRatio = targetRatio,
+		xpContext = xpContext,
+		config = config,
+		timestamp = now
+	}
+
+	C_Timer.After(ACCUMULATION_TIMEOUT, function()
+		local pendingData = self.pendingAnimations[bar]
+		if pendingData then
+			self.pendingAnimations[bar] = nil
+			self:ProcessAnimateTo(bar, pendingData.targetRatio, pendingData.xpContext, pendingData.config)
+		end
+	end)
+end
+
+--- Internal: process a single AnimateTo call (the original accumulated or immediate logic)
+function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 	local now = GetTime()
 
 	-- CRITICAL: Preserve incoming xpContext for flash decision BEFORE any aggregation
@@ -126,8 +180,6 @@ function AnimationManager:AnimateTo(bar, targetRatio, xpContext, config)
 
 		return
 	end
-
-	local now = GetTime()
 
 	-- Detect level-up
 	if AnimationUtils.DetectLevelUp(xpContext) then
@@ -333,13 +385,21 @@ end
 -- @param elapsed number: Time since last frame (unused, we use GetTime())
 function AnimationManager:OnUpdate(elapsed)
 	local now = GetTime()
-	local barsToRemove = {}
+	local barsToRemove = self._barsToRemove
+	local removeCount = 0
 
 	-- Update each registered bar
 	for i, bar in ipairs(self.registeredBars) do
-		if not bar.animation or (not bar.animation.isAnimating and not bar.animation.isFlashing) then
+		if not bar.animation then
+			removeCount = removeCount + 1
+			barsToRemove[removeCount] = bar
+		elseif bar.animation.holdStartTime then
+			-- Bar is in level-up hold phase — keep registered and poll for timer expiry
+			self:UpdateBarAnimation(bar, now)
+		elseif not bar.animation.isAnimating and not bar.animation.isFlashing then
 			-- Bar finished animation and flash, mark for removal
-			table.insert(barsToRemove, bar)
+			removeCount = removeCount + 1
+			barsToRemove[removeCount] = bar
 		else
 			-- Update bar animation (will update bar position and/or flash)
 			self:UpdateBarAnimation(bar, now)
@@ -347,8 +407,9 @@ function AnimationManager:OnUpdate(elapsed)
 	end
 
 	-- Remove bars that completed
-	for _, bar in ipairs(barsToRemove) do
-		self:Unregister(bar)
+	for i = 1, removeCount do
+		self:Unregister(barsToRemove[i])
+		barsToRemove[i] = nil
 	end
 end
 
@@ -445,17 +506,17 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 			flashAlpha = 0
 		end
 
-		flashData = {
-			active = flashActive,
-			currentAlpha = flashAlpha,
-			startTime = anim.flashStartTime,
-			duration = flashDuration,
-			elapsed = flashElapsed,
-			phase = phase,
-			fadeInDuration = fadeInDuration,
-			holdDuration = holdDuration,
-			fadeOutDuration = fadeOutDuration
-		}
+		local fd = self._flashData
+		fd.active = flashActive
+		fd.currentAlpha = flashAlpha
+		fd.startTime = anim.flashStartTime
+		fd.duration = flashDuration
+		fd.elapsed = flashElapsed
+		fd.phase = phase
+		fd.fadeInDuration = fadeInDuration
+		fd.holdDuration = holdDuration
+		fd.fadeOutDuration = fadeOutDuration
+		flashData = fd
 	end
 
 	-- Calculate quest overlay alpha reduction during flash
@@ -469,31 +530,24 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 		questOverlayAlpha = reductionFactor
 	end
 
-	-- Build iteration data (calculated per frame, zero allocation)
-	local iterationData = {
-		-- Core interpolated values
-		currentRatio = currentRatio,
-		targetRatio = anim.targetRatio,
-		startRatio = anim.startRatio,
-		progress = progress,
-		easedProgress = easedProgress,
-		-- Timing information
-		startTime = anim.startTime,
-		currentTime = now,
-		elapsedTime = elapsedTime,
-		duration = anim.duration,
-		-- Flash data (nil if not flashing)
-		flashData = flashData,
-		isFlashing = anim.isFlashing,
-		-- Quest overlay alpha multiplier (nil if not flashing)
-		questOverlayAlpha = questOverlayAlpha,
-		questOverlayCompleteInitialAlpha = anim.questOverlayCompleteInitialAlpha,
-		questOverlayIncompleteInitialAlpha = anim.questOverlayIncompleteInitialAlpha,
-		-- Level-up phase 1 flag (hides overlays during fill-to-100% animation)
-		isLevelUpPhase1 = anim.isLevelUpPhase1 or false,
-		-- Configuration
-		config = config
-	}
+	-- Build iteration data (repopulate pre-allocated table to avoid per-frame allocation)
+	local iterationData = self._iterationData
+	iterationData.currentRatio = currentRatio
+	iterationData.targetRatio = anim.targetRatio
+	iterationData.startRatio = anim.startRatio
+	iterationData.progress = progress
+	iterationData.easedProgress = easedProgress
+	iterationData.startTime = anim.startTime
+	iterationData.currentTime = now
+	iterationData.elapsedTime = elapsedTime
+	iterationData.duration = anim.duration
+	iterationData.flashData = flashData
+	iterationData.isFlashing = anim.isFlashing
+	iterationData.questOverlayAlpha = questOverlayAlpha
+	iterationData.questOverlayCompleteInitialAlpha = anim.questOverlayCompleteInitialAlpha
+	iterationData.questOverlayIncompleteInitialAlpha = anim.questOverlayIncompleteInitialAlpha
+	iterationData.isLevelUpPhase1 = anim.isLevelUpPhase1 or false
+	iterationData.config = config
 
 	-- Use stored event context (single immutable context, no aggregation)
 	local eventContext = anim.eventContext
@@ -540,8 +594,27 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 		-- Check if there's a pending second phase (from two-phase level-up animation)
 		if anim.pendingSecondPhase then
 			local phase2 = anim.pendingSecondPhase
-			anim.pendingSecondPhase = nil -- Clear the pending state
-			anim.isLevelUpPhase1 = false -- Clear Phase 1 flag
+			local holdDuration = AnimationUtils.GetConstants().LEVELUP_HOLD_DURATION or 0.4
+
+			-- HOLD: keep bar at 100% for a brief moment before starting phase 2
+			if not anim.holdStartTime then
+				anim.holdStartTime = now
+				anim.isAnimating = false -- Stop main animation tick
+				-- Re-register so OnUpdate continues checking the hold timer
+				self:Register(bar)
+				return
+			end
+
+			local holdElapsed = now - anim.holdStartTime
+			if holdElapsed < holdDuration then
+				-- Still holding at 100%
+				return
+			end
+
+			-- Hold complete — start phase 2
+			anim.holdStartTime = nil
+			anim.pendingSecondPhase = nil
+			anim.isLevelUpPhase1 = false
 
 			-- Reset bar to 0 immediately
 			if bar.SetCurrentRatio then

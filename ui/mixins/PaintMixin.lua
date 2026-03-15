@@ -5,7 +5,7 @@
 XPBarPaintMixin = {}
 
 local Addon = XPBarEnhanced
-local XPBarColors = _G.XPBarColors
+Addon.UI.Mixins.Paint = XPBarPaintMixin
 
 -------------------------------------------------------------------
 -- COLOR APPLICATION METHODS
@@ -25,8 +25,8 @@ function XPBarPaintMixin:UpdateBarColors(context, barName)
 	-- Select color based on whether player has rested XP (not just in resting area)
 	-- Use hasRestedXP field if available, otherwise check restedXP > 0
 	local hasRestedXP = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
-	local colorKey = hasRestedXP and Color.XpBarRested or Color.XpBar
-	local color = XPBarColors:GetUserColor(colorKey)
+	local colorKey = hasRestedXP and Addon.Colors.Key.XpBarRested or Addon.Colors.Key.XpBar
+	local color = Addon.Colors:Get(colorKey)
 	bar:SetStatusBarColor(color.r, color.g, color.b, color.a)
 end
 
@@ -41,7 +41,7 @@ function XPBarPaintMixin:UpdateRestedBarColor(overlayName)
 		return
 	end
 
-	local color = XPBarColors:GetUserColor(Color.Rested)
+	local color = Addon.Colors:Get(Addon.Colors.Key.Rested)
 	overlay:SetVertexColor(color.r, color.g, color.b, color.a)
 end
 
@@ -55,7 +55,7 @@ function XPBarPaintMixin:UpdateQuestCompleteBarColor(overlayName)
 		return
 	end
 
-	local color = XPBarColors:GetUserColor(Color.QuestComplete)
+	local color = Addon.Colors:Get(Addon.Colors.Key.QuestComplete)
 	overlay:SetVertexColor(color.r, color.g, color.b, color.a)
 end
 
@@ -69,7 +69,7 @@ function XPBarPaintMixin:UpdateQuestIncompleteBarColor(overlayName)
 		return
 	end
 
-	local color = XPBarColors:GetUserColor(Color.QuestIncomplete)
+	local color = Addon.Colors:Get(Addon.Colors.Key.QuestIncomplete)
 	overlay:SetVertexColor(color.r, color.g, color.b, color.a)
 end
 
@@ -93,6 +93,66 @@ function XPBarPaintMixin:ApplyBarTexture(texture, barName)
 	end
 end
 
+--- Apply atlas texture to status bar with file-based fallback
+--- Uses Blizzard's atlas system for resolution-independent textures.
+--- Falls back to file texture if the atlas is unavailable (older clients).
+---@param atlasName string Atlas name (e.g. "UI-HUD-ExperienceBar-Fill-XP")
+---@param fallbackFile string|nil File path fallback if atlas unavailable
+---@param barName string|nil StatusBar name (default: "StatusBar")
+---@return boolean applied True if atlas was applied, false if fell back to file
+function XPBarPaintMixin:ApplyBarAtlasOrTexture(atlasName, fallbackFile, barName)
+	barName = barName or "StatusBar"
+	local bar = self[barName]
+
+	if not bar or not bar.SetStatusBarTexture then
+		return false
+	end
+
+	-- Try atlas first (available in Retail 10.0+)
+	if atlasName and C_Texture and C_Texture.GetAtlasInfo then
+		local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
+		if atlasInfo then
+			local statusBarTexture = bar:GetStatusBarTexture()
+			if statusBarTexture and statusBarTexture.SetAtlas then
+				statusBarTexture:SetAtlas(atlasName)
+				return true
+			end
+		end
+	end
+
+	-- Fallback to file-based texture
+	if fallbackFile then
+		bar:SetStatusBarTexture(fallbackFile)
+	end
+	return false
+end
+
+--- Apply atlas to a plain Texture element with file-based fallback
+---@param element table Texture element (e.g. self.RestedOverlay)
+---@param atlasName string Atlas name
+---@param fallbackFile string|nil File path fallback
+---@return boolean applied True if atlas was applied
+function XPBarPaintMixin:ApplyAtlasOrTexture(element, atlasName, fallbackFile)
+	if not element then
+		return false
+	end
+
+	-- Try atlas first
+	if atlasName and C_Texture and C_Texture.GetAtlasInfo then
+		local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
+		if atlasInfo and element.SetAtlas then
+			element:SetAtlas(atlasName)
+			return true
+		end
+	end
+
+	-- Fallback to file-based texture
+	if fallbackFile and element.SetTexture then
+		element:SetTexture(fallbackFile)
+	end
+	return false
+end
+
 -------------------------------------------------------------------
 -- VISUAL BUILD & STYLE METHODS
 -------------------------------------------------------------------
@@ -114,11 +174,7 @@ function XPBarPaintMixin:BuildVisuals()
 		self.GainFlash = self.GainFlash or (self.StatusBar and self.StatusBar.GainFlash)
 	else
 		-- Attempt to alias frame-level overlays if style put them on the frame
-		self.RestedOverlay = self.RestedOverlay or self.RestedOverlay
-		self.QuestOverlayComplete = self.QuestOverlayComplete or self.QuestOverlayComplete
-		self.QuestOverlayIncomplete = self.QuestOverlayIncomplete or self.QuestOverlayIncomplete
-		self.ExhaustionTick = self.ExhaustionTick or self.ExhaustionTick
-		self.GainFlash = self.GainFlash or self.GainFlash
+		-- (self.X = self.X is a no-op; keep only meaningful fallback aliases)
 	end
 
 	-- Alias ON-BAR text children. Prefer an explicit container; fall back to the frame
@@ -162,23 +218,19 @@ end
 --- Initialize all colors from user configuration
 ---  Architecture: Called once during BuildVisuals to override XML defaults
 function XPBarPaintMixin:InitializeColors()
-	if not XPBarColors then
-		return
-	end
-
 	-- Initialize overlay colors (read from user config, not XML)
 	if self.RestedOverlay then
-		local color = XPBarColors:GetUserColor(Color.Rested)
+		local color = Addon.Colors:Get(Addon.Colors.Key.Rested)
 		self.RestedOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
 	end
 
 	if self.QuestOverlayComplete then
-		local color = XPBarColors:GetUserColor(Color.QuestComplete)
+		local color = Addon.Colors:Get(Addon.Colors.Key.QuestComplete)
 		self.QuestOverlayComplete:SetVertexColor(color.r, color.g, color.b, color.a)
 	end
 
 	if self.QuestOverlayIncomplete then
-		local color = XPBarColors:GetUserColor(Color.QuestIncomplete)
+		local color = Addon.Colors:Get(Addon.Colors.Key.QuestIncomplete)
 		self.QuestOverlayIncomplete:SetVertexColor(color.r, color.g, color.b, color.a)
 	end
 

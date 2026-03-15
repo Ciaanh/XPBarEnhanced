@@ -15,7 +15,9 @@ local optionDetails = {
             {value = "classic", label = Addon.L["OPT_BAR_STYLE_CLASSIC"]},
             {value = "flat", label = Addon.L["OPT_BAR_STYLE_FLAT"]},
             {value = "vertical", label = Addon.L["OPT_BAR_STYLE_VERTICAL"]},
-            {value = "circular", label = Addon.L["OPT_BAR_STYLE_CIRCULAR"]}
+            {value = "circular", label = Addon.L["OPT_BAR_STYLE_CIRCULAR"]},
+            {value = "minimap_ring", label = Addon.L["OPT_BAR_STYLE_MINIMAP_RING"]},
+            {value = "terminal", label = Addon.L["OPT_BAR_STYLE_TERMINAL"]},
         },
         commandKeys = {"style", "mode", "barstyle"}
     },
@@ -30,6 +32,12 @@ local optionDetails = {
         label = Addon.L["OPT_CLASSIC_DRAGGABLE"] or "Classic Bar Draggable",
         description = Addon.L["OPT_CLASSIC_DRAGGABLE_DESC"] or "Allow the Classic bar to be dragged and positioned manually. When disabled, the Classic bar will be anchored to Blizzard's default position.",
         commandKeys = {"classicdraggable", "classicdrag"}
+    },
+    showMinimapButton = {
+        key = "showMinimapButton",
+        label = Addon.L["OPT_SHOW_MINIMAP_BUTTON"],
+        description = Addon.L["OPT_SHOW_MINIMAP_BUTTON_DESC"],
+        commandKeys = {"minimapbutton", "minimap"}
     },
     showRestedOverlay = {
         key = "showRestedOverlay",
@@ -60,6 +68,12 @@ local optionDetails = {
         label = Addon.L["OPT_PERCENTAGE"],
         description = Addon.L["OPT_PERCENTAGE_DESC"],
         commandKeys = {"percentage"}
+    },
+    showMilestoneTicks = {
+        key = "showMilestoneTicks",
+        label = Addon.L["OPT_SHOW_MILESTONE_TICKS"],
+        description = Addon.L["OPT_SHOW_MILESTONE_TICKS_DESC"],
+        commandKeys = {"milestoneticks", "ticks"}
     },
     showQuestPercent = {
         key = "showQuestPercent",
@@ -162,6 +176,62 @@ local optionDetails = {
         label = Addon.L["OPT_CIRCULAR_USE_TEXTURE"],
         description = Addon.L["OPT_CIRCULAR_USE_TEXTURE_DESC"],
         commandKeys = {"texture", "circletexture"}
+    },
+    minimapRingPadding = {
+        key = "minimapRingPadding",
+        type = "slider",
+        label = Addon.L["OPT_MINIMAP_RING_PADDING"],
+        description = Addon.L["OPT_MINIMAP_RING_PADDING_DESC"],
+        min = 4,
+        max = 32,
+        step = 1,
+        format = "%.0f",
+        commandKeys = {"minimappadding", "ringpadding"}
+    },
+    minimapRingSegments = {
+        key = "minimapRingSegments",
+        type = "slider",
+        label = Addon.L["OPT_MINIMAP_RING_SEGMENTS"],
+        description = Addon.L["OPT_MINIMAP_RING_SEGMENTS_DESC"],
+        min = 25,
+        max = 100,
+        step = 5,
+        format = "%.0f",
+        commandKeys = {"minimapsegments", "ringsegments"}
+    },
+    minimapRingCollectButtons = {
+        key = "minimapRingCollectButtons",
+        label = Addon.L["OPT_MINIMAP_RING_COLLECT_BUTTONS"],
+        description = Addon.L["OPT_MINIMAP_RING_COLLECT_BUTTONS_DESC"],
+        commandKeys = {"collectbuttons", "ringbuttons"}
+    },
+    minimapRingSegmentWidth = {
+        key = "minimapRingSegmentWidth",
+        type = "slider",
+        label = Addon.L["OPT_MINIMAP_RING_SEGMENT_WIDTH"],
+        description = Addon.L["OPT_MINIMAP_RING_SEGMENT_WIDTH_DESC"],
+        min = 2,
+        max = 10,
+        step = 1,
+        format = "%.0f",
+        commandKeys = {"segmentwidth", "ringsegmentwidth"}
+    },
+    minimapRingSegmentHeight = {
+        key = "minimapRingSegmentHeight",
+        type = "slider",
+        label = Addon.L["OPT_MINIMAP_RING_SEGMENT_HEIGHT"],
+        description = Addon.L["OPT_MINIMAP_RING_SEGMENT_HEIGHT_DESC"],
+        min = 4,
+        max = 24,
+        step = 1,
+        format = "%.0f",
+        commandKeys = {"segmentheight", "ringsegmentheight"}
+    },
+    terminalUseCustomColors = {
+        key = "terminalUseCustomColors",
+        label = Addon.L["OPT_TERMINAL_USE_CUSTOM_COLORS"],
+        description = Addon.L["OPT_TERMINAL_USE_CUSTOM_COLORS_DESC"],
+        commandKeys = {"terminalcustomcolors", "terminalcolors"}
     }
 }
 
@@ -169,11 +239,13 @@ local optionOrder = {
     "barStyle",
     "barLocked",
     "classicBarDraggable",
+    "showMinimapButton",
     "showRestedOverlay",
     "showQuestXP",
     "showCompleteQuestOverlay",
     "showIncompleteQuestOverlay",
     "showPercentage",
+    "showMilestoneTicks",
     "showQuestPercent",
     "showLevelText",
     "showXPText",
@@ -188,7 +260,13 @@ local optionOrder = {
     "twoPhaseOnLevelUp",
     "circularSize",
     "circularSegments",
-    "circularUseTexture"
+    "circularUseTexture",
+    "minimapRingPadding",
+    "minimapRingSegments",
+    "minimapRingCollectButtons",
+    "minimapRingSegmentWidth",
+    "minimapRingSegmentHeight",
+    "terminalUseCustomColors"
 }
 
 local colorOptionsList = {

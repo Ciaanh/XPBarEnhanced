@@ -24,13 +24,29 @@
 
 ---@alias EventHandler fun(context: XPBarContext): nil
 
+---@class EventBusHandle
+---@field Unregister fun() Unregister this subscription
+
 ---@class EventBus
 ---@field listeners table<string, table<string, EventHandler>> Registered event handlers keyed by event name and subscription id
+---@field _executingEvents table<string, number> Re-entrancy depth counters per event
+---@field _deferredRegistrations table<string, table<string, EventHandler>> Registrations deferred during dispatch
 local Addon = XPBarEnhanced
 Addon.EventBus = Addon.EventBus or {}
 local EventBus = Addon.EventBus
 
 EventBus.listeners = EventBus.listeners or {}
+EventBus._executingEvents = EventBus._executingEvents or {}
+EventBus._deferredRegistrations = EventBus._deferredRegistrations or {}
+
+-- Route errors through Blizzard's error handler when available, fall back to print
+local function SafeCallErrorHandler(err)
+    if CallErrorHandler then
+        CallErrorHandler(err)
+    else
+        print(tostring(err))
+    end
+end
 
 ---Register a handler for an event
 ---@param eventName string The event name to listen for
@@ -53,9 +69,29 @@ function EventBus:Register(eventName, idOrHandler, handler)
         error("EventBus:Register requires a function handler")
     end
     id = id or tostring(fn)
+    -- If currently dispatching this event, defer registration to avoid iterator invalidation
+    if self._executingEvents[eventName] and self._executingEvents[eventName] > 0 then
+        self._deferredRegistrations[eventName] = self._deferredRegistrations[eventName] or {}
+        self._deferredRegistrations[eventName][id] = fn
+        return id
+    end
     EventBus.listeners[eventName] = EventBus.listeners[eventName] or {}
     EventBus.listeners[eventName][id] = fn
     return id
+end
+
+---Register a handler and return a handle that can unregister it
+---@param eventName string The event name to listen for
+---@param idOrHandler string|EventHandler Subscription ID or handler function
+---@param handler? EventHandler Handler function
+---@return EventBusHandle handle Object with Unregister() method
+function EventBus:RegisterWithHandle(eventName, idOrHandler, handler)
+    local id = self:Register(eventName, idOrHandler, handler)
+    return {
+        Unregister = function()
+            EventBus:Unregister(eventName, id)
+        end
+    }
 end
 
 ---Unregister a handler by id or function for an event
@@ -78,12 +114,17 @@ end
 
 ---Emit an event to all listeners
 ---@param eventName string The event name to emit
----@return XPBarContext context The context object passed to all handlers
+---@return XPBarContext|nil context The context object passed to all handlers, or nil if no listeners
 function EventBus:Emit(eventName)
+    -- Skip expensive context build when no listeners are registered for this event
+    local listenersForEvent = self.listeners and self.listeners[eventName]
+    if not listenersForEvent or not next(listenersForEvent) then
+        return nil
+    end
+
     -- Build a fresh immutable context
     local context = nil
     if XPBarContextBuilder and XPBarContextBuilder.BuildContext then
-        -- use eventName to let the builder set a reason; fall back to generic
         local reason = eventName or "BROADCAST_UPDATE"
         context = XPBarContextBuilder.BuildContext(reason)
     end
@@ -92,20 +133,25 @@ function EventBus:Emit(eventName)
         error("EventBus:Emit requires a valid context")
     end
 
-    -- Dispatch to listeners (use defensive pcall so a failing listener won't break others)
-    local listenersForEvent = self.listeners and self.listeners[eventName]
-    if not listenersForEvent then
-        return context
-    end
+    -- Increment re-entrancy depth so Register() knows to defer new subscriptions
+    self._executingEvents[eventName] = (self._executingEvents[eventName] or 0) + 1
 
     for id, handler in pairs(listenersForEvent) do
-        local ok, err = pcall(handler, context)
-        if not ok then
-            -- Keep a small error log but avoid throwing here
+        xpcall(handler, SafeCallErrorHandler, context)
+    end
 
-            print(
-                ("EventBus: listener [%s] for %s failed: %s"):format(tostring(id), tostring(eventName), tostring(err))
-            )
+    self._executingEvents[eventName] = self._executingEvents[eventName] - 1
+
+    -- Apply any registrations that were deferred during dispatch
+    if self._executingEvents[eventName] == 0 then
+        self._executingEvents[eventName] = nil
+        local deferred = self._deferredRegistrations[eventName]
+        if deferred then
+            self._deferredRegistrations[eventName] = nil
+            EventBus.listeners[eventName] = EventBus.listeners[eventName] or {}
+            for id, fn in pairs(deferred) do
+                EventBus.listeners[eventName][id] = fn
+            end
         end
     end
 

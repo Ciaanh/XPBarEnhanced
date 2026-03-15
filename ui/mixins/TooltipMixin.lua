@@ -10,23 +10,12 @@
 XPBarTooltipMixin = {}
 
 local TooltipMixin = XPBarTooltipMixin
-local XPBarColors = _G.XPBarColors
-
--- track the current tooltip owner so Refresh can re-open it when needed
-TooltipMixin.currentTooltipOwner = nil
-
--------------------------------------------------------------------
--- UTIL / DEPENDENCY HELPERS
--------------------------------------------------------------------
-
 local Addon = XPBarEnhanced
+Addon.UI.Mixins.Tooltip = XPBarTooltipMixin
 local L = Addon and Addon.L or {}
 
 local function GetGlobalDB()
-	if Addon and Addon.db and Addon.db.profile then
-		return Addon.db.profile
-	end
-	return {}
+	return Addon and Addon.db or {}
 end
 
 function TooltipMixin:FormatNumber(n)
@@ -83,8 +72,9 @@ end
 local function GetTooltipColors()
 	local leftR, leftG, leftB = 0.7, 0.7, 0.7
 	local rightR, rightG, rightB = 1, 1, 1
-	if XPBarColors and Color and XPBarColors.GetUserColor then
-		local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(Color.XpBar) or nil
+	local Addon = XPBarEnhanced
+	if Addon and Addon.Colors and Addon.Colors.Get then
+		local c = Addon.Colors:Get(Addon.Colors.Key.XpBar)
 		if c then
 			rightR, rightG, rightB = c.r or rightR, c.g or rightG, c.b or rightB
 		end
@@ -117,12 +107,12 @@ function TooltipMixin:GetBestAnchor()
 	end
 end
 
-function TooltipMixin:Show() -- public helper that mirrors old API
+function TooltipMixin:ShowTooltip() -- public helper that mirrors old API
 	TooltipMixin.currentTooltipOwner = self
 	self:OnEnter()
 end
 
-function TooltipMixin:Hide() -- public helper
+function TooltipMixin:HideTooltip() -- public helper
 	if TooltipMixin.currentTooltipOwner == self then
 		TooltipMixin.currentTooltipOwner = nil
 	end
@@ -145,10 +135,10 @@ function TooltipMixin:AddXPSection(content, context, cfg)
 	-- left uses muted label color; right should reflect the bar's primary color (or rested color when appropriate)
 	local leftR, leftG, leftB = 0.7, 0.7, 0.7
 	local rightR, rightG, rightB = 1, 1, 1
-	if XPBarColors and Color and XPBarColors.GetUserColor then
+	if Addon.Colors and Addon.Colors.Get then
 		local hasRestedXP = context and (context.hasRestedXP or (context.restedXP and context.restedXP > 0))
-		local key = hasRestedXP and Color.XpBarRested or Color.XpBar
-		local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(key) or nil
+		local key = hasRestedXP and Addon.Colors.Key.XpBarRested or Addon.Colors.Key.XpBar
+		local c = Addon.Colors:Get(key)
 		if c then
 			rightR, rightG, rightB = c.r or rightR, c.g or rightG, c.b or rightB
 		end
@@ -205,8 +195,9 @@ function TooltipMixin:AddRestedSection(content, context, cfg)
 	-- Rested color should reflect the rested overlay color
 	local leftR, leftG, leftB = 0.7, 0.7, 0.7
 	local rightR, rightG, rightB = 0, 0.8, 1
-	if XPBarColors and Color and XPBarColors.GetUserColor then
-		local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(Color.Rested) or nil
+	local Colors = Addon.Colors
+	if Colors then
+		local c = Colors:Get(Colors.Key.Rested)
 		if c then
 			rightR, rightG, rightB = c.r or rightR, c.g or rightG, c.b or rightB
 		end
@@ -272,8 +263,9 @@ function TooltipMixin:AddQuestSection(content, context, cfg)
 
 	if totalComplete and totalComplete > 0 then
 		local cR, cG, cB = 0, 1, 0
-		if XPBarColors and Color and XPBarColors.GetUserColor then
-			local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(Color.QuestComplete) or nil
+		local Colors = Addon.Colors
+		if Colors then
+			local c = Colors:Get(Colors.Key.QuestComplete)
 			if c then
 				cR, cG, cB = c.r or cR, c.g or cG, c.b or cB
 			end
@@ -308,8 +300,9 @@ function TooltipMixin:AddQuestSection(content, context, cfg)
 
 	if totalIncomplete and totalIncomplete > 0 then
 		local cR, cG, cB = 1, 0.8, 0
-		if XPBarColors and Color and XPBarColors.GetUserColor then
-			local c = (XPBarColors and XPBarColors.GetUserColor) and XPBarColors:GetUserColor(Color.QuestIncomplete) or nil
+		local Colors = Addon.Colors
+		if Colors then
+			local c = Colors:Get(Colors.Key.QuestIncomplete)
 			if c then
 				cR, cG, cB = c.r or cR, c.g or cG, c.b or cB
 			end
@@ -499,6 +492,36 @@ function TooltipMixin:GetHintText()
 end
 
 -------------------------------------------------------------------
+-- SECTION CONTENT BUILDER (shared between OnEnter and GetTooltipContent)
+-------------------------------------------------------------------
+
+local function BuildTooltipContent(self, context, tooltipConfig)
+	local content = {title = string.format(L["TT_LEVEL_FMT"], tonumber(context.level) or 1), lines = {}}
+	self:AddXPSection(content, context, tooltipConfig)
+	self:AddRestedSection(content, context, tooltipConfig)
+	if context.isResting then
+		table.insert(content.lines, " ")
+		table.insert(
+			content.lines,
+			{
+				left = (L["TT_STATUS"]) .. ":",
+				right = L["TT_RESTING"],
+				leftR = 0.7,
+				leftG = 0.7,
+				leftB = 0.7,
+				rightR = 0,
+				rightG = 1,
+				rightB = 0
+			}
+		)
+	end
+	self:AddQuestSection(content, context, tooltipConfig)
+	self:AddSessionSection(content, context, tooltipConfig)
+	self:AddHintSection(content, context, tooltipConfig)
+	return content
+end
+
+-------------------------------------------------------------------
 -- TOOLTIP HANDLERS (OnEnter/OnLeave)
 -------------------------------------------------------------------
 
@@ -530,41 +553,8 @@ function TooltipMixin:OnEnter()
 		return
 	end
 
-	-- Build content using unified API that preserves section parity
-	local content = {title = string.format(L["TT_LEVEL_FMT"], tonumber(context.level) or 1), lines = {}}
-
-	-- XP / remaining
-	self:AddXPSection(content, context, tooltipConfig)
-
-	-- Rested
-	self:AddRestedSection(content, context, tooltipConfig)
-
-	-- Resting status
-	if context.isResting then
-		table.insert(content.lines, " ")
-		table.insert(
-			content.lines,
-			{
-				left = (L["TT_STATUS"]) .. ":",
-				right = L["TT_RESTING"],
-				leftR = 0.7,
-				leftG = 0.7,
-				leftB = 0.7,
-				rightR = 0,
-				rightG = 1,
-				rightB = 0
-			}
-		)
-	end
-
-	-- Quest section
-	self:AddQuestSection(content, context, tooltipConfig)
-
-	-- Session stats
-	self:AddSessionSection(content, context, tooltipConfig)
-
-	-- Hints
-	self:AddHintSection(content, context, tooltipConfig)
+	-- Build content using unified section builders
+	local content = BuildTooltipContent(self, context, tooltipConfig)
 
 	-- If no content lines and user opted not to show an empty tooltip, return
 	if not content.lines or #content.lines == 0 then
@@ -620,30 +610,7 @@ function TooltipMixin:GetTooltipContent()
 	-- Try to obtain a centralized context first (call directly if available)
 	local context = XPBarContextBuilder:BuildContext("TOOLTIP")
 	if context and type(context) == "table" then
-		-- build content like classic did (use helper builders)
-		local content = {title = string.format(L["TT_LEVEL_FMT"], tonumber(context.level) or 1), lines = {}}
-		self:AddXPSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		self:AddRestedSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		if context.isResting then
-			table.insert(content.lines, " ")
-			table.insert(
-				content.lines,
-				{
-					left = (L["TT_STATUS"]) .. ":",
-					right = L["TT_RESTING"],
-					leftR = 0.7,
-					leftG = 0.7,
-					leftB = 0.7,
-					rightR = 0,
-					rightG = 1,
-					rightB = 0
-				}
-			)
-		end
-		self:AddQuestSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		self:AddSessionSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		self:AddHintSection(content, context, self.__xpbar_config and self.__xpbar_config.tooltip)
-		return content
+		return BuildTooltipContent(self, context, self.__xpbar_config and self.__xpbar_config.tooltip)
 	end
 
 	-- fallback: nil to let OnEnter attempt its own fallback

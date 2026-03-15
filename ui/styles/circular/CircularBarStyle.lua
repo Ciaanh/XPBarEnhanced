@@ -12,6 +12,8 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
     )
 end
 
+local Addon = XPBarEnhanced
+
 -------------------------------------------------------------------
 -- CONSTANTS
 -------------------------------------------------------------------
@@ -87,7 +89,6 @@ end
 --- Get the configured size scale factor (from saved settings)
 -- @return number: Scale factor for ring size (0.75 to 2.0)
 function CircularBarStyleTemplate:GetCircularScale()
-    local Addon = XPBarEnhanced
     local size = "medium"
     if Addon and Addon.db then
         local saved = Addon.db.circularSize
@@ -101,7 +102,6 @@ end
 --- Get the configured number of segments to display (from saved settings)
 -- @return number: Number of segments to display (clamped to 20-100)
 function CircularBarStyleTemplate:GetDisplaySegmentCount()
-    local Addon = XPBarEnhanced
     local count = DEFAULT_SEGMENTS
     if Addon and Addon.db then
         local saved = Addon.db.circularSegments
@@ -136,7 +136,6 @@ end
 --- Get whether to use textured or solid segments (from saved settings)
 -- @return boolean: true for textured, false for solid color
 function CircularBarStyleTemplate:GetUseTexture()
-    local Addon = XPBarEnhanced
     if Addon and Addon.db and Addon.db.circularUseTexture ~= nil then
         return Addon.db.circularUseTexture
     end
@@ -385,12 +384,12 @@ end
 --- Apply colors to segments based on their type
 -- @param hasRestedXP boolean: Whether player has rested XP available
 function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha)
-    local XPBarColors = _G.XPBarColors
-    local colorNormal = XPBarColors:GetUserColor(Color.XpBar)
-    local colorRested = XPBarColors:GetUserColor(Color.Rested)
-    local colorXpBarRested = XPBarColors:GetUserColor(Color.XpBarRested)
-    local colorQuestComplete = XPBarColors:GetUserColor(Color.QuestComplete)
-    local colorQuestIncomplete = XPBarColors:GetUserColor(Color.QuestIncomplete)
+    local Colors = XPBarEnhanced.Colors
+    local colorNormal = Colors:Get(Colors.Key.XpBar)
+    local colorRested = Colors:Get(Colors.Key.Rested)
+    local colorXpBarRested = Colors:Get(Colors.Key.XpBarRested)
+    local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
+    local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
 
     -- Use provided parameter only; no fallback to persistent cached values
     hasRestedXP = hasRestedXP == true
@@ -401,57 +400,43 @@ function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha)
     -- Only process visible segments
     local totalSegments = self:GetDisplaySegmentCount()
 
+    -- Cache empty color components as locals to avoid repeated table indexing in the loop
+    local emptyR = EMPTY_SEGMENT_COLOR.r
+    local emptyG = EMPTY_SEGMENT_COLOR.g
+    local emptyB = EMPTY_SEGMENT_COLOR.b
+    local emptyA = EMPTY_SEGMENT_COLOR.a
+
     for i = 1, totalSegments do
         local segment = self.segments[i]
-        if not segment then
-            -- missing texture, skip
-        else
-            -- default empty appearance
-            local color = EMPTY_SEGMENT_COLOR
-
-            -- not part of main fill; check overlay type
+        if segment then
             local segType = self.segmentTypes[i]
             if segType == SEGMENT_TYPE.CURRENT_XP then
-                -- Use exact color from config
                 if currentXPColor and currentXPColor.r then
-                    color = {
-                        r = currentXPColor.r,
-                        g = currentXPColor.g,
-                        b = currentXPColor.b,
-                        a = (currentXPColor.a or 1) * overlayAlpha
-                    }
+                    segment:SetVertexColor(currentXPColor.r, currentXPColor.g, currentXPColor.b, (currentXPColor.a or 1) * overlayAlpha)
+                else
+                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
                 end
             elseif segType == SEGMENT_TYPE.QUEST_COMPLETE then
-                -- Use exact color from config
                 if colorQuestComplete and colorQuestComplete.r then
-                    color = {
-                        r = colorQuestComplete.r,
-                        g = colorQuestComplete.g,
-                        b = colorQuestComplete.b,
-                        a = (colorQuestComplete.a or 1) * overlayAlpha
-                    }
+                    segment:SetVertexColor(colorQuestComplete.r, colorQuestComplete.g, colorQuestComplete.b, (colorQuestComplete.a or 1) * overlayAlpha)
+                else
+                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
                 end
             elseif segType == SEGMENT_TYPE.QUEST_INCOMPLETE then
-                -- Use exact color from config
                 if colorQuestIncomplete and colorQuestIncomplete.r then
-                    color = {
-                        r = colorQuestIncomplete.r,
-                        g = colorQuestIncomplete.g,
-                        b = colorQuestIncomplete.b,
-                        a = (colorQuestIncomplete.a or 1) * overlayAlpha
-                    }
+                    segment:SetVertexColor(colorQuestIncomplete.r, colorQuestIncomplete.g, colorQuestIncomplete.b, (colorQuestIncomplete.a or 1) * overlayAlpha)
+                else
+                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
                 end
             elseif segType == SEGMENT_TYPE.RESTED then
-                -- Use exact color from config with ADD blend mode (v1 behavior)
                 if colorRested and colorRested.r then
-                    color = colorRested
+                    segment:SetVertexColor(colorRested.r, colorRested.g, colorRested.b, colorRested.a)
+                else
+                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
                 end
             else
-                -- EMPTY remains default
+                segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
             end
-
-            -- Apply appearance: SetColorTexture for RGB only, SetAlpha separately
-            segment:SetVertexColor(color.r, color.g, color.b, color.a)
             segment:Show()
         end
     end
@@ -535,25 +520,14 @@ end
 -- OVERRIDES for circular layout
 -------------------------------------------------------------------
 
--- Override UpdateRestedBar to store rested data for segment coloring
-function CircularBarStyleTemplate:UpdateRestedBar(context)
-    local targetRatio = self:CalculateTargetRatio(context)
-    self:SetArcProgress(targetRatio, context)
-end
+-- These are no-ops: SetArcProgress is called once with the correct ratio in
+-- UpdateGainedBar, which is the canonical render entry point for circular bar.
+-- Calling it in each overlay method caused 4x renders per frame with stale ratios.
+function CircularBarStyleTemplate:UpdateRestedBar(context) end
 
-function CircularBarStyleTemplate:UpdateQuestCompleteBar(context)
-    if not context then
-        return
-    end
+function CircularBarStyleTemplate:UpdateQuestCompleteBar(context) end
 
-    local targetRatio = self:CalculateTargetRatio(context)
-    self:SetArcProgress(targetRatio, context)
-end
-
-function CircularBarStyleTemplate:UpdateQuestIncompleteBar(context)
-    local targetRatio = self:CalculateTargetRatio(context)
-    self:SetArcProgress(targetRatio, context)
-end
+function CircularBarStyleTemplate:UpdateQuestIncompleteBar(context) end
 
 --- Override UpdateVisuals to trigger text updates
 function CircularBarStyleTemplate:UpdateVisuals(context)
@@ -580,8 +554,6 @@ function CircularBarStyleTemplate:UpdateLevelText(context)
 end
 
 function CircularBarStyleTemplate:UpdatePercentText(context)
-    local Addon = XPBarEnhanced
-
     if not self.PercentText or not context or not Addon.TextFormatter then
         return
     end
@@ -590,7 +562,6 @@ function CircularBarStyleTemplate:UpdatePercentText(context)
     local maxv = context.xpMax or 1
     local current = context.currentXP or 0
     if Addon.TextFormatter then
-        local Addon = XPBarEnhanced
         local decimals = 1
         if Addon and Addon.Database then
             local db = Addon.Database:GetDB()
@@ -606,8 +577,6 @@ function CircularBarStyleTemplate:UpdatePercentText(context)
 end
 
 function CircularBarStyleTemplate:UpdateRateText(context)
-    local Addon = XPBarEnhanced
-
     if not self.RateText or not Addon.TextFormatter then
         return
     end
@@ -799,7 +768,13 @@ local DefaultConfig = {
         flashOnGain = true
     },
     position = {mode = "DRAGGABLE", positionKey = "CircularBar"},
-    style = {}
+    style = {},
+    capabilities = {
+        statusBar      = false,
+        overlays       = false,
+        exhaustionTick = false,
+        textBelowBar   = false,
+    }
 }
 
 -------------------------------------------------------------------

@@ -1,12 +1,25 @@
 -- XP Bar Enhanced -  Animation Base Mixin
 -- Common animation behavior for  bar styles
 
-local AddonName, Addon = ...
+local Addon = XPBarEnhanced
 
 -----------------------------------
 -- Animation Base Mixin
 -----------------------------------
 local AnimationBase = {}
+
+local function ResetOverlayAlpha(frame, completeAlpha, incompleteAlpha)
+	if not frame then
+		return
+	end
+
+	if frame.QuestOverlayComplete and completeAlpha then
+		frame.QuestOverlayComplete:SetAlpha(completeAlpha)
+	end
+	if frame.QuestOverlayIncomplete and incompleteAlpha then
+		frame.QuestOverlayIncomplete:SetAlpha(incompleteAlpha)
+	end
+end
 
 --- Initialize animation system for this bar
 -- Called during bar initialization (OnLoad or Initialize)
@@ -83,11 +96,41 @@ function AnimationBase:CleanupAnimation()
 		Addon.AnimationManager:Unregister(self)
 	end
 
+	self:ResetAnimationEffects()
+
 	if self.animation then
 		self.animation.isAnimating = false
 		self.animation.isFlashing = false
+		self.animation.flashStartTime = 0
+		self.animation.flashDuration = 0
+		self.animation.holdStartTime = nil
+		self.animation.pendingSecondPhase = nil
 		self.animation.eventContext = nil
 	end
+end
+
+function AnimationBase:ResetAnimationEffects()
+	local gainFlash = (self.StatusBar and self.StatusBar.GainFlash) or self.GainFlash
+	if gainFlash then
+		gainFlash:SetAlpha(0)
+		gainFlash:Hide()
+	end
+
+	local anim = self.animation or {}
+	local completeAlpha = anim.questOverlayCompleteInitialAlpha
+	local incompleteAlpha = anim.questOverlayIncompleteInitialAlpha
+
+	if self.StatusBar then
+		ResetOverlayAlpha(self.StatusBar, completeAlpha, incompleteAlpha)
+	end
+	ResetOverlayAlpha(self, completeAlpha, incompleteAlpha)
+
+	anim.questOverlayCompleteInitialAlpha = nil
+	anim.questOverlayIncompleteInitialAlpha = nil
+	anim.flashCooldownUntil = nil
+	anim.isLevelUpPhase1 = nil
+	anim.pendingSecondPhase = nil
+	anim.holdStartTime = nil
 end
 
 --- Get current displayed ratio
@@ -172,10 +215,10 @@ function AnimationBase:AnimateBarEffect(iterationData, eventContext)
 		return
 	end
 	if flashData and flashData.active and flashData.currentAlpha and flashData.currentAlpha > 0 then
-		local XPBarColors = _G.XPBarColors
+		local colors = Addon and Addon.Colors
 		local hasRestedXP = eventContext and eventContext.hasRestedXP
-		local colorKey = hasRestedXP and Color.Rested or Color.XpBar
-		local color = XPBarColors and XPBarColors.GetUserColor and XPBarColors:GetUserColor(colorKey)
+		local colorKey = colors and (hasRestedXP and colors.Key.Rested or colors.Key.XpBar)
+		local color = colorKey and colors:Get(colorKey)
 		if color then
 			gainFlash:SetColorTexture(color.r, color.g, color.b, flashData.currentAlpha)
 		else
@@ -225,4 +268,4 @@ end
 -----------------------------------
 -- Export as global for composition in StyleBuilder (consistent with other mixins)
 XPBarAnimationMixin = AnimationBase
-Addon.AnimationBase = AnimationBase -- Keep for backward compatibility
+Addon.UI.Mixins.Animation = AnimationBase

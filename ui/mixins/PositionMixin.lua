@@ -9,6 +9,7 @@ local Addon = XPBarEnhanced
 
 ---@class XPBarPositionMixin
 XPBarPositionMixin = {}
+Addon.UI.Mixins.Position = XPBarPositionMixin
 
 local PositionMixin = XPBarPositionMixin
 
@@ -55,12 +56,19 @@ end
 
 --- Apply static position (anchored to Blizzard bar)
 function PositionMixin:ApplyStaticPosition()
-	-- Anchor to MainStatusTrackingBarContainer if available
+	-- Anchor to MainStatusTrackingBarContainer if available.
+	-- When a custom style is active, the container is hidden; use its parent instead
+	-- to avoid anchoring to a hidden frame (undefined layout behavior in some clients).
 	local container = _G.MainStatusTrackingBarContainer
+	local anchor = container
+
 	if container then
+		if not container:IsShown() then
+			anchor = container:GetParent() or container
+		end
 		self:ClearAllPoints()
-		self:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0) -- to edit when development is done to remove -50 offset
-		self:SetPoint("TOPRIGHT", container, "TOPRIGHT", 0, 0)
+		self:SetPoint("TOPLEFT", anchor, "TOPLEFT", 0, 0)
+		self:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", 0, 0)
 		return
 	end
 
