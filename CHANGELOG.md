@@ -12,6 +12,8 @@ All notable changes to XP Bar Enhanced will be documented in this file.
     - Fixed terminal color palette (phosphor green for earned XP, teal for rested, amber for quest overlay)
     - Monospace font (DejaVu Sans Mono) for authentic terminal appearance
     - Delta XP popup with fade-out animation
+- **Minimap Ring Bar Style**: Added a minimap-anchored XP ring style with dedicated options for ring padding, segment count, and segment dimensions
+    - Optional minimap button collection mode to reduce minimap icon clutter while the ring style is active
 - **Edit Mode Awareness**: Bars become draggable when Edit Mode is active
     - Detects when player enters/exits Edit Mode via EditModeManagerFrame hooks
     - Shows blue overlay indicator when bar is movable in Edit Mode
