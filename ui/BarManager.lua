@@ -21,6 +21,7 @@ local StyleTemplateNameMap = {
     flat     = "FlatBarTemplate",
     vertical = "VerticalBarTemplate",
     circular = "CircularBarTemplate",
+    minimap_ring = "MinimapRingBarTemplate",
     terminal = "TerminalBarTemplate",
 }
 

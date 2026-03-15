@@ -86,6 +86,14 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_showMinimapButton" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="showMinimapButton" type="string"/>
+                                            <KeyValue key="layoutIndex" value="5" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Flat Bar ==================== -->
 
                                     <Frame parentKey="Row_showMilestoneTicks" inherits="ConfigCheckboxTemplate">
@@ -124,12 +132,53 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_minimapRingPadding" inherits="ConfigSliderTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="minimapRingPadding" type="string"/>
+                                            <KeyValue key="layoutIndex" value="11" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_minimapRingSegments" inherits="ConfigSliderTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="minimapRingSegments" type="string"/>
+                                            <KeyValue key="layoutIndex" value="12" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_minimapRingCollectButtons" inherits="ConfigCheckboxTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="minimapRingCollectButtons" type="string"/>
+                                            <KeyValue key="layoutIndex" value="13" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_minimapRingSegmentWidth" inherits="ConfigSliderTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="minimapRingSegmentWidth" type="string"/>
+                                            <KeyValue key="layoutIndex" value="15" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_minimapRingSegmentHeight" inherits="ConfigSliderTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="minimapRingSegmentHeight" type="string"/>
+                                            <KeyValue key="layoutIndex" value="16" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Terminal Bar ==================== -->
 
                                     <Frame parentKey="Row_terminalUseCustomColors" inherits="ConfigCheckboxTemplate" hidden="true">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="terminalUseCustomColors" type="string"/>
-                                            <KeyValue key="layoutIndex" value="12" type="number"/>
+                                            <KeyValue key="layoutIndex" value="19" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="20" type="number"/>
                                         </KeyValues>
@@ -139,7 +188,7 @@
 
                                     <Frame parentKey="OverlayFeaturesHeader" inherits="ConfigSectionHeader">
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="13" type="number"/>
+                                            <KeyValue key="layoutIndex" value="20" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="20" type="number"/>
                                         </KeyValues>
@@ -148,7 +197,7 @@
                                     <Frame parentKey="Row_showRestedOverlay" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showRestedOverlay" type="string"/>
-                                            <KeyValue key="layoutIndex" value="14" type="number"/>
+                                            <KeyValue key="layoutIndex" value="21" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
@@ -158,7 +207,7 @@
 
                                     <Frame parentKey="QuestFeaturesHeader" inherits="ConfigSectionHeader">
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="15" type="number"/>
+                                            <KeyValue key="layoutIndex" value="22" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="20" type="number"/>
                                         </KeyValues>
@@ -167,7 +216,7 @@
                                     <Frame parentKey="Row_showQuestXP" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showQuestXP" type="string"/>
-                                            <KeyValue key="layoutIndex" value="16" type="number"/>
+                                            <KeyValue key="layoutIndex" value="23" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
@@ -176,7 +225,7 @@
                                     <Frame parentKey="Row_showCompleteQuestOverlay" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showCompleteQuestOverlay" type="string"/>
-                                            <KeyValue key="layoutIndex" value="17" type="number"/>
+                                            <KeyValue key="layoutIndex" value="24" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
@@ -184,7 +233,7 @@
                                     <Frame parentKey="Row_showIncompleteQuestOverlay" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showIncompleteQuestOverlay" type="string"/>
-                                            <KeyValue key="layoutIndex" value="18" type="number"/>
+                                            <KeyValue key="layoutIndex" value="25" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
@@ -193,7 +242,7 @@
 
                                     <Frame parentKey="TextDisplayHeader" inherits="ConfigSectionHeader">
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="19" type="number"/>
+                                            <KeyValue key="layoutIndex" value="26" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="20" type="number"/>
                                         </KeyValues>
@@ -202,7 +251,7 @@
                                     <Frame parentKey="Row_abbreviateNumbers" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="abbreviateNumbers" type="string"/>
-                                            <KeyValue key="layoutIndex" value="20" type="number"/>
+                                            <KeyValue key="layoutIndex" value="27" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
@@ -211,7 +260,7 @@
 
                                     <Frame parentKey="TextOnBarHeader" inherits="ConfigSubSectionHeader">
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="21" type="number"/>
+                                            <KeyValue key="layoutIndex" value="28" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
@@ -220,7 +269,7 @@
                                     <Frame parentKey="Row_showLevelText" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showLevelText" type="string"/>
-                                            <KeyValue key="layoutIndex" value="22" type="number"/>
+                                            <KeyValue key="layoutIndex" value="29" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
@@ -228,7 +277,7 @@
                                     <Frame parentKey="Row_showXPText" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showXPText" type="string"/>
-                                            <KeyValue key="layoutIndex" value="23" type="number"/>
+                                            <KeyValue key="layoutIndex" value="30" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>
@@ -236,7 +285,7 @@
                                     <Frame parentKey="Row_showRemainingXP" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showRemainingXP" type="string"/>
-                                            <KeyValue key="layoutIndex" value="24" type="number"/>
+                                            <KeyValue key="layoutIndex" value="31" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="6" type="number"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
@@ -246,7 +295,7 @@
                                     <Frame parentKey="Row_showPercentage" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showPercentage" type="string"/>
-                                            <KeyValue key="layoutIndex" value="25" type="number"/>
+                                            <KeyValue key="layoutIndex" value="32" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="6" type="number"/>
                                         </KeyValues>
@@ -255,7 +304,7 @@
                                     <Frame parentKey="Row_showQuestPercent" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showQuestPercent" type="string"/>
-                                            <KeyValue key="layoutIndex" value="26" type="number"/>
+                                            <KeyValue key="layoutIndex" value="33" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -265,7 +314,7 @@
 
                                     <Frame parentKey="TextBelowBarHeader" inherits="ConfigSubSectionHeader">
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="27" type="number"/>
+                                            <KeyValue key="layoutIndex" value="34" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -284,7 +333,7 @@
                                             </Layer>
                                         </Layers>
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="28" type="number"/>
+                                            <KeyValue key="layoutIndex" value="35" type="number"/>
                                             <KeyValue key="topPadding" value="16" type="number"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -293,7 +342,7 @@
                                     <Frame parentKey="Row_showXPPerHourText" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showXPPerHourText" type="string"/>
-                                            <KeyValue key="layoutIndex" value="29" type="number"/>
+                                            <KeyValue key="layoutIndex" value="36" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -302,7 +351,7 @@
                                     <Frame parentKey="Row_showTimeToLevelText" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showTimeToLevelText" type="string"/>
-                                            <KeyValue key="layoutIndex" value="30" type="number"/>
+                                            <KeyValue key="layoutIndex" value="37" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -323,7 +372,7 @@
                                             </Layer>
                                         </Layers>
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="31" type="number"/>
+                                            <KeyValue key="layoutIndex" value="38" type="number"/>
                                             <KeyValue key="topPadding" value="16" type="number"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -332,7 +381,7 @@
                                     <Frame parentKey="Row_showSessionTimeText" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showSessionTimeText" type="string"/>
-                                            <KeyValue key="layoutIndex" value="32" type="number"/>
+                                            <KeyValue key="layoutIndex" value="39" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -341,7 +390,7 @@
                                     <Frame parentKey="Row_showLevelTimeText" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showLevelTimeText" type="string"/>
-                                            <KeyValue key="layoutIndex" value="33" type="number"/>
+                                            <KeyValue key="layoutIndex" value="40" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -351,7 +400,7 @@
 
                                     <Frame parentKey="AnimationHeader" inherits="ConfigSectionHeader">
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="34" type="number"/>
+                                            <KeyValue key="layoutIndex" value="41" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="20" type="number"/>
                                         </KeyValues>
@@ -360,7 +409,7 @@
                                     <Frame parentKey="Row_enableAnimations" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="enableAnimations" type="string"/>
-                                            <KeyValue key="layoutIndex" value="35" type="number"/>
+                                            <KeyValue key="layoutIndex" value="42" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
@@ -370,7 +419,7 @@
                                     <Frame parentKey="Row_flashOnGain" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="flashOnGain" type="string"/>
-                                            <KeyValue key="layoutIndex" value="36" type="number"/>
+                                            <KeyValue key="layoutIndex" value="43" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -379,7 +428,7 @@
                                     <Frame parentKey="Row_twoPhaseOnLevelUp" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="twoPhaseOnLevelUp" type="string"/>
-                                            <KeyValue key="layoutIndex" value="37" type="number"/>
+                                            <KeyValue key="layoutIndex" value="44" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>
@@ -389,7 +438,7 @@
 
                                     <Frame parentKey="ColorsHeader" inherits="ConfigSectionHeader">
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="38" type="number"/>
+                                            <KeyValue key="layoutIndex" value="45" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="20" type="number"/>
                                         </KeyValues>
@@ -399,7 +448,7 @@
                                         <KeyValues>
                                             <KeyValue key="configKey" value="xpBar" type="string"/>
                                             <KeyValue key="previewType" value="statusbar" type="string"/>
-                                            <KeyValue key="layoutIndex" value="39" type="number"/>
+                                            <KeyValue key="layoutIndex" value="46" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
@@ -409,7 +458,7 @@
                                         <KeyValues>
                                             <KeyValue key="configKey" value="xpBarRested" type="string"/>
                                             <KeyValue key="previewType" value="statusbar" type="string"/>
-                                            <KeyValue key="layoutIndex" value="40" type="number"/>
+                                            <KeyValue key="layoutIndex" value="47" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
@@ -419,7 +468,7 @@
                                         <KeyValues>
                                             <KeyValue key="configKey" value="questComplete" type="string"/>
                                             <KeyValue key="previewType" value="texture" type="string"/>
-                                            <KeyValue key="layoutIndex" value="41" type="number"/>
+                                            <KeyValue key="layoutIndex" value="48" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
@@ -429,7 +478,7 @@
                                         <KeyValues>
                                             <KeyValue key="configKey" value="questIncomplete" type="string"/>
                                             <KeyValue key="previewType" value="texture" type="string"/>
-                                            <KeyValue key="layoutIndex" value="42" type="number"/>
+                                            <KeyValue key="layoutIndex" value="49" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
@@ -439,7 +488,7 @@
                                         <KeyValues>
                                             <KeyValue key="configKey" value="rested" type="string"/>
                                             <KeyValue key="previewType" value="texture" type="string"/>
-                                            <KeyValue key="layoutIndex" value="43" type="number"/>
+                                            <KeyValue key="layoutIndex" value="50" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>

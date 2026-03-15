@@ -13,7 +13,7 @@ local function showHelp()
     print("|cff33ff99XP Bar Enhanced|r Commands:")
     print("  /xpbe |cFFFFFFFFoptions|r - Open options panel")
     print("  /xpbe |cFFFFFFFFstats|r - Toggle statistics window")
-    print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular>|r - Change bar style")
+    print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|portrait_arc|terminal>|r - Change bar style")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -75,10 +75,10 @@ local function handleStyle(style)
     if style == "" then
         local currentStyle = Addon.db.barStyle or "classic"
         print("|cFF00FF00XP Bar Enhanced:|r Current bar style: " .. currentStyle)
-        print("Usage: /xpbe style <none|classic|flat>")
+        print("Usage: /xpbe style <none|classic|flat|vertical|circular|minimap_ring|terminal>")
         return
     end
-    if style == "none" or style == "classic" or style == "flat" or style == "vertical" or style == "circular" then
+    if style == "none" or style == "classic" or style == "flat" or style == "vertical" or style == "circular" or style == "minimap_ring" or style == "terminal" then
         if Addon.BarManager and Addon.BarManager.SetStyle then
             Addon.BarManager:SetStyle(style)
             Addon.db.barStyle = style
@@ -87,7 +87,7 @@ local function handleStyle(style)
             print("|cFFFF0000XP Bar Enhanced:|r XP Bar module or BarManager not available")
         end
     else
-        print("|cFFFF0000XP Bar Enhanced:|r Invalid style. Use: none, classic, flat, vertical, circular")
+        print("|cFFFF0000XP Bar Enhanced:|r Invalid style. Use: none, classic, flat, vertical, circular, minimap_ring, terminal")
     end
 end
 

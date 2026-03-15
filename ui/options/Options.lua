@@ -638,6 +638,7 @@ function XPBarEnhancedOptionsMixin:Refresh()
     local barStyle = Config:GetOptionValue("barStyle")
     local isNoneMode = (barStyle == "none")
     local isCircularMode = (barStyle == "circular")
+    local isMinimapRingMode = (barStyle == "minimap_ring")
 
     -- Refresh checkboxes
     for key, checkbox in pairs(self.controls) do
@@ -789,6 +790,12 @@ function XPBarEnhancedOptionsMixin:Refresh()
             if rowFrame then rowFrame:SetShown(isCircularMode) end
         end
 
+        local minimapRingRowKeys = {"minimapRingPadding", "minimapRingSegments", "minimapRingCollectButtons", "minimapRingSegmentWidth", "minimapRingSegmentHeight"}
+        for _, key in ipairs(minimapRingRowKeys) do
+            local rowFrame = container["Row_" .. key]
+            if rowFrame then rowFrame:SetShown(isMinimapRingMode) end
+        end
+
         -- Terminal rows
         if container.Row_terminalUseCustomColors then
             container.Row_terminalUseCustomColors:SetShown(isTerminalMode)
@@ -893,6 +900,11 @@ function Options:OnOptionChanged(key)
         -- No additional action needed here
     elseif key == "barLocked" then
     elseif key == "classicBarDraggable" then
+    elseif key == "showMinimapButton" then
+        local value = Config:GetOptionValue("showMinimapButton")
+        if Addon.MinimapButton and Addon.MinimapButton.SetEnabled then
+            Addon.MinimapButton:SetEnabled(value and true or false)
+        end
         -- Handled by Config side effects - just refresh UI
     elseif
         key == "enableAnimations" or key == "flashOnGain" or key == "twoPhaseOnLevelUp"
@@ -927,6 +939,25 @@ function Options:OnOptionChanged(key)
     elseif key == "terminalUseCustomColors" then
         -- Terminal colors changed, refresh the bar rendering
         -- (no specific bar method needed — Refresh will re-render with new colors)
+    elseif key == "minimapRingCollectButtons" then
+        -- Immediately collect or release buttons without waiting for an XP event
+        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
+            local bar = Addon.BarManager:GetCurrentFrame()
+            if bar and bar.UpdateButtonCollection then
+                bar:UpdateButtonCollection(true)
+            end
+        end
+    elseif
+        key == "minimapRingPadding" or key == "minimapRingSegments" or
+        key == "minimapRingSegmentWidth" or key == "minimapRingSegmentHeight"
+    then
+        -- Reposition ring/arc immediately so the visual updates without waiting for an XP event
+        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
+            local bar = Addon.BarManager:GetCurrentFrame()
+            if bar and bar.QueueReposition then
+                bar:QueueReposition()
+            end
+        end
     elseif
         key == "showQuestXP" or key == "showQuestPercent" or key == "questOverlaysEnabled" or
             key == "showCompleteQuestOverlay" or

@@ -54,7 +54,6 @@ core\services\ContextBuilder.lua
 
 # UI Features
 ui\MinimapButton.lua
-ui\EditModeIntegration.lua
 
 # Base and Mixins (must load before StyleBuilder)
 ui\mixins\BaseMixin.lua
@@ -88,4 +87,5 @@ ui\styles\flat\FlatBarTemplate.xml
 ui\styles\classic\ClassicBarTemplate.xml
 ui\styles\vertical\VerticalBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
+ui\styles\minimap_ring\MinimapRingBarTemplate.xml
 ui\styles\terminal\TerminalBarTemplate.xml
