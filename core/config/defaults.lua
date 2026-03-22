@@ -9,6 +9,7 @@ local defaults = {
     circularSize = "medium",
     circularSegments = 50,
     circularUseTexture = true,
+    circularScaleCenterText = false,
     minimapRingPadding = 10,
     minimapRingSegments = 100,
     minimapRingCollectButtons = false,

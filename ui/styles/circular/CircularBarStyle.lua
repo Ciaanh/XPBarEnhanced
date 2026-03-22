@@ -234,8 +234,9 @@ function CircularBarStyleTemplate:RepositionSegments()
         end
     end
 
-    -- Re-pin CenterBG to its fixed size so it does not scale with the frame
+    -- Re-pin CenterBG and update center text scale
     self:FixStaticElements()
+    self:UpdateCenterTextScale()
 
     -- Re-apply current progress colors after repositioning
     if self.Refresh then
@@ -243,14 +244,18 @@ function CircularBarStyleTemplate:RepositionSegments()
     end
 end
 
---- Keep CenterBG at its original 256x256 size centered on the frame.
--- Called after every frame resize so the background image never scales
--- regardless of the selected ring size preset.
+--- Keep CenterBG at its original 256x256 size centered on the frame,
+--- or scale it proportionally when center text scaling is enabled.
+-- Called after every frame resize.
 function CircularBarStyleTemplate:FixStaticElements()
     if self.CenterBG then
         self.CenterBG:ClearAllPoints()
-        self.CenterBG:SetSize(BASE_FRAME_SIZE, BASE_FRAME_SIZE)
-        self.CenterBG:SetPoint("CENTER", self, "CENTER", 0, 0)
+        if Addon.db and Addon.db.circularScaleCenterText then
+            self.CenterBG:SetAllPoints(self)
+        else
+            self.CenterBG:SetSize(BASE_FRAME_SIZE, BASE_FRAME_SIZE)
+            self.CenterBG:SetPoint("CENTER", self, "CENTER", 0, 0)
+        end
     end
 end
 
@@ -539,6 +544,51 @@ function CircularBarStyleTemplate:UpdateVisuals(context)
     if self.UpdateTexts then
         self:UpdateTexts(context)
     else
+    end
+end
+
+--- Override text visibility: center text is the primary display for circular
+--- bars and must NOT be gated by Blizzard's xpBarText CVar.
+function CircularBarStyleTemplate:UpdateTextVisibility(context)
+    if self.LevelText then
+        local show = Addon.ConfigHelper.GetShowLevelText(context)
+        self.LevelText:SetShown(show)
+    end
+    if self.PercentText then
+        local show = Addon.ConfigHelper.GetShowPercentage(context)
+        self.PercentText:SetShown(show)
+    end
+    if self.RateText then
+        local showTimeToLevel = Addon.ConfigHelper.GetShowTimeToLevelText(context)
+        self.RateText:SetShown(showTimeToLevel)
+    end
+end
+
+--- Scale center text elements proportionally with the ring size.
+--- Called from RepositionSegments when layout changes.
+function CircularBarStyleTemplate:UpdateCenterTextScale()
+    local shouldScale = Addon.db and Addon.db.circularScaleCenterText
+    local scale = shouldScale and self:GetCircularScale() or 1.0
+
+    local elements = {
+        {elem = self.LevelText,   baseY = 15},
+        {elem = self.PercentText, baseY = -5},
+        {elem = self.RateText,    baseY = -25},
+    }
+
+    for _, info in ipairs(elements) do
+        local element = info.elem
+        if element then
+            if not element._baseFontFile then
+                local fontFile, fontSize, fontFlags = element:GetFont()
+                element._baseFontFile = fontFile
+                element._baseFontSize = fontSize
+                element._baseFontFlags = fontFlags or ""
+            end
+            element:SetFont(element._baseFontFile, element._baseFontSize * scale, element._baseFontFlags)
+            element:ClearAllPoints()
+            element:SetPoint("CENTER", self, "CENTER", 0, info.baseY * scale)
+        end
     end
 end
 

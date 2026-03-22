@@ -784,7 +784,7 @@ function XPBarEnhancedOptionsMixin:Refresh()
 
     if container then
         -- Circular rows
-        local circularRowKeys = {"circularSize", "circularSegments", "circularUseTexture"}
+        local circularRowKeys = {"circularSize", "circularSegments", "circularUseTexture", "circularScaleCenterText"}
         for _, key in ipairs(circularRowKeys) do
             local rowFrame = container["Row_" .. key]
             if rowFrame then rowFrame:SetShown(isCircularMode) end
@@ -930,6 +930,14 @@ function Options:OnOptionChanged(key)
         end
     elseif key == "circularSize" then
         -- Resize ring and reposition segments
+        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
+            local bar = Addon.BarManager:GetCurrentFrame()
+            if bar and bar.RepositionSegments then
+                bar:RepositionSegments()
+            end
+        end
+    elseif key == "circularScaleCenterText" then
+        -- Re-layout center text and CenterBG with new scale setting
         if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
             local bar = Addon.BarManager:GetCurrentFrame()
             if bar and bar.RepositionSegments then

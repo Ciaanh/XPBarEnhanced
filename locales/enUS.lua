@@ -174,7 +174,7 @@ L["OPT_TWO_PHASE_LEVEL_UP_DESC"] = "When leveling up, animate the bar filling to
 
 -- Circular bar options
 L["OPT_CIRCULAR_SIZE"] = "Ring size"
-L["OPT_CIRCULAR_SIZE_DESC"] = "Size of the circular progress ring. Text remains the same size at all ring sizes."
+L["OPT_CIRCULAR_SIZE_DESC"] = "Size of the circular progress ring. Enable 'Scale center text with ring' to make center text grow with the ring."
 L["OPT_CIRCULAR_SIZE_SMALL"] = "Small"
 L["OPT_CIRCULAR_SIZE_MEDIUM"] = "Medium"
 L["OPT_CIRCULAR_SIZE_LARGE"] = "Large"
@@ -183,6 +183,8 @@ L["OPT_CIRCULAR_SEGMENTS"] = "Segment count"
 L["OPT_CIRCULAR_SEGMENTS_DESC"] = "Number of segments in the circular progress ring. Lower values give a chunky look, higher values appear smoother."
 L["OPT_CIRCULAR_USE_TEXTURE"] = "Use textured segments"
 L["OPT_CIRCULAR_USE_TEXTURE_DESC"] = "Use a textured appearance for segments instead of solid color. Gives a more detailed look to the circular bar."
+L["OPT_CIRCULAR_SCALE_CENTER_TEXT"] = "Scale center text with ring"
+L["OPT_CIRCULAR_SCALE_CENTER_TEXT_DESC"] = "When enabled, the level, percentage, and time-to-level text in the center of the ring scales proportionally with the ring size. Useful for streamers or anyone who wants larger numbers."
 
 L["OPT_MINIMAP_RING_PADDING"] = "Minimap ring padding"
 L["OPT_MINIMAP_RING_PADDING_DESC"] = "Extra distance between the minimap edge and the XP ring segments."

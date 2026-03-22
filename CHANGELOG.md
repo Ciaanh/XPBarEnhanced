@@ -2,6 +2,16 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [1.0.6] - 2026-03-22
+
+### Fixed
+
+- **Circular Bar Center Text Missing**: Fixed a bug where the level number and percentage text inside the circular bar center disappeared after v1.0.5
+
+### Added
+
+- **Circular Bar Center Text Scaling**: New option to scale center text with the ring size
+
 ## [1.0.5] - 2026-03-09
 
 ### Added

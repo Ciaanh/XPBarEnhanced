@@ -369,11 +369,14 @@ local function BuildTerminalTooltipText(context)
     if context.currentXP and context.xpMax and context.xpMax > 0 then
         local pct  = context.currentXP / context.xpMax * 100
         local rem  = context.xpMax - context.currentXP
+        local currentXPText = FormatXP(context.currentXP, false) or "0"
+        local maxXPText = FormatXP(context.xpMax, false) or "0"
+        local remainingXPText = FormatXP(rem, false) or "0"
         lines[#lines+1] = C_STATS .. "current:   |r"
-            .. colorEarned .. FormatXP(context.currentXP, false) .. " / " .. FormatXP(context.xpMax, false)
+            .. colorEarned .. currentXPText .. " / " .. maxXPText
             .. C_STATS  .. string.format("  (%.1f%%)", pct) .. "|r"
         lines[#lines+1] = C_STATS .. "remaining: |r"
-            .. colorEarned .. FormatXP(rem, false) .. "|r"
+            .. colorEarned .. remainingXPText .. "|r"
     end
 
     -- Rested
