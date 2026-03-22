@@ -177,6 +177,12 @@ local optionDetails = {
         description = Addon.L["OPT_CIRCULAR_USE_TEXTURE_DESC"],
         commandKeys = {"texture", "circletexture"}
     },
+    circularScaleCenterText = {
+        key = "circularScaleCenterText",
+        label = Addon.L["OPT_CIRCULAR_SCALE_CENTER_TEXT"],
+        description = Addon.L["OPT_CIRCULAR_SCALE_CENTER_TEXT_DESC"],
+        commandKeys = {"scalecentertext", "scaletext"}
+    },
     minimapRingPadding = {
         key = "minimapRingPadding",
         type = "slider",
@@ -261,6 +267,7 @@ local optionOrder = {
     "circularSize",
     "circularSegments",
     "circularUseTexture",
+    "circularScaleCenterText",
     "minimapRingPadding",
     "minimapRingSegments",
     "minimapRingCollectButtons",
