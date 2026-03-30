@@ -64,6 +64,10 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 - World of Warcraft Retail
 - No external dependencies
 
+## Credits
+
+This addon was inspired byt the WeakAura from Luxthos [https://wago.io/LuxthosExperienceBar] for the flat bar design.
+
 ## License
 
 MIT License — See [LICENSE](LICENSE) for details.
