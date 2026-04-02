@@ -2,6 +2,32 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [1.0.7] - 2026-04-02
+
+### Added
+
+- **Reputation Tracking**: New `ReputationSession` service tracks the player's watched faction gains per session
+    - Supports all four faction types: standard, friendship, major (renown), and paragon
+    - Computes rep/hour rate and estimated time to next standing
+    - Emits `REPUTATION:BROADCAST_UPDATE` on every faction change
+- **Companion Tracking**: New `CompanionSession` service tracks Delve companion (Brann) XP gains per session
+    - Guarded against missing `C_DelvesUI` / `C_GossipInfo` APIs for forward compatibility
+    - Computes XP/hour rate and estimated time to next level
+    - Emits `COMPANION:BROADCAST_UPDATE` on every companion XP gain
+- **Reputation Calculations**: Pure stateless helpers in `ReputationCalculations` for all four WoW reputation types
+    - `NormalizeRepData` produces a uniform `{current, min, max, ratio, percent, name, standingLabel, factionType, isMaxed}` table
+- **Companion Calculations**: Pure stateless helpers in `CompanionCalculations` for Delve companion progress
+    - `NormalizeCompanionData` converts raw `C_GossipInfo` friendship data into a uniform table
+- **Session XP Breakdown**: Session now separately tracks `questXP` and `otherXP` alongside total XP gained
+- **Sliding-Window XP Rate**: `Session.GetRecentXPPerHour()` uses a 20-entry rolling window for more responsive XP/hour estimates
+- **Release Script**: `make-release.ps1` packages addon files from the project root into `XPBarEnhanced-<version>.zip` placed in `.build/`
+
+### Changed
+
+- **EventBus**: Added `REPUTATION:BROADCAST_UPDATE` and `COMPANION:BROADCAST_UPDATE` to the known event registry
+- **Database**: Seeds `reputationSessionData` and `companionSessionData` tables on initialization
+- **Config**: `ResetStats` now also clears reputation and companion session data
+
 ## [1.0.6] - 2026-03-22
 
 ### Fixed
