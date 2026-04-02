@@ -6,6 +6,12 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Added
 
+- **Secondary Bars UI**: New `SecondaryBarManager` controls independent reputation and companion flat bars
+    - `FlatReputationBarTemplate` renders the watched faction name, standing, and progress (with faction-type colour coding: standard=purple, friendship=green, major=blue, paragon=gold)
+    - `FlatCompanionBarTemplate` renders the Delve companion name, level, and XP progress
+    - Both bars use `frameStrata="HIGH"` to remain above action-bar elements
+    - `XPBarContextBuilder.BuildReputationContext()` and `BuildCompanionContext()` provide flat UI-ready context tables
+- **Options — Secondary Bars**: New "Secondary Bars" section in the settings panel with `reputationBarStyle` and `companionBarStyle` dropdowns (none / flat)
 - **Reputation Tracking**: New `ReputationSession` service tracks the player's watched faction gains per session
     - Supports all four faction types: standard, friendship, major (renown), and paragon
     - Computes rep/hour rate and estimated time to next standing

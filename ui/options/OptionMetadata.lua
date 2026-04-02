@@ -21,6 +21,28 @@ local optionDetails = {
         },
         commandKeys = {"style", "mode", "barstyle"}
     },
+    reputationBarStyle = {
+        key = "reputationBarStyle",
+        type = "dropdown",
+        label = Addon.L["OPT_REP_BAR_STYLE"],
+        description = Addon.L["OPT_REP_BAR_STYLE_DESC"],
+        options = {
+            {value = "none", label = Addon.L["OPT_BAR_STYLE_NONE"]},
+            {value = "flat", label = Addon.L["OPT_BAR_STYLE_FLAT"]},
+        },
+        commandKeys = {"repstyle", "reputationstyle"}
+    },
+    companionBarStyle = {
+        key = "companionBarStyle",
+        type = "dropdown",
+        label = Addon.L["OPT_COMPANION_BAR_STYLE"],
+        description = Addon.L["OPT_COMPANION_BAR_STYLE_DESC"],
+        options = {
+            {value = "none", label = Addon.L["OPT_BAR_STYLE_NONE"]},
+            {value = "flat", label = Addon.L["OPT_BAR_STYLE_FLAT"]},
+        },
+        commandKeys = {"companionstyle"}
+    },
     barLocked = {
         key = "barLocked",
         label = Addon.L["OPT_BAR_LOCKED"],
@@ -243,6 +265,8 @@ local optionDetails = {
 
 local optionOrder = {
     "barStyle",
+    "reputationBarStyle",
+    "companionBarStyle",
     "barLocked",
     "classicBarDraggable",
     "showMinimapButton",

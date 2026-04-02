@@ -1,0 +1,53 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\Blizzard_SharedXML\UI.xsd">
+
+    <!-- XP Bar Enhanced - Flat Companion Bar Template -->
+    <!-- Simple flat status bar showing the Delve companion (Brann) XP progress. -->
+
+    <Script file="FlatCompanionBarStyle.lua"/>
+
+    <Frame name="FlatCompanionBarTemplate" virtual="true" mixin="FlatCompanionBarMixin" frameStrata="HIGH">
+        <Size x="565" y="18"/>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="Background" setAllPoints="true">
+                    <Color r="0" g="0" b="0" a="0.5"/>
+                </Texture>
+            </Layer>
+        </Layers>
+        <Frames>
+            <StatusBar parentKey="Bar" minValue="0" maxValue="1" defaultValue="0">
+                <Size x="565" y="18"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT"/>
+                </Anchors>
+                <BarTexture file="Interface\Buttons\WHITE8X8"/>
+            </StatusBar>
+            <!-- Label container in HIGH strata so text renders above the StatusBar fill -->
+            <Frame parentKey="LabelContainer" frameStrata="HIGH" setAllPoints="true">
+                <Layers>
+                    <Layer level="ARTWORK" textureSubLevel="5">
+                        <FontString parentKey="Label" inherits="GameFontNormalSmall" justifyH="CENTER">
+                            <Size x="565" y="18"/>
+                            <Anchors>
+                                <Anchor point="TOPLEFT"/>
+                            </Anchors>
+                            <Color r="1.0" g="1.0" b="1.0"/>
+                            <Shadow>
+                                <Offset x="1" y="-1"/>
+                                <Color r="0" g="0" b="0" a="0.8"/>
+                            </Shadow>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+        </Frames>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+            <OnShow method="OnShow"/>
+            <OnHide method="OnHide"/>
+        </Scripts>
+    </Frame>
+
+</Ui>

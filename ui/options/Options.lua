@@ -275,6 +275,11 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         if container.ColorsHeader and container.ColorsHeader.Title then
             container.ColorsHeader.Title:SetText(ResolveLocale("OPT_HEADER_COLORS"))
         end
+
+        -- Secondary Bars section
+        if container.SecondaryBarsHeader and container.SecondaryBarsHeader.Title then
+            container.SecondaryBarsHeader.Title:SetText(ResolveLocale("OPT_HEADER_SECONDARY_BARS"))
+        end
     end
 
     self:BuildOptionCheckboxes()

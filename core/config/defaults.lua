@@ -5,6 +5,8 @@ local Addon = XPBarEnhanced
 
 local defaults = {
     barStyle = "classic",
+    reputationBarStyle = "none",
+    companionBarStyle = "none",
     barLocked = false,
     circularSize = "medium",
     circularSegments = 50,

@@ -58,6 +58,11 @@ function eventHandlers:OnPlayerLogin()
         Addon.BarManager:Initialize()
     end
 
+    -- Initialize Secondary Bar Manager (reputation and companion bars)
+    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.Initialize then
+        Addon.SecondaryBarManager:Initialize()
+    end
+
     -- Initialize Minimap Button
     if Addon.MinimapButton and Addon.MinimapButton.Initialize then
         Addon.MinimapButton:Initialize()
@@ -87,6 +92,9 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
         Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
     elseif Addon.BarManager and Addon.BarManager.OnEnteringWorld then
         Addon.BarManager:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    end
+    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.OnEnteringWorld then
+        Addon.SecondaryBarManager:OnEnteringWorld()
     end
     -- Blizzard's StatusTrackingBarManager re-shows its containers via internal
     -- code paths on PLAYER_ENTERING_WORLD. Re-apply our visibility rules after

@@ -76,6 +76,7 @@ ui\mixins\animation\AnimationBase.lua
 # Style system (after mixins so globals are defined)
 ui\StyleBuilder.lua
 ui\BarManager.lua
+ui\SecondaryBarManager.lua
 
 #  Frames
 ui\options\OptionsPanelTemplates.xml
@@ -93,3 +94,7 @@ ui\styles\vertical\VerticalBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
 ui\styles\minimap_ring\MinimapRingBarTemplate.xml
 ui\styles\terminal\TerminalBarTemplate.xml
+
+# Secondary Bar Styles
+ui\secondary\FlatReputationBarTemplate.xml
+ui\secondary\FlatCompanionBarTemplate.xml

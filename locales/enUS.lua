@@ -163,6 +163,13 @@ L["OPT_HEADER_ANIMATION"] = "Animation"
 L["OPT_HEADER_COLORS"] = "Colors"
 L["OPT_HEADER_CIRCULAR"] = "Circular Bar"
 L["OPT_HEADER_FLAT_BAR"] = "Flat Bar"
+L["OPT_HEADER_SECONDARY_BARS"] = "Secondary Bars"
+
+-- Secondary bar options
+L["OPT_REP_BAR_STYLE"] = "Reputation Bar Style"
+L["OPT_REP_BAR_STYLE_DESC"] = "Display style for the watched faction reputation bar. Stacks above the XP bar when visible."
+L["OPT_COMPANION_BAR_STYLE"] = "Companion Bar Style"
+L["OPT_COMPANION_BAR_STYLE_DESC"] = "Display style for the Delve companion (Brann) XP bar. Stacks above the XP bar when visible. Requires Delve companion APIs to be available."
 
 -- Animation options
 L["OPT_ENABLE_ANIMATIONS"] = "Enable animations"

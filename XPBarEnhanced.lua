@@ -29,6 +29,7 @@ Addon.ReputationCalculations = Addon.ReputationCalculations or {}
 Addon.ReputationSession = Addon.ReputationSession or {}
 Addon.CompanionCalculations = Addon.CompanionCalculations or {}
 Addon.CompanionSession = Addon.CompanionSession or {}
+Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 
 -- State
 Addon.state =
