@@ -37,6 +37,16 @@ function eventHandlers:OnPlayerLogin()
         Addon.Session:Initialize()
     end
 
+    -- Initialize Reputation session
+    if Addon.ReputationSession and Addon.ReputationSession.Initialize then
+        Addon.ReputationSession:Initialize()
+    end
+
+    -- Initialize Companion session
+    if Addon.CompanionSession and Addon.CompanionSession.Initialize then
+        Addon.CompanionSession:Initialize()
+    end
+
     -- Initialize features
     local stats = Addon.Stats
     if stats and stats.Initialize then
@@ -63,6 +73,12 @@ end
 function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     if Addon.Session and Addon.Session.OnEnteringWorld then
         Addon.Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    end
+    if Addon.ReputationSession and Addon.ReputationSession.OnEnteringWorld then
+        Addon.ReputationSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    end
+    if Addon.CompanionSession and Addon.CompanionSession.OnEnteringWorld then
+        Addon.CompanionSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
     if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
         Addon.QuestXP:InvalidateQuestCache()

@@ -34,6 +34,8 @@ function Database:Initialize()
     -- Set addon database reference
     Addon.db = XPBarEnhancedDB
     Addon.db.sessionData = Addon.db.sessionData or {}
+    Addon.db.reputationSessionData = Addon.db.reputationSessionData or {}
+    Addon.db.companionSessionData = Addon.db.companionSessionData or {}
 
     -- Set player key
     local playerName = UnitName("player") or "Unknown"
@@ -55,6 +57,20 @@ function Database:GetSessionData()
     local db = self:GetDB()
     db.sessionData = db.sessionData or {}
     return db.sessionData
+end
+
+---Return the reputation session data table stored in the database
+function Database:GetReputationSessionData()
+    local db = self:GetDB()
+    db.reputationSessionData = db.reputationSessionData or {}
+    return db.reputationSessionData
+end
+
+---Return the companion session data table stored in the database
+function Database:GetCompanionSessionData()
+    local db = self:GetDB()
+    db.companionSessionData = db.companionSessionData or {}
+    return db.companionSessionData
 end
 
 ---Return the cached player/realm key used for per-character storage

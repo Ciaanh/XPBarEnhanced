@@ -40,6 +40,8 @@ core\Colors.lua
 # Calculation helpers (shared by Session, ContextBuilder)
 core\calculations\XPCalculations.lua
 core\calculations\TimeCalculations.lua
+core\calculations\ReputationCalculations.lua
+core\calculations\CompanionCalculations.lua
 
 core\services\QuestXP.lua
 core\TextFormatter.lua
@@ -50,6 +52,8 @@ core\config\ConfigHelper.lua
 
 core\services\Database.lua
 core\services\Session.lua
+core\services\ReputationSession.lua
+core\services\CompanionSession.lua
 core\services\ContextBuilder.lua
 
 # UI Features

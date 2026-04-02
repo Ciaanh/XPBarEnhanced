@@ -231,6 +231,12 @@ L["MSG_RESET_STATS_UNAVAILABLE"] = "Unable to reset statistics."
 L["MSG_SETTINGS_RESET"] = "Settings reset to defaults"
 
 -- ============================================================================
+-- REPUTATION
+-- ============================================================================
+L["REP_STANDING_RENOWN"] = "Renown %d"
+L["REP_STANDING_PARAGON"] = "Paragon"
+
+-- ============================================================================
 -- ERRORS
 -- ============================================================================
 L["ERR_UNKNOWN_COLOR_TARGET"] = "Unknown color target."

@@ -114,19 +114,21 @@ end
 
 ---Emit an event to all listeners
 ---@param eventName string The event name to emit
----@return XPBarContext|nil context The context object passed to all handlers, or nil if no listeners
-function EventBus:Emit(eventName)
+---@param context? table Optional pre-built context; if nil, XPBarContextBuilder.BuildContext is used
+---@return XPBarContext|table|nil context The context object passed to all handlers, or nil if no listeners
+function EventBus:Emit(eventName, context)
     -- Skip expensive context build when no listeners are registered for this event
     local listenersForEvent = self.listeners and self.listeners[eventName]
     if not listenersForEvent or not next(listenersForEvent) then
         return nil
     end
 
-    -- Build a fresh immutable context
-    local context = nil
-    if XPBarContextBuilder and XPBarContextBuilder.BuildContext then
-        local reason = eventName or "BROADCAST_UPDATE"
-        context = XPBarContextBuilder.BuildContext(reason)
+    -- Build a fresh immutable context if one was not provided
+    if context == nil then
+        if XPBarContextBuilder and XPBarContextBuilder.BuildContext then
+            local reason = eventName or "BROADCAST_UPDATE"
+            context = XPBarContextBuilder.BuildContext(reason)
+        end
     end
 
     if context == nil then

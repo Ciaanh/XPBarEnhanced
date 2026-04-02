@@ -9,7 +9,10 @@
 .vscode/
 .idea/
 
-assets/refs
+.build/
 
-BlizzardInterfaceCode
-refs
+# Release packages
+XPBarEnhanced-v*.zip
+
+docs/
+assets/refs

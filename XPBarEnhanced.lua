@@ -13,7 +13,9 @@ Addon.EventNames = {
     COLORS_UPDATED = "COLORS:UPDATED",
     QUESTS_CACHE_INVALIDATED = "QUESTS:CACHE_INVALIDATED",
     QUESTS_CACHE_REBUILT = "QUESTS:CACHE_REBUILT",
-    XPBAR_ANIMATION_CONTEXT = "XPBAR:ANIMATION_CONTEXT"
+    XPBAR_ANIMATION_CONTEXT = "XPBAR:ANIMATION_CONTEXT",
+    REPUTATION_BROADCAST_UPDATE = "REPUTATION:BROADCAST_UPDATE",
+    COMPANION_BROADCAST_UPDATE = "COMPANION:BROADCAST_UPDATE",
 }
 
 Addon.OptionsCategory = "XP Bar Enhanced"
@@ -23,6 +25,10 @@ Addon.Config = Addon.Config or {}
 Addon.Database = Addon.Database or {}
 Addon.Session = Addon.Session or {}
 Addon.Utils = Addon.Utils or {}
+Addon.ReputationCalculations = Addon.ReputationCalculations or {}
+Addon.ReputationSession = Addon.ReputationSession or {}
+Addon.CompanionCalculations = Addon.CompanionCalculations or {}
+Addon.CompanionSession = Addon.CompanionSession or {}
 
 -- State
 Addon.state =

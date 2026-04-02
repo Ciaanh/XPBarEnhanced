@@ -47,6 +47,11 @@ local function ensureSessionDefaults(session)
     session.lastUpdate = session.lastUpdate or time()
     session.startLevel = session.startLevel or (UnitLevel("player") or 1)
     session.levelsGained = session.levelsGained or 0
+    session.gainsHistory = session.gainsHistory or {}
+    session.levelUpTimestamps = session.levelUpTimestamps or {}
+    session.recentGains = session.recentGains or {}
+    session.questXP = session.questXP or 0
+    session.otherXP = session.otherXP or 0
 end
 
 -------------------------------------------------------------------
@@ -159,6 +164,35 @@ function Session:OnXPUpdate()
     session.maxXP = maxXP
     session.lastUpdate = time()
 
+    -- Track gain source and record in history
+    if gained > 0 then
+        local source = self._pendingQuestTurnIn and "quest" or "other"
+        self._pendingQuestTurnIn = nil
+
+        local entry = {
+            timestamp = time(),
+            amount = gained,
+            source = source,
+            level = UnitLevel("player") or 1,
+        }
+
+        table.insert(session.gainsHistory, entry)
+        if #session.gainsHistory > 500 then
+            table.remove(session.gainsHistory, 1)
+        end
+
+        table.insert(session.recentGains, entry)
+        if #session.recentGains > 20 then
+            table.remove(session.recentGains, 1)
+        end
+
+        if source == "quest" then
+            session.questXP = (session.questXP or 0) + gained
+        else
+            session.otherXP = (session.otherXP or 0) + gained
+        end
+    end
+
     -- Session is the single source of XP events; broadcast to all registered bars
     if Addon.EventBus and Addon.EventBus.Emit then
         Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
@@ -173,6 +207,8 @@ function Session:OnLevelUp(level)
 
     -- Track levels gained this session
     session.levelsGained = (session.levelsGained or 0) + 1
+    session.levelUpTimestamps = session.levelUpTimestamps or {}
+    table.insert(session.levelUpTimestamps, time())
 
     -- Reset level time
     session.realLevelTime = 0
@@ -226,6 +262,9 @@ function Session:OnQuestTurnedIn(questID)
     if not questID then
         return
     end
+
+    -- Flag the next XP gain as quest-sourced (cleared inside OnXPUpdate)
+    self._pendingQuestTurnIn = true
 
     local function RefreshCompletedQuests()
         -- Touch the API to ensure it's updated
@@ -383,6 +422,20 @@ function Session:GetXPPerHour()
 
     return 0
 end
+
+---Return XP per hour based on a sliding window of recent gains
+---@return number xpPerHour Recent XP/hour rate
+function Session:GetRecentXPPerHour()
+    local session = self:GetCurrent()
+    if not session or not session.recentGains then
+        return 0
+    end
+    local TimeCalc = Addon.TimeCalculations
+    if not TimeCalc or not TimeCalc.RecentXPPerHour then
+        return 0
+    end
+    return TimeCalc.RecentXPPerHour(session.recentGains)
+end
 -------------------------------------------------------------------
 
 ---Return a normalized stats table for the current session
@@ -412,7 +465,12 @@ function Session:GetStats()
         xpPerHour = xpPerHour,
         startTime = session.sessionStart or time(),
         realTotalTime = session.realTotalTime or 0,
-        realLevelTime = session.realLevelTime or 0
+        realLevelTime = session.realLevelTime or 0,
+        recentXPPerHour = self:GetRecentXPPerHour(),
+        questXPGained = session.questXP or 0,
+        otherXP = session.otherXP or 0,
+        gainsCount = #(session.gainsHistory or {}),
+        levelUpTimestamps = session.levelUpTimestamps or {},
     }
 end
 

@@ -234,6 +234,9 @@ function ContextBuilder.BuildCoreContext(coreState)
 	local sessionStart = time()
 	local sessionXP = 0
 	local levelSeconds = 0
+	local questXPGained = 0
+	local otherXP = 0
+	local recentXPPerHour = 0
 
 	if AddonGlobal and AddonGlobal.Session then
 		local session = AddonGlobal.Session:GetCurrent()
@@ -251,6 +254,11 @@ function ContextBuilder.BuildCoreContext(coreState)
 					levelSeconds = levelSeconds + elapsed
 				end
 			end
+			questXPGained = session.questXP or 0
+			otherXP       = session.otherXP  or 0
+		end
+		if AddonGlobal.Session.GetRecentXPPerHour then
+			recentXPPerHour = AddonGlobal.Session:GetRecentXPPerHour()
 		end
 	end
 
@@ -266,7 +274,10 @@ function ContextBuilder.BuildCoreContext(coreState)
 		incompleteQuestXP = incompleteQuestXP,
 		sessionStart = sessionStart,
 		sessionXP = sessionXP,
-		levelSeconds = levelSeconds
+		levelSeconds = levelSeconds,
+		questXPGained   = questXPGained,
+		otherXP         = otherXP,
+		recentXPPerHour = recentXPPerHour,
 	}
 end
 

@@ -348,14 +348,22 @@ end
 
 function Config:ResetStats()
     if Addon and Addon.db then
-        Addon.db.sessionData = {}
-        Addon.db.stats = {}
+        Addon.db.sessionData            = {}
+        Addon.db.stats                  = {}
+        Addon.db.reputationSessionData  = {}
+        Addon.db.companionSessionData   = {}
     end
     if Addon.ContextBuilder and Addon.ContextBuilder.ResetSession then
         Addon.ContextBuilder.ResetSession()
     end
     if Addon.Session and Addon.Session.Initialize then
         Addon.Session:Initialize()
+    end
+    if Addon.ReputationSession and Addon.ReputationSession.Initialize then
+        Addon.ReputationSession:Initialize()
+    end
+    if Addon.CompanionSession and Addon.CompanionSession.Initialize then
+        Addon.CompanionSession:Initialize()
     end
     local stats = Addon.Stats
     if stats and stats.Update then
