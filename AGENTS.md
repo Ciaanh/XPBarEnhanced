@@ -61,3 +61,12 @@ combat data, unit identification, addon messaging, spell APIs, or combat log.
 - @validator — Blizzard UI & API validator
 - @uiux — UI/UX design expert
 - @tester — Addon testing specialist
+
+## Documentation Governance
+- Canonical planning/backlog/docs location is `docs/`.
+- Active coding session guide: `docs/plan.md`.
+- Durable analysis and lessons: `docs/memory/*.md`.
+- Architecture and structure guidance: `docs/guidelines/*.md`.
+- Feature tracking: one file per feature under `docs/features/*.md`.
+- `.claude/plan.md` is compatibility pointer-only and MUST NOT be used as source of truth.
+- Any change that affects behavior or architecture should update the relevant file in `docs/` in the same PR.

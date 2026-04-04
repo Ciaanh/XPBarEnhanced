@@ -77,3 +77,12 @@ MyAddon/
   Libs/                 -- Embedded libraries
   Locales/              -- Localization files
 ```
+
+## Documentation Governance (Required)
+- Canonical project planning and backlog documentation MUST live under `docs/`.
+- Active coding session guide: `docs/plan.md`.
+- Memory/decision capture: `docs/memory/*.md`.
+- Architecture and project-structure guidance: `docs/guidelines/*.md`.
+- Feature tracking: one markdown file per feature in `docs/features/*.md`.
+- `.claude/plan.md` is pointer-only and must not hold canonical backlog/strategy content.
+- When implementing a feature/refactor, update the corresponding `docs/features/*` file and append key decisions to `docs/memory/decision-log.md`.
