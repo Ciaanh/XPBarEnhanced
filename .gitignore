@@ -14,5 +14,5 @@
 # Release packages
 XPBarEnhanced-v*.zip
 
-docs/
-assets/refs
+docs/refs/
+assets/refs/
