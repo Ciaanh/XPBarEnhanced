@@ -76,22 +76,16 @@ local function IsPlayerAtMaxLevel(currentLevel)
 end
 
 function BarManager:ApplyDefaultXPBarVisibility()
-    -- Hide both Blizzard bar containers whenever we are using a custom style
-    -- (classic, flat, vertical, circular)
+    -- Hide only the Blizzard XP bar container when a custom XP style is active.
+    -- Secondary/reputation tracking is managed independently by SecondaryBarManager.
     if self:IsCustomStyle(self.currentStyle) then
         if _G.MainStatusTrackingBarContainer then
             _G.MainStatusTrackingBarContainer:Hide()
         end
-        if _G.SecondaryStatusTrackingBarContainer then
-            _G.SecondaryStatusTrackingBarContainer:Hide()
-        end
     else
-        -- Otherwise, restore Blizzard defaults
+        -- Otherwise, restore Blizzard XP bar visibility.
         if _G.MainStatusTrackingBarContainer then
             _G.MainStatusTrackingBarContainer:Show()
-        end
-        if _G.SecondaryStatusTrackingBarContainer then
-            _G.SecondaryStatusTrackingBarContainer:Show()
         end
     end
     self:DebugContainerState()
@@ -106,7 +100,6 @@ end
 function BarManager:InstallBlizzardBarHooks()
     local containers = {
         _G.MainStatusTrackingBarContainer,
-        _G.SecondaryStatusTrackingBarContainer,
     }
 
     for _, container in ipairs(containers) do
@@ -192,8 +185,8 @@ function BarManager:SetStyle(nextStyle)
 
     self.currentStyle = nextStyle
 
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
     end
 
     -- Always hide the Blizzard XP bar when we are using a custom style
@@ -248,8 +241,8 @@ function BarManager:OnLevelUp(newLevel)
 end
 
 function BarManager:OnRestedChanged()
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("UPDATE_EXHAUSTION"))
     end
 end
 
@@ -263,8 +256,8 @@ function BarManager:Shutdown()
     end
     self.currentFrame = nil
     self.currentStyle = nil
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
     end
 end
 

@@ -166,6 +166,13 @@ function RepSession:OnFactionUpdate()
     if not watchedData or not watchedData.name or watchedData.name == "" then
         session.watchedFactionID   = nil
         session.watchedFactionName = nil
+        session.watchedFactionType = nil
+        session.lastStanding       = 0
+        session.lastMin            = 0
+        session.lastMax            = 0
+        if Addon.EventBus and Addon.EventNames then
+            Addon.EventBus:Emit(Addon.EventNames.REPUTATION_BROADCAST_UPDATE, self:_BuildContext())
+        end
         return
     end
 
@@ -177,6 +184,9 @@ function RepSession:OnFactionUpdate()
     -- If player switched watched faction, re-baseline without recording a gain.
     if factionID ~= session.watchedFactionID then
         self:_SnapshotWatchedFaction()
+        if Addon.EventBus and Addon.EventNames then
+            Addon.EventBus:Emit(Addon.EventNames.REPUTATION_BROADCAST_UPDATE, self:_BuildContext())
+        end
         return
     end
 
@@ -224,11 +234,15 @@ end
 -------------------------------------------------------------------
 
 function RepSession:_BuildContext()
+    if XPBarContextBuilder and XPBarContextBuilder.BuildReputationContext then
+        local context = XPBarContextBuilder.BuildReputationContext()
+        context.event = Addon.EventNames.REPUTATION_BROADCAST_UPDATE
+        return context
+    end
+
     return {
-        event              = Addon.EventNames.REPUTATION_BROADCAST_UPDATE,
-        watchedFactionInfo = self:GetWatchedFactionInfo(),
-        repPerHour         = self:GetRepPerHour(),
-        timeToNextStanding = self:GetTimeToNextStanding(),
+        event = Addon.EventNames.REPUTATION_BROADCAST_UPDATE,
+        isAvailable = false,
     }
 end
 

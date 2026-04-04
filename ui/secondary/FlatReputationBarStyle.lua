@@ -23,28 +23,26 @@ end
 -------------------------------------------------------------------
 
 function Mixin:OnLoad()
-    print("[XPBE-DBG] FlatReputationBarMixin:OnLoad fired")
     self:ClearAllPoints()
-    self:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-    print("[XPBE-DBG] FlatReputationBarMixin:OnLoad Bar=" .. tostring(self.Bar) .. " LabelContainer=" .. tostring(self.LabelContainer))
+    local db = XPBarEnhanced and XPBarEnhanced.db
+    local pos = (db and db.reputationBarPosition)
+        or (XPBarEnhanced and XPBarEnhanced.defaults and XPBarEnhanced.defaults.reputationBarPosition)
+    if pos then
+        self:SetPoint(pos.point, pos.relativeTo or "UIParent", pos.relativePoint, pos.x or 0, pos.y or 0)
+    else
+        self:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 34)
+    end
 end
 
 function Mixin:OnShow()
-    print("[XPBE-DBG] FlatReputationBarMixin:OnShow fired")
     self._busHandle = Addon.EventBus:RegisterWithHandle(
         Addon.EventNames.REPUTATION_BROADCAST_UPDATE,
-        function(_)
-            if XPBarContextBuilder and XPBarContextBuilder.BuildReputationContext then
-                self:Render(XPBarContextBuilder.BuildReputationContext())
-            end
+        function(ctx)
+            self:Render(ctx)
         end
     )
     if XPBarContextBuilder and XPBarContextBuilder.BuildReputationContext then
-        local ctx = XPBarContextBuilder.BuildReputationContext()
-        print("[XPBE-DBG] FlatReputationBarMixin:OnShow initial context isAvailable=" .. tostring(ctx.isAvailable) .. " name=" .. tostring(ctx.name))
-        self:Render(ctx)
-    else
-        print("[XPBE-DBG] FlatReputationBarMixin:OnShow XPBarContextBuilder.BuildReputationContext not found!")
+        self:Render(XPBarContextBuilder.BuildReputationContext())
     end
 end
 
@@ -61,14 +59,10 @@ end
 
 function Mixin:Render(context)
     if not context then
-        print("[XPBE-DBG] FlatReputationBarMixin:Render context is nil")
         return
     end
 
-    print("[XPBE-DBG] FlatReputationBarMixin:Render isAvailable=" .. tostring(context.isAvailable) .. " name=" .. tostring(context.name) .. " current=" .. tostring(context.current) .. " max=" .. tostring(context.max))
-
     if not context.isAvailable then
-        print("[XPBE-DBG] FlatReputationBarMixin:Render hiding (isAvailable=false)")
         self:SetAlpha(0)
         return
     end

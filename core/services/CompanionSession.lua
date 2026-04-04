@@ -171,11 +171,15 @@ end
 -------------------------------------------------------------------
 
 function CompSession:_BuildContext()
+    if XPBarContextBuilder and XPBarContextBuilder.BuildCompanionContext then
+        local context = XPBarContextBuilder.BuildCompanionContext()
+        context.event = Addon.EventNames.COMPANION_BROADCAST_UPDATE
+        return context
+    end
+
     return {
-        event           = Addon.EventNames.COMPANION_BROADCAST_UPDATE,
-        companionInfo   = self:GetCompanionInfo(),
-        xpPerHour       = self:GetXPPerHour(),
-        timeToNextLevel = self:GetTimeToNextLevel(),
+        event = Addon.EventNames.COMPANION_BROADCAST_UPDATE,
+        isAvailable = false,
     }
 end
 

@@ -98,7 +98,7 @@ function QuestXP:InvalidateQuestCache()
     questCache.totals = nil
     questCache.timestamp = 0
     if Addon.EventBus then
-        Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_INVALIDATED)
+        Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_INVALIDATED, { event = Addon.EventNames.QUESTS_CACHE_INVALIDATED })
     end
 end
 
@@ -117,8 +117,10 @@ local function setupCacheListeners()
     local function scheduleRebuild(delay)
         C_Timer.After(delay, function()
             buildQuestCache()
-            Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_REBUILT)
-            Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+            Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_REBUILT, { event = Addon.EventNames.QUESTS_CACHE_REBUILT })
+            if XPBarContextBuilder then
+                Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("QUEST_LOG_UPDATE"))
+            end
         end)
     end
 
@@ -180,8 +182,10 @@ function QuestXP:Rebuild(delay)
     self:InvalidateQuestCache()
     C_Timer.After(delay or 0.5, function()
         buildQuestCache()
-        Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_REBUILT)
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+        Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_REBUILT, { event = Addon.EventNames.QUESTS_CACHE_REBUILT })
+        if XPBarContextBuilder then
+            Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("QUEST_LOG_UPDATE"))
+        end
     end)
 end
 

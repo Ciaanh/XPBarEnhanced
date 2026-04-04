@@ -123,16 +123,8 @@ function EventBus:Emit(eventName, context)
         return nil
     end
 
-    -- Build a fresh immutable context if one was not provided
     if context == nil then
-        if XPBarContextBuilder and XPBarContextBuilder.BuildContext then
-            local reason = eventName or "BROADCAST_UPDATE"
-            context = XPBarContextBuilder.BuildContext(reason)
-        end
-    end
-
-    if context == nil then
-        error("EventBus:Emit requires a valid context")
+        error("EventBus:Emit called without context for event: " .. tostring(eventName))
     end
 
     -- Increment re-entrancy depth so Register() knows to defer new subscriptions

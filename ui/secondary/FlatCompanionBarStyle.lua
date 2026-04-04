@@ -14,29 +14,27 @@ local BAR_COLOR = {r = 0.20, g = 0.80, b = 0.80}
 -------------------------------------------------------------------
 
 function Mixin:OnLoad()
-    print("[XPBE-DBG] FlatCompanionBarMixin:OnLoad fired")
     self:ClearAllPoints()
-    self:SetPoint("CENTER", UIParent, "CENTER", 0, -22)
     self.Bar:SetStatusBarColor(BAR_COLOR.r, BAR_COLOR.g, BAR_COLOR.b)
-    print("[XPBE-DBG] FlatCompanionBarMixin:OnLoad Bar=" .. tostring(self.Bar) .. " LabelContainer=" .. tostring(self.LabelContainer))
+    local db = XPBarEnhanced and XPBarEnhanced.db
+    local pos = (db and db.companionBarPosition)
+        or (XPBarEnhanced and XPBarEnhanced.defaults and XPBarEnhanced.defaults.companionBarPosition)
+    if pos then
+        self:SetPoint(pos.point, pos.relativeTo or "UIParent", pos.relativePoint, pos.x or 0, pos.y or 0)
+    else
+        self:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 54)
+    end
 end
 
 function Mixin:OnShow()
-    print("[XPBE-DBG] FlatCompanionBarMixin:OnShow fired")
     self._busHandle = Addon.EventBus:RegisterWithHandle(
         Addon.EventNames.COMPANION_BROADCAST_UPDATE,
-        function(_)
-            if XPBarContextBuilder and XPBarContextBuilder.BuildCompanionContext then
-                self:Render(XPBarContextBuilder.BuildCompanionContext())
-            end
+        function(ctx)
+            self:Render(ctx)
         end
     )
     if XPBarContextBuilder and XPBarContextBuilder.BuildCompanionContext then
-        local ctx = XPBarContextBuilder.BuildCompanionContext()
-        print("[XPBE-DBG] FlatCompanionBarMixin:OnShow initial context isAvailable=" .. tostring(ctx.isAvailable) .. " name=" .. tostring(ctx.name))
-        self:Render(ctx)
-    else
-        print("[XPBE-DBG] FlatCompanionBarMixin:OnShow XPBarContextBuilder.BuildCompanionContext not found!")
+        self:Render(XPBarContextBuilder.BuildCompanionContext())
     end
 end
 
@@ -53,14 +51,10 @@ end
 
 function Mixin:Render(context)
     if not context then
-        print("[XPBE-DBG] FlatCompanionBarMixin:Render context is nil")
         return
     end
 
-    print("[XPBE-DBG] FlatCompanionBarMixin:Render isAvailable=" .. tostring(context.isAvailable) .. " name=" .. tostring(context.name) .. " current=" .. tostring(context.current) .. " max=" .. tostring(context.max))
-
     if not context.isAvailable then
-        print("[XPBE-DBG] FlatCompanionBarMixin:Render hiding (isAvailable=false)")
         self:SetAlpha(0)
         return
     end

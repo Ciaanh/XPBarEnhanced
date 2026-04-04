@@ -434,8 +434,8 @@ function XPBarEnhancedOptionsMixin:OnResetSettingsClicked()
     self:Refresh()
 
     -- Refresh bars immediately to apply new colors and settings
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
     end
 end
 
@@ -448,6 +448,14 @@ function XPBarEnhancedOptionsMixin:OnResetBarPositionClicked()
     -- Prefer BarManager wrapper or direct view call for reset position; fallback to old shim
     if Addon.BarManager and Addon.BarManager.ResetBarPosition then
         Addon.BarManager:ResetBarPosition()
+    end
+    -- Clear persisted secondary bar positions so bars return to default anchors
+    if Addon.db then
+        Addon.db.reputationBarPosition = nil
+        Addon.db.companionBarPosition  = nil
+    end
+    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ResetBarPositions then
+        Addon.SecondaryBarManager:ResetBarPositions()
     end
 end
 
@@ -981,32 +989,32 @@ function Options:OnOptionChanged(key)
     -- General refresh
     self:Refresh()
 
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
     end
 end
 
 function Options:OnColorReset()
     self:UpdateColorControls()
     -- Refresh bars to apply new colors
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
     end
 end
 
 function Options:OnColorChanged()
     self:UpdateColorControls()
     -- Refresh bars to apply new colors
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
     end
 end
 
 function Options:OnColorCancel()
     self:UpdateColorControls()
     -- Refresh bars to apply new colors
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
     end
 end
 

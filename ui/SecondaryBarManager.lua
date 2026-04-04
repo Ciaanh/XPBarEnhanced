@@ -11,6 +11,10 @@ local TEMPLATE_MAP = {
     companion  = { flat = "FlatCompanionBarTemplate" },
 }
 
+local function IsCustomStyle(styleMap, style)
+    return style and styleMap and styleMap[style] ~= nil
+end
+
 -------------------------------------------------------------------
 -- INTERNAL
 -------------------------------------------------------------------
@@ -32,16 +36,13 @@ function Manager:_GetOrCreateFrame(key, style)
         local templates = TEMPLATE_MAP[key]
         local templateName = templates and templates[style]
         if not templateName then
-            print("[XPBE-DBG] _GetOrCreateFrame: no templateName for key=" .. tostring(key) .. " style=" .. tostring(style))
             return nil
         end
 
-        print("[XPBE-DBG] _GetOrCreateFrame: CreateFrame key=" .. key .. " template=" .. templateName)
         frame = CreateFrame("Frame", nil, UIParent, templateName)
         if not frame then
             error("SecondaryBarManager: failed to create frame from template: " .. templateName)
         end
-        print("[XPBE-DBG] _GetOrCreateFrame: frame created ok, IsShown=" .. tostring(frame:IsShown()))
         self._frames[key][style] = frame
     end
     return frame
@@ -51,10 +52,7 @@ function Manager:_SetStyle(key, style)
     self._currentStyles = self._currentStyles or {}
     self._frames = self._frames or {}
 
-    print("[XPBE-DBG] _SetStyle key=" .. tostring(key) .. " style=" .. tostring(style) .. " current=" .. tostring(self._currentStyles[key]))
-
     if self._currentStyles[key] == style then
-        print("[XPBE-DBG] _SetStyle: no change, skipping")
         return
     end
 
@@ -68,17 +66,12 @@ function Manager:_SetStyle(key, style)
     self._currentStyles[key] = style
 
     if style == "none" then
-        print("[XPBE-DBG] _SetStyle: style=none, bar hidden")
         return
     end
 
     local frame = self:_GetOrCreateFrame(key, style)
     if frame and frame.SetShown then
-        print("[XPBE-DBG] _SetStyle: calling SetShown(true) on frame")
         frame:SetShown(true)
-        print("[XPBE-DBG] _SetStyle: after SetShown, IsShown=" .. tostring(frame:IsShown()))
-    else
-        print("[XPBE-DBG] _SetStyle: frame is nil or missing SetShown!")
     end
 end
 
@@ -89,24 +82,68 @@ end
 function Manager:Initialize()
     local db = Addon.db or {}
 
-    print("[XPBE-DBG] SecondaryBarManager:Initialize reputationBarStyle=" .. tostring(db.reputationBarStyle) .. " companionBarStyle=" .. tostring(db.companionBarStyle))
+    self:InstallBlizzardBarHooks()
 
     self:SetReputationStyle(db.reputationBarStyle or "none")
     self:SetCompanionStyle(db.companionBarStyle or "none")
+    self:ApplyDefaultReputationBarVisibility()
 
     Addon.EventBus:Register(
         Addon.EventNames.CONFIG_UPDATED,
         "SecondaryBarManager_ConfigUpdated",
-        function()
+        function(_ctx)
             local d = Addon.db or {}
             self:SetReputationStyle(d.reputationBarStyle or "none")
             self:SetCompanionStyle(d.companionBarStyle or "none")
+            self:ApplyDefaultReputationBarVisibility()
         end
     )
 end
 
+function Manager:ApplyDefaultReputationBarVisibility()
+    local style = self._currentStyles and self._currentStyles["reputation"]
+    local hasCustomReputationStyle = IsCustomStyle(TEMPLATE_MAP.reputation, style)
+
+    if hasCustomReputationStyle then
+        if _G.SecondaryStatusTrackingBarContainer then
+            _G.SecondaryStatusTrackingBarContainer:Hide()
+        end
+    else
+        if _G.SecondaryStatusTrackingBarContainer then
+            _G.SecondaryStatusTrackingBarContainer:Show()
+        end
+    end
+end
+
+function Manager:InstallBlizzardBarHooks()
+    if self._blizzardHooksInstalled then
+        return
+    end
+
+    local container = _G.SecondaryStatusTrackingBarContainer
+    if container and container.Show then
+        hooksecurefunc(container, "Show", function()
+            local style = self._currentStyles and self._currentStyles["reputation"]
+            if IsCustomStyle(TEMPLATE_MAP.reputation, style) then
+                container:Hide()
+            end
+        end)
+    end
+    if container and container.SetShown then
+        hooksecurefunc(container, "SetShown", function(_, shown)
+            local style = self._currentStyles and self._currentStyles["reputation"]
+            if shown and IsCustomStyle(TEMPLATE_MAP.reputation, style) then
+                container:Hide()
+            end
+        end)
+    end
+
+    self._blizzardHooksInstalled = true
+end
+
 function Manager:SetReputationStyle(style)
     xpcall(self._SetStyle, SafeCallErrorHandler, self, "reputation", style)
+    self:ApplyDefaultReputationBarVisibility()
 end
 
 function Manager:SetCompanionStyle(style)
@@ -116,18 +153,45 @@ end
 function Manager:OnEnteringWorld()
     self._frames = self._frames or {}
     self._currentStyles = self._currentStyles or {}
+    self:ApplyDefaultReputationBarVisibility()
 
     if self._currentStyles["reputation"] and self._currentStyles["reputation"] ~= "none" then
         local frame = self._frames["reputation"] and self._frames["reputation"][self._currentStyles["reputation"]]
-        if frame and frame:IsShown() and frame.Render and XPBarContextBuilder then
-            xpcall(frame.Render, SafeCallErrorHandler, frame, XPBarContextBuilder.BuildReputationContext())
+        if frame and frame:IsShown() and Addon.EventBus and Addon.ReputationSession then
+            xpcall(Addon.EventBus.Emit, SafeCallErrorHandler, Addon.EventBus,
+                Addon.EventNames.REPUTATION_BROADCAST_UPDATE, Addon.ReputationSession:_BuildContext())
         end
     end
 
     if self._currentStyles["companion"] and self._currentStyles["companion"] ~= "none" then
         local frame = self._frames["companion"] and self._frames["companion"][self._currentStyles["companion"]]
-        if frame and frame:IsShown() and frame.Render and XPBarContextBuilder then
-            xpcall(frame.Render, SafeCallErrorHandler, frame, XPBarContextBuilder.BuildCompanionContext())
+        if frame and frame:IsShown() and Addon.EventBus and Addon.CompanionSession then
+            xpcall(Addon.EventBus.Emit, SafeCallErrorHandler, Addon.EventBus,
+                Addon.EventNames.COMPANION_BROADCAST_UPDATE, Addon.CompanionSession:_BuildContext())
+        end
+    end
+end
+
+function Manager:ResetBarPositions()
+    local defaults = Addon.defaults or {}
+    local posMap = {
+        reputation = defaults.reputationBarPosition,
+        companion  = defaults.companionBarPosition,
+    }
+    for key, defaultPos in pairs(posMap) do
+        local style = self._currentStyles and self._currentStyles[key]
+        if style and style ~= "none" then
+            local frame = self._frames and self._frames[key] and self._frames[key][style]
+            if frame and frame.ClearAllPoints and defaultPos then
+                frame:ClearAllPoints()
+                frame:SetPoint(
+                    defaultPos.point,
+                    defaultPos.relativeTo or "UIParent",
+                    defaultPos.relativePoint,
+                    defaultPos.x or 0,
+                    defaultPos.y or 0
+                )
+            end
         end
     end
 end

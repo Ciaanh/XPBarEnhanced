@@ -194,8 +194,11 @@ function Session:OnXPUpdate()
     end
 
     -- Session is the single source of XP events; broadcast to all registered bars
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(
+            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+            XPBarContextBuilder.BuildContext("PLAYER_XP_UPDATE")
+        )
     end
 end
 
@@ -230,8 +233,11 @@ function Session:OnLevelUp(level)
     end
 
     -- Broadcast update to all bars
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(
+            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+            XPBarContextBuilder.BuildContext("PLAYER_LEVEL_UP")
+        )
     end
 end
 
@@ -300,8 +306,11 @@ function Session:OnQuestTurnedIn(questID)
         end
 
         -- Broadcast quest state change to all bars
-        if Addon.EventBus and Addon.EventBus.Emit then
-            Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+        if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+            Addon.EventBus:Emit(
+                Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+                XPBarContextBuilder.BuildContext("QUEST_LOG_UPDATE")
+            )
         end
     end
 
@@ -315,8 +324,11 @@ end
 
 function Session:OnRestedChanged()
     -- Rested/exhaustion state changed; notify all bars via EventBus
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(
+            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+            XPBarContextBuilder.BuildContext("UPDATE_EXHAUSTION")
+        )
     end
 end
 

@@ -173,7 +173,7 @@ function Config:SetColor(key, hex, silent)
 
     -- Emit a dedicated color update event so views can update only their color previews
     if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.COLORS_UPDATED)
+        Addon.EventBus:Emit(EventNames.COLORS_UPDATED, { event = EventNames.COLORS_UPDATED })
     end
 
     return true, normalized
@@ -192,7 +192,7 @@ function Config:ResetColor(key, silent)
     end
 
     if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.COLORS_UPDATED)
+        Addon.EventBus:Emit(EventNames.COLORS_UPDATED, { event = EventNames.COLORS_UPDATED })
     end
 
     return true, normalized
@@ -219,8 +219,8 @@ end
 
 function Config:ApplyOptionSideEffects(key)
     -- Emit a config-level event for fine-grained subscribers; also leave broadcast for compatibility
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
     end
     -- Bar visual options that require refresh
     local barVisualOptions = {
@@ -251,8 +251,8 @@ function Config:ApplyOptionSideEffects(key)
 
     if needsBarRefresh then
         -- Update XP bar controller (use new EventBus first)
-        if Addon.EventBus and Addon.EventBus.Emit then
-            Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+        if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+            Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
         end
     end
 
@@ -340,9 +340,10 @@ function Config:Reset()
         Addon.Database:Initialize()
     end
     -- Emit config change so UI updates
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED)
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        local ctx = XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE")
+        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, ctx)
+        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, ctx)
     end
 end
 
@@ -369,8 +370,8 @@ function Config:ResetStats()
     if stats and stats.Update then
         stats:Update()
     end
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
     end
 end
 

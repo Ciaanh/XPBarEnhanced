@@ -88,8 +88,11 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
         Addon.QuestXP:InvalidateQuestCache()
     end
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(
+            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+            XPBarContextBuilder.BuildContext("PLAYER_ENTERING_WORLD")
+        )
     elseif Addon.BarManager and Addon.BarManager.OnEnteringWorld then
         Addon.BarManager:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
@@ -147,14 +150,20 @@ function eventHandlers:OnPlayerMaxLevelUpdate()
         Addon.BarManager.currentStyle = nil  -- Force re-evaluation
         Addon.BarManager:SetStyle(db.barStyle or "classic")
     end
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(
+            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+            XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE")
+        )
     end
 end
 
 function eventHandlers:OnPlayerLogout()
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(
+            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+            XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE")
+        )
     elseif Addon.BarManager and Addon.BarManager.Shutdown then
         Addon.BarManager:Shutdown()
     end
