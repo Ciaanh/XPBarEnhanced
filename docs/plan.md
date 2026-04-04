@@ -59,6 +59,103 @@ Recommended execution order:
 10. Localization — `docs/backlog/localization-multi-language.md`
 11. Max level behavior expansion — `docs/backlog/max-level-enhancements.md`
 
+## Multi-Step Implementation Plan
+
+### Phase 0 — Baseline and Safety Rails
+
+Goal: lock current behavior before refactors.
+
+1. Confirm current validation matrix baseline in-game (login, reload, level-up, rep, companion, style switch, reset anchor).
+2. Add temporary debug counters/trace toggles for event fan-out and render count (dev-only, removable).
+3. Document baseline observations in `docs/memory/decision-log.md`.
+
+Exit criteria:
+- Baseline behavior and known edge cases are recorded.
+- Refactor regressions can be identified quickly.
+
+### Phase 1 — Shared Bar Lifecycle Contract (P1)
+
+Goal: create one reusable lifecycle for all bars.
+
+1. Extract generic lifecycle behavior from primary mixins into a shared base (`OnLoad`, `OnShow`, `OnHide`, `MarkDirty`, optional ticker hooks).
+2. Keep XP-specific animation/render behavior in XP-specific mixins.
+3. Define explicit extension points for secondary bars (`Render(context)`, optional `OnTextTick`, optional fade hooks).
+4. Update feature docs for XP and secondary manager contracts.
+
+Exit criteria:
+- Secondary bars can opt into the same dirty/coalesced lifecycle contract.
+- No XP bar behavior regression.
+
+### Phase 2 — Secondary Bars on Shared Contract (P1)
+
+Goal: remove ad-hoc secondary lifecycle duplication.
+
+1. Refactor reputation and companion style mixins to use shared base lifecycle.
+2. Move repeated subscription/ticker cleanup logic into shared code.
+3. Keep rendering domain-specific and context-driven.
+
+Exit criteria:
+- Secondary bars use shared lifecycle hooks.
+- Event bursts do not cause duplicate same-frame redraws.
+
+### Phase 3 — Event Router Consolidation Stage 1 (P1)
+
+Goal: centralize highest-overlap event ownership first.
+
+1. Introduce `core/EventRouter.lua` with explicit event → handler mapping.
+2. Migrate Session + QuestXP external event registration to router.
+3. Preserve existing internal EventBus payload contracts.
+
+Exit criteria:
+- Session/QuestXP no longer create their own event frames.
+- No regressions in XP, quest overlay, level-up flow.
+
+### Phase 4 — Event Router Consolidation Stage 2/3 (P1)
+
+Goal: complete event ownership centralization incrementally.
+
+1. Migrate ReputationSession and CompanionSession external events into router.
+2. Remove remaining per-service frame registration paths.
+3. Keep manager modules lifecycle/style-only.
+
+Exit criteria:
+- Single external event owner is in place for addon domains.
+- Event flow is traceable from router mapping.
+
+### Phase 5 — Session Persistence Across Reload (P1)
+
+Goal: make time-based metrics stable across `/reload`.
+
+1. Implement `sessionAccumTime` + `resetOnReload` behavior.
+2. Add option wiring and locale strings.
+3. Validate XP/hour and time-to-level continuity across reload.
+
+Exit criteria:
+- Reload preserves or resets session by config as expected.
+
+### Phase 6 — Secondary Bar Polish on Stable Foundation (P2)
+
+Goal: deliver UX improvements without duplicating infrastructure.
+
+1. Implement fade transitions via shared lifecycle hooks.
+2. Implement tooltip via shared anchor/formatting utility.
+3. Implement drag-to-move using shared position behavior.
+4. Add secondary time text refresh using shared ticker path.
+
+Exit criteria:
+- Fade/tooltip/drag/live-text work with no lifecycle duplication.
+
+### Phase 7 — Follow-On Feature Work (P2/P3)
+
+Goal: continue backlog work on a simplified architecture.
+
+1. Faction selector, size/scale, font customization.
+2. Additional secondary styles and localization.
+3. Max-level behavior enhancements.
+
+Exit criteria:
+- New features integrate through shared contracts, not parallel custom flows.
+
 ## Validation Matrix
 
 - [ ] Login: XP + secondary bars initialize with expected visibility/position.
@@ -72,7 +169,7 @@ Recommended execution order:
 ## Notes
 
 - Keep manager split (XP vs secondary) unless architecture guidance changes.
-- Defer event router consolidation until after secondary-bar polish is stable.
+- Keep manager responsibilities strict: lifecycle/style/visibility orchestration only.
 - Backlog items are in `docs/backlog/` — one file per feature with priority, scope, and acceptance criteria.
 
 ## Previous Session Summary (2026-04-04)
