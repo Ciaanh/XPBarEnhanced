@@ -101,3 +101,19 @@ Impact: `QuestXP` now exposes `HandleRoutedEvent(event)`; router owns QuestXP ev
 Decision: Migrate Session external event ownership to `EventRouter` while preserving level-up lifecycle ownership.
 Reason: reduce distributed event-frame ownership without changing existing `AddOnLifecycle -> Session:OnLevelUp` flow.
 Impact: Session no longer registers WoW events directly; router now dispatches XP, quest, rested, and time-played events into Session handlers.
+
+Decision: Start Stage 3 by moving remaining lifecycle fan-out events to `EventRouter`.
+Reason: centralize runtime event routing in one place and reduce orchestration spread across modules.
+Impact: router now dispatches entering-world, level-up, XP gain enable/disable, and max-level-update fan-out behavior; `AddOnLifecycle` was reduced to startup/shutdown handlers.
+
+Decision: Complete Stage 3 by moving startup/shutdown event registrations into `EventRouter`.
+Reason: satisfy single-frame external event ownership target and keep AddOnLifecycle focused on handler logic only.
+Impact: `AddOnLifecycle` no longer owns a frame or event map; `EventRouter` now registers and dispatches `ADDON_LOADED`, `PLAYER_LOGIN`, and `PLAYER_LOGOUT` in addition to domain and lifecycle fan-out events.
+
+Decision: Stabilize Stage 3 startup ordering by gating routed reputation/companion handlers on initialized session state, while keeping Session routed handlers ungated.
+Reason: reputation/companion handlers depend on local `_session` seeded during login; Session uses database-backed `GetCurrent()` and must continue processing XP updates without `_session` gating.
+Impact: nil-session faults on early routed events were resolved and XP refresh/animation behavior was restored after removing incorrect Session dispatcher gating.
+
+Decision: Close Stage 3 consolidation after in-game validation pass.
+Reason: runtime testing confirmed no errors and restored XP gain refresh behavior after startup-order stabilization fixes.
+Impact: event-router consolidation backlog item is now considered implemented and validated for current scope.

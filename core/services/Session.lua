@@ -120,8 +120,6 @@ function Session:OnXPUpdate()
     -- Use centralized XPCalculations module for XP gain computation
     local XPCalc = Addon.XPCalculations
     local gained, didLevelUp = XPCalc.ComputeGain(currentXP, maxXP, lastXP, lastMax)
-
-    -- Update session
     session.gainedXP = (session.gainedXP or 0) + gained
     session.sessionXP = session.gainedXP
     session.lastXP = currentXP

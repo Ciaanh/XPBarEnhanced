@@ -191,3 +191,23 @@ Exit criteria:
 - Phase 2 continued: added `core/EventRouter.lua` and migrated reputation/companion external event ownership from per-service frames to centralized router dispatch.
 - Phase 2 continued: migrated `QuestXP` external events to `EventRouter` and removed QuestXP event frame ownership.
 - Phase 2 continued: migrated Session external event ownership to `EventRouter`; Session now acts as routed handler module (level-up remains lifecycle-owned).
+- Stage 3 started: lifecycle fan-out events (`PLAYER_ENTERING_WORLD`, `PLAYER_LEVEL_UP`, `ENABLE_XP_GAIN`, `DISABLE_XP_GAIN`, `PLAYER_MAX_LEVEL_UPDATE`) moved into `EventRouter` dispatch; `AddOnLifecycle` now handles startup/shutdown only.
+- Stage 3 continued: startup/shutdown registrations (`ADDON_LOADED`, `PLAYER_LOGIN`, `PLAYER_LOGOUT`) moved into `EventRouter`; `AddOnLifecycle` now provides lifecycle handler methods only.
+- Stage 3 stabilization: fixed startup-order nil session faults by gating reputation/companion routed handlers until initialized; restored Session XP gain accumulation path so XP refresh and animation behavior resumed.
+- Stage 3 validation complete: in-game verification passed with no errors; XP gain refresh/animation behavior confirmed restored and overall routing behavior stable.
+
+## Next Phase Readiness (Planning Only)
+
+Target next phase: **Phase 5 — Session Persistence Across Reload**.
+
+Prepared scope (no implementation started):
+
+1. Add explicit persistence model for session continuity across `/reload` (`sessionAccumTime` + reset policy).
+2. Wire config toggle for reset behavior and update locale strings.
+3. Validate XP/hour and time-to-level continuity with and without reset enabled.
+
+Entry checklist prepared:
+
+- Confirm current session fields in `core/services/Session.lua` and `services/Database.lua` support additive time accounting.
+- Define migration-safe defaults for existing users in `config/defaults.lua`.
+- Prepare in-game test matrix for `/reload` continuity and option toggle behavior.

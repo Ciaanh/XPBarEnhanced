@@ -85,6 +85,7 @@ end
 -------------------------------------------------------------------
 
 function CompSession:OnFactionUpdate()
+    if not self._session then return end
     if self._unavailable then return end
 
     local session = self._session
@@ -231,6 +232,7 @@ end
 -------------------------------------------------------------------
 
 function CompSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    if not self._session then return end
     if isInitialLogin then
         -- Reset counters; companion identity may have changed between sessions.
         local session = self._session

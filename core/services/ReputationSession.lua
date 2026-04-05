@@ -129,6 +129,7 @@ end
 -------------------------------------------------------------------
 
 function RepSession:OnFactionUpdate()
+    if not self._session then return end
     if not (C_Reputation and C_Reputation.GetWatchedFactionData) then return end
 
     local watchedData = C_Reputation.GetWatchedFactionData()
@@ -191,6 +192,7 @@ function RepSession:OnFactionUpdate()
 end
 
 function RepSession:OnRenownLevelChanged(factionID, newRenownLevel, oldRenownLevel)
+    if not self._session then return end
     local session = self._session
     if factionID == session.watchedFactionID then
         self:_SnapshotWatchedFaction()
@@ -282,6 +284,7 @@ end
 -------------------------------------------------------------------
 
 function RepSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    if not self._session then return end
     if isInitialLogin then
         local session = self._session
         session.factionTotals = {}

@@ -52,11 +52,12 @@ A central event router would:
 - [x] Task 1 completed for secondary-domain events.
 - [x] Task 2 completed: `QuestXP` and `Session` external event ownership migrated.
 - [x] Task 3 completed: `ReputationSession` and `CompanionSession` external event ownership moved to `EventRouter`.
-- [ ] Task 4 pending.
+- [x] Task 4 completed for lifecycle fan-out scope, including startup/shutdown dispatch migration into `EventRouter`.
 - [x] Task 5 completed for stage-2 mappings and stage-1 Session/QuestXP mappings.
 - [x] Task 6 completed for stage-2 services and stage-1 Session/QuestXP service cleanup.
 - [x] Task 7 completed for `EventRouter` module load.
-- [ ] Task 8 pending full in-game validation sweep.
+- [x] Post-Stage-3 regression fix: guarded reputation/companion dispatch before service initialization and restored Session XP gain refresh path.
+- [x] Task 8 completed: in-game validation passed (no errors, XP gain refresh restored, no visible regressions observed).
 
 ## Affected Files
 
@@ -70,11 +71,11 @@ A central event router would:
 
 ## Acceptance Criteria
 
-- [ ] Only one hidden frame registers WoW events.
-- [ ] All existing event-driven behavior is preserved.
-- [ ] Event → handler mapping is documented in the router.
-- [ ] No double-broadcast from overlapping events.
-- [ ] Services no longer create frames or register events directly.
+- [x] Only one hidden frame registers WoW events.
+- [x] All existing event-driven behavior is preserved.
+- [x] Event → handler mapping is documented in the router.
+- [x] No double-broadcast from overlapping events.
+- [x] Services no longer create frames or register events directly.
 
 ## Risk Mitigation
 
