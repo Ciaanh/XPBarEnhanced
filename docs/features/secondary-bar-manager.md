@@ -10,6 +10,7 @@ Manage reputation and companion bars independently while keeping style switching
 ## Current Components
 
 - ui/SecondaryBarManager.lua
+- ui/mixins/SecondaryBarBaseMixin.lua
 - ui/secondary/FlatReputationBarStyle.lua
 - ui/secondary/FlatCompanionBarStyle.lua
 
@@ -24,6 +25,18 @@ Manage reputation and companion bars independently while keeping style switching
 2. Keep Blizzard reputation-bar visibility ownership in SecondaryBarManager.
 3. Shift bootstrap emissions into domain/session orchestration so manager does not call private session context builders.
 4. Adopt shared bar lifecycle contract before adding more secondary-bar polish features.
+
+## Phase 2 Kickoff (2026-04-05)
+
+1. Manager bootstrap emits were decoupled from private session context builders.
+2. `SecondaryBarManager:OnEnteringWorld()` now uses `XPBarContextBuilder` entry points instead of `ReputationSession:_BuildContext()` / `CompanionSession:_BuildContext()`.
+3. Full router migration is still pending; manager still owns initial broadcast trigger for visible secondary bars.
+
+## Phase 2 Progress (2026-04-05)
+
+1. Manager entering-world bootstrap emit ownership has been removed.
+2. Reputation/companion entering-world emits now come from session layers, not manager orchestration.
+3. AddOnLifecycle now reapplies secondary Blizzard visibility policy on the deferred entering-world pass.
 
 ## Session Milestone Mapping
 
@@ -43,3 +56,9 @@ Manage reputation and companion bars independently while keeping style switching
 2. Entering-world path emits session-built context via EventBus for secondary bars.
 3. Secondary defaults and reset-anchor behavior are config-driven.
 4. Blizzard reputation visibility is now independent from XP style selection.
+
+## Implemented Status (2026-04-05)
+
+1. Secondary lifecycle contract is now shared via `XPBarSecondaryBaseMixin`.
+2. Secondary style mixins now provide domain hooks only (`GetBroadcastEventName`, `GetInitialContext`, `Render`).
+3. EventBus updates for secondary bars now run through `MarkDirty` coalescing instead of direct render calls.

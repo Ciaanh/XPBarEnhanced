@@ -59,3 +59,45 @@ Impact: guidelines and feature docs now explicitly require manager-layer context
 Decision: Adopt Blizzard-aligned status/progress UI principles as architecture references.
 Reason: Blizzard patterns favor central orchestration, shared bar contracts, and coalesced animation/update handling.
 Impact: `docs/guidelines/code-architecture-choices.md` updated with explicit architecture principles and migration priorities.
+
+## 2026-04-05
+
+Decision: Start shared secondary-bar lifecycle migration with a dedicated base mixin.
+Reason: secondary bars duplicated lifecycle wiring and rendered immediately on each event; this blocks additive polish work.
+Impact: `XPBarSecondaryBaseMixin` now owns `OnLoad`/`OnShow`/`OnHide`/`Refresh`/`MarkDirty`, while secondary styles only provide domain hooks and render logic.
+
+Decision: Keep shared-contract Phase 1 scoped to secondary bars first.
+Reason: minimize blast radius and preserve stable primary XP behavior while validating the contract pattern.
+Impact: `FlatReputationBarMixin` and `FlatCompanionBarMixin` now compose from the shared base; XP primary mixin remains unchanged for this step.
+
+Decision: Add optional secondary text ticker support to shared lifecycle mixin.
+Reason: enable follow-on live text/tooltip polish without re-adding per-style ticker wiring.
+Impact: secondary styles can opt in with `GetTextTickerInterval` and `OnTextTick`; no behavior changes for styles that do not implement these hooks.
+
+Decision: Begin Phase 2 by removing manager dependency on private session context builders.
+Reason: private session methods should not be called outside service scope; manager responsibilities should remain lifecycle/visibility focused.
+Impact: `SecondaryBarManager` now builds startup contexts through `XPBarContextBuilder` instead of `_BuildContext` session internals.
+
+Decision: Remove secondary entering-world broadcast ownership from `SecondaryBarManager`.
+Reason: entering-world domain refresh belongs to session/service orchestration, not style/visibility manager layer.
+Impact: manager no longer emits reputation/companion updates on entering world; session layers are now the source for those broadcasts.
+
+Decision: Re-apply secondary Blizzard visibility policy from lifecycle defer pass.
+Reason: Blizzard status tracking containers can be re-shown during entering-world internals and must be corrected after all handlers finish.
+Impact: `AddOnLifecycle:OnPlayerEnteringWorld` now defers both XP and secondary visibility policy re-application.
+
+Decision: Introduce `core/EventRouter.lua` for staged secondary-domain event ownership.
+Reason: continue modularization by reducing distributed hidden event frames while keeping migration incremental.
+Impact: router now owns `UPDATE_FACTION`, `CHAT_MSG_COMBAT_FACTION_CHANGE`, `MAJOR_FACTION_RENOWN_LEVEL_CHANGED`, and `DELVES_ACCOUNT_DATA_ELEMENT_CHANGED` dispatch for reputation/companion services.
+
+Decision: Remove event frame creation from `ReputationSession` and `CompanionSession`.
+Reason: event ownership moved to router; duplicate registration would cause redundant updates.
+Impact: these services are now state/handler modules for external events rather than event-frame owners.
+
+Decision: Migrate `QuestXP` external events to `EventRouter` and remove QuestXP listener frame.
+Reason: continue staged consolidation of distributed event ownership while preserving existing rebuild delay behavior.
+Impact: `QuestXP` now exposes `HandleRoutedEvent(event)`; router owns QuestXP event registrations and forwards to service handler.
+
+Decision: Migrate Session external event ownership to `EventRouter` while preserving level-up lifecycle ownership.
+Reason: reduce distributed event-frame ownership without changing existing `AddOnLifecycle -> Session:OnLevelUp` flow.
+Impact: Session no longer registers WoW events directly; router now dispatches XP, quest, rested, and time-played events into Session handlers.

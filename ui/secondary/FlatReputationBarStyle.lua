@@ -5,7 +5,7 @@ local Addon = XPBarEnhanced
 
 ---@class FlatReputationBarMixin
 FlatReputationBarMixin = {}
-local Mixin = FlatReputationBarMixin
+local StyleMixin = {}
 
 local FACTION_COLORS = {
     standard   = {r = 0.70, g = 0.30, b = 0.85},
@@ -18,46 +18,36 @@ local function GetFactionColor(factionType)
     return FACTION_COLORS[factionType] or FACTION_COLORS.standard
 end
 
--------------------------------------------------------------------
--- LIFECYCLE
--------------------------------------------------------------------
-
-function Mixin:OnLoad()
-    self:ClearAllPoints()
-    local db = XPBarEnhanced and XPBarEnhanced.db
-    local pos = (db and db.reputationBarPosition)
-        or (XPBarEnhanced and XPBarEnhanced.defaults and XPBarEnhanced.defaults.reputationBarPosition)
-    if pos then
-        self:SetPoint(pos.point, pos.relativeTo or "UIParent", pos.relativePoint, pos.x or 0, pos.y or 0)
-    else
-        self:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 34)
-    end
+function StyleMixin:GetPositionConfigKey()
+    return "reputationBarPosition"
 end
 
-function Mixin:OnShow()
-    self._busHandle = Addon.EventBus:RegisterWithHandle(
-        Addon.EventNames.REPUTATION_BROADCAST_UPDATE,
-        function(ctx)
-            self:Render(ctx)
-        end
-    )
+function StyleMixin:GetFallbackPosition()
+    return {
+        point = "BOTTOM",
+        relativeTo = "UIParent",
+        relativePoint = "BOTTOM",
+        x = 0,
+        y = 34,
+    }
+end
+
+function StyleMixin:GetBroadcastEventName()
+    return Addon.EventNames.REPUTATION_BROADCAST_UPDATE
+end
+
+function StyleMixin:GetInitialContext()
     if XPBarContextBuilder and XPBarContextBuilder.BuildReputationContext then
-        self:Render(XPBarContextBuilder.BuildReputationContext())
+        return XPBarContextBuilder.BuildReputationContext()
     end
-end
-
-function Mixin:OnHide()
-    if self._busHandle then
-        self._busHandle.Unregister()
-        self._busHandle = nil
-    end
+    return nil
 end
 
 -------------------------------------------------------------------
 -- RENDER
 -------------------------------------------------------------------
 
-function Mixin:Render(context)
+function StyleMixin:Render(context)
     if not context then
         return
     end
@@ -86,3 +76,5 @@ function Mixin:Render(context)
     end
     self.LabelContainer.Label:SetText(label)
 end
+
+FlatReputationBarMixin = CreateFromMixins(XPBarSecondaryBaseMixin, StyleMixin)

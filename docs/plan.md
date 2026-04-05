@@ -1,6 +1,6 @@
 # XPBarEnhanced Session Plan
 
-Last updated: 2026-04-04
+Last updated: 2026-04-05
 Scope: Current implementation guide for ongoing coding work.
 
 ## How To Use This Plan
@@ -179,3 +179,15 @@ Exit criteria:
 - Reputation watched-faction transitions fixed: clear/switch now emits update immediately so the custom bar hides/shows correctly.
 - Blizzard container ownership split: XP style controls Blizzard XP bar visibility; reputation style controls Blizzard reputation bar visibility.
 - Options reset-anchor now resets secondary bar anchors and button placement aligns with secondary-bar controls.
+
+## Current Session Progress (2026-04-05)
+
+- Phase 1 implementation started: added `ui/mixins/SecondaryBarBaseMixin.lua` with shared secondary lifecycle hooks (`OnLoad`, `OnShow`, `OnHide`, `Refresh`, `MarkDirty`).
+- `ui/secondary/FlatReputationBarStyle.lua` and `ui/secondary/FlatCompanionBarStyle.lua` now compose from the shared base and provide domain-specific hooks/rendering only.
+- `docs/backlog/shared-bar-contract.md` updated to reflect initial completed tasks and acceptance criteria progress.
+- Optional secondary text ticker support added to shared mixin (`GetTextTickerInterval` + `OnTextTick` hook contract).
+- Phase 2 kickoff: `SecondaryBarManager` no longer calls private session `_BuildContext()` methods during entering-world bootstrap.
+- Phase 2 continued: entering-world secondary broadcast ownership moved off manager and into session flows; lifecycle now only reapplies secondary Blizzard visibility policy after world entry.
+- Phase 2 continued: added `core/EventRouter.lua` and migrated reputation/companion external event ownership from per-service frames to centralized router dispatch.
+- Phase 2 continued: migrated `QuestXP` external events to `EventRouter` and removed QuestXP event frame ownership.
+- Phase 2 continued: migrated Session external event ownership to `EventRouter`; Session now acts as routed handler module (level-up remains lifecycle-owned).

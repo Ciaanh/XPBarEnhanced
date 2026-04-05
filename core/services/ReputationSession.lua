@@ -94,35 +94,6 @@ function RepSession:Initialize()
     session.factionTotals   = session.factionTotals   or {}
 
     self:_SnapshotWatchedFaction()
-    self:_SetupEventFrame()
-end
-
--------------------------------------------------------------------
--- EVENT FRAME
--------------------------------------------------------------------
-
-function RepSession:_SetupEventFrame()
-    if self._eventFrame then return end
-
-    local frame = CreateFrame("Frame")
-    self._eventFrame = frame
-
-    frame:RegisterEvent("UPDATE_FACTION")
-    -- Also listen to chat messages for reputation changes. UPDATE_FACTION is the primary
-    -- trigger, but CHAT_MSG_COMBAT_FACTION_CHANGE provides an additional signal for edge
-    -- cases where the faction panel update is delayed (e.g. during some phased content).
-    -- Both events route to OnFactionUpdate(), which is idempotent (delta-based), so
-    -- firing it twice has no side-effects beyond a redundant snapshot read.
-    frame:RegisterEvent("CHAT_MSG_COMBAT_FACTION_CHANGE")
-    frame:RegisterEvent("MAJOR_FACTION_RENOWN_LEVEL_CHANGED")
-
-    frame:SetScript("OnEvent", function(_, event, ...)
-        if event == "UPDATE_FACTION" or event == "CHAT_MSG_COMBAT_FACTION_CHANGE" then
-            RepSession:OnFactionUpdate()
-        elseif event == "MAJOR_FACTION_RENOWN_LEVEL_CHANGED" then
-            RepSession:OnRenownLevelChanged(...)
-        end
-    end)
 end
 
 -------------------------------------------------------------------

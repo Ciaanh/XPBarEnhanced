@@ -44,3 +44,8 @@ Provide stable, accurate XP state updates to XP bar rendering with predictable t
 1. XP emit sites and related config/options emit paths provide explicit context payloads.
 2. EventBus no longer infers/builds XP context.
 3. Listener contracts now assume explicit payloads only.
+
+## Implemented Status (2026-04-05)
+
+1. Stage-1 router migration moved Session external event registrations to `core/EventRouter.lua`.
+2. `core/services/Session.lua` no longer creates an internal event frame; event ownership is centralized.

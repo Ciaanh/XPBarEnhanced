@@ -5,51 +5,44 @@ local Addon = XPBarEnhanced
 
 ---@class FlatCompanionBarMixin
 FlatCompanionBarMixin = {}
-local Mixin = FlatCompanionBarMixin
+local StyleMixin = {}
 
 local BAR_COLOR = {r = 0.20, g = 0.80, b = 0.80}
 
--------------------------------------------------------------------
--- LIFECYCLE
--------------------------------------------------------------------
-
-function Mixin:OnLoad()
-    self:ClearAllPoints()
+function StyleMixin:OnSecondaryLoad()
     self.Bar:SetStatusBarColor(BAR_COLOR.r, BAR_COLOR.g, BAR_COLOR.b)
-    local db = XPBarEnhanced and XPBarEnhanced.db
-    local pos = (db and db.companionBarPosition)
-        or (XPBarEnhanced and XPBarEnhanced.defaults and XPBarEnhanced.defaults.companionBarPosition)
-    if pos then
-        self:SetPoint(pos.point, pos.relativeTo or "UIParent", pos.relativePoint, pos.x or 0, pos.y or 0)
-    else
-        self:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 54)
-    end
 end
 
-function Mixin:OnShow()
-    self._busHandle = Addon.EventBus:RegisterWithHandle(
-        Addon.EventNames.COMPANION_BROADCAST_UPDATE,
-        function(ctx)
-            self:Render(ctx)
-        end
-    )
+function StyleMixin:GetPositionConfigKey()
+    return "companionBarPosition"
+end
+
+function StyleMixin:GetFallbackPosition()
+    return {
+        point = "BOTTOM",
+        relativeTo = "UIParent",
+        relativePoint = "BOTTOM",
+        x = 0,
+        y = 54,
+    }
+end
+
+function StyleMixin:GetBroadcastEventName()
+    return Addon.EventNames.COMPANION_BROADCAST_UPDATE
+end
+
+function StyleMixin:GetInitialContext()
     if XPBarContextBuilder and XPBarContextBuilder.BuildCompanionContext then
-        self:Render(XPBarContextBuilder.BuildCompanionContext())
+        return XPBarContextBuilder.BuildCompanionContext()
     end
-end
-
-function Mixin:OnHide()
-    if self._busHandle then
-        self._busHandle.Unregister()
-        self._busHandle = nil
-    end
+    return nil
 end
 
 -------------------------------------------------------------------
 -- RENDER
 -------------------------------------------------------------------
 
-function Mixin:Render(context)
+function StyleMixin:Render(context)
     if not context then
         return
     end
@@ -76,3 +69,5 @@ function Mixin:Render(context)
     end
     self.LabelContainer.Label:SetText(label)
 end
+
+FlatCompanionBarMixin = CreateFromMixins(XPBarSecondaryBaseMixin, StyleMixin)

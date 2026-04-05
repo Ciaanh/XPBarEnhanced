@@ -16,6 +16,7 @@ This is the architecture-enabler for secondary bar polish tasks and should land 
 Primary bars use BaseMixin with: dirty-mark coalescing, animation support, text ticker, position persistence, and Edit Mode awareness. Secondary bars use a separate, simpler contract with no coalescing, no animation, and hard-coded lifecycle methods.
 
 Adding features like fade animations, tooltip, or drag-to-move to secondary bars means re-implementing infrastructure that BaseMixin already provides. A shared base contract would:
+
 - Reduce code duplication when adding polish to secondary bars.
 - Make it easier to create new bar types (e.g., honor bar, artifact power bar).
 - Ensure consistent lifecycle behavior across all bars.
@@ -36,9 +37,9 @@ Adding features like fade animations, tooltip, or drag-to-move to secondary bars
 
 ## Tasks
 
-1. Audit BaseMixin to identify which behaviors are XP-specific vs generic.
-2. Extract generic lifecycle mixin (subscribe/unsubscribe, dirty-mark, position, ticker).
-3. Refactor secondary bar styles to inherit from the shared mixin.
+1. [x] Audit BaseMixin to identify which behaviors are XP-specific vs generic.
+2. [x] Extract generic lifecycle mixin (subscribe/unsubscribe, dirty-mark, position, ticker).
+3. [x] Refactor secondary bar styles to inherit from the shared mixin.
 4. Verify all existing behavior is preserved.
 5. Document the shared bar contract in code comments.
 
@@ -51,9 +52,9 @@ Adding features like fade animations, tooltip, or drag-to-move to secondary bars
 
 ## Acceptance Criteria
 
-- [ ] Secondary bars use the same lifecycle hooks as primary bars.
-- [ ] MarkDirty coalescing is available to secondary bars.
-- [ ] Text ticker is available to secondary bars.
+- [x] Secondary bars use the same lifecycle hooks as primary bars.
+- [x] MarkDirty coalescing is available to secondary bars.
+- [x] Text ticker is available to secondary bars.
 - [ ] No regressions in primary bar behavior.
 - [ ] Adding a new bar type requires only a Render method and event name.
 

@@ -150,28 +150,6 @@ function Manager:SetCompanionStyle(style)
     xpcall(self._SetStyle, SafeCallErrorHandler, self, "companion", style)
 end
 
-function Manager:OnEnteringWorld()
-    self._frames = self._frames or {}
-    self._currentStyles = self._currentStyles or {}
-    self:ApplyDefaultReputationBarVisibility()
-
-    if self._currentStyles["reputation"] and self._currentStyles["reputation"] ~= "none" then
-        local frame = self._frames["reputation"] and self._frames["reputation"][self._currentStyles["reputation"]]
-        if frame and frame:IsShown() and Addon.EventBus and Addon.ReputationSession then
-            xpcall(Addon.EventBus.Emit, SafeCallErrorHandler, Addon.EventBus,
-                Addon.EventNames.REPUTATION_BROADCAST_UPDATE, Addon.ReputationSession:_BuildContext())
-        end
-    end
-
-    if self._currentStyles["companion"] and self._currentStyles["companion"] ~= "none" then
-        local frame = self._frames["companion"] and self._frames["companion"][self._currentStyles["companion"]]
-        if frame and frame:IsShown() and Addon.EventBus and Addon.CompanionSession then
-            xpcall(Addon.EventBus.Emit, SafeCallErrorHandler, Addon.EventBus,
-                Addon.EventNames.COMPANION_BROADCAST_UPDATE, Addon.CompanionSession:_BuildContext())
-        end
-    end
-end
-
 function Manager:ResetBarPositions()
     local defaults = Addon.defaults or {}
     local posMap = {

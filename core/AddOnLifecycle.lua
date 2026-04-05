@@ -47,6 +47,11 @@ function eventHandlers:OnPlayerLogin()
         Addon.CompanionSession:Initialize()
     end
 
+    -- Initialize centralized event router (staged migration)
+    if Addon.EventRouter and Addon.EventRouter.Initialize then
+        Addon.EventRouter:Initialize()
+    end
+
     -- Initialize features
     local stats = Addon.Stats
     if stats and stats.Initialize then
@@ -96,15 +101,15 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     elseif Addon.BarManager and Addon.BarManager.OnEnteringWorld then
         Addon.BarManager:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
-    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.OnEnteringWorld then
-        Addon.SecondaryBarManager:OnEnteringWorld()
-    end
     -- Blizzard's StatusTrackingBarManager re-shows its containers via internal
     -- code paths on PLAYER_ENTERING_WORLD. Re-apply our visibility rules after
     -- all other handlers have run (C_Timer.After(0) defers to next frame).
     C_Timer.After(0, function()
         if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
             Addon.BarManager:ApplyDefaultXPBarVisibility()
+        end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ApplyDefaultReputationBarVisibility then
+            Addon.SecondaryBarManager:ApplyDefaultReputationBarVisibility()
         end
     end)
 end

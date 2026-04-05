@@ -16,6 +16,7 @@ Implementation policy: staged migration (domain-by-domain), not one-shot rewrite
 Currently, WoW events are registered independently by AddOnLifecycle, Session, ReputationSession, CompanionSession, and QuestXP — each creating its own hidden frame. This works but makes the event flow hard to trace and risks redundant broadcasts (e.g., `QUEST_TURNED_IN` fires in both Session and QuestXP, each potentially emitting `XPBAR_BROADCAST_UPDATE`).
 
 A central event router would:
+
 - Make the event → handler flow explicit and traceable.
 - Eliminate hidden frame overhead (5 frames → 1).
 - Allow deduplication of overlapping event registrations.
@@ -45,6 +46,17 @@ A central event router would:
 6. Remove `CreateFrame` and `RegisterEvent` from migrated services.
 7. Update TOC load order.
 8. Verify no regressions in event handling across all domains.
+
+## Progress (2026-04-05)
+
+- [x] Task 1 completed for secondary-domain events.
+- [x] Task 2 completed: `QuestXP` and `Session` external event ownership migrated.
+- [x] Task 3 completed: `ReputationSession` and `CompanionSession` external event ownership moved to `EventRouter`.
+- [ ] Task 4 pending.
+- [x] Task 5 completed for stage-2 mappings and stage-1 Session/QuestXP mappings.
+- [x] Task 6 completed for stage-2 services and stage-1 Session/QuestXP service cleanup.
+- [x] Task 7 completed for `EventRouter` module load.
+- [ ] Task 8 pending full in-game validation sweep.
 
 ## Affected Files
 

@@ -73,49 +73,13 @@ end
 
 function Session:Initialize()
     self:GetCurrent()
-    -- Set up event listeners to keep session state updated
-    self:SetupEventFrame()
+    -- External event ownership is centralized in EventRouter.
 end
 
 -- Initialize event frame for session-relevant events
 function Session:SetupEventFrame()
-    if self.eventFrame then
-        return
-    end
-
-    local frame = CreateFrame("Frame")
-    frame:RegisterEvent("PLAYER_XP_UPDATE")
-    -- PLAYER_LEVEL_UP is handled exclusively by AddOnLifecycle:OnPlayerLevelUp
-    -- (which calls Session:OnLevelUp). Do NOT register here to avoid double-dispatch.
-    frame:RegisterEvent("TIME_PLAYED_MSG")
-    frame:RegisterEvent("QUEST_TURNED_IN")
-    frame:RegisterEvent("QUEST_LOG_UPDATE")
-    -- Rested state changes are also handled centrally here so bars
-    -- only need to subscribe to EventBus instead of raw WoW events.
-    frame:RegisterEvent("UPDATE_EXHAUSTION")
-    frame:RegisterEvent("PLAYER_UPDATE_RESTING")
-
-    frame:SetScript(
-        "OnEvent",
-        function(_, event, ...)
-            if event == "PLAYER_XP_UPDATE" then
-                Session:OnXPUpdate()
-            elseif event == "TIME_PLAYED_MSG" then
-                local totalTime, levelTime = ...
-                Session:OnTimePlayed(totalTime, levelTime)
-            elseif event == "QUEST_TURNED_IN" then
-                local questID = ...
-                Session:OnQuestTurnedIn(questID)
-            elseif event == "QUEST_LOG_UPDATE" then
-                -- keep lastXP/maxXP/current cache fresh just in case
-                Session:RefreshSessionTimes()
-            elseif event == "UPDATE_EXHAUSTION" or event == "PLAYER_UPDATE_RESTING" then
-                Session:OnRestedChanged()
-            end
-        end
-    )
-
-    self.eventFrame = frame
+    -- Deprecated in router architecture. Kept as a no-op for compatibility.
+    return false
 end
 
 function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)

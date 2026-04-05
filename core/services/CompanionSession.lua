@@ -78,36 +78,6 @@ function CompSession:Initialize()
     session.lastLevel             = normalized.currentLevel
 
     self._unavailable = false
-
-    self:_SetupEventFrame()
-end
-
--------------------------------------------------------------------
--- EVENT FRAME
--------------------------------------------------------------------
-
-function CompSession:_SetupEventFrame()
-    -- Guard against duplicate frame creation on re-initialize.
-    if self._eventFrame then return end
-
-    local frame = CreateFrame("Frame")
-    self._eventFrame = frame
-
-    frame:RegisterEvent("UPDATE_FACTION")
-    frame:RegisterEvent("DELVES_ACCOUNT_DATA_ELEMENT_CHANGED")
-
-    frame:SetScript("OnEvent", function(_, event, ...)
-        if event == "UPDATE_FACTION" then
-            -- UPDATE_FACTION may carry a factionID argument or none (global update).
-            local factionID = ...
-            local sess = CompSession._session
-            if not factionID or (sess and factionID == sess.factionID) then
-                CompSession:OnFactionUpdate()
-            end
-        elseif event == "DELVES_ACCOUNT_DATA_ELEMENT_CHANGED" then
-            CompSession:OnFactionUpdate()
-        end
-    end)
 end
 
 -------------------------------------------------------------------
@@ -272,6 +242,9 @@ function CompSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
         end
         -- Re-run full init to detect the current companion.
         self:Initialize()
+        if Addon.EventBus and Addon.EventNames and Addon.EventNames.COMPANION_BROADCAST_UPDATE then
+            Addon.EventBus:Emit(Addon.EventNames.COMPANION_BROADCAST_UPDATE, self:_BuildContext())
+        end
         return
     end
 
@@ -298,6 +271,10 @@ function CompSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     session.lastNextThreshold     = friendData.nextThreshold
     session.lastCurrentXP         = normalized.currentXP
     session.lastLevel             = normalized.currentLevel
+
+    if Addon.EventBus and Addon.EventNames and Addon.EventNames.COMPANION_BROADCAST_UPDATE then
+        Addon.EventBus:Emit(Addon.EventNames.COMPANION_BROADCAST_UPDATE, self:_BuildContext())
+    end
 end
 
 return CompSession

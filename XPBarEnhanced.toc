@@ -46,6 +46,7 @@ core\calculations\CompanionCalculations.lua
 core\services\QuestXP.lua
 core\TextFormatter.lua
 core\EventBus.lua
+core\EventRouter.lua
 
 core\config\Config.lua
 core\config\ConfigHelper.lua
@@ -61,6 +62,7 @@ ui\MinimapButton.lua
 
 # Base and Mixins (must load before StyleBuilder)
 ui\mixins\BaseMixin.lua
+ui\mixins\SecondaryBarBaseMixin.lua
 ui\mixins\LayoutMixin.lua
 ui\mixins\PaintMixin.lua
 ui\mixins\DisplayMixin.lua
