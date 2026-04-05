@@ -139,6 +139,12 @@ local optionDetails = {
         description = Addon.L["OPT_SESSION_TIME_DESC"],
         commandKeys = {"sessiontime"}
     },
+    resetOnReload = {
+        key = "resetOnReload",
+        label = Addon.L["OPT_RESET_ON_RELOAD"],
+        description = Addon.L["OPT_RESET_ON_RELOAD_DESC"],
+        commandKeys = {"resetonreload", "reloadreset"}
+    },
     showTimeToLevelText = {
         key = "showTimeToLevelText",
         label = Addon.L["OPT_TIME_TO_LEVEL"],
@@ -283,6 +289,7 @@ local optionOrder = {
     "showXPPerHourText",
     "showLevelTimeText",
     "showSessionTimeText",
+    "resetOnReload",
     "showTimeToLevelText",
     "abbreviateNumbers",
     "enableAnimations",

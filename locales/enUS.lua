@@ -112,6 +112,8 @@ L["OPT_LEVEL_TIME"] = "Show level time"
 L["OPT_LEVEL_TIME_DESC"] = "Display time spent on current level as text beneath the XP bar."
 L["OPT_SESSION_TIME"] = "Show session time"
 L["OPT_SESSION_TIME_DESC"] = "Display time played this session as text beneath the XP bar."
+L["OPT_RESET_ON_RELOAD"] = "Reset session on /reload"
+L["OPT_RESET_ON_RELOAD_DESC"] = "When enabled, UI reload starts a fresh XP session. When disabled, session elapsed time and rates continue across /reload."
 L["OPT_TIME_TO_LEVEL"] = "Show time to next level"
 L["OPT_TIME_TO_LEVEL_DESC"] =
     "Display estimated time remaining to reach next level (based on current XP/hour rate) as text beneath the XP bar."

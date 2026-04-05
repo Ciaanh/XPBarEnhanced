@@ -395,10 +395,19 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_resetOnReload" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="resetOnReload" type="string"/>
+                                            <KeyValue key="layoutIndex" value="40" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <Frame parentKey="Row_showLevelTimeText" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showLevelTimeText" type="string"/>
-                                            <KeyValue key="layoutIndex" value="40" type="number"/>
+                                            <KeyValue key="layoutIndex" value="40.1" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                         </KeyValues>

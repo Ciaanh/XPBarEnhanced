@@ -40,24 +40,22 @@ The addon is **feature-complete for its initial scope**. All P0 work is done.
 - Context-first rendering: emitters own context, listeners consume.
 - MarkDirty coalescing and 2.5s text ticker active on primary bar.
 - Secondary bars are functional but still use a simpler lifecycle contract than primary bars.
-- External WoW event ownership remains distributed across multiple frames and should be consolidated incrementally.
+- External WoW event ownership is consolidated through `core/EventRouter.lua` and validated in-game.
 
 ## Current Priorities
 
 No active P0 work. Next priorities should be selected from `docs/backlog/`.
 
 Recommended execution order:
-1. Shared bar contract baseline — `docs/backlog/shared-bar-contract.md`
-2. Event router consolidation (staged migration) — `docs/backlog/event-router-consolidation.md`
-3. Session persistence across /reload — `docs/backlog/session-persistence-reload.md`
-4. Secondary bar polish (fade, tooltip, drag-to-move) — `docs/backlog/secondary-bar-fade-animation.md`, `docs/backlog/secondary-bar-tooltip.md`, `docs/backlog/secondary-bar-drag-to-move.md`
-5. Time display improvements — `docs/backlog/time-display-live-refresh.md`
-6. Faction selection UI — `docs/backlog/faction-selection-dropdown.md`
-7. Bar size/scale options — `docs/backlog/bar-size-scale-options.md`
-8. New secondary bar styles — `docs/backlog/secondary-bar-styles.md`
-9. Font customization expansion — `docs/backlog/font-customization-per-bar.md`
-10. Localization — `docs/backlog/localization-multi-language.md`
-11. Max level behavior expansion — `docs/backlog/max-level-enhancements.md`
+1. Session persistence across /reload — `docs/backlog/session-persistence-reload.md`
+2. Secondary bar polish (fade, tooltip, drag-to-move) — `docs/backlog/secondary-bar-fade-animation.md`, `docs/backlog/secondary-bar-tooltip.md`, `docs/backlog/secondary-bar-drag-to-move.md`
+3. Time display improvements — `docs/backlog/time-display-live-refresh.md`
+4. Faction selection UI — `docs/backlog/faction-selection-dropdown.md`
+5. Bar size/scale options — `docs/backlog/bar-size-scale-options.md`
+6. New secondary bar styles — `docs/backlog/secondary-bar-styles.md`
+7. Font customization expansion — `docs/backlog/font-customization-per-bar.md`
+8. Localization — `docs/backlog/localization-multi-language.md`
+9. Max level behavior expansion — `docs/backlog/max-level-enhancements.md`
 
 ## Multi-Step Implementation Plan
 
@@ -195,19 +193,32 @@ Exit criteria:
 - Stage 3 continued: startup/shutdown registrations (`ADDON_LOADED`, `PLAYER_LOGIN`, `PLAYER_LOGOUT`) moved into `EventRouter`; `AddOnLifecycle` now provides lifecycle handler methods only.
 - Stage 3 stabilization: fixed startup-order nil session faults by gating reputation/companion routed handlers until initialized; restored Session XP gain accumulation path so XP refresh and animation behavior resumed.
 - Stage 3 validation complete: in-game verification passed with no errors; XP gain refresh/animation behavior confirmed restored and overall routing behavior stable.
+- Phase 5 implementation started: added `resetOnReload` config default and option wiring, plus `sessionAccumTime` persistence/rebase logic in `Session` for `/reload` continuity.
+- Phase 5 behavior implemented: `/reload` now preserves session timing by default; enabling reset-on-reload starts a fresh session window.
+- Phase 5 validation complete: in-game checks passed for both reload modes and fresh-login reset behavior.
 
 ## Next Phase Readiness (Planning Only)
 
-Target next phase: **Phase 5 — Session Persistence Across Reload**.
+Target next phase: **Phase 6 — Secondary Bar Polish on Stable Foundation**.
 
 Prepared scope (no implementation started):
 
-1. Add explicit persistence model for session continuity across `/reload` (`sessionAccumTime` + reset policy).
-2. Wire config toggle for reset behavior and update locale strings.
-3. Validate XP/hour and time-to-level continuity with and without reset enabled.
+1. Implement secondary fade transitions via shared lifecycle hooks.
+2. Implement tooltip behavior with shared anchor/format helpers.
+3. Implement drag-to-move with shared position behavior and consistent lock semantics.
+4. Add secondary time text live refresh via ticker hook path.
 
 Entry checklist prepared:
 
-- Confirm current session fields in `core/services/Session.lua` and `services/Database.lua` support additive time accounting.
-- Define migration-safe defaults for existing users in `config/defaults.lua`.
-- Prepare in-game test matrix for `/reload` continuity and option toggle behavior.
+- Review `ui/mixins/SecondaryBarBaseMixin.lua` extension points and identify reusable fade/tooltip hooks.
+- Define interaction contract for drag/lock behavior across reputation and companion bars.
+- Prepare in-game polish validation matrix (fade, tooltip, drag, live text updates).
+- Schedule analysis item from `docs/notes.md`: evaluate session/context workflow consistency between XP and secondary services for future simplification.
+- Schedule analysis item from `docs/notes.md`: evaluate options panel structure improvements (including tabbed layouts) against Blizzard patterns.
+
+Implementation slices prepared:
+
+1. Lifecycle polish: shared fade/visibility hooks in secondary base.
+2. Interaction polish: shared drag-to-move and lock enforcement.
+3. UX polish: tooltip integration and live text refresh behavior.
+4. Validation: execute phase-6 in-game matrix and capture regressions/edge cases.

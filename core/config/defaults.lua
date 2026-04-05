@@ -25,6 +25,7 @@ local defaults = {
     showXPPerHourText = true,
     showLevelTimeText = true,
     showSessionTimeText = true,
+    resetOnReload = false,
     showTimeToLevelText = true,
     abbreviateNumbers = true,
     showRemainingXP = true,

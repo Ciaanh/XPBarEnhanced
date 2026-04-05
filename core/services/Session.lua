@@ -5,6 +5,7 @@
 ---@field sessionStart number Unix timestamp when session started
 ---@field sessionXP number Total XP at session start (deprecated, use gainedXP)
 ---@field gainedXP number Total XP gained this session
+---@field sessionAccumTime number Persisted elapsed session seconds used to preserve session continuity across /reload
 ---@field lastXP number Last recorded current XP
 ---@field maxXP number Last recorded max XP for level
 ---@field realTotalTime number Total time played on character (from TIME_PLAYED_MSG)
@@ -39,6 +40,7 @@ local function ensureSessionDefaults(session)
     session.sessionStart = session.sessionStart or time()
     session.sessionXP = session.sessionXP or 0
     session.gainedXP = session.gainedXP or 0
+    session.sessionAccumTime = session.sessionAccumTime or 0
     session.lastXP = session.lastXP or UnitXP("player") or 0
     session.maxXP = session.maxXP or UnitXPMax("player") or 0
     session.realTotalTime = session.realTotalTime or 0
@@ -52,6 +54,32 @@ local function ensureSessionDefaults(session)
     session.recentGains = session.recentGains or {}
     session.questXP = session.questXP or 0
     session.otherXP = session.otherXP or 0
+end
+
+---@param session SessionData
+local function updateSessionAccumTime(session)
+    local elapsed = time() - (session.sessionStart or time())
+    if elapsed < 0 then
+        elapsed = 0
+    end
+    session.sessionAccumTime = elapsed
+end
+
+---@param session SessionData
+local function resetSessionProgress(session)
+    local now = time()
+    session.sessionStart = now
+    session.sessionAccumTime = 0
+    session.sessionXP = 0
+    session.gainedXP = 0
+    session.startLevel = UnitLevel("player") or 1
+    session.levelsGained = 0
+    session.lastUpdate = now
+    session.gainsHistory = {}
+    session.levelUpTimestamps = {}
+    session.recentGains = {}
+    session.questXP = 0
+    session.otherXP = 0
 end
 
 -------------------------------------------------------------------
@@ -89,16 +117,27 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
     if isInitialLogin then
-        session.sessionStart = time()
-        session.gainedXP = 0
-        session.startLevel = UnitLevel("player") or 1
-        session.levelsGained = 0
+        resetSessionProgress(session)
+    elseif isReloadingUI then
+        if Addon.db and Addon.db.resetOnReload then
+            resetSessionProgress(session)
+        else
+            local persistedElapsed = time() - (session.sessionStart or time())
+            if persistedElapsed < 0 then
+                persistedElapsed = 0
+            end
+            local accumTime = math.max(session.sessionAccumTime or 0, persistedElapsed)
+            session.sessionAccumTime = accumTime
+            session.sessionStart = time() - accumTime
+        end
     end
 
     if isInitialLogin or isReloadingUI then
         session.lastXP = UnitXP("player")
         session.maxXP = UnitXPMax("player")
     end
+
+    updateSessionAccumTime(session)
 
     -- Request time played if time text options are enabled
     if Addon.db and (Addon.db.showLevelTimeText or Addon.db.showSessionTimeText) then
@@ -125,6 +164,7 @@ function Session:OnXPUpdate()
     session.lastXP = currentXP
     session.maxXP = maxXP
     session.lastUpdate = time()
+    updateSessionAccumTime(session)
 
     -- Track gain source and record in history
     if gained > 0 then

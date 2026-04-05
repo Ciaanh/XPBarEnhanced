@@ -49,3 +49,6 @@ Provide stable, accurate XP state updates to XP bar rendering with predictable t
 
 1. Stage-1 router migration moved Session external event registrations to `core/EventRouter.lua`.
 2. `core/services/Session.lua` no longer creates an internal event frame; event ownership is centralized.
+3. Phase-5 session persistence implementation added `sessionAccumTime` and `/reload` continuity behavior in `Session`.
+4. New `resetOnReload` user option added (default off) so users can choose continuity or fresh-session behavior on `/reload`.
+5. Phase-5 behavior validated in-game for both continuity and reset-on-reload paths.

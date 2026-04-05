@@ -32,12 +32,43 @@ The reference addon (v1.3.2) implements this pattern and users expect /reload to
 
 ## Tasks
 
-1. Add `resetOnReload = false` to `core/config/defaults.lua`.
-2. Add `sessionAccumTime` field initialization in `Session:ensureSessionDefaults()`.
-3. In `Session:OnEnteringWorld()`, on reload path: rebase `sessionStart = time() - sessionAccumTime`.
-4. In `Session:OnXPUpdate()`, persist `sessionAccumTime = time() - sessionStart`.
-5. Add locale strings: `OPT_RESET_ON_RELOAD`, `OPT_RESET_ON_RELOAD_DESC`.
-6. Add checkbox option in `OptionMetadata.lua` and `Options.lua` under a "Session" section.
+1. [x] Add `resetOnReload = false` to `core/config/defaults.lua`.
+2. [x] Add `sessionAccumTime` field initialization in `Session:ensureSessionDefaults()`.
+3. [x] In `Session:OnEnteringWorld()`, on reload path: rebase `sessionStart = time() - sessionAccumTime`.
+4. [x] In `Session:OnXPUpdate()`, persist `sessionAccumTime = time() - sessionStart`.
+5. [x] Add locale strings: `OPT_RESET_ON_RELOAD`, `OPT_RESET_ON_RELOAD_DESC`.
+6. [x] Add checkbox option in `OptionMetadata.lua` and `OptionsPanel.xml` under the session-time controls.
+
+## Prep Status (2026-04-05)
+
+- [x] Target file paths confirmed in current repo layout.
+- [x] Phase sequencing prepared (data model → session behavior → options/locale → validation).
+- [x] Implementation completed for data model, session behavior, and options/locale wiring.
+
+## Implementation Slices (Do in Order)
+
+1. **Data model slice**
+   - Add defaults in `core/config/defaults.lua`.
+   - Ensure backward compatibility for existing saved variables.
+2. **Session logic slice**
+   - Update `core/services/Session.lua` defaults and reload handling.
+   - Persist accumulator updates during XP event flow.
+3. **Options/UI slice**
+   - Add metadata and checkbox wiring in `ui/options/OptionMetadata.lua` and `ui/options/Options.lua`.
+   - Add labels/help text in `locales/enUS.lua`.
+4. **Validation slice**
+   - Test `/reload` continuity with `resetOnReload=false`.
+   - Test `/reload` reset behavior with `resetOnReload=true`.
+   - Test fresh login reset behavior independent of toggle.
+
+## Implementation Status (2026-04-05)
+
+- `resetOnReload` default added and exposed as an option.
+- Session accumulator (`sessionAccumTime`) added with reload rebase logic.
+- Reload behavior: `resetOnReload=false` continues session timing/rates through `/reload`.
+- Reload behavior: `resetOnReload=true` starts a fresh session on `/reload`.
+- Localization strings added for the new option.
+- In-game validation passed.
 
 ## Affected Files
 
@@ -45,12 +76,13 @@ The reference addon (v1.3.2) implements this pattern and users expect /reload to
 - core/services/Session.lua
 - locales/enUS.lua
 - ui/options/OptionMetadata.lua
-- ui/options/Options.lua
+- ui/options/OptionsPanel.xml
+- core/services/Database.lua (verify no migration helper needed)
 
 ## Acceptance Criteria
 
-- [ ] After `/reload`, session time continues from where it was (no reset).
-- [ ] After `/reload`, XP/hour calculation uses accumulated time, not time since reload.
-- [ ] With `resetOnReload = true`, session resets on reload (original behavior).
-- [ ] Fresh login always starts a new session regardless of setting.
-- [ ] Option toggle appears in the options panel.
+- [x] After `/reload`, session time continues from where it was (no reset).
+- [x] After `/reload`, XP/hour calculation uses accumulated time, not time since reload.
+- [x] With `resetOnReload = true`, session resets on reload (original behavior).
+- [x] Fresh login always starts a new session regardless of setting.
+- [x] Option toggle appears in the options panel.

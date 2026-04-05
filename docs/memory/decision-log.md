@@ -117,3 +117,19 @@ Impact: nil-session faults on early routed events were resolved and XP refresh/a
 Decision: Close Stage 3 consolidation after in-game validation pass.
 Reason: runtime testing confirmed no errors and restored XP gain refresh behavior after startup-order stabilization fixes.
 Impact: event-router consolidation backlog item is now considered implemented and validated for current scope.
+
+Decision: Prepare Phase 5 execution as a staged implementation plan before touching runtime code.
+Reason: session persistence changes affect saved variables, options wiring, and time-based calculations; staged rollout lowers regression risk.
+Impact: Phase 5 now has a concrete, ordered checklist and validated target file map, ready for implementation kickoff.
+
+Decision: Implement Phase 5 with `sessionAccumTime` persistence and configurable `/reload` reset policy.
+Reason: keep XP/hour, session-time, and time-to-level stable across UI reload by default while still supporting opt-in reset semantics.
+Impact: `Session` now persists/rebases elapsed session time through `/reload`; new `resetOnReload` option (default false) controls whether reload continues or resets the session window.
+
+Decision: Close Phase 5 after in-game validation pass.
+Reason: runtime checks confirmed correct continuity when `resetOnReload=false` and correct reset behavior when `resetOnReload=true`, with fresh login still starting a new session.
+Impact: session-persistence-reload backlog item is now implemented and validated for current scope.
+
+Decision: Carry `docs/notes.md` findings into next planning cycle as analysis tasks.
+Reason: observed differences in XP vs secondary session/context workflow and options panel complexity are architectural/UX opportunities but not blockers for Phase 5 closure.
+Impact: next-phase readiness now includes analysis tasks for workflow harmonization and options panel structure review against Blizzard patterns.
