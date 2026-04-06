@@ -168,3 +168,75 @@ function SecondaryBaseMixin:MarkDirty(context)
         end
     end)
 end
+
+-------------------------------------------------------------------
+-- FADE/ANIMATION SUPPORT
+-------------------------------------------------------------------
+
+function SecondaryBaseMixin:FadeToAlpha(targetAlpha)
+    local fadeSpeed = targetAlpha == 1 and (Addon.db and Addon.db.secondaryFadeInSpeed or (Addon.defaults and Addon.defaults.secondaryFadeInSpeed or 0.3))
+                      or (Addon.db and Addon.db.secondaryFadeOutSpeed or (Addon.defaults and Addon.defaults.secondaryFadeOutSpeed or 0.5))
+    
+    if not self:IsShown() then
+        self:SetAlpha(targetAlpha)
+        return
+    end
+    
+    local currentAlpha = self:GetAlpha() or 0
+    if math.abs(currentAlpha - targetAlpha) < 0.01 then
+        return
+    end
+    
+    if not self._fadeAnim then
+        self._fadeAnim = self:CreateAnimationGroup()
+    end
+    
+    self._fadeAnim:SetLooping("NONE")
+    self._fadeAnim:SetScript("OnFinished", function()
+        if self then
+            self:SetAlpha(targetAlpha)
+        end
+    end)
+    
+    local alpha = self._fadeAnim:CreateAnimation("Alpha")
+    alpha:SetDuration(fadeSpeed)
+    alpha:SetFromAlpha(currentAlpha)
+    alpha:SetToAlpha(targetAlpha)
+    
+    self._fadeAnim:Play()
+end
+
+-------------------------------------------------------------------
+-- POSITION PERSISTENCE SUPPORT
+-------------------------------------------------------------------
+
+function SecondaryBaseMixin:SavePosition()
+    local configKey = self.GetPositionConfigKey and self:GetPositionConfigKey()
+    if not configKey or not Addon.db then
+        return
+    end
+    
+    local point, relativeTo, relativePoint, x, y = self:GetPoint()
+    if not point then
+        return
+    end
+    
+    Addon.db[configKey] = {
+        point = point,
+        relativeTo = relativeTo,
+        relativePoint = relativePoint,
+        x = x,
+        y = y,
+    }
+end
+
+function SecondaryBaseMixin:ResetPosition()
+    local configKey = self.GetPositionConfigKey and self:GetPositionConfigKey()
+    if not configKey or not Addon.db then
+        return
+    end
+    
+    Addon.db[configKey] = nil
+    self:ApplyInitialPosition()
+end
+

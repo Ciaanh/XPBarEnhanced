@@ -75,6 +75,8 @@ local defaults = {
     },
     reputationBarPosition = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 34},
     companionBarPosition  = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 54},
+    secondaryFadeInSpeed = 0.3,
+    secondaryFadeOutSpeed = 0.5,
 }
 
 defaults.xpBarColor = defaults.colors.xpBar

@@ -1,5 +1,7 @@
 # Backlog: Bar Size and Scale Options
 
+Status: Closed - Not Planned (2026-04-06)
+
 Priority: P2
 Effort: Medium
 Risk: Low
@@ -7,13 +9,19 @@ Source: docs/analysis/reference-addon-comparison.md
 
 ## Summary
 
+This item is no longer part of the active roadmap.
+
 Add width, height, and/or scale options for bars so users can customize bar dimensions beyond the style-defined defaults.
 
 ## Motivation
 
+Decision update (2026-04-06): size/scale customization is intentionally excluded from the near-term product scope.
+
 The reference addon supports per-bar width and height customization. Our addon currently uses fixed dimensions per style (except circular which has a size dropdown). Users with different screen resolutions or UI scales may want larger or smaller bars.
 
 ## Scope
+
+Roadmap status: superseded by planning decision; implementation is not approved.
 
 ### In Scope
 
@@ -54,3 +62,8 @@ The reference addon supports per-bar width and height customization. Our addon c
 - [ ] Settings persist across reload/login.
 - [ ] Text remains readable at different bar sizes.
 - [ ] Secondary bars can be independently sized.
+
+## Closure Note
+
+- Closed by product direction during pre-Phase-7 planning.
+- Keep this document as historical reference only.

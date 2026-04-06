@@ -7,7 +7,7 @@
 
     <Script file="FlatReputationBarStyle.lua"/>
 
-    <Frame name="FlatReputationBarTemplate" virtual="true" mixin="FlatReputationBarMixin" frameStrata="HIGH">
+    <Frame name="FlatReputationBarTemplate" virtual="true" mixin="FlatReputationBarMixin" frameStrata="LOW" fixedFrameStrata="true">
         <Size x="565" y="18"/>
         <Layers>
             <Layer level="BACKGROUND">
@@ -24,8 +24,8 @@
                 </Anchors>
                 <BarTexture file="Interface\Buttons\WHITE8X8"/>
             </StatusBar>
-            <!-- Label container in HIGH strata so text renders above the StatusBar fill -->
-            <Frame parentKey="LabelContainer" frameStrata="HIGH" setAllPoints="true">
+            <!-- Label container in MEDIUM strata so text renders above the StatusBar fill -->
+            <Frame parentKey="LabelContainer" frameStrata="MEDIUM" setAllPoints="true">
                 <Layers>
                     <Layer level="ARTWORK" textureSubLevel="5">
                         <FontString parentKey="Label" inherits="GameFontNormalSmall" justifyH="CENTER">
@@ -47,6 +47,10 @@
             <OnLoad method="OnLoad"/>
             <OnShow method="OnShow"/>
             <OnHide method="OnHide"/>
+            <OnEnter method="OnEnter"/>
+            <OnLeave method="OnLeave"/>
+            <OnDragStart method="OnDragStart"/>
+            <OnDragStop method="OnDragStop"/>
         </Scripts>
     </Frame>
 

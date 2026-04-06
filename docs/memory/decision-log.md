@@ -133,3 +133,66 @@ Impact: session-persistence-reload backlog item is now implemented and validated
 Decision: Carry `docs/notes.md` findings into next planning cycle as analysis tasks.
 Reason: observed differences in XP vs secondary session/context workflow and options panel complexity are architectural/UX opportunities but not blockers for Phase 5 closure.
 Impact: next-phase readiness now includes analysis tasks for workflow harmonization and options panel structure review against Blizzard patterns.
+
+Decision: Gate Phase 7 behind a dedicated planning/approval session after Phase 6.
+Reason: follow-on scope is not yet approved and needs separate review of priority, risk, and acceptance criteria before implementation.
+Impact: `docs/plan.md` now treats Phase 6 as implementation-ready and Phase 7 as planning-only until explicit approval is documented.
+
+Decision: Implement Phase 6 four features using shared base mixin hooks without lifecycle duplication.
+Reason: all four polish features (fade, drag, tooltip, ticker) can be wired into hooks already present in `SecondaryBarBaseMixin` without adding new lifecycle paths.
+Impact: style mixins implement feature-specific logic only; no duplicate controller/manager code required across styles.
+
+Decision: Fade secondary bars only on tracking state changes, not idle timers.
+Reason: fade should match Blizzard's reputation bar behavior, which occurs when the player tracks/untracks a faction or when companion availability changes, not on arbitrary idle periods.
+Impact: `FadeToAlpha(targetAlpha)` triggers when `context.isAvailable` transitions from false→true or true→false; no delay or idle gating required.
+
+Decision: Persist bar positions to SavedVariables on drag-stop, with config-driven key per bar type.
+Reason: positions survive across reload and re-login, and can be cleared independently via reset button.
+Impact: each style's `SavePosition()` stores point/relativeTo/relativePoint/x/y to `Addon.db[configKey]`; reset clears key and re-anchors.
+
+Decision: Use TextFormatter for all tooltip and live-text number/time formatting.
+Reason: maintain consistent formatting with primary XP bar tooltips and avoid format logic duplication.
+Impact: both styles import and call `TextFormatter:FormatNumber()`, `:FormatTime()`, `:FormatPercent()` for display.
+
+Decision: Implement live text ticker at 1.0s interval for both reputation and companion bars.
+Reason: 1s update frequency matches primary XP bar ticker and provides real-time rate/gained feedback without excessive re-renders.
+Impact: `GetTextTickerInterval()` returns 1.0; `OnTextTick(context)` rebuilds on-bar text label with fresh calculations every 1s.
+
+Decision: Tooltip content includes session metrics (gained, rates, time-to-next) in addition to bar-displayed progress.
+Reason: tooltips provide user with deeper context on session performance without cluttering on-bar text.
+Impact: `OnEnter()` reads `_lastContext` and populates GameTooltip with faction/companion name, progress, session gained, rep/hour or XP/hour, and time projections.
+
+Decision: Simplify fade implementation to state-change-based transitions instead of idle timers.
+Reason: fade-out should only occur when faction tracking is disabled or companion becomes unavailable, not on arbitrary idle delays; this matches Blizzard's behavior.
+Impact: removed `FadeOut()` idle timer logic and `secondaryFadeDelay` config; replaced with `FadeToAlpha(targetAlpha)` that triggers only when `context.isAvailable` state changes frame-to-frame.
+
+## 2026-04-06
+
+Decision: Close faction selector, size/scale options, per-bar font customization, and localization from the active roadmap.
+Reason: these items are not needed for the current product scope and should not consume near-term implementation capacity.
+Impact: related backlog files are now marked closed/not planned and removed from active execution ordering.
+
+Decision: Keep additional secondary styles as investigation-only.
+Reason: style expansion requires deeper architecture and UX analysis before accurate effort/risk estimation.
+Impact: `docs/backlog/secondary-bar-styles.md` now includes an explicit investigation gate and is not approved for coding.
+
+Decision: Start pre-Phase-7 implementation with documentation and governance alignment.
+Reason: roadmap and phase guidance must be synchronized before any next feature implementation begins.
+Impact: `docs/plan.md`, `docs/backlog/README.md`, and `docs/notes.md` were updated to reflect active priorities, analysis tracks, and approval gates.
+
+Decision: Stage Session 2 architecture and Blizzard-compliance outputs as one combined planning deliverable.
+Reason: keep pre-Phase-7 approval inputs centralized, reduce fragmentation, and make gate review explicit.
+Impact: `docs/analysis/pre-phase-7-architecture-compliance-deliverable.md` is now the canonical Session 2 artifact and is referenced by gate/planning docs.
+
+Decision: Select Phase 7 Slice 1 as compliance-hardening-first before any feature expansion.
+Reason: critical/high-risk interaction safety and Blizzard-aligned behavior should be stabilized before broader post-gate changes.
+Impact: `docs/features/phase-7-slice-1-compliance-hardening.md` is now the next coding slice target and is linked from planning-gate and plan docs.
+
+Decision: Compact planning and phase documentation to enforce concise, bounded docs.
+Reason: phase/session docs were growing with duplicated historical narrative and drifting from governance intent.
+Impact: `docs/plan.md` is now a concise execution guide, `docs/features/phase-6-secondary-polish.md` is a compact feature summary, and `docs/README.md` now documents clear boundaries for plan vs feature vs analysis vs decision-log content.
+
+Decision: Enforce strict doc ownership model: plan=session planning, features+memory=decisions/analysis context.
+Reason: prevent documentation growth from mixed responsibilities and keep one source of truth per concern.
+Impact: `docs/plan.md` now excludes durable approvals/decisions, `docs/features/phase-7-planning-gate.md` owns approval state, and approvals/decision rationale are required in `docs/memory/decision-log.md`.
+

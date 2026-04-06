@@ -303,11 +303,33 @@ function XPBarEnhancedOptionsMixin:OnPanelShow()
 end
 
 function XPBarEnhancedOptionsMixin:RefreshScrollLayout()
-    -- Force recalculation of scroll content height
+    -- Force recalculation of scroll content height while preserving scroll position.
     if self.ScrollBox and self.ScrollBox:GetDataProvider() then
+        local previousPercent = nil
+        if self.ScrollBox.GetScrollPercentage then
+            previousPercent = self.ScrollBox:GetScrollPercentage()
+        elseif self.ScrollBar and self.ScrollBar.GetValue and self.ScrollBar.GetMinMaxValues then
+            local minValue, maxValue = self.ScrollBar:GetMinMaxValues()
+            local currentValue = self.ScrollBar:GetValue()
+            if minValue and maxValue and currentValue and maxValue > minValue then
+                previousPercent = (currentValue - minValue) / (maxValue - minValue)
+            else
+                previousPercent = 0
+            end
+        end
+
         local dataProvider = CreateDataProvider()
         dataProvider:Insert({id = "content"})
         self.ScrollBox:SetDataProvider(dataProvider)
+
+        if previousPercent ~= nil and self.ScrollBox.SetScrollPercentage then
+            self.ScrollBox:SetScrollPercentage(previousPercent, ScrollBoxConstants.NoScrollInterpolation)
+        elseif previousPercent ~= nil and self.ScrollBar and self.ScrollBar.SetValue and self.ScrollBar.GetMinMaxValues then
+            local minValue, maxValue = self.ScrollBar:GetMinMaxValues()
+            if minValue and maxValue and maxValue > minValue then
+                self.ScrollBar:SetValue(minValue + ((maxValue - minValue) * previousPercent))
+            end
+        end
     end
 end
 

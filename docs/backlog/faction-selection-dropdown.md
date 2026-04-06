@@ -1,5 +1,7 @@
 # Backlog: Faction Selection Dropdown
 
+Status: Closed - Not Planned (2026-04-06)
+
 Priority: P2
 Effort: Medium
 Risk: Medium
@@ -7,15 +9,21 @@ Source: docs/analysis/reputation-bar-feature.md, docs/analysis/reference-addon-c
 
 ## Summary
 
+This item is no longer part of the active roadmap.
+
 Add a dropdown UI in the options panel (or a right-click context menu on the reputation bar) that lets the user pick a specific faction to track, instead of always following the Blizzard watched faction.
 
 ## Motivation
+
+Decision update (2026-04-06): feature value does not justify near-term complexity for the current product scope.
 
 Currently the reputation bar always tracks whichever faction the player has pinned in the Blizzard Reputation panel. Users may want to track a different faction without changing their Blizzard watched faction, or may want to track a faction that can't be easily watched via the default UI.
 
 The reference addon implements this feature with a full faction list dropdown organized by expansion/subgroup, including tagging of delve companions.
 
 ## Scope
+
+Roadmap status: superseded by planning decision; implementation is not approved.
 
 ### In Scope
 
@@ -56,6 +64,11 @@ The reference addon implements this feature with a full faction list dropdown or
 - [ ] "Follow Watched Faction" restores default behavior.
 - [ ] Reputation bar renders the selected faction's data correctly for all 4 rep types.
 - [ ] Faction list handles collapsed headers without corrupting the Blizzard UI state.
+
+## Closure Note
+
+- Closed by product direction during pre-Phase-7 planning.
+- Keep this document as historical reference only.
 
 ## References
 

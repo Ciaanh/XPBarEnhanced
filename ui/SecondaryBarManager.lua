@@ -152,22 +152,32 @@ end
 
 function Manager:ResetBarPositions()
     local defaults = Addon.defaults or {}
+    local db = Addon.db or {}
     local posMap = {
-        reputation = defaults.reputationBarPosition,
-        companion  = defaults.companionBarPosition,
+        reputation = {configKey = "reputationBarPosition", defaultPos = defaults.reputationBarPosition},
+        companion  = {configKey = "companionBarPosition", defaultPos = defaults.companionBarPosition},
     }
-    for key, defaultPos in pairs(posMap) do
+    
+    for key, posInfo in pairs(posMap) do
+        -- Clear SavedVariables
+        if db[posInfo.configKey] then
+            db[posInfo.configKey] = nil
+        end
+        
+        -- Reset frame position
         local style = self._currentStyles and self._currentStyles[key]
         if style and style ~= "none" then
             local frame = self._frames and self._frames[key] and self._frames[key][style]
-            if frame and frame.ClearAllPoints and defaultPos then
+            if frame and frame.ResetPosition then
+                frame:ResetPosition()
+            elseif frame and frame.ClearAllPoints and posInfo.defaultPos then
                 frame:ClearAllPoints()
                 frame:SetPoint(
-                    defaultPos.point,
-                    defaultPos.relativeTo or "UIParent",
-                    defaultPos.relativePoint,
-                    defaultPos.x or 0,
-                    defaultPos.y or 0
+                    posInfo.defaultPos.point,
+                    posInfo.defaultPos.relativeTo or "UIParent",
+                    posInfo.defaultPos.relativePoint,
+                    posInfo.defaultPos.x or 0,
+                    posInfo.defaultPos.y or 0
                 )
             end
         end
