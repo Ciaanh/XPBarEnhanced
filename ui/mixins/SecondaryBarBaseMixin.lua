@@ -88,12 +88,9 @@ function SecondaryBaseMixin:StartTextTicker()
             return
         end
 
-        local context = self_ref._lastContext
+        local context = self_ref:GetLatestContext()
         if not context and self_ref.GetTextTickerContext then
             context = self_ref:GetTextTickerContext()
-        end
-        if not context and self_ref.GetInitialContext then
-            context = self_ref:GetInitialContext()
         end
 
         xpcall(self_ref.OnTextTick, SafeCallErrorHandler, self_ref, context)
@@ -133,10 +130,23 @@ function SecondaryBaseMixin:Refresh()
         return
     end
 
-    local context = self.GetInitialContext and self:GetInitialContext()
+    local context = self:GetLatestContext()
     if context then
         xpcall(self.Render, SafeCallErrorHandler, self, context)
     end
+end
+
+function SecondaryBaseMixin:GetLatestContext()
+    local context = self._pendingContext or self._lastContext
+    if context then
+        return context
+    end
+
+    if self.GetInitialContext then
+        return self:GetInitialContext()
+    end
+
+    return nil
 end
 
 function SecondaryBaseMixin:MarkDirty(context)

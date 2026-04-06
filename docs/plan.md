@@ -17,19 +17,19 @@ Prepare and execute the next approved code slice without expanding scope.
 ## This Session Checklist
 
 1. Confirm approval state in `docs/features/phase-7-planning-gate.md`.
-2. Execute only `docs/features/phase-7-slice-1-compliance-hardening.md` scope.
+2. Execute only `docs/features/phase-7-slice-2-context-contract.md` scope.
 3. Run the slice validation matrix immediately after edits.
 4. Capture outcomes in `docs/memory/decision-log.md`.
 
 ## Session Inputs
 
 - Gate: `docs/features/phase-7-planning-gate.md`
-- Slice: `docs/features/phase-7-slice-1-compliance-hardening.md`
+- Slice: `docs/features/phase-7-slice-2-context-contract.md`
 - Analysis: `docs/analysis/pre-phase-7-architecture-compliance-deliverable.md`
 
 ## Session Progress (Update During Session)
 
-- Not started.
+- Slice 2 started: context contract normalization implementation in progress.
 
 ## Session Guardrails
 

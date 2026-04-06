@@ -220,3 +220,15 @@ Decision: Close Slice 1 hardening after in-game validation pass.
 Reason: runtime testing reported no errors after drag/combat-safety/tooltip/fade/ticker hardening changes.
 Impact: `docs/features/phase-7-slice-1-compliance-hardening.md` marked implemented and validated; repository is ready to move to next approved slice selection.
 
+Decision: Start Slice 2 for secondary context contract normalization.
+Reason: next planned consistency work is to reduce redundant context rebuilds and standardize source preference for secondary lifecycle paths.
+Impact: `docs/features/phase-7-slice-2-context-contract.md` added and set in-progress; gate/plan now point to Slice 2 as active execution target.
+
+Decision: Centralize latest-context resolution in `SecondaryBarBaseMixin`.
+Reason: refresh/ticker paths should prefer emitted/cached context and use initial-context rebuild only as bootstrap fallback.
+Impact: `GetLatestContext()` added and wired into shared `Refresh()` and text ticker flow.
+
+Decision: Validate current Slice 2 batch in-game and proceed.
+Reason: runtime verification reported no errors after context-source normalization changes.
+Impact: Slice 2 remains in-progress, with current batch accepted as stable baseline for next incremental step.
+
