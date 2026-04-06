@@ -63,6 +63,9 @@ end
 function SecondaryBaseMixin:OnHide()
     self:StopTextTicker()
     self:Unsubscribe()
+    if self._fadeAnim and self._fadeAnim:IsPlaying() then
+        self._fadeAnim:Stop()
+    end
     self._dirty = nil
     self._pendingContext = nil
 end
@@ -85,10 +88,11 @@ function SecondaryBaseMixin:StartTextTicker()
             return
         end
 
-        local context = nil
-        if self_ref.GetTextTickerContext then
+        local context = self_ref._lastContext
+        if not context and self_ref.GetTextTickerContext then
             context = self_ref:GetTextTickerContext()
-        elseif self_ref.GetInitialContext then
+        end
+        if not context and self_ref.GetInitialContext then
             context = self_ref:GetInitialContext()
         end
 
@@ -189,21 +193,65 @@ function SecondaryBaseMixin:FadeToAlpha(targetAlpha)
     
     if not self._fadeAnim then
         self._fadeAnim = self:CreateAnimationGroup()
+        self._fadeAlpha = self._fadeAnim:CreateAnimation("Alpha")
+        self._fadeAnim:SetLooping("NONE")
+        self._fadeAnim:SetScript("OnFinished", function()
+            if self and self._fadeTargetAlpha ~= nil then
+                self:SetAlpha(self._fadeTargetAlpha)
+            end
+        end)
     end
-    
-    self._fadeAnim:SetLooping("NONE")
-    self._fadeAnim:SetScript("OnFinished", function()
-        if self then
-            self:SetAlpha(targetAlpha)
-        end
-    end)
-    
-    local alpha = self._fadeAnim:CreateAnimation("Alpha")
-    alpha:SetDuration(fadeSpeed)
-    alpha:SetFromAlpha(currentAlpha)
-    alpha:SetToAlpha(targetAlpha)
-    
+
+    if self._fadeAnim:IsPlaying() then
+        self._fadeAnim:Stop()
+    end
+
+    self._fadeTargetAlpha = targetAlpha
+    self._fadeAlpha:SetDuration(fadeSpeed)
+    self._fadeAlpha:SetFromAlpha(currentAlpha)
+    self._fadeAlpha:SetToAlpha(targetAlpha)
+
     self._fadeAnim:Play()
+end
+
+-------------------------------------------------------------------
+-- INTERACTION SAFETY SUPPORT
+-------------------------------------------------------------------
+
+function SecondaryBaseMixin:ConfigureDragSupport()
+    if not self.SetMovable then
+        return
+    end
+
+    if InCombatLockdown and InCombatLockdown() then
+        if self._dragSetupPending then
+            return
+        end
+
+        self._dragSetupPending = true
+        if not self._dragSetupFrame then
+            self._dragSetupFrame = CreateFrame("Frame")
+        end
+
+        self._dragSetupFrame:SetScript("OnEvent", function(frame, event)
+            if event ~= "PLAYER_REGEN_ENABLED" then
+                return
+            end
+
+            frame:UnregisterEvent("PLAYER_REGEN_ENABLED")
+            self._dragSetupPending = nil
+            self:ConfigureDragSupport()
+        end)
+        self._dragSetupFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+        return
+    end
+
+    self:SetMovable(true)
+    self:SetClampedToScreen(true)
+    if self.RegisterForDrag then
+        self:RegisterForDrag("LeftButton")
+    end
+    self._dragSetupPending = nil
 end
 
 -------------------------------------------------------------------

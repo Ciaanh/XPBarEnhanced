@@ -19,11 +19,7 @@ end
 
 function StyleMixin:OnSecondaryLoad()
     self.Bar:SetStatusBarColor(BAR_COLOR.r, BAR_COLOR.g, BAR_COLOR.b)
-    
-    -- Enable dragging for this frame
-    self:SetMovable(true)
-    self:SetClampedToScreen(true)
-    self:RegisterForDrag("LeftButton")
+    self:ConfigureDragSupport()
 end
 
 function StyleMixin:GetPositionConfigKey()
@@ -56,7 +52,7 @@ function StyleMixin:GetTextTickerInterval()
 end
 
 function StyleMixin:GetTextTickerContext()
-    return self:GetInitialContext()
+    return self._lastContext or self:GetInitialContext()
 end
 
 -------------------------------------------------------------------
@@ -113,7 +109,7 @@ end
 -------------------------------------------------------------------
 
 function StyleMixin:OnEnter()
-    if not self._lastContext then
+    if not GameTooltip or not self._lastContext then
         return
     end
 
@@ -159,7 +155,9 @@ function StyleMixin:OnEnter()
 end
 
 function StyleMixin:OnLeave()
-    GameTooltip:Hide()
+    if GameTooltip then
+        GameTooltip:Hide()
+    end
 end
 
 -------------------------------------------------------------------
@@ -201,13 +199,16 @@ function StyleMixin:OnDragStart()
         return
     end
 
+    if InCombatLockdown and InCombatLockdown() then
+        return
+    end
+
     self:StartMoving()
-    self:SetUserPlaced(false)
 end
 
 function StyleMixin:OnDragStop()
     self:StopMovingOrSizing()
-    self:SetUserPlaced(false)
+    self:SetUserPlaced(true)
     self:SavePosition()
 end
 

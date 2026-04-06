@@ -65,10 +65,22 @@ All items below must be complete:
 
 ## Approval Record
 
-Current state: Not approved for code implementation.
+Current state: Approved for Slice 1 implementation (2026-04-06).
 
 When approved, capture:
 
 1. Approved slice ID and scope lock.
 2. Approval date.
 3. Decision-log reference entry.
+
+Recorded approval:
+
+1. Approved slice: `docs/features/phase-7-slice-1-compliance-hardening.md`
+2. Approval date: 2026-04-06
+3. Decision log: `docs/memory/decision-log.md` (2026-04-06 entries)
+
+Current progress:
+
+1. Slice 1 implementation completed.
+2. In-game validation reported no errors.
+3. Gate remains active for selecting and approving the next slice.

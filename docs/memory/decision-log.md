@@ -196,3 +196,27 @@ Decision: Enforce strict doc ownership model: plan=session planning, features+me
 Reason: prevent documentation growth from mixed responsibilities and keep one source of truth per concern.
 Impact: `docs/plan.md` now excludes durable approvals/decisions, `docs/features/phase-7-planning-gate.md` owns approval state, and approvals/decision rationale are required in `docs/memory/decision-log.md`.
 
+Decision: Approve Phase 7 Slice 1 and begin compliance hardening implementation.
+Reason: planning gate criteria were met and the next safe step is targeted hardening before broader feature expansion.
+Impact: `docs/features/phase-7-planning-gate.md` now records approval; `docs/features/phase-7-slice-1-compliance-hardening.md` status moved to in-progress.
+
+Decision: Harden secondary drag semantics by removing SetUserPlaced(false) on drag paths and setting user placement true on drag stop.
+Reason: avoid conflicting placement semantics while preserving explicit SavedVariables persistence flow.
+Impact: secondary style mixins now call `SetUserPlaced(true)` on drag stop and no longer force false on drag start/stop.
+
+Decision: Add combat-safe drag setup and movement gating for secondary bars.
+Reason: movement-related setup should not run unsafely during combat-sensitive windows.
+Impact: `SecondaryBarBaseMixin:ConfigureDragSupport()` now defers drag setup to `PLAYER_REGEN_ENABLED` when needed; drag start is blocked while in combat.
+
+Decision: Add tooltip safety guards and ticker context caching preference.
+Reason: avoid tooltip nil access issues and reduce avoidable context rebuild churn.
+Impact: tooltip handlers now guard `GameTooltip`; text ticker now prefers `_lastContext` before rebuilding fallback context.
+
+Decision: Rework fade animation lifecycle to reuse a single animation object.
+Reason: prevent repeated animation allocation/stale state accumulation during frequent availability transitions.
+Impact: `FadeToAlpha()` now reuses cached animation objects, stops in-flight animation before retargeting, and stops cleanly on hide.
+
+Decision: Close Slice 1 hardening after in-game validation pass.
+Reason: runtime testing reported no errors after drag/combat-safety/tooltip/fade/ticker hardening changes.
+Impact: `docs/features/phase-7-slice-1-compliance-hardening.md` marked implemented and validated; repository is ready to move to next approved slice selection.
+
