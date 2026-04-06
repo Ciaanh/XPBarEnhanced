@@ -278,9 +278,6 @@ function BaseMixin:HasCapability(cap)
 	return caps[cap] ~= false
 end
 
---- Determine if this event should force a full render
----@param event string|nil Event name from context
----@return boolean
 local FORCE_RENDER_EVENTS = {
 	["FULL_UPDATE"]             = true,
 	["XPBAR:BROADCAST_UPDATE"]  = true,
@@ -289,6 +286,9 @@ local FORCE_RENDER_EVENTS = {
 	["CVAR_UPDATE"]             = true,
 }
 
+--- Determine if this event should force a full render.
+---@param event string|nil Event name from context
+---@return boolean
 local function ShouldForceRender(event)
 	return FORCE_RENDER_EVENTS[event] == true
 end
@@ -387,10 +387,42 @@ function BaseMixin:TriggerBarRefresh(context)
 		error("Style must implement RenderBar(context) method")
 	end
 
-	-- Hide bar at max level (UnitXPMax returns 0 when no more XP can be earned)
 	local Addon = XPBarEnhanced
-	if (context.xpMax ~= nil and context.xpMax <= 0) or (UnitXPMax("player") or 1) <= 0 then
-		local manager = Addon and Addon.BarManager
+	local manager = Addon and Addon.BarManager
+	if manager and manager.LogMaxLevel then
+		manager:LogMaxLevel(
+			"TriggerBarRefresh:",
+			"event=", context.event,
+			"level=", context.level,
+			"xpMax=", context.xpMax,
+			"currentXP=", context.currentXP
+		)
+	end
+
+	-- Let BarManager adapt or hide max-level rendering according to maxLevelBehavior.
+	if manager and manager.AdjustContextForMaxLevel then
+		context = manager:AdjustContextForMaxLevel(context)
+		if not context then
+			if manager.LogMaxLevel then
+				manager:LogMaxLevel("TriggerBarRefresh: context nil after max-level adjustment -> hide")
+			end
+			if manager.GetCurrentFrame and manager:GetCurrentFrame() == self and manager.SetStyle then
+				manager:SetStyle("none")
+			else
+				if self.CleanupAnimation then
+					self:CleanupAnimation()
+				end
+				self:Hide()
+			end
+			return
+		end
+	end
+
+	-- Non-max-level guard: if context cannot represent progress, hide safely.
+	if context.xpMax ~= nil and context.xpMax <= 0 then
+		if manager and manager.LogMaxLevel then
+			manager:LogMaxLevel("TriggerBarRefresh: xpMax<=0 guard -> hide", "xpMax=", context.xpMax)
+		end
 		if manager and manager.GetCurrentFrame and manager:GetCurrentFrame() == self and manager.SetStyle then
 			manager:SetStyle("none")
 		else

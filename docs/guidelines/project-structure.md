@@ -21,15 +21,19 @@
 
 ## Documentation Rules
 
-1. docs/plan.md is the active coding session guide.
-2. docs/memory stores decisions, lessons, and external analysis summaries.
-3. docs/guidelines stores durable architecture and structure guidance.
-4. docs/features stores one file per feature domain.
+1. docs/plan.md is the project roadmap with goals, priorities, and next steps.
+2. docs/features stores one file per addon feature describing what it does.
+3. docs/backlog stores actionable future work items with goals and acceptance criteria.
+4. docs/history stores archived implementation records (completed phases).
+5. docs/memory stores decisions, lessons, and external analysis summaries.
+6. docs/analysis stores deep technical investigations.
+7. docs/guidelines stores durable architecture and structure guidance.
+8. docs/notes stores open investigation tracks not yet resolved.
 
 ## Change Discipline
 
-1. Any feature refactor should update its feature doc.
+1. Any feature change should update the relevant feature doc in docs/features/.
 2. Any architectural decision should append docs/memory/decision-log.md.
 3. Any new recurring lesson should be added to docs/memory/lessons-learned.md.
-4. If a feature requires duplicated lifecycle logic across bars, add or update shared lifecycle utilities first.
-5. Backlog ordering should prioritize architecture-enabling work when it reduces repeated implementation cost.
+4. Completed work should be recorded in docs/history/ and removed from active backlog.
+5. Backlog items should have clear goals, not just task descriptions.

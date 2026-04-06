@@ -1,11 +1,10 @@
 # Deprecated Planning Location
 
-Primary session plan is now maintained at docs/plan.md.
+All project documentation lives in `docs/`. This file is a compatibility pointer only.
 
-Project backlog and documentation are maintained in docs/:
-- docs/plan.md
-- docs/memory/
-- docs/guidelines/
-- docs/features/
-
-This file is kept only as a compatibility pointer.
+- Project plan and goals: `docs/plan.md`
+- Feature descriptions: `docs/features/`
+- Future work: `docs/backlog/`
+- Implementation history: `docs/history/`
+- Decisions and lessons: `docs/memory/`
+- Architecture standards: `docs/guidelines/`

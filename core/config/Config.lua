@@ -38,6 +38,7 @@ function Config:Initialize()
                 Addon.db.barPositions = {}
             end
         end
+
     end
 end
 

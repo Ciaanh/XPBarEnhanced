@@ -15,7 +15,7 @@ The primary addon feature — an enhanced experience bar that replaces and exten
 ## Bar Styles
 
 | Style | Description |
-|-------|-------------|
+| ----- | ----------- |
 | None | Blizzard's default XP bar only |
 | Classic | Blizzard-style bar with atlas textures and quest overlays |
 | Flat | Full-width draggable bar with milestone ticks |

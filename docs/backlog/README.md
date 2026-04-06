@@ -1,53 +1,47 @@
 # Backlog
 
-Prioritized list of features and improvements for XPBarEnhanced.
-Each file represents one implementable work item with scope, tasks, and acceptance criteria.
+Future work items for XPBarEnhanced. Each file is one actionable work item with goal, scope, tasks, and acceptance criteria.
 
-## Priority Tiers
+Completed and closed items have been archived to `docs/history/phases.md`. Decisions are recorded in `docs/memory/decision-log.md`.
 
-| Priority | Meaning |
-|----------|---------|
-| P1 | High value, low risk — implement next |
-| P2 | Medium value or moderate complexity |
-| P3 | Nice to have, or requires significant architecture work |
+## How to Use This Backlog
 
-## Item Index
+1. **Pick a goal** — Review the items below and select one that aligns with the current product direction.
+2. **Validate readiness** — Ensure any prerequisites (investigation, analysis) are complete before starting.
+3. **Create a plan** — Add concrete steps to `docs/plan.md` with scope, checklist, and validation criteria.
+4. **Record decisions** — Append approval and key decisions to `docs/memory/decision-log.md`.
 
-### Active — Approved For Near-Term Work
+## Active Backlog Items
 
-| File | Summary |
-|------|---------|
-| [secondary-bar-fade-animation.md](secondary-bar-fade-animation.md) | Validate and harden fade transitions for secondary bars |
-| [secondary-bar-tooltip.md](secondary-bar-tooltip.md) | Validate and harden tooltip behavior for secondary bars |
-| [secondary-bar-drag-to-move.md](secondary-bar-drag-to-move.md) | Validate drag persistence and lock semantics for secondary bars |
-| [time-display-live-refresh.md](time-display-live-refresh.md) | Validate and tune periodic text refresh behavior |
-| [max-level-enhancements.md](max-level-enhancements.md) | Improve max-level behavior after secondary-bar polish stabilization |
+| Item | Goal | Status | Priority | Prerequisite |
+| ---- | ---- | ------ | -------- | ------------ |
+| [secondary-bar-styles.md](secondary-bar-styles.md) | Give users visual style options for secondary bars beyond "flat" | Investigation only — not approved for coding | P3 | Architecture review, UX review, delivery plan |
+| [companion-multi-companion.md](companion-multi-companion.md) | Support tracking any delve companion, not just Brann | Deferred — future work | P3 | C_DelvesUI API review |
 
-### Investigation Queue (Not Approved For Implementation)
+## Potential New Work (Not Yet Filed)
 
-| File | Summary |
-|------|---------|
-| [secondary-bar-styles.md](secondary-bar-styles.md) | Additional secondary styles require architecture and UX investigation before estimation |
+Ideas that have surfaced but don't have backlog files yet. File them when they're ready for investigation.
 
-### Completed Foundations
+- **Options panel restructure** — Tabbed or grouped layout for growing settings (noted in `docs/notes.md` Track 2)
+- **UI folder naming cleanup** — Migration-safe folder/file rename pass (noted in `docs/notes.md` Track 3)
+- **Dead code cleanup** — Remove unused max-level context builders and vestigial config keys from Slice 3 exploration
+- **Debug log removal** — Remove or gate investigation logs before release build
 
-| File | Summary |
-|------|---------|
-| [shared-bar-contract.md](shared-bar-contract.md) | Unify primary and secondary bar lifecycle contracts |
-| [event-router-consolidation.md](event-router-consolidation.md) | Consolidate WoW event registration into a staged single router |
-| [session-persistence-reload.md](session-persistence-reload.md) | Persist session time/XP across /reload |
+## Completed Work (Archived)
 
-### Closed — Not Planned
+See `docs/history/phases.md` for implementation records of:
 
-| File | Summary |
-|------|---------|
-| [faction-selection-dropdown.md](faction-selection-dropdown.md) | UI to pick a specific faction to track |
-| [bar-size-scale-options.md](bar-size-scale-options.md) | Width/height/scale options for bars |
-| [font-customization-per-bar.md](font-customization-per-bar.md) | Per-bar font face, size, and outline options |
-| [localization-multi-language.md](localization-multi-language.md) | Multi-language localization support |
+- Shared bar contract (Phase 5)
+- Event router consolidation (Phase 5, 3 stages)
+- Session persistence across /reload (Phase 5)
+- Secondary bar fade, drag, tooltip, live text (Phase 6)
+- Compliance hardening, context contract, max-level behavior (Phase 7, Slices 1-3)
 
-### Deferred — Future
+## Closed / Not Planned
 
-| File | Summary |
-|------|---------|
-| [companion-multi-companion.md](companion-multi-companion.md) | Support for multiple delve companions |
+These were explicitly closed on 2026-04-06 (rationale in decision-log):
+
+- Faction selection dropdown
+- Bar size/scale options
+- Per-bar font customization
+- Multi-language localization

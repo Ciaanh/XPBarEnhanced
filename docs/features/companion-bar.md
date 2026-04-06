@@ -1,37 +1,34 @@
 # Feature: Companion Bar
 
-Owner scope: Delve companion progression bar.
-Priority: P0
+A secondary progress bar that tracks Delve companion (Brann) progression.
 
-## Purpose
+## Capabilities
 
-Track and display companion progression in a stable secondary bar with reliable availability handling.
+- **Companion XP tracking**: Displays current companion level and XP progress
+- **Availability detection**: Shows only when companion data is available (active Delve session)
+- **Graceful hiding**: Unavailable states hide without flicker
+- **Independent visibility**: Controlled by `companionBarStyle` setting, separate from primary XP bar
+- **Drag-to-move**: Repositionable with Shift+drag; position persists across sessions
+- **Fade transitions**: Smooth fade-in/out on availability changes
+- **Hover tooltip**: Shows companion session metrics on mouseover
+- **Live text refresh**: Periodic text updates without full context rebuild
 
-## Current Components
+## Architecture
 
-- core/services/CompanionSession.lua
-- core/services/ContextBuilder.lua (BuildCompanionContext)
-- ui/secondary/FlatCompanionBarStyle.lua
-- ui/SecondaryBarManager.lua
+- **Data pipeline**: `CompanionSession` → `ContextBuilder` (BuildCompanionContext) → `EventBus` → bar style
+- **Session layer**: `CompanionSession` tracks companion state and session gains
+- **Visibility ownership**: `SecondaryBarManager` controls custom companion bar visibility
+- **Render model**: Bar renders from emitted context payloads; flat UI-ready shape
 
-## Current Gaps
+## Key Components
 
-1. Optional fade/coalescing polish remains future work if required.
+- `core/services/CompanionSession.lua` — Companion state and session tracking
+- `core/services/ContextBuilder.lua` (BuildCompanionContext) — Immutable context builder
+- `ui/secondary/FlatCompanionBarStyle.lua` — Visual rendering
+- `ui/SecondaryBarManager.lua` — Style activation and visibility
 
-## Planned Work
+## Known Limitations
 
-1. Keep rendering from emitted companion context.
-2. Preserve config/default-driven anchors and reset behavior.
-3. Add MarkDirty/fade behavior only if additional polish is required.
-
-## Acceptance Criteria
-
-1. Companion updates stay accurate and stable on event changes.
-2. Unavailable states hide gracefully without flicker.
-3. No redundant context build in listener render path.
-
-## Implemented Status (2026-04-04)
-
-1. Listener now consumes emitted context directly.
-2. Companion context is emitted in the same flat UI-ready shape used by the style renderer.
-3. Anchor defaults are config-driven and reset-anchor support is wired through options.
+- Only one visual style currently available (flat)
+- Only supports single companion (Brann); multi-companion is deferred
+- Requires active Delve context for data availability

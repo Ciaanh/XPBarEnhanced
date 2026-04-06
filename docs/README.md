@@ -1,56 +1,59 @@
 # Docs Index
 
-This folder is the canonical source for project planning and technical documentation.
+Canonical source for project planning and technical documentation.
 
-## Core Files
+## Start Here
 
-- Session guide: [plan.md](plan.md)
-- Architecture analysis: [analysis/architecture-analysis.md](analysis/architecture-analysis.md)
+- **Project plan and goals**: [plan.md](plan.md)
+- **What to work on next**: [backlog/README.md](backlog/README.md)
 
-## Memory
+## Features (What the Addon Does)
 
-- Lessons learned: [memory/lessons-learned.md](memory/lessons-learned.md)
-- Decision log: [memory/decision-log.md](memory/decision-log.md)
-- External analysis: [memory/external-project-analysis.md](memory/external-project-analysis.md)
+- [XP bar](features/xp-bar.md) — Primary experience bar with 7 styles, animations, session tracking
+- [Reputation bar](features/reputation-bar.md) — Watched faction tracking secondary bar
+- [Companion bar](features/companion-bar.md) — Delve companion tracking secondary bar
+- [Secondary bar system](features/secondary-bar-manager.md) — Shared infrastructure for secondary bars
+- [Options and config](features/options-and-config.md) — Settings panel, slash commands, minimap button
 
-## Guidelines
+## Backlog (Future Work)
 
-- Project structure: [guidelines/project-structure.md](guidelines/project-structure.md)
-- Architecture choices: [guidelines/code-architecture-choices.md](guidelines/code-architecture-choices.md)
+- [Backlog index](backlog/README.md) — Prioritized items with goals and readiness status
 
-## Features
+## History (Completed Work)
 
-- XP core pipeline: [features/xp-core-pipeline.md](features/xp-core-pipeline.md)
-- Reputation bar: [features/reputation-bar.md](features/reputation-bar.md)
-- Companion bar: [features/companion-bar.md](features/companion-bar.md)
-- Secondary bar manager: [features/secondary-bar-manager.md](features/secondary-bar-manager.md)
-- Phase 6 summary: [features/phase-6-secondary-polish.md](features/phase-6-secondary-polish.md)
-- Phase 7 planning gate: [features/phase-7-planning-gate.md](features/phase-7-planning-gate.md)
-- Phase 7 slice 1: [features/phase-7-slice-1-compliance-hardening.md](features/phase-7-slice-1-compliance-hardening.md)
+- [Implementation phases](history/phases.md) — Consolidated Phase 5–7 implementation records
 
-## Update Workflow
+## Analysis (Research)
 
-1. Start from [plan.md](plan.md) for active work.
-2. Record durable decisions in [memory/decision-log.md](memory/decision-log.md).
-3. Add recurring insights to [memory/lessons-learned.md](memory/lessons-learned.md).
-4. Update affected feature docs in [features](features).
-5. If architecture direction changes, update [guidelines/code-architecture-choices.md](guidelines/code-architecture-choices.md).
+- [Architecture analysis](analysis/architecture-analysis.md) — Comprehensive architecture audit
+- [Pre-Phase-7 deliverable](analysis/pre-phase-7-architecture-compliance-deliverable.md) — Compliance and consistency analysis
+- [Reputation bar analysis](analysis/reputation-bar-feature.md) — Reputation type model and API research
+- [Companion feature analysis](analysis/delve-companion-feature.md) — Companion API and integration options
+- [Reference addon comparison](analysis/reference-addon-comparison.md) — Comparative analysis with reference addon
+- [XP tracking improvements](analysis/xp-tracking-improvements-plan.md) — Actionable XP pipeline improvement list
 
-## Documentation Boundaries
+## Memory (Decisions and Lessons)
 
-- `plan.md` is for current-session planning only (what is being executed now, next steps, and session checklist).
-- `features/*.md` holds feature-level decisions, scope, status, acceptance criteria, and references to analysis.
-- `memory/*.md` holds durable decisions, rationale, and lessons across sessions.
-- `analysis/*.md` stores deep-dive technical investigations.
+- [Decision log](memory/decision-log.md) — Canonical record of all decisions with rationale
+- [Lessons learned](memory/lessons-learned.md) — Recurring patterns and insights
+- [External analysis](memory/external-project-analysis.md) — Findings from Blizzard UI source
 
-Compaction rule:
+## Guidelines (Standards)
 
-1. Prefer links to canonical docs instead of copying long sections.
-2. Keep one source of truth per concern (plan, feature scope, analysis, decisions).
-3. Move stale phase narrative to decision log or analysis references, then trim operational docs.
-4. Do not store durable approvals/decisions in `plan.md`; record them in feature + memory docs.
+- [Project structure](guidelines/project-structure.md) — File placement rules and doc ownership
+- [Architecture choices](guidelines/code-architecture-choices.md) — Design principles and constraints
 
-## Policy
+## Open Investigation Tracks
 
-- Planning and backlog documentation must live in `docs/`.
-- `.claude/plan.md` is a compatibility pointer only, not a source of truth.
+- [Notes](notes.md) — Analysis tracks not yet resolved (workflow consistency, options panel, UI naming)
+
+## Documentation Rules
+
+1. `plan.md` = project goals, priorities, and next steps
+2. `features/` = one file per addon feature describing what it does
+3. `backlog/` = actionable future work items with goals and acceptance criteria
+4. `history/` = archived implementation records
+5. `memory/` = durable decisions and lessons across sessions
+6. `analysis/` = deep technical investigations
+7. `guidelines/` = architecture and structure standards
+8. One source of truth per concern — don't duplicate across files

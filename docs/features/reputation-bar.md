@@ -1,38 +1,33 @@
 # Feature: Reputation Bar
 
-Owner scope: watched-faction secondary progress bar.
-Priority: P0
+A secondary progress bar that displays the player's watched faction reputation progression.
 
-## Purpose
+## Capabilities
 
-Display watched reputation progression with clear standing and progress state.
+- **Watched faction tracking**: Displays current standing and progress for the tracked faction
+- **All reputation types**: Handles standard, friendship, major/renown, and paragon factions
+- **Automatic updates**: Reacts to faction gain, standing changes, and tracked faction switches
+- **Independent visibility**: Controlled by `reputationBarStyle` setting, separate from primary XP bar
+- **Drag-to-move**: Repositionable with Shift+drag; position persists across sessions
+- **Fade transitions**: Smooth fade-in/out on availability changes
+- **Hover tooltip**: Shows session metrics on mouseover
+- **Live text refresh**: Periodic text updates without full context rebuild
 
-## Current Components
+## Architecture
 
-- core/services/ReputationSession.lua
-- core/services/ContextBuilder.lua (BuildReputationContext)
-- ui/secondary/FlatReputationBarStyle.lua
-- ui/SecondaryBarManager.lua
+- **Data pipeline**: `ReputationSession` → `ContextBuilder` (BuildReputationContext) → `EventBus` → bar style
+- **Session layer**: `ReputationSession` snapshots watched faction data and tracks session gains
+- **Visibility ownership**: `SecondaryBarManager` controls both custom and Blizzard reputation bar visibility
+- **Render model**: Bar renders from emitted context payloads; no listener-side rebuilding
 
-## Current Gaps
+## Key Components
 
-1. Fade polish is still optional future work if needed.
+- `core/services/ReputationSession.lua` — Faction state, session tracking
+- `core/services/ContextBuilder.lua` (BuildReputationContext) — Immutable context builder
+- `ui/secondary/FlatReputationBarStyle.lua` — Visual rendering
+- `ui/SecondaryBarManager.lua` — Style activation and visibility
 
-## Planned Work
+## Known Limitations
 
-1. Keep rendering from emitted context payload.
-2. Preserve config/default-driven bar position and reset-anchor behavior.
-3. Preserve watched-faction transition correctness (clear/switch should emit immediate update).
-
-## Acceptance Criteria
-
-1. Updates are accurate on faction gain/standing changes.
-2. No duplicate context-build path in listener.
-3. Visibility transitions are smooth and stable.
-
-## Implemented Status (2026-04-04)
-
-1. Listener consumes emitted context directly.
-2. Anchoring is config/default-driven.
-3. Clearing tracked reputation and switching tracked faction emits immediate updates, keeping hide/show behavior correct.
-4. Blizzard reputation bar visibility is controlled by reputation style, not XP style.
+- Only one visual style currently available (flat)
+- Fade polish is optional future work

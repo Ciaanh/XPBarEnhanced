@@ -1,5 +1,6 @@
 # Backlog: Max Level Enhancements
 
+Status: Completed (Phase 7 Slice 3)
 Priority: P2
 Effort: Small
 Risk: Low
@@ -7,11 +8,12 @@ Source: feature gap analysis
 
 ## Summary
 
-Improve the XP bar experience at max level. Currently `maxLevelBehavior` supports "always_show" (default). Add additional modes and visual adaptations for max-level players.
+Preserve and validate the max-level behavior contract: hide the primary XP bar at cap while allowing secondary reputation/companion bars to remain style-driven and visible when configured.
 
 ## Motivation
 
 At max level, the XP bar is not useful for level progression. Players may want the bar to:
+
 - Show reputation progress instead of XP.
 - Show a celebration/completed state.
 - Auto-switch to a secondary bar.
@@ -49,8 +51,8 @@ At max level, the XP bar is not useful for level progression. Players may want t
 
 ## Acceptance Criteria
 
-- [ ] At max level, chosen behavior is applied.
-- [ ] "show_reputation" displays watched faction data in the primary bar area.
-- [ ] "hide" hides the bar and restores Blizzard default.
-- [ ] Level-up to max triggers behavior switch.
-- [ ] Settings persist and behavior is applied on login.
+- [x] At max level, primary custom XP bar is hidden.
+- [x] Blizzard primary tracking bar visibility is restored.
+- [x] Level-up to max triggers primary-bar hide behavior.
+- [x] Behavior applies correctly on login/reload.
+- [x] Secondary reputation/companion bars remain visible when their styles are enabled.

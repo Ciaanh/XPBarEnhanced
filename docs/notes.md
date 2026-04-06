@@ -1,31 +1,27 @@
-# Notes (Promoted to Analysis Tracks)
+# Open Investigation Tracks
 
-Last updated: 2026-04-06
+Items that need analysis before they can become backlog items. Partially addressed by Phase 7 work but not fully resolved.
 
-## Track 1: Session/Context Workflow Consistency
+## Track 1: Context/Session Workflow Consistency
 
-Observation:
-- XP and secondary domains do not follow the same context/session ownership pattern.
-- Secondary flows still rely on `_session`-centric service internals while XP flow is more database-backed and globally consumed.
+**Goal**: Define one explicit context production/consumption contract across XP, reputation, and companion pipelines.
 
-Planned analysis outcome:
-- Define one explicit context production/consumption contract across XP, reputation, and companion pipelines.
-- Identify duplicated context-building paths and propose a staged simplification plan.
+**Current state**: Phase 7 Slice 2 normalized secondary context sourcing (prefer emitted/cached, bootstrap fallback). But XP and secondary domains still differ — secondary uses session-centric internals while XP is more database-backed.
 
-## Track 2: Options Panel Structure and Blizzard UX Alignment
+**Next step**: Compare the three pipelines side-by-side, identify remaining duplication, and propose a staged simplification plan.
 
-Observation:
-- Current options organization is functional but becoming crowded with secondary-bar controls.
+## Track 2: Options Panel Structure
 
-Planned analysis outcome:
-- Evaluate tabbed layout vs grouped sections against Blizzard settings patterns.
-- Recommend information hierarchy and progressive disclosure rules for future options growth.
+**Goal**: Evaluate whether the options panel needs restructuring as settings grow.
 
-## Track 3: UI Folder Structure and Naming Clarity
+**Current state**: Functional but increasingly crowded with secondary-bar controls added in Phase 6.
 
-Observation:
-- The `ui/` folder naming and boundaries no longer cleanly reflect architecture and module roles.
+**Next step**: Review tabbed layout vs grouped sections against Blizzard settings patterns. Recommend information hierarchy and progressive disclosure rules.
 
-Planned analysis outcome:
-- Propose a migration-safe folder structure and naming strategy.
-- Define file-move constraints to avoid TOC/load-order regressions.
+## Track 3: UI Folder Naming and Structure
+
+**Goal**: Improve folder boundaries to reflect current architecture and module roles.
+
+**Current state**: The `ui/` folder naming no longer cleanly maps to the architecture after Phase 5-7 changes.
+
+**Next step**: Propose a migration-safe folder structure. Define file-move constraints to avoid TOC/load-order regressions.

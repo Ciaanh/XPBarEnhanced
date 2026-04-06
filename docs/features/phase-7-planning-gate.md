@@ -1,11 +1,13 @@
 # Feature: Phase 7 Planning Gate (No Implementation)
 
-Status: Deferred pending approval
-Last updated: 2026-04-06
+Status: Active (post-Slice 3)
+Last updated: 2026-04-07
 
 ## Purpose
 
 Define what must be completed before any Phase 7 implementation can begin.
+
+Global status view: `docs/plan.md` (Global Phase and Slice View section)
 
 ## Closed / Not Planned Items
 
@@ -56,16 +58,16 @@ All items below must be complete:
 1. One implementation slice is approved with clear scope and acceptance criteria.
 2. Non-approved items remain excluded from active roadmap execution.
 
-## Immediate Approval Checklist (Slice 1)
+## Immediate Approval Checklist (Next Slice)
 
-1. Confirm Slice 1 scope remains limited to compliance hardening only.
-2. Confirm no closed/not-planned features are reintroduced.
-3. Confirm validation matrix for drag, tooltip, fade, ticker, and combat safety is accepted.
-4. Record explicit approval in this file and append the decision to `docs/memory/decision-log.md` before starting code edits.
+1. Confirm next-slice scope remains limited to approved in-scope items only.
+2. Confirm no investigation-only or closed/not-planned features are reintroduced.
+3. Confirm validation matrix is updated for the selected target.
+4. Record explicit approval/execution start in this file and append the decision to `docs/memory/decision-log.md` before code edits.
 
 ## Approval Record
 
-Current state: Approved for Slice 1 implementation (2026-04-06).
+Current state: Slice 1, Slice 2, and Slice 3 completed and validated.
 
 When approved, capture:
 
@@ -81,11 +83,10 @@ Recorded approval:
 
 Current progress:
 
-1. Slice 1 implementation completed.
-2. In-game validation reported no errors.
-3. Slice 2 implementation started.
-4. Slice 2 current batch validated in-game with no errors.
+1. Slice 1 implementation completed and validated.
+2. Slice 2 implementation completed and validated.
+3. Slice 3 implementation completed and validated.
 
 Selected next implementation slice:
 
-- `docs/features/phase-7-slice-2-context-contract.md`
+- To be selected in next planning step.

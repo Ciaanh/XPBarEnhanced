@@ -199,7 +199,6 @@ Impact: `docs/plan.md` now excludes durable approvals/decisions, `docs/features/
 Decision: Approve Phase 7 Slice 1 and begin compliance hardening implementation.
 Reason: planning gate criteria were met and the next safe step is targeted hardening before broader feature expansion.
 Impact: `docs/features/phase-7-planning-gate.md` now records approval; `docs/features/phase-7-slice-1-compliance-hardening.md` status moved to in-progress.
-
 Decision: Harden secondary drag semantics by removing SetUserPlaced(false) on drag paths and setting user placement true on drag stop.
 Reason: avoid conflicting placement semantics while preserving explicit SavedVariables persistence flow.
 Impact: secondary style mixins now call `SetUserPlaced(true)` on drag stop and no longer force false on drag start/stop.
@@ -232,3 +231,26 @@ Decision: Validate current Slice 2 batch in-game and proceed.
 Reason: runtime verification reported no errors after context-source normalization changes.
 Impact: Slice 2 remains in-progress, with current batch accepted as stable baseline for next incremental step.
 
+Decision: Close Slice 2 context-contract normalization and mark it validated.
+Reason: all planned Slice 2 scope items are complete and in-game checks reported no errors/regressions.
+Impact: `docs/features/phase-7-slice-2-context-contract.md`, gate status, and plan phase table now treat Slice 2 as closed.
+
+Decision: Select max-level behavior enhancements as Phase 7 Slice 3 and prepare kickoff docs.
+Reason: it is the remaining approved near-term active backlog item and can be implemented incrementally with low risk.
+Impact: created `docs/features/phase-7-slice-3-max-level-behavior.md`; plan and gate now point to Slice 3 as next execution target.
+
+Decision: Start Slice 3 implementation with max-level behavior mode wiring.
+Reason: move from planning to incremental execution while keeping scope limited to approved Slice 3 targets.
+Impact: options now expose `maxLevelBehavior`; `BarManager` and base mixin now apply max-level behavior modes (`always_show`, `show_reputation`, `hide`, `show_rested_only`) during style selection and render context handling.
+
+Decision: Switch active-development max-level default behavior to `hide` and migrate legacy `always_show` defaults.
+Reason: runtime logs showed capped characters remained visible because legacy/default mode was `always_show`, which conflicted with expected development behavior for max-level testing.
+Impact: `maxLevelBehavior` now defaults to `hide`; `Config:Initialize()` performs a one-time migration from legacy default to `hide` for existing profiles unless users later reselect another mode.
+
+Decision: Preserve historical max-level behavior contract by removing user-facing max-level mode selection.
+Reason: Slice 3 did not explicitly approve changing long-standing behavior; expected behavior is primary XP hidden at cap while secondary styles remain independently visible.
+Impact: primary XP bar now always hides at max level in `BarManager` regardless of prior mode experiments; temporary max-level option wiring and side effects were removed from options/config.
+
+Decision: Close Slice 3 after in-game validation pass.
+Reason: runtime validation confirmed expected behavior contract on capped characters.
+Impact: Slice 3 is now complete: primary XP bar hides at max level, and secondary reputation/companion bars remain style-driven and visible when configured.

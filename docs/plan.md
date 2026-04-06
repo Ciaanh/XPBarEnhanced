@@ -1,38 +1,76 @@
-# XPBarEnhanced Session Plan
+# XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-06
-Scope: Active session control document (concise, forward-looking)
+Last updated: 2026-04-07
 
-## How To Use This Plan
+## Addon Summary
 
-1. Use this file only for current-session planning and execution checklist.
-2. Record durable decisions in `docs/memory/decision-log.md`.
-3. Maintain scope/status/approval in `docs/features/*.md`.
-4. Keep deep technical investigations in `docs/analysis/*.md`.
+Enhanced XP bar addon for WoW Retail with 7 visual styles, quest XP overlay, session statistics, reputation tracking, companion tracking, and full color customization.
 
-## Current Session Goal
+## Current State
 
-Prepare and execute the next approved code slice without expanding scope.
+The addon is feature-complete for its core scope:
 
-## This Session Checklist
+- **Primary XP bar**: 7 styles, animations, quest overlay, session tracking, max-level auto-hide
+- **Reputation bar**: Watched faction tracking with fade, drag, tooltip, live text
+- **Companion bar**: Delve companion tracking with the same polish features
+- **Architecture**: Centralized event router, context-first render model, shared secondary lifecycle
+- **Quality**: Compliance hardened (combat safety, fade lifecycle, context contracts)
 
-1. Confirm approval state in `docs/features/phase-7-planning-gate.md`.
-2. Execute only `docs/features/phase-7-slice-2-context-contract.md` scope.
-3. Run the slice validation matrix immediately after edits.
-4. Capture outcomes in `docs/memory/decision-log.md`.
+All Phase 5 (foundations), Phase 6 (secondary polish), and Phase 7 (hardening) work is complete and validated. See `docs/history/phases.md` for implementation records.
 
-## Session Inputs
+## Goals
 
-- Gate: `docs/features/phase-7-planning-gate.md`
-- Slice: `docs/features/phase-7-slice-2-context-contract.md`
-- Analysis: `docs/analysis/pre-phase-7-architecture-compliance-deliverable.md`
+### Near-Term: Stabilize for Release
 
-## Session Progress (Update During Session)
+**Goal**: Get the addon to a clean, release-ready state.
 
-- Slice 2 started: context contract normalization implementation in progress.
+Steps:
 
-## Session Guardrails
+1. Remove dead code from Slice 3 exploration (unused context builders in BarManager, vestigial config keys)
+2. Remove or gate debug investigation logs (MaxLevel logging throughout BarManager/BaseMixin)
+3. In-game regression test across all 7 styles, secondary bars, max-level, and login/reload paths
+4. Verify companion bar behavior in an actual Delve session
+5. Update README if any user-facing behavior changed
 
-1. Do not implement closed/not-planned features.
-2. Do not start investigation-only items without explicit approval.
-3. Do not store durable approvals/decisions in this file.
+### Medium-Term: Code Quality
+
+**Goal**: Reduce technical debt and improve maintainability.
+
+Steps:
+
+1. Review and address `docs/notes.md` analysis tracks:
+   - Track 1: Harmonize XP vs secondary context/session workflow patterns
+   - Track 2: Evaluate options panel restructure for growing settings
+   - Track 3: UI folder naming and structure cleanup
+2. Assess whether additional analysis docs in `docs/analysis/` contain actionable items not yet captured in backlog
+
+### Future: Feature Expansion
+
+**Goal**: Expand addon capabilities based on user demand.
+
+Available backlog items (see `docs/backlog/README.md` for details):
+
+- Additional secondary bar styles (investigation required first)
+- Multi-companion support (deferred, low priority)
+- Any new ideas that arise from user feedback
+
+## How to Start a Session
+
+1. Review this plan for current goals and priorities
+2. Pick a goal or step to work on
+3. Check `docs/backlog/README.md` if picking feature work
+4. Record decisions in `docs/memory/decision-log.md`
+5. Update this plan when goals shift or steps are completed
+
+## Documentation Map
+
+| Location | Purpose |
+| ---------- | ------- |
+| `docs/plan.md` | This file — project goals, priorities, next steps |
+| `docs/features/` | What the addon does — one file per feature |
+| `docs/backlog/` | Future work items with goals, scope, and acceptance criteria |
+| `docs/history/` | Completed implementation phases (archive) |
+| `docs/analysis/` | Deep technical investigations and research |
+| `docs/memory/` | Decision log, lessons learned, external analysis |
+| `docs/guidelines/` | Architecture and project structure standards |
+| `docs/notes.md` | Open analysis tracks for future investigation |
