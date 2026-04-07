@@ -10,7 +10,8 @@ local function DeriveSecondaryStyle()
     if not db.showSecondaryBar then
         return "none"
     end
-    local primaryStyle = db.barStyle or "none"
+    -- Use the actual runtime style (BarManager may force "none" at max level)
+    local primaryStyle = (Addon.BarManager and Addon.BarManager:GetCurrentStyle()) or db.barStyle or "none"
     if primaryStyle == "none" then
         return "none"
     end
@@ -123,6 +124,8 @@ function Manager:ReapplyAttachedPositions()
 
     local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
     if not primaryFrame then
+        -- Primary bar unavailable (e.g. max level) — fall back to saved/default position
+        frame:ApplyInitialPosition()
         return
     end
 
