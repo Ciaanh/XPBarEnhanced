@@ -10,8 +10,9 @@ local function DeriveSecondaryStyle()
     if not db.showSecondaryBar then
         return "none"
     end
-    -- Use the actual runtime style (BarManager may force "none" at max level)
-    local primaryStyle = (Addon.BarManager and Addon.BarManager:GetCurrentStyle()) or db.barStyle or "none"
+    -- Use db.barStyle (user preference) not runtime style — secondary bar should
+    -- remain visible at max level even though the primary bar hides itself.
+    local primaryStyle = db.barStyle or "none"
     if primaryStyle == "none" then
         return "none"
     end
