@@ -76,7 +76,6 @@ local defaults = {
     secondaryBarPosition = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 34},
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,
-    debugSecondaryBars = false,
 }
 
 defaults.xpBarColor = defaults.colors.xpBar

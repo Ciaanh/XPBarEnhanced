@@ -5,31 +5,15 @@ local Addon = XPBarEnhanced
 Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 local Manager = Addon.SecondaryBarManager
 
-local function DebugSecondary(message, ...)
-    local db = Addon and Addon.db
-    if db and db.debugSecondaryBars == false then
-        return
-    end
-
-    local text = tostring(message or "")
-    if select("#", ...) > 0 then
-        text = string.format(text, ...)
-    end
-    print("|cff66ccffXPBE Secondary|r " .. text)
-end
-
 local function DeriveSecondaryStyle()
     local db = Addon.db or {}
     if not db.showSecondaryBar then
-        DebugSecondary("DeriveStyle -> none (show disabled)")
         return "none"
     end
     local primaryStyle = db.barStyle or "none"
     if primaryStyle == "none" then
-        DebugSecondary("DeriveStyle -> none (primary style none)")
         return "none"
     end
-    DebugSecondary("DeriveStyle -> flat (primary style %s)", tostring(primaryStyle))
     return "flat"
 end
 
@@ -76,7 +60,6 @@ function Manager:_SetStyle(style)
     self._frames = self._frames or {}
 
     if self._currentStyle == style then
-        DebugSecondary("SetStyle unchanged (%s)", tostring(style))
         return
     end
 
@@ -87,7 +70,6 @@ function Manager:_SetStyle(style)
     end
 
     self._currentStyle = style
-    DebugSecondary("SetStyle -> %s", tostring(style))
 
     if style == "none" then
         return
@@ -127,7 +109,6 @@ function Manager:ReapplyAttachedPositions()
     local db = Addon.db or {}
 
     if not db.secondaryBarsAttached then
-        DebugSecondary("ReapplyAttachedPositions: detached mode")
         local frame = self:GetCurrentFrame()
         if frame and frame.ApplyInitialPosition then
             frame:ApplyInitialPosition()
@@ -137,17 +118,13 @@ function Manager:ReapplyAttachedPositions()
 
     local frame = self:GetCurrentFrame()
     if not frame then
-        DebugSecondary("ReapplyAttachedPositions: no secondary frame available")
         return
     end
 
     local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
     if not primaryFrame then
-        DebugSecondary("ReapplyAttachedPositions: no primary frame available")
         return
     end
-
-    DebugSecondary("ReapplyAttachedPositions: attached mode, primary frame found")
 
     frame:ClearAllPoints()
     frame:SetPoint("BOTTOM", primaryFrame, "TOP", 0, 2)

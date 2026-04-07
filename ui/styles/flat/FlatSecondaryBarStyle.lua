@@ -44,19 +44,6 @@ local function BuildLabel(context)
     return label .. string.format(" (%d%%)", context.percent)
 end
 
-local function DebugSecondary(message, ...)
-    local db = Addon and Addon.db
-    if db and db.debugSecondaryBars == false then
-        return
-    end
-
-    local text = tostring(message or "")
-    if select("#", ...) > 0 then
-        text = string.format(text, ...)
-    end
-    print("|cff66ccffXPBE Secondary|r " .. text)
-end
-
 function StyleMixin:GetPositionConfigKey()
     return "secondaryBarPosition"
 end
@@ -214,7 +201,6 @@ function StyleMixin:OnDragStart()
     end
 
     if AddonGlobal.db.secondaryBarsAttached then
-        DebugSecondary("Reputation drag blocked: attached mode enabled")
         return
     end
 
@@ -237,7 +223,6 @@ function StyleMixin:OnDragStop()
     self:StopMovingOrSizing()
     self:SetUserPlaced(true)
     self:SavePosition()
-    DebugSecondary("Reputation drag stop: saved position")
 end
 
 function StyleMixin:OnSecondaryLoad()
