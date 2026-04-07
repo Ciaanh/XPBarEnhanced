@@ -1,6 +1,6 @@
 # XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-07 (session 2)
+Last updated: 2026-04-07 (session 4)
 
 ## Addon Summary
 
@@ -11,8 +11,7 @@ Enhanced XP bar addon for WoW Retail with 7 visual styles, quest XP overlay, ses
 The addon is feature-complete for its core scope:
 
 - **Primary XP bar**: 7 styles, animations, quest overlay, session tracking, max-level auto-hide
-- **Reputation bar**: Watched faction tracking with fade, drag, tooltip, live text
-- **Companion bar**: Delve companion tracking with the same polish features
+- **Unified secondary bar**: Watched-faction tracking with companion-aware display, fade, drag, tooltip, live text
 - **Architecture**: Centralized event router, context-first render model, shared secondary lifecycle
 - **Quality**: Compliance hardened (combat safety, fade lifecycle, context contracts)
 
@@ -24,14 +23,39 @@ Completed this session (near-term stabilization):
 - **NR-2**: MaxLevel debug logs removed (BarManager, BaseMixin, defaults)
 - **Bug fix**: `SavePosition` frame-reference serialization bug corrected
 - **Default position**: Secondary bar default anchor corrected to `UIParent` bottom offset; attached mode now re-anchors relative to the active XP bar
-- **NR-3 (partial)**: Checkbox UX implemented but testing revealed companion identity bugs and drag-lock incompleteness
-- **Key finding**: Companion and reputation are the same API data source — NR-3 rewritten as unified secondary bar model (see decision log session 3)
+- **NR-3 complete**: companion/reputation pipelines unified into one tracked-reputation secondary bar
+- **UI regrouping**: flat secondary style/template moved under `ui/styles/flat/`
+- **Interaction**: click on secondary bar opens Character Reputation panel
+- **New option**: `hideCompanionOutsideDelve` added to hide companion-tracked secondary bar when outside Delves
+
+Validation status:
+
+- Release package builds successfully (`make-release.ps1`)
+- In-game smoke checks pass for visibility and new option behavior
+- Final next-phase gate remains a structured validation pass before any new implementation
 
 ## Goals
 
-### Near-Term: Stabilize for Release
+### Near-Term: Validation and Signoff
 
-**Goal**: Get the addon to a clean, release-ready state.
+**Goal**: Freeze implementation changes and complete validation/signoff before starting any new phase.
+
+Execution steps:
+
+1. Validate unified secondary behavior across tracked standard reputation and tracked Delve companion.
+2. Validate `hideCompanionOutsideDelve` ON/OFF transitions (inside Delve, outside Delve, watched-faction swap).
+3. Validate secondary interactions (tooltip, shift-drag detached, click-to-open Reputation panel).
+4. Capture any regressions as explicit defects; do not begin feature expansion until resolved or accepted.
+
+Definition of done:
+
+- Validation notes reviewed and accepted.
+- No unresolved release-blocking defects.
+- Explicit go/no-go confirmation recorded before starting the next phase.
+
+### Next-Phase Hold
+
+No new implementation phase starts until the validation gate above is approved.
 
 ### NR-3: Unified secondary bar (tracked-reputation model)
 
