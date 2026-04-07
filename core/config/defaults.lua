@@ -5,8 +5,8 @@ local Addon = XPBarEnhanced
 
 local defaults = {
     barStyle = "classic",
-    showReputationBar = false,
-    showCompanionBar = false,
+    showSecondaryBar = false,
+    hideCompanionOutsideDelve = false,
     secondaryBarsAttached = true,
     barLocked = false,
     circularSize = "medium",
@@ -73,8 +73,7 @@ local defaults = {
         flat = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
         circular = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
     },
-    reputationBarPosition = {point = "CENTER", relativeTo = "SecondaryStatusTrackingBarContainer", relativePoint = "CENTER", x = 0, y = 0},
-    companionBarPosition  = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 54},
+    secondaryBarPosition = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 34},
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,
     debugSecondaryBars = true,

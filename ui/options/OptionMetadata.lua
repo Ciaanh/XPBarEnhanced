@@ -21,16 +21,16 @@ local optionDetails = {
         },
         commandKeys = {"style", "mode", "barstyle"}
     },
-    showReputationBar = {
-        key = "showReputationBar",
-        label = Addon.L["OPT_SHOW_REPUTATION_BAR"],
-        description = Addon.L["OPT_SHOW_REPUTATION_BAR_DESC"],
+    showSecondaryBar = {
+        key = "showSecondaryBar",
+        label = Addon.L["OPT_SHOW_SECONDARY_BAR"],
+        description = Addon.L["OPT_SHOW_SECONDARY_BAR_DESC"],
         commandKeys = {}
     },
-    showCompanionBar = {
-        key = "showCompanionBar",
-        label = Addon.L["OPT_SHOW_COMPANION_BAR"],
-        description = Addon.L["OPT_SHOW_COMPANION_BAR_DESC"],
+    hideCompanionOutsideDelve = {
+        key = "hideCompanionOutsideDelve",
+        label = Addon.L["OPT_HIDE_COMPANION_OUTSIDE_DELVE"],
+        description = Addon.L["OPT_HIDE_COMPANION_OUTSIDE_DELVE_DESC"],
         commandKeys = {}
     },
     secondaryBarsAttached = {
@@ -267,8 +267,8 @@ local optionDetails = {
 
 local optionOrder = {
     "barStyle",
-    "showReputationBar",
-    "showCompanionBar",
+    "showSecondaryBar",
+    "hideCompanionOutsideDelve",
     "secondaryBarsAttached",
     "barLocked",
     "classicBarDraggable",

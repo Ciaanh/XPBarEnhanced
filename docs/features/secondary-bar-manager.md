@@ -4,8 +4,8 @@ The shared infrastructure that manages reputation and companion secondary bars �
 
 ## Capabilities
 
-- **Enable/disable per bar**: Reputation and companion bars are activated via boolean flags (`showReputationBar`, `showCompanionBar`); style is derived from the primary `barStyle`
-- **Attached/free positioning**: `secondaryBarsAttached` toggle locks secondary bars relative to the XP bar or allows independent drag placement
+- **Single tracked-reputation bar**: One secondary bar renders the watched faction and applies companion-specific decoration when the watched faction is a delve companion
+- **Attached/free positioning**: `secondaryBarsAttached` toggle locks the secondary bar relative to the XP bar or allows independent drag placement
 - **Shared lifecycle contract**: All secondary bars follow OnLoad → OnShow → OnHide → MarkDirty → Render
 - **Drag-to-move**: Shift+drag repositioning with SavedVariables persistence and position lock
 - **Fade animations**: Smooth fade-in/out transitions on availability changes via shared mixin
@@ -28,8 +28,7 @@ The shared infrastructure that manages reputation and companion secondary bars �
 
 - `ui/SecondaryBarManager.lua` — Style activation, frame lifecycle, Blizzard visibility
 - `ui/mixins/SecondaryBarBaseMixin.lua` — Shared lifecycle, fade, tooltip, ticker, drag
-- `ui/secondary/FlatReputationBarStyle.lua` — Reputation bar rendering
-- `ui/secondary/FlatCompanionBarStyle.lua` — Companion bar rendering
+- `ui/styles/flat/FlatSecondaryBarStyle.lua` — Flat secondary bar rendering
 
 ## Design Decisions
 
@@ -37,4 +36,4 @@ The shared infrastructure that manages reputation and companion secondary bars �
 - Blizzard reputation visibility is separate from Blizzard XP visibility
 - Bootstrap emit ownership moved from manager to session layers (Phase 7 Slice 2)
 - Drag semantics hardened: position persistence managed by SavePosition, not drag-stop (Slice 1)
-- **Planned**: Companion and reputation bars will be unified into a single secondary bar per style, with companion-specific decoration when the tracked faction is a delve companion (NR-3 rewrite, decision log session 3)
+- Companion and reputation rendering share one secondary frame and one style lifecycle

@@ -522,18 +522,18 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_showReputationBar" inherits="ConfigCheckboxTemplate">
+                                    <Frame parentKey="Row_showSecondaryBar" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
-                                            <KeyValue key="configKey" value="showReputationBar" type="string"/>
+                                            <KeyValue key="configKey" value="showSecondaryBar" type="string"/>
                                             <KeyValue key="layoutIndex" value="52" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_showCompanionBar" inherits="ConfigCheckboxTemplate">
+                                    <Frame parentKey="Row_hideCompanionOutsideDelve" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
-                                            <KeyValue key="configKey" value="showCompanionBar" type="string"/>
+                                            <KeyValue key="configKey" value="hideCompanionOutsideDelve" type="string"/>
                                             <KeyValue key="layoutIndex" value="53" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>

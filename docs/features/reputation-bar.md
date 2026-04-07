@@ -7,7 +7,8 @@ A secondary progress bar that displays the player's watched faction reputation p
 - **Watched faction tracking**: Displays current standing and progress for the tracked faction
 - **All reputation types**: Handles standard, friendship, major/renown, and paragon factions
 - **Automatic updates**: Reacts to faction gain, standing changes, and tracked faction switches
-- **Independent visibility**: Enabled via `showReputationBar` checkbox in settings; hidden when disabled or when primary XP bar style is "none"
+- **Independent visibility**: Enabled via `showSecondaryBar` checkbox in settings; hidden when disabled or when primary XP bar style is "none"
+- **Companion visibility rule toggle**: Optional setting `hideCompanionOutsideDelve` hides the secondary bar when the watched faction is a Delve companion and the player is outside a Delve
 - **Drag-to-move**: Repositionable with Shift+drag; position persists across sessions
 - **Fade transitions**: Smooth fade-in/out on availability changes
 - **Hover tooltip**: Shows session metrics on mouseover
@@ -24,10 +25,10 @@ A secondary progress bar that displays the player's watched faction reputation p
 
 - `core/services/ReputationSession.lua` — Faction state, session tracking
 - `core/services/ContextBuilder.lua` (BuildReputationContext) — Immutable context builder
-- `ui/secondary/FlatReputationBarStyle.lua` — Visual rendering
+- `ui/styles/flat/FlatSecondaryBarStyle.lua` — Visual rendering
 - `ui/SecondaryBarManager.lua` — Style activation and visibility
 
 ## Known Limitations
 
 - Only one visual style currently available (flat), derived automatically from the primary bar being active
-- Fade polish is optional future work
+- Delve companion display is layered on top of the watched-faction path and still relies on a known-companion list

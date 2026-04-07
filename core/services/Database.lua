@@ -34,19 +34,23 @@ function Database:Initialize()
     -- Set addon database reference
     Addon.db = XPBarEnhancedDB
 
-    -- Migrate pre-NR-3 style dropdown keys to boolean show flags
-    if Addon.db.reputationBarStyle ~= nil then
-        Addon.db.showReputationBar = Addon.db.reputationBarStyle ~= "none"
-        Addon.db.reputationBarStyle = nil
-    end
-    if Addon.db.companionBarStyle ~= nil then
-        Addon.db.showCompanionBar = Addon.db.companionBarStyle ~= "none"
-        Addon.db.companionBarStyle = nil
+    if Addon.db.secondaryBarPosition
+        and Addon.db.secondaryBarPosition.relativeTo == "SecondaryStatusTrackingBarContainer"
+        and Addon.db.secondaryBarPosition.point == "CENTER"
+        and Addon.db.secondaryBarPosition.relativePoint == "CENTER"
+        and (Addon.db.secondaryBarPosition.x or 0) == 0
+        and (Addon.db.secondaryBarPosition.y or 0) == 0 then
+        Addon.db.secondaryBarPosition = {
+            point = "BOTTOM",
+            relativeTo = "UIParent",
+            relativePoint = "BOTTOM",
+            x = 0,
+            y = 34,
+        }
     end
 
     Addon.db.sessionData = Addon.db.sessionData or {}
     Addon.db.reputationSessionData = Addon.db.reputationSessionData or {}
-    Addon.db.companionSessionData = Addon.db.companionSessionData or {}
 
     -- Set player key
     local playerName = UnitName("player") or "Unknown"
@@ -75,13 +79,6 @@ function Database:GetReputationSessionData()
     local db = self:GetDB()
     db.reputationSessionData = db.reputationSessionData or {}
     return db.reputationSessionData
-end
-
----Return the companion session data table stored in the database
-function Database:GetCompanionSessionData()
-    local db = self:GetDB()
-    db.companionSessionData = db.companionSessionData or {}
-    return db.companionSessionData
 end
 
 ---Return the cached player/realm key used for per-character storage

@@ -9,8 +9,7 @@ Access via `/xpbe options` or minimap button right-click.
 ### Bar Style
 
 - Style selector dropdown (None, Classic, Flat, Vertical, Circular, Minimap Ring, Terminal)
-- Reputation bar style selector (None, Flat)
-- Companion bar style selector (None, Flat)
+- Unified secondary bar uses a dedicated visibility toggle instead of per-bar style dropdowns
 
 ### Display Options
 
@@ -35,7 +34,9 @@ Access via `/xpbe options` or minimap button right-click.
 
 ### Secondary Bar Options
 
-- Reset anchor position for reputation/companion bars
+- Show/hide the unified secondary tracked-reputation bar
+- Optional hide rule for Delve companions outside Delves
+- Attach/detach secondary bar positioning relative to the primary XP bar
 
 ## Slash Commands
 

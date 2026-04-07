@@ -266,6 +266,12 @@ function Config:ApplyOptionSideEffects(key)
         end
     end
 
+    if key == "hideCompanionOutsideDelve" then
+        if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder and EventNames and EventNames.REPUTATION_BROADCAST_UPDATE then
+            Addon.EventBus:Emit(EventNames.REPUTATION_BROADCAST_UPDATE, XPBarContextBuilder.BuildReputationContext())
+        end
+    end
+
     -- Request time played if time text options enabled
     if key == "showLevelTimeText" or key == "showSessionTimeText" then
         local session = Addon.db.sessionData
@@ -354,7 +360,6 @@ function Config:ResetStats()
         Addon.db.sessionData            = {}
         Addon.db.stats                  = {}
         Addon.db.reputationSessionData  = {}
-        Addon.db.companionSessionData   = {}
     end
     if Addon.ContextBuilder and Addon.ContextBuilder.ResetSession then
         Addon.ContextBuilder.ResetSession()
@@ -364,9 +369,6 @@ function Config:ResetStats()
     end
     if Addon.ReputationSession and Addon.ReputationSession.Initialize then
         Addon.ReputationSession:Initialize()
-    end
-    if Addon.CompanionSession and Addon.CompanionSession.Initialize then
-        Addon.CompanionSession:Initialize()
     end
     local stats = Addon.Stats
     if stats and stats.Update then

@@ -31,13 +31,6 @@ local function DispatchUpdateFaction(factionID)
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
         xpcall(Addon.ReputationSession.OnFactionUpdate, SafeCallErrorHandler, Addon.ReputationSession)
     end
-
-    if Addon.CompanionSession and Addon.CompanionSession._session and Addon.CompanionSession.OnFactionUpdate then
-        local session = Addon.CompanionSession._session
-        if not factionID or (session and factionID == session.factionID) then
-            xpcall(Addon.CompanionSession.OnFactionUpdate, SafeCallErrorHandler, Addon.CompanionSession)
-        end
-    end
 end
 
 local function DispatchChatCombatFactionChange()
@@ -54,8 +47,8 @@ end
 
 local function DispatchDelvesAccountDataChanged()
     DebugSecondary("Event DELVES_ACCOUNT_DATA_ELEMENT_CHANGED received")
-    if Addon.CompanionSession and Addon.CompanionSession._session and Addon.CompanionSession.OnFactionUpdate then
-        xpcall(Addon.CompanionSession.OnFactionUpdate, SafeCallErrorHandler, Addon.CompanionSession)
+    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
+        xpcall(Addon.ReputationSession.OnFactionUpdate, SafeCallErrorHandler, Addon.ReputationSession)
     end
 end
 
@@ -123,10 +116,6 @@ local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
 
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnEnteringWorld then
         xpcall(Addon.ReputationSession.OnEnteringWorld, SafeCallErrorHandler, Addon.ReputationSession, isInitialLogin, isReloadingUI)
-    end
-
-    if Addon.CompanionSession and Addon.CompanionSession._session and Addon.CompanionSession.OnEnteringWorld then
-        xpcall(Addon.CompanionSession.OnEnteringWorld, SafeCallErrorHandler, Addon.CompanionSession, isInitialLogin, isReloadingUI)
     end
 
     DispatchQuestEvent("PLAYER_ENTERING_WORLD")
@@ -240,6 +229,7 @@ local ROUTER_DISPATCH = {
         DispatchPlayerLevelUp(level)
     end,
     ZONE_CHANGED_NEW_AREA = function()
+        DispatchUpdateFaction()
         DispatchQuestEvent("ZONE_CHANGED_NEW_AREA")
     end,
     UNIT_QUEST_LOG_CHANGED = function()

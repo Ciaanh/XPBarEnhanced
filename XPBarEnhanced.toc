@@ -41,7 +41,6 @@ core\Colors.lua
 core\calculations\XPCalculations.lua
 core\calculations\TimeCalculations.lua
 core\calculations\ReputationCalculations.lua
-core\calculations\CompanionCalculations.lua
 
 core\services\QuestXP.lua
 core\TextFormatter.lua
@@ -54,7 +53,6 @@ core\config\ConfigHelper.lua
 core\services\Database.lua
 core\services\Session.lua
 core\services\ReputationSession.lua
-core\services\CompanionSession.lua
 core\services\ContextBuilder.lua
 
 # UI Features
@@ -91,12 +89,9 @@ ui\stats\StatsFrame.xml
 #  Styles
 ui\templates\XPBarBaseTemplate.xml
 ui\styles\flat\FlatBarTemplate.xml
+ui\styles\flat\FlatSecondaryBarTemplate.xml
 ui\styles\classic\ClassicBarTemplate.xml
 ui\styles\vertical\VerticalBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
 ui\styles\minimap_ring\MinimapRingBarTemplate.xml
 ui\styles\terminal\TerminalBarTemplate.xml
-
-# Secondary Bar Styles
-ui\secondary\FlatReputationBarTemplate.xml
-ui\secondary\FlatCompanionBarTemplate.xml

@@ -22,20 +22,20 @@ Why: companion and reputation tracking both read from the same watched-faction /
 2. EventBus should dispatch, not infer domain behavior.
 Why: XP-only auto-context generation made shared infrastructure domain-coupled.
 
-2. Coalesced rendering should be standard for event-driven bars.
+3. Coalesced rendering should be standard for event-driven bars.
 Why: burst events can trigger redundant rendering without dirty-mark batching.
 
-3. Preserve healthy boundaries while normalizing contracts.
+4. Preserve healthy boundaries while normalizing contracts.
 Why: per-domain sessions and separate managers are valuable; flow consistency is the real gap.
 
-4. Visibility ownership must follow domain ownership.
+5. Visibility ownership must follow domain ownership.
 Why: hiding a shared Blizzard container from the XP manager caused reputation UI regressions.
 
-5. State-clearing transitions should emit explicit UI updates.
+6. State-clearing transitions should emit explicit UI updates.
 Why: tracked-faction clear/switch paths can leave stale frames visible if no event is emitted.
 
-6. Shared bar contracts should land before adding secondary-bar polish.
+7. Shared bar contracts should land before adding secondary-bar polish.
 Why: fade/tooltip/drag/time-refresh features otherwise duplicate lifecycle and cleanup logic across styles.
 
-7. Central orchestration improves event-flow traceability.
+8. Central orchestration improves event-flow traceability.
 Why: Blizzard status tracking uses a manager/container hierarchy with shared animation and dirty-state handling, reducing hidden control flow.

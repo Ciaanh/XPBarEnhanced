@@ -1,4 +1,4 @@
--- XP Bar Enhanced - Flat Reputation Bar Style
+-- XP Bar Enhanced - Flat Secondary Bar Style
 -- Displays the watched faction's reputation progress as a simple flat status bar.
 
 local Addon = XPBarEnhanced
@@ -12,18 +12,36 @@ local FACTION_COLORS = {
     friendship = {r = 0.20, g = 0.85, b = 0.30},
     major      = {r = 0.20, g = 0.60, b = 1.00},
     paragon    = {r = 0.95, g = 0.75, b = 0.10},
+    companion  = {r = 0.20, g = 0.80, b = 0.80},
 }
 
 local function GetFactionColor(factionType)
     return FACTION_COLORS[factionType] or FACTION_COLORS.standard
 end
 
-local function SafeCallErrorHandler(err)
-    if CallErrorHandler then
-        CallErrorHandler(err)
-    else
-        print(tostring(err))
+local function GetBarColor(context)
+    if context and context.isCompanion then
+        return FACTION_COLORS.companion
     end
+
+    return GetFactionColor(context and context.factionType)
+end
+
+local function BuildLabel(context)
+    local label = context.name or ""
+    if context.isCompanion then
+        if context.currentLevel and context.currentLevel > 0 then
+            label = label .. string.format(" Lv.%d", context.currentLevel)
+        end
+    elseif context.standingLabel and context.standingLabel ~= "" then
+        label = label .. " - " .. context.standingLabel
+    end
+
+    if context.isMaxed then
+        return label .. " (MAX)"
+    end
+
+    return label .. string.format(" (%d%%)", context.percent)
 end
 
 local function DebugSecondary(message, ...)
@@ -40,16 +58,16 @@ local function DebugSecondary(message, ...)
 end
 
 function StyleMixin:GetPositionConfigKey()
-    return "reputationBarPosition"
+    return "secondaryBarPosition"
 end
 
 function StyleMixin:GetFallbackPosition()
     return {
-        point = "CENTER",
-        relativeTo = "SecondaryStatusTrackingBarContainer",
-        relativePoint = "CENTER",
+        point = "BOTTOM",
+        relativeTo = "UIParent",
+        relativePoint = "BOTTOM",
         x = 0,
-        y = 0,
+        y = 34,
     }
 end
 
@@ -65,35 +83,28 @@ function StyleMixin:GetInitialContext()
 end
 
 function StyleMixin:GetTextTickerInterval()
-    return 1.0  -- Update text every 1 second
+    return 1.0
 end
 
 function StyleMixin:GetTextTickerContext()
     return self._lastContext or self:GetInitialContext()
 end
 
--------------------------------------------------------------------
--- RENDER
--------------------------------------------------------------------
-
 function StyleMixin:Render(context)
     if not context then
         return
     end
 
-    -- Track availability state changes for fade transitions
     local wasAvailable = self._lastContext and self._lastContext.isAvailable
     local isAvailable = context.isAvailable
-    
+
     self._lastContext = context
 
-    -- Fade out if faction became unavailable (untracked)
     if wasAvailable and not isAvailable then
         self:FadeToAlpha(0)
         return
     end
 
-    -- Fade in if faction became available (tracked)
     if not wasAvailable and isAvailable then
         self:FadeToAlpha(1)
     end
@@ -105,27 +116,12 @@ function StyleMixin:Render(context)
 
     self:SetAlpha(1)
 
-    local color = GetFactionColor(context.factionType)
+    local color = GetBarColor(context)
     self.Bar:SetMinMaxValues(context.min, context.max)
     self.Bar:SetValue(context.current)
     self.Bar:SetStatusBarColor(color.r, color.g, color.b)
-
-    -- Build label: "FactionName - Standing (percent%)"
-    local label = context.name
-    if context.standingLabel and context.standingLabel ~= "" then
-        label = label .. " - " .. context.standingLabel
-    end
-    if context.isMaxed then
-        label = label .. " (MAX)"
-    else
-        label = label .. string.format(" (%d%%)", context.percent)
-    end
-    self.LabelContainer.Label:SetText(label)
+    self.LabelContainer.Label:SetText(BuildLabel(context))
 end
-
--------------------------------------------------------------------
--- TOOLTIP SUPPORT (Feature 3)
--------------------------------------------------------------------
 
 function StyleMixin:OnEnter()
     if not GameTooltip or not self._lastContext then
@@ -136,11 +132,12 @@ function StyleMixin:OnEnter()
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine(context.name, 1, 1, 1)
 
-    if context.standingLabel and context.standingLabel ~= "" then
+    if context.isCompanion and context.currentLevel and context.currentLevel > 0 then
+        GameTooltip:AddLine(string.format("Level: %d", context.currentLevel), 0.7, 0.7, 0.7)
+    elseif context.standingLabel and context.standingLabel ~= "" then
         GameTooltip:AddLine(context.standingLabel, 0.7, 0.7, 0.7)
     end
 
-    -- Progress line
     if context.isMaxed then
         GameTooltip:AddLine("Progress: MAX", 0.7, 1, 0.7)
     else
@@ -149,27 +146,25 @@ function StyleMixin:OnEnter()
         GameTooltip:AddLine(string.format("Progress: %s", progressText), 0.7, 1, 0.7)
     end
 
-    -- Session gained
     if context.sessionGained and context.sessionGained > 0 then
         local TextFormatter = Addon.TextFormatter
         local gained = TextFormatter:FormatNumber(context.sessionGained, false)
         GameTooltip:AddLine(string.format("Gained: +%s", gained), 0.5, 1, 0.5)
     end
 
-    -- Rep per hour
     if context.repPerHour and context.repPerHour > 0 then
         local TextFormatter = Addon.TextFormatter
         local rate = TextFormatter:FormatNumber(context.repPerHour, false)
         GameTooltip:AddLine(string.format("Rate: %s/hr", rate), 0.5, 0.8, 1)
     end
 
-    -- Time to next standing
     if context.timeToNextLevel and context.timeToNextLevel > 0 then
         local TextFormatter = Addon.TextFormatter
         local timeStr = TextFormatter:FormatTime(context.timeToNextLevel, true)
         GameTooltip:AddLine(string.format("Next: %s", timeStr), 0.8, 0.8, 0.5)
     end
 
+    GameTooltip:AddLine("Click to open Reputation", 0.4, 0.4, 0.4)
     GameTooltip:Show()
 end
 
@@ -179,46 +174,46 @@ function StyleMixin:OnLeave()
     end
 end
 
--------------------------------------------------------------------
--- LIVE TEXT REFRESH SUPPORT (Feature 4)
--------------------------------------------------------------------
+function StyleMixin:OnMouseUp(button)
+    if self.__isDragging then
+        self:StopMovingOrSizing()
+        self.__isDragging = nil
+        if self.SavePosition then
+            self:SavePosition()
+        end
+        return
+    end
+
+    if button == "LeftButton" and not IsShiftKeyDown() then
+        self:OnLeftClick()
+    end
+end
+
+function StyleMixin:OnLeftClick()
+    if ToggleCharacter then
+        ToggleCharacter("ReputationFrame")
+    end
+end
 
 function StyleMixin:OnTextTick(context)
     if not context or not context.isAvailable then
         return
     end
 
-    -- Rebuild label with fresh calculations
-    local label = context.name
-    if context.standingLabel and context.standingLabel ~= "" then
-        label = label .. " - " .. context.standingLabel
-    end
-    if context.isMaxed then
-        label = label .. " (MAX)"
-    else
-        label = label .. string.format(" (%d%%)", context.percent)
-    end
-    
-    self.LabelContainer.Label:SetText(label)
+    self.LabelContainer.Label:SetText(BuildLabel(context))
 end
 
--------------------------------------------------------------------
--- DRAG-TO-MOVE SUPPORT (Feature 2)
--------------------------------------------------------------------
-
 function StyleMixin:OnDragStart()
-    -- Match XP bar behavior: Shift + Left drag while unlocked.
     if not IsShiftKeyDown() then
         return
     end
 
-    -- Only allow dragging if bar is unlocked
-    local Addon = XPBarEnhanced
-    if not Addon.db or Addon.db.barLocked then
+    local AddonGlobal = XPBarEnhanced
+    if not AddonGlobal.db or AddonGlobal.db.barLocked then
         return
     end
 
-    if Addon.db.secondaryBarsAttached then
+    if AddonGlobal.db.secondaryBarsAttached then
         DebugSecondary("Reputation drag blocked: attached mode enabled")
         return
     end

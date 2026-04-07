@@ -1,13 +1,11 @@
-<Ui xmlns="http://www.blizzard.com/wow/ui/"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\..\Blizzard_SharedXML\UI.xsd">
 
-    <!-- XP Bar Enhanced - Flat Companion Bar Template -->
-    <!-- Simple flat status bar showing the Delve companion (Brann) XP progress. -->
+    <!-- XP Bar Enhanced - Flat Secondary Bar Template -->
 
-    <Script file="FlatCompanionBarStyle.lua"/>
+    <Script file="FlatSecondaryBarStyle.lua"/>
 
-    <Frame name="FlatCompanionBarTemplate" virtual="true" mixin="FlatCompanionBarMixin" frameStrata="LOW" fixedFrameStrata="true">
+    <Frame name="FlatReputationBarTemplate" virtual="true" mixin="FlatReputationBarMixin" frameStrata="LOW" fixedFrameStrata="true" enableMouse="true">
         <Size x="565" y="18"/>
         <Layers>
             <Layer level="BACKGROUND">
@@ -24,7 +22,6 @@
                 </Anchors>
                 <BarTexture file="Interface\Buttons\WHITE8X8"/>
             </StatusBar>
-            <!-- Label container in MEDIUM strata so text renders above the StatusBar fill -->
             <Frame parentKey="LabelContainer" frameStrata="MEDIUM" setAllPoints="true">
                 <Layers>
                     <Layer level="ARTWORK" textureSubLevel="5">
@@ -49,6 +46,7 @@
             <OnHide method="OnHide"/>
             <OnEnter method="OnEnter"/>
             <OnLeave method="OnLeave"/>
+            <OnMouseUp method="OnMouseUp"/>
             <OnDragStart method="OnDragStart"/>
             <OnDragStop method="OnDragStop"/>
         </Scripts>

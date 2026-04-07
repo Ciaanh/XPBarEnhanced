@@ -1,6 +1,5 @@
 -- XP Bar Enhanced - Secondary Bar Manager
--- Manages the reputation and companion secondary progress bars independently.
--- Each bar is enabled/disabled via a boolean flag; style is derived from the primary barStyle.
+-- Manages the unified tracked-reputation secondary progress bar.
 
 local Addon = XPBarEnhanced
 Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
@@ -19,36 +18,27 @@ local function DebugSecondary(message, ...)
     print("|cff66ccffXPBE Secondary|r " .. text)
 end
 
-local SHOW_CONFIG_KEY = {
-    reputation = "showReputationBar",
-    companion  = "showCompanionBar",
-}
-
--- Derive the style string from boolean show flag and primary barStyle.
--- Returns "flat" when the bar is enabled and a primary style is active, else "none".
-local function _DeriveSecondaryStyle(key)
+local function DeriveSecondaryStyle()
     local db = Addon.db or {}
-    local showKey = SHOW_CONFIG_KEY[key]
-    if not showKey or not db[showKey] then
-        DebugSecondary("DeriveStyle %s -> none (show disabled)", tostring(key))
+    if not db.showSecondaryBar then
+        DebugSecondary("DeriveStyle -> none (show disabled)")
         return "none"
     end
     local primaryStyle = db.barStyle or "none"
     if primaryStyle == "none" then
-        DebugSecondary("DeriveStyle %s -> none (primary style none)", tostring(key))
+        DebugSecondary("DeriveStyle -> none (primary style none)")
         return "none"
     end
-    DebugSecondary("DeriveStyle %s -> flat (primary style %s)", tostring(key), tostring(primaryStyle))
+    DebugSecondary("DeriveStyle -> flat (primary style %s)", tostring(primaryStyle))
     return "flat"
 end
 
 local TEMPLATE_MAP = {
-    reputation = { flat = "FlatReputationBarTemplate" },
-    companion  = { flat = "FlatCompanionBarTemplate" },
+    flat = "FlatReputationBarTemplate",
 }
 
-local function IsCustomStyle(styleMap, style)
-    return style and styleMap and styleMap[style] ~= nil
+local function IsCustomStyle(style)
+    return style and TEMPLATE_MAP[style] ~= nil
 end
 
 -------------------------------------------------------------------
@@ -63,14 +53,12 @@ local function SafeCallErrorHandler(err)
     end
 end
 
-function Manager:_GetOrCreateFrame(key, style)
+function Manager:_GetOrCreateFrame(style)
     self._frames = self._frames or {}
-    self._frames[key] = self._frames[key] or {}
 
-    local frame = self._frames[key][style]
+    local frame = self._frames[style]
     if not frame then
-        local templates = TEMPLATE_MAP[key]
-        local templateName = templates and templates[style]
+        local templateName = TEMPLATE_MAP[style]
         if not templateName then
             return nil
         end
@@ -79,35 +67,33 @@ function Manager:_GetOrCreateFrame(key, style)
         if not frame then
             error("SecondaryBarManager: failed to create frame from template: " .. templateName)
         end
-        self._frames[key][style] = frame
+        self._frames[style] = frame
     end
     return frame
 end
 
-function Manager:_SetStyle(key, style)
-    self._currentStyles = self._currentStyles or {}
+function Manager:_SetStyle(style)
     self._frames = self._frames or {}
 
-    if self._currentStyles[key] == style then
-        DebugSecondary("SetStyle %s unchanged (%s)", tostring(key), tostring(style))
+    if self._currentStyle == style then
+        DebugSecondary("SetStyle unchanged (%s)", tostring(style))
         return
     end
 
-    -- Hide all existing frames for this key
-    for _, frame in pairs(self._frames[key] or {}) do
+    for _, frame in pairs(self._frames) do
         if frame and frame.SetShown then
             frame:SetShown(false)
         end
     end
 
-    self._currentStyles[key] = style
-    DebugSecondary("SetStyle %s -> %s", tostring(key), tostring(style))
+    self._currentStyle = style
+    DebugSecondary("SetStyle -> %s", tostring(style))
 
     if style == "none" then
         return
     end
 
-    local frame = self:_GetOrCreateFrame(key, style)
+    local frame = self:_GetOrCreateFrame(style)
     if frame and frame.SetShown then
         frame:SetShown(true)
     end
@@ -118,12 +104,9 @@ end
 -------------------------------------------------------------------
 
 function Manager:Initialize()
-    local db = Addon.db or {}
-
     self:InstallBlizzardBarHooks()
 
-    self:SetReputationStyle(_DeriveSecondaryStyle("reputation"))
-    self:SetCompanionStyle(_DeriveSecondaryStyle("companion"))
+    self:SetSecondaryStyle(DeriveSecondaryStyle())
     self:ApplyDefaultReputationBarVisibility()
     self:ReapplyAttachedPositions()
 
@@ -131,8 +114,7 @@ function Manager:Initialize()
         Addon.EventNames.CONFIG_UPDATED,
         "SecondaryBarManager_ConfigUpdated",
         function(_ctx)
-            self:SetReputationStyle(_DeriveSecondaryStyle("reputation"))
-            self:SetCompanionStyle(_DeriveSecondaryStyle("companion"))
+            self:SetSecondaryStyle(DeriveSecondaryStyle())
             self:ApplyDefaultReputationBarVisibility()
             self:ReapplyAttachedPositions()
         end
@@ -146,16 +128,16 @@ function Manager:ReapplyAttachedPositions()
 
     if not db.secondaryBarsAttached then
         DebugSecondary("ReapplyAttachedPositions: detached mode")
-        -- Restore each active frame to its independently saved/fallback position.
-        for key, styleFrames in pairs(self._frames or {}) do
-            local style = self._currentStyles and self._currentStyles[key]
-            if style and style ~= "none" then
-                local frame = styleFrames[style]
-                if frame and frame.ApplyInitialPosition then
-                    frame:ApplyInitialPosition()
-                end
-            end
+        local frame = self:GetCurrentFrame()
+        if frame and frame.ApplyInitialPosition then
+            frame:ApplyInitialPosition()
         end
+        return
+    end
+
+    local frame = self:GetCurrentFrame()
+    if not frame then
+        DebugSecondary("ReapplyAttachedPositions: no secondary frame available")
         return
     end
 
@@ -167,26 +149,21 @@ function Manager:ReapplyAttachedPositions()
 
     DebugSecondary("ReapplyAttachedPositions: attached mode, primary frame found")
 
-    -- Stack bars bottom-to-top: XP bar → reputation → companion (2px gap).
-    local barOrder = { "reputation", "companion" }
-    local anchorFrame = primaryFrame
-    for _, key in ipairs(barOrder) do
-        local style = self._currentStyles and self._currentStyles[key]
-        if style and style ~= "none" then
-            local frame = self._frames and self._frames[key] and self._frames[key][style]
-            if frame then
-                frame:ClearAllPoints()
-                frame:SetPoint("BOTTOM", anchorFrame, "TOP", 0, 2)
-                DebugSecondary("Attached %s bar above %s", tostring(key), tostring(anchorFrame))
-                anchorFrame = frame
-            end
-        end
+    frame:ClearAllPoints()
+    frame:SetPoint("BOTTOM", primaryFrame, "TOP", 0, 2)
+end
+
+function Manager:GetCurrentFrame()
+    local style = self._currentStyle
+    if not style or style == "none" then
+        return nil
     end
+
+    return self._frames and self._frames[style] or nil
 end
 
 function Manager:ApplyDefaultReputationBarVisibility()
-    local style = self._currentStyles and self._currentStyles["reputation"]
-    local hasCustomReputationStyle = IsCustomStyle(TEMPLATE_MAP.reputation, style)
+    local hasCustomReputationStyle = IsCustomStyle(self._currentStyle)
 
     if hasCustomReputationStyle then
         if _G.SecondaryStatusTrackingBarContainer then
@@ -207,16 +184,14 @@ function Manager:InstallBlizzardBarHooks()
     local container = _G.SecondaryStatusTrackingBarContainer
     if container and container.Show then
         hooksecurefunc(container, "Show", function()
-            local style = self._currentStyles and self._currentStyles["reputation"]
-            if IsCustomStyle(TEMPLATE_MAP.reputation, style) then
+            if IsCustomStyle(self._currentStyle) then
                 container:Hide()
             end
         end)
     end
     if container and container.SetShown then
         hooksecurefunc(container, "SetShown", function(_, shown)
-            local style = self._currentStyles and self._currentStyles["reputation"]
-            if shown and IsCustomStyle(TEMPLATE_MAP.reputation, style) then
+            if shown and IsCustomStyle(self._currentStyle) then
                 container:Hide()
             end
         end)
@@ -225,47 +200,35 @@ function Manager:InstallBlizzardBarHooks()
     self._blizzardHooksInstalled = true
 end
 
-function Manager:SetReputationStyle(style)
-    xpcall(self._SetStyle, SafeCallErrorHandler, self, "reputation", style)
+function Manager:SetSecondaryStyle(style)
+    xpcall(self._SetStyle, SafeCallErrorHandler, self, style)
     self:ApplyDefaultReputationBarVisibility()
-end
-
-function Manager:SetCompanionStyle(style)
-    xpcall(self._SetStyle, SafeCallErrorHandler, self, "companion", style)
 end
 
 function Manager:ResetBarPositions()
     local defaults = Addon.defaults or {}
     local db = Addon.db or {}
-    local posMap = {
-        reputation = {configKey = "reputationBarPosition", defaultPos = defaults.reputationBarPosition},
-        companion  = {configKey = "companionBarPosition", defaultPos = defaults.companionBarPosition},
-    }
-    
-    for key, posInfo in pairs(posMap) do
-        -- Clear SavedVariables
-        if db[posInfo.configKey] then
-            db[posInfo.configKey] = nil
-        end
-        
-        -- Reset frame position
-        local style = self._currentStyles and self._currentStyles[key]
-        if style and style ~= "none" then
-            local frame = self._frames and self._frames[key] and self._frames[key][style]
-            if frame and frame.ResetPosition then
-                frame:ResetPosition()
-            elseif frame and frame.ClearAllPoints and posInfo.defaultPos then
-                frame:ClearAllPoints()
-                frame:SetPoint(
-                    posInfo.defaultPos.point,
-                    posInfo.defaultPos.relativeTo or "UIParent",
-                    posInfo.defaultPos.relativePoint,
-                    posInfo.defaultPos.x or 0,
-                    posInfo.defaultPos.y or 0
-                )
-            end
-        end
+    local posInfo = {configKey = "secondaryBarPosition", defaultPos = defaults.secondaryBarPosition}
+
+    if db[posInfo.configKey] then
+        db[posInfo.configKey] = nil
     end
+
+    local frame = self:GetCurrentFrame()
+    if frame and frame.ResetPosition then
+        frame:ResetPosition()
+    elseif frame and frame.ClearAllPoints and posInfo.defaultPos then
+        frame:ClearAllPoints()
+        frame:SetPoint(
+            posInfo.defaultPos.point,
+            posInfo.defaultPos.relativeTo or "UIParent",
+            posInfo.defaultPos.relativePoint,
+            posInfo.defaultPos.x or 0,
+            posInfo.defaultPos.y or 0
+        )
+    end
+
+    self:ReapplyAttachedPositions()
 end
 
 return Manager

@@ -1,15 +1,29 @@
 # Decision Log
 
+## 2026-04-07 (session 4)
+
+Decision: Add a user option to hide the secondary bar when the watched faction is a Delve companion and the player is outside a Delve.
+Reason: Companion progression is only actionable in Delves for this use case, and some users prefer not to keep the companion-flavored secondary bar visible while in open-world or non-Delve content.
+Impact:
+
+- New config key `hideCompanionOutsideDelve` (default `false`) with options panel checkbox.
+- `ContextBuilder.BuildReputationContext()` now applies a stricter companion visibility gate when the option is enabled.
+- Toggling the option emits `REPUTATION_BROADCAST_UPDATE` immediately so bar visibility updates without requiring zoning or faction changes.
+
 ## 2026-04-07 (session 3)
 
 Decision: Companion and reputation tracking are the same data source — unify into a single tracked-reputation secondary bar per style, with companion-specific decoration when the tracked faction is a delve companion.
 Reason: In-game investigation and reference-addon comparison confirmed that companion XP is accessed entirely through the friendship reputation API (`C_GossipInfo.GetFriendshipReputation`). The companion bar was never a separate data domain — it was always a watched reputation faction that happens to be a friendship faction flagged as a known delve companion. Maintaining two separate service/session/context/style pipelines for the same underlying data source creates duplication, identity-resolution bugs (fallback selecting wrong companion), and unnecessary user-facing complexity (two checkboxes for what is conceptually one tracked bar).
+
 Key findings:
+
 - Companion data comes from `C_GossipInfo.GetFriendshipReputation(factionID)` — the same API path used for friendship-type reputations.
 - The reference addon resolves companion identity by scanning the faction list for known names (`FindCompanionFactionID`), then applies delve-specific visibility gates (in-delve check, max-level hide). The underlying data fetch is identical to any other friendship faction.
 - In-delve testing showed the current separate-pipeline approach produces fallback misdetection (Valeera selected when wrong companion is active) because the identity resolution runs independently of the watched faction state.
 - The watched faction is the correct single source of truth — if the player tracks a delve companion, the bar should show companion flavor (delve gating, level display); if they track any other faction, it renders as a standard reputation bar.
+
 Impact:
+
 - Two separate bars (reputation + companion) will be replaced by one secondary "tracked reputation" bar per style.
 - Companion decoration (in-delve visibility gate, level display, companion-specific text) is conditional — applied only when the tracked faction is detected as a known delve companion.
 - `showReputationBar` and `showCompanionBar` collapse into a single `showSecondaryBar` toggle (or renamed equivalent).
@@ -25,7 +39,9 @@ Impact: NR-3 execution steps remain structurally valid (checkboxes, attached mod
 
 Decision: Replace per-bar style dropdowns with boolean enable/disable checkboxes and add an attached/free position toggle (NR-3).
 Reason: Testing revealed the "none / flat" dropdown was a confusing proxy for a simple on/off choice — bars only ever had one style. A checkbox is clearer. The attached/free option was needed to let secondary bars follow the XP bar position without requiring manual realignment.
+
 Impact:
+
 - `defaults.lua`: `reputationBarStyle`/`companionBarStyle` removed; `showReputationBar = false`, `showCompanionBar = false`, `secondaryBarsAttached = true` added.
 - `Database:Initialize`: migration converts old style keys on first load (non-"none" → true, "none" → false).
 - `SecondaryBarManager`: `_DeriveSecondaryStyle(key)` replaces direct style reads; returns `"flat"` when bar enabled and primary style is not "none", else `"none"`.

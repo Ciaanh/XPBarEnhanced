@@ -10,6 +10,31 @@ Addon.ReputationSession = Addon.ReputationSession or {}
 local RepSession = Addon.ReputationSession
 
 local MAX_HISTORY = 200
+local KNOWN_DELVE_COMPANIONS = {
+    ["brann bronzebeard"] = true,
+    ["valeera sanguinar"] = true,
+}
+
+local function NormalizeFactionName(name)
+    local value = tostring(name or "")
+    value = value:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+    value = value:match("^%s*(.-)%s*$") or ""
+    return value:lower()
+end
+
+local function IsKnownDelveCompanion(name)
+    local normalized = NormalizeFactionName(name)
+    return normalized ~= "" and KNOWN_DELVE_COMPANIONS[normalized] or false
+end
+
+local function IsInDelve()
+    if C_Garrison and C_Garrison.IsInDelve then
+        return C_Garrison.IsInDelve() and true or false
+    end
+
+    local _, instanceType = IsInInstance()
+    return instanceType == "scenario"
+end
 
 -------------------------------------------------------------------
 -- INTERNAL HELPERS
@@ -258,6 +283,19 @@ function RepSession:GetWatchedFactionInfo()
 
     local totals = session.factionTotals and session.factionTotals[session.watchedFactionID]
     snapshot.sessionGained = (totals and totals.gained) or 0
+
+    local isCompanion = session.watchedFactionType == "friendship" and IsKnownDelveCompanion(snapshot.name)
+    snapshot.isCompanion = isCompanion
+    snapshot.isInDelve = isCompanion and IsInDelve() or false
+
+    if isCompanion and C_GossipInfo and C_GossipInfo.GetFriendshipReputationRanks then
+        local rankData = C_GossipInfo.GetFriendshipReputationRanks(session.watchedFactionID)
+        snapshot.currentLevel = (rankData and rankData.currentLevel) or 0
+        snapshot.maxLevel = (rankData and rankData.maxLevel) or 0
+    else
+        snapshot.currentLevel = nil
+        snapshot.maxLevel = nil
+    end
 
     return snapshot
 end

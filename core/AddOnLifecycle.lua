@@ -41,11 +41,6 @@ function eventHandlers:OnPlayerLogin()
         Addon.ReputationSession:Initialize()
     end
 
-    -- Initialize Companion session
-    if Addon.CompanionSession and Addon.CompanionSession.Initialize then
-        Addon.CompanionSession:Initialize()
-    end
-
     -- Initialize features
     local stats = Addon.Stats
     if stats and stats.Initialize then
@@ -57,7 +52,7 @@ function eventHandlers:OnPlayerLogin()
         Addon.BarManager:Initialize()
     end
 
-    -- Initialize Secondary Bar Manager (reputation and companion bars)
+    -- Initialize Secondary Bar Manager
     if Addon.SecondaryBarManager and Addon.SecondaryBarManager.Initialize then
         Addon.SecondaryBarManager:Initialize()
     end

@@ -440,12 +440,33 @@ function XPBarContextBuilder.BuildReputationContext()
 	end
 
 	local stats = repSession:GetStats()
+	local panel = rawget(_G, "XPBarEnhancedOptionsPanel")
+	local isPreviewMode = (Addon.db and Addon.db.barLocked == false) or (panel and panel.IsVisible and panel:IsVisible())
+	local hideCompanionOutsideDelve = Addon.db and Addon.db.hideCompanionOutsideDelve
+	local isCompanionAvailable
+	if hideCompanionOutsideDelve then
+		isCompanionAvailable = not info.isCompanion or (info.isInDelve and not info.isMaxed)
+	else
+		isCompanionAvailable = not info.isCompanion or isPreviewMode or (info.isInDelve and not info.isMaxed)
+	end
+
+	if not isCompanionAvailable then
+		return {
+			isAvailable = false,
+			isCompanion = true,
+			name = info.name or "",
+		}
+	end
 
 	return {
 		isAvailable        = true,
 		name               = info.name or "",
 		standingLabel      = info.standingLabel or "",
 		factionType        = info.factionType or "standard",
+		isCompanion        = info.isCompanion or false,
+		isInDelve          = info.isInDelve or false,
+		currentLevel       = info.currentLevel or 0,
+		maxLevel           = info.maxLevel or 0,
 		current            = info.current or 0,
 		min                = info.min or 0,
 		max                = math.max(1, info.max or 1),
@@ -455,49 +476,7 @@ function XPBarContextBuilder.BuildReputationContext()
 		sessionGained      = info.sessionGained or 0,
 		repPerHour         = (stats and stats.repPerHour) or 0,
 		timeToNextStanding = stats and stats.timeToNextStanding,
-	}
-end
-
---- Build a context for the Delve companion (Brann) XP bar.
---- Returns a simple table (not immutable) for direct use by secondary bar styles.
----@return table context Companion context, isAvailable=false if companion APIs unavailable
-function XPBarContextBuilder.BuildCompanionContext()
-	local Addon = _G["XPBarEnhanced"]
-	if not (Addon and Addon.CompanionSession) then
-		return { isAvailable = false }
-	end
-
-	local compSession = Addon.CompanionSession
-	local stats = compSession:GetStats()
-
-	if not stats or not stats.available then
-		return { isAvailable = false }
-	end
-
-	local info = compSession:GetCompanionInfo()
-	if not info then
-		return { isAvailable = false }
-	end
-
-	local min     = info.lastReactionThreshold or 0
-	local max     = info.lastNextThreshold or 1
-	local current = info.lastStanding or 0
-	local range   = math.max(1, max - min)
-	local ratio   = math.max(0, math.min(1, (current - min) / range))
-
-	return {
-		isAvailable     = true,
-		name            = info.name or "",
-		currentLevel    = info.currentLevel or 0,
-		current         = current,
-		min             = min,
-		max             = max,
-		ratio           = ratio,
-		percent         = math.floor(ratio * 100 + 0.5),
-		isMaxLevel      = info.isMaxLevel or false,
-		sessionGained   = info.gainedXP or 0,
-		xpPerHour       = stats.xpPerHour or 0,
-		timeToNextLevel = stats.timeToNextLevel,
+		timeToNextLevel    = stats and stats.timeToNextStanding,
 	}
 end
 

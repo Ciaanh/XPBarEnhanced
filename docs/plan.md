@@ -19,10 +19,11 @@ The addon is feature-complete for its core scope:
 All Phase 5 (foundations), Phase 6 (secondary polish), and Phase 7 (hardening) work is complete and validated. See `docs/history/phases.md` for implementation records.
 
 Completed this session (near-term stabilization):
+
 - **NR-1**: Dead Slice 3 exploration code removed (BarManager, defaults)
 - **NR-2**: MaxLevel debug logs removed (BarManager, BaseMixin, defaults)
 - **Bug fix**: `SavePosition` frame-reference serialization bug corrected
-- **Default position**: Reputation bar default anchor updated to `SecondaryStatusTrackingBarContainer`
+- **Default position**: Secondary bar default anchor corrected to `UIParent` bottom offset; attached mode now re-anchors relative to the active XP bar
 - **NR-3 (partial)**: Checkbox UX implemented but testing revealed companion identity bugs and drag-lock incompleteness
 - **Key finding**: Companion and reputation are the same API data source — NR-3 rewritten as unified secondary bar model (see decision log session 3)
 
