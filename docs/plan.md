@@ -1,6 +1,6 @@
 # XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-07 (session 4)
+Last updated: 2026-04-07 (session 5)
 
 ## Addon Summary
 
@@ -17,107 +17,27 @@ The addon is feature-complete for its core scope:
 
 All Phase 5 (foundations), Phase 6 (secondary polish), and Phase 7 (hardening) work is complete and validated. See `docs/history/phases.md` for implementation records.
 
-Completed this session (near-term stabilization):
+Completed (sessions 4–5):
 
-- **NR-1**: Dead Slice 3 exploration code removed (BarManager, defaults)
-- **NR-2**: MaxLevel debug logs removed (BarManager, BaseMixin, defaults)
+- **NR-1**: Dead Slice 3 exploration code removed
+- **NR-2**: MaxLevel debug logs removed
 - **Bug fix**: `SavePosition` frame-reference serialization bug corrected
-- **Default position**: Secondary bar default anchor corrected to `UIParent` bottom offset; attached mode now re-anchors relative to the active XP bar
+- **Default position**: Secondary bar default anchor corrected; attached mode re-anchors to active XP bar
 - **NR-3 complete**: companion/reputation pipelines unified into one tracked-reputation secondary bar
 - **UI regrouping**: flat secondary style/template moved under `ui/styles/flat/`
 - **Interaction**: click on secondary bar opens Character Reputation panel
-- **New option**: `hideCompanionOutsideDelve` added to hide companion-tracked secondary bar when outside Delves
+- **New option**: `hideCompanionOutsideDelve` hides companion bar when outside Delves
+- **NR-4 complete**: full regression pass — 3 bugs found and fixed (debug default shipped on, dead `__isDragging` flag, fade-in symmetry); `debugSecondaryBars` infrastructure removed entirely; all 7 primary styles, secondary bar, lifecycle paths, and Blizzard bar ownership validated in-game
 
 Validation status:
 
 - Release package builds successfully (`make-release.ps1`)
-- In-game smoke checks pass for visibility and new option behavior
-- Final next-phase gate remains a structured validation pass before any new implementation
+- NR-4 regression pass complete with no outstanding defects
+- Next gate: NR-5 companion decoration validation (requires in-Delve gameplay)
 
 ## Goals
 
-### Near-Term: Validation and Signoff
-
-**Goal**: Freeze implementation changes and complete validation/signoff before starting any new phase.
-
-Execution steps:
-
-1. Validate unified secondary behavior across tracked standard reputation and tracked Delve companion.
-2. Validate `hideCompanionOutsideDelve` ON/OFF transitions (inside Delve, outside Delve, watched-faction swap).
-3. Validate secondary interactions (tooltip, shift-drag detached, click-to-open Reputation panel).
-4. Capture any regressions as explicit defects; do not begin feature expansion until resolved or accepted.
-
-Definition of done:
-
-- Validation notes reviewed and accepted.
-- No unresolved release-blocking defects.
-- Explicit go/no-go confirmation recorded before starting the next phase.
-
-### Next-Phase Hold
-
-No new implementation phase starts until the validation gate above is approved.
-
-### NR-3: Unified secondary bar (tracked-reputation model)
-
-Objective: replace the separate reputation and companion bar pipelines with a single tracked-reputation secondary bar that applies companion-specific decoration when the tracked faction is a delve companion.
-
-Background: in-game investigation confirmed that companion XP uses the same friendship-reputation API as all other friendship factions. The two-bar split duplicated data pipelines and caused identity-resolution bugs (fallback selecting wrong companion). A single bar driven by watched-faction state eliminates duplication and simplifies the user model.
-
-Execution steps:
-
-1. **Config schema**: replace all previous secondary bar keys (`reputationBarStyle`, `companionBarStyle`, `showReputationBar`, `showCompanionBar`) with `showSecondaryBar` (bool, default false) and `secondaryBarsAttached` (bool, default true). No migration needed — secondary bars have never been released.
-2. **Reputation pipeline gains companion awareness**:
-   - `ReputationSession` checks whether the watched faction is a known delve companion (friendship faction + known-names list or future `C_DelvesUI` API).
-   - Context includes `isCompanion` flag and companion-specific fields (level, delve-gating state).
-   - When `isCompanion == true` and player is not in a delve, the bar applies companion visibility gate (hide unless settings open or bar unlocked).
-3. **Remove companion-only pipeline**: delete or fold `CompanionSession`, `CompanionCalculations`, `FlatCompanionBarStyle`, `FlatCompanionBarTemplate.xml`, and companion-specific context builder paths into the reputation side.
-4. **Style derivation**: `SecondaryBarManager._DeriveSecondaryStyle()` returns `"flat"` when `showSecondaryBar` is true and primary `barStyle ~= "none"`, else `"none"`. Only one secondary frame to manage.
-5. **Attached mode**: when `secondaryBarsAttached = true`, the single secondary bar anchors relative to the XP bar; position stacking simplified (one bar instead of two).
-6. **Drag fix**: ensure attached-mode guard blocks drag registration and prevents any save on drag stop (fixes NR-3 defect).
-7. **Options UI**: two checkboxes in Secondary section — `showSecondaryBar` and `secondaryBarsAttached`; update reset button anchor.
-8. **Locale**: update keys to reflect single-bar model (e.g., `OPT_SHOW_SECONDARY_BAR`, `OPT_SECONDARY_BAR_ATTACHED`).
-9. **Dead code**: remove `repstyle`/`reputationstyle`/`companionstyle` commands, old companion config keys.
-
-Expected output:
-
-- One secondary bar tracks the player's watched faction — standard, friendship, major/renown, or paragon.
-- When the watched faction is a known delve companion and the player is inside a delve, the bar shows companion-flavored display (level, companion text format).
-- When the watched faction is a companion but the player is outside a delve, the bar hides (unless settings/unlock mode active).
-- Options panel shows two checkboxes: enable secondary bar + attached mode.
-- Attached mode fully prevents drag and position save.
-
-Definition of done:
-
-- No separate companion service/session/style/context paths remain.
-- Watched-faction tracking works for all four reputation types plus companion decoration.
-- Companion visibility gating (delve check, max-level hide) functions correctly.
-- Existing user configs migrate cleanly on first load.
-- No `companionBarStyle`, `showCompanionBar`, or `reputationBarStyle` keys remain in defaults, options, or runtime.
-
-### NR-4: Full regression pass (core gameplay matrix)
-
-Objective: verify no behavior regressions across primary and secondary systems.
-
-Execution steps:
-
-1. Primary bar styles:
-   - Validate all 7 styles for visibility, XP updates, text, and animations.
-2. Secondary bars:
-   - Validate reputation and companion enable/disable checkboxes, attached/free modes, drag, fade, tooltip, live text.
-3. Lifecycle paths:
-   - Validate login, `/reload`, level-up, and max-level transitions.
-4. Blizzard bar ownership:
-   - Verify Blizzard XP and reputation bars hide/show according to manager ownership rules.
-5. Capture pass/fail notes and unresolved defects.
-
-Expected output:
-
-- Regression report with pass/fail status per scenario.
-
-Definition of done:
-
-- All P0/P1 user-facing behaviors pass.
-- Any failures are documented with reproducible steps and prioritized.
+### Near-Term: NR-5 — Delve companion decoration validation
 
 ### NR-5: Delve companion decoration validation
 
