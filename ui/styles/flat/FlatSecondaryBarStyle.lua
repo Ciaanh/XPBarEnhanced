@@ -105,16 +105,16 @@ function StyleMixin:Render(context)
         return
     end
 
-    if not wasAvailable and isAvailable then
-        self:FadeToAlpha(1)
-    end
-
     if not isAvailable then
         self:SetAlpha(0)
         return
     end
 
-    self:SetAlpha(1)
+    if not wasAvailable then
+        self:FadeToAlpha(1)
+    else
+        self:SetAlpha(1)
+    end
 
     local color = GetBarColor(context)
     self.Bar:SetMinMaxValues(context.min, context.max)
@@ -223,9 +223,11 @@ function StyleMixin:OnDragStart()
     end
 
     self:StartMoving()
+    self.__isDragging = true
 end
 
 function StyleMixin:OnDragStop()
+    self.__isDragging = nil
     local db = Addon and Addon.db
     if db and db.secondaryBarsAttached then
         self:StopMovingOrSizing()
