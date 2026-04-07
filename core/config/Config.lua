@@ -219,6 +219,15 @@ end
 -------------------------------------------------------------------
 
 function Config:ApplyOptionSideEffects(key)
+    -- Apply primary bar style switch BEFORE emitting CONFIG_UPDATED so that
+    -- secondary bars can attach to the new frame in the same event cycle.
+    if key == "barStyle" then
+        local newStyle = Addon.db.barStyle
+        if Addon.BarManager and Addon.BarManager.SetStyle then
+            Addon.BarManager:SetStyle(newStyle)
+        end
+    end
+
     -- Emit a config-level event for fine-grained subscribers; also leave broadcast for compatibility
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
@@ -293,14 +302,6 @@ function Config:ApplyOptionSideEffects(key)
         local stats = Addon.Stats
         if stats and stats.Update then
             stats:Update()
-        end
-    end
-
-    -- Bar style changed
-    if key == "barStyle" then
-        local newStyle = Addon.db.barStyle
-        if Addon.BarManager and Addon.BarManager.SetStyle then
-            Addon.BarManager:SetStyle(newStyle)
         end
     end
 

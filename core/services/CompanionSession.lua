@@ -10,6 +10,107 @@ local CompSession = Addon.CompanionSession
 
 local MAX_HISTORY = 200
 
+local function DebugCompanion(message, ...)
+    local db = Addon and Addon.db
+    if db and db.debugSecondaryBars == false then
+        return
+    end
+
+    local text = tostring(message or "")
+    if select("#", ...) > 0 then
+        text = string.format(text, ...)
+    end
+    print("|cff66ccffXPBE Companion|r " .. text)
+end
+
+local function IsPositiveNumber(value)
+    return type(value) == "number" and value > 0
+end
+
+local function NormalizeName(name)
+    local value = tostring(name or "")
+    value = value:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+    value = value:match("^%s*(.-)%s*$") or ""
+    return value:lower()
+end
+
+local function FindFriendshipFactionIDByName(targetName)
+    if not (targetName and targetName ~= "") then
+        return nil
+    end
+    if not (C_Reputation and C_Reputation.GetNumFactions and C_Reputation.GetFactionDataByIndex) then
+        return nil
+    end
+    if not (C_GossipInfo and C_GossipInfo.GetFriendshipReputation) then
+        return nil
+    end
+
+    local targetLower = NormalizeName(targetName)
+    local numFactions = C_Reputation.GetNumFactions() or 0
+    for index = 1, numFactions do
+        local fdata = C_Reputation.GetFactionDataByIndex(index)
+        if fdata and not fdata.isHeader and IsPositiveNumber(fdata.factionID) then
+            local friendData = C_GossipInfo.GetFriendshipReputation(fdata.factionID)
+            if friendData and IsPositiveNumber(friendData.friendshipFactionID) then
+                local candidate = NormalizeName(friendData.name or fdata.name)
+                if candidate == targetLower or candidate:find(targetLower, 1, true) then
+                    return fdata.factionID
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function ResolveCompanionIdentity(session)
+    local companionInfo = C_DelvesUI.GetCompanionInfoForActivePlayer and C_DelvesUI.GetCompanionInfoForActivePlayer()
+    local companionID = companionInfo
+    local companionFactionFromInfo = nil
+    local companionName = nil
+
+    -- Some builds may return a table instead of a scalar companion ID.
+    if type(companionInfo) == "table" then
+        companionID = companionInfo.companionID or companionInfo.id or companionInfo.garrFollowerID
+        companionFactionFromInfo = companionInfo.factionID
+        companionName = companionInfo.name or companionInfo.companionName
+    end
+
+    if not IsPositiveNumber(companionID) then
+        DebugCompanion("ResolveIdentity: no active companion ID from C_DelvesUI")
+        companionID = 0
+    end
+
+    local factionID = nil
+    if C_DelvesUI.GetFactionForCompanion then
+        factionID = C_DelvesUI.GetFactionForCompanion(companionID)
+    end
+
+    if not IsPositiveNumber(factionID) and IsPositiveNumber(companionFactionFromInfo) then
+        factionID = companionFactionFromInfo
+        DebugCompanion("ResolveIdentity fallback: using companionInfo.factionID=%s", tostring(factionID))
+    end
+
+    if not IsPositiveNumber(factionID) and session and IsPositiveNumber(session.factionID)
+        and IsPositiveNumber(session.companionID) and session.companionID == companionID then
+        factionID = session.factionID
+        DebugCompanion("ResolveIdentity fallback: using cached session factionID=%s", tostring(factionID))
+    end
+
+    if not IsPositiveNumber(factionID) and companionName and companionName ~= "" then
+        factionID = FindFriendshipFactionIDByName(companionName)
+        if IsPositiveNumber(factionID) then
+            DebugCompanion("ResolveIdentity fallback: matched companionName=%s factionID=%s", tostring(companionName), tostring(factionID))
+        end
+    end
+
+    if not IsPositiveNumber(factionID) then
+        DebugCompanion("ResolveIdentity failed: no verified faction for active companionID=%s", tostring(companionID))
+        return companionID, nil, "no valid companion factionID"
+    end
+
+    return companionID, factionID, nil
+end
+
 -------------------------------------------------------------------
 -- INITIALIZE
 -------------------------------------------------------------------
@@ -35,29 +136,33 @@ function CompSession:Initialize()
         and C_DelvesUI.GetCompanionInfoForActivePlayer
         and C_DelvesUI.GetFactionForCompanion) then
         self._unavailable = true
+        DebugCompanion("Initialize unavailable: C_DelvesUI APIs missing")
         return
     end
 
-    local companionID = C_DelvesUI.GetCompanionInfoForActivePlayer()
-    if not companionID or companionID == 0 then
+    local companionID, factionID, identityErr = ResolveCompanionIdentity(session)
+    if not companionID then
         self._unavailable = true
+        DebugCompanion("Initialize unavailable: %s", tostring(identityErr))
         return
     end
 
-    local factionID = C_DelvesUI.GetFactionForCompanion(companionID)
-    if not factionID then
+    if not IsPositiveNumber(factionID) then
         self._unavailable = true
+        DebugCompanion("Initialize unavailable: %s (companionID=%s, factionID=%s)", tostring(identityErr or "invalid faction"), tostring(companionID), tostring(factionID))
         return
     end
 
     if not (C_GossipInfo and C_GossipInfo.GetFriendshipReputation) then
         self._unavailable = true
+        DebugCompanion("Initialize unavailable: C_GossipInfo friendship APIs missing")
         return
     end
 
     local friendData = C_GossipInfo.GetFriendshipReputation(factionID)
     if not friendData then
         self._unavailable = true
+        DebugCompanion("Initialize unavailable: no friendship data for factionID=%s", tostring(factionID))
         return
     end
 
@@ -78,6 +183,7 @@ function CompSession:Initialize()
     session.lastLevel             = normalized.currentLevel
 
     self._unavailable = false
+    DebugCompanion("Initialize OK: companionID=%s factionID=%s level=%s", tostring(companionID), tostring(factionID), tostring(normalized.currentLevel))
 end
 
 -------------------------------------------------------------------
@@ -86,19 +192,38 @@ end
 
 function CompSession:OnFactionUpdate()
     if not self._session then return end
-    if self._unavailable then return end
+    if self._unavailable then
+        DebugCompanion("OnFactionUpdate while unavailable -> reinitialize attempt")
+        self:Initialize()
+        if self._unavailable then
+            DebugCompanion("OnFactionUpdate still unavailable after reinit")
+            return
+        end
+    end
 
     local session = self._session
-    if not session or not session.factionID then return end
+    if not session or not IsPositiveNumber(session.factionID) then
+        DebugCompanion("OnFactionUpdate aborted: missing session factionID")
+        return
+    end
 
-    if not (C_GossipInfo and C_GossipInfo.GetFriendshipReputation) then return end
+    if not (C_GossipInfo and C_GossipInfo.GetFriendshipReputation) then
+        DebugCompanion("OnFactionUpdate aborted: friendship API unavailable")
+        return
+    end
 
     local friendData = C_GossipInfo.GetFriendshipReputation(session.factionID)
-    if not friendData then return end
+    if not friendData then
+        DebugCompanion("OnFactionUpdate aborted: no friendship data for factionID=%s", tostring(session.factionID))
+        return
+    end
 
     local rankData = C_GossipInfo.GetFriendshipReputationRanks
         and C_GossipInfo.GetFriendshipReputationRanks(session.factionID)
-    if not rankData then return end
+    if not rankData then
+        DebugCompanion("OnFactionUpdate aborted: no rankData for factionID=%s", tostring(session.factionID))
+        return
+    end
 
     local normalized = Addon.CompanionCalculations.NormalizeCompanionData(
         friendData, rankData, session.companionID, session.factionID
@@ -133,6 +258,7 @@ function CompSession:OnFactionUpdate()
 
     -- Broadcast update.
     if Addon.EventBus and Addon.EventNames and Addon.EventNames.COMPANION_BROADCAST_UPDATE then
+        DebugCompanion("Broadcast companion update: level=%s standing=%s currentXP=%s", tostring(normalized.currentLevel), tostring(friendData.standing), tostring(normalized.currentXP))
         Addon.EventBus:Emit(Addon.EventNames.COMPANION_BROADCAST_UPDATE, self:_BuildContext())
     end
 end

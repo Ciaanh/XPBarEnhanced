@@ -389,23 +389,11 @@ function BaseMixin:TriggerBarRefresh(context)
 
 	local Addon = XPBarEnhanced
 	local manager = Addon and Addon.BarManager
-	if manager and manager.LogMaxLevel then
-		manager:LogMaxLevel(
-			"TriggerBarRefresh:",
-			"event=", context.event,
-			"level=", context.level,
-			"xpMax=", context.xpMax,
-			"currentXP=", context.currentXP
-		)
-	end
 
-	-- Let BarManager adapt or hide max-level rendering according to maxLevelBehavior.
+	-- Let BarManager hide the bar at max level.
 	if manager and manager.AdjustContextForMaxLevel then
 		context = manager:AdjustContextForMaxLevel(context)
 		if not context then
-			if manager.LogMaxLevel then
-				manager:LogMaxLevel("TriggerBarRefresh: context nil after max-level adjustment -> hide")
-			end
 			if manager.GetCurrentFrame and manager:GetCurrentFrame() == self and manager.SetStyle then
 				manager:SetStyle("none")
 			else
@@ -420,9 +408,6 @@ function BaseMixin:TriggerBarRefresh(context)
 
 	-- Non-max-level guard: if context cannot represent progress, hide safely.
 	if context.xpMax ~= nil and context.xpMax <= 0 then
-		if manager and manager.LogMaxLevel then
-			manager:LogMaxLevel("TriggerBarRefresh: xpMax<=0 guard -> hide", "xpMax=", context.xpMax)
-		end
 		if manager and manager.GetCurrentFrame and manager:GetCurrentFrame() == self and manager.SetStyle then
 			manager:SetStyle("none")
 		else

@@ -14,6 +14,19 @@ local function SafeCallErrorHandler(err)
     end
 end
 
+local function DebugSecondary(message, ...)
+    local db = Addon and Addon.db
+    if db and db.debugSecondaryBars == false then
+        return
+    end
+
+    local text = tostring(message or "")
+    if select("#", ...) > 0 then
+        text = string.format(text, ...)
+    end
+    print("|cff66ccffXPBE Secondary|r " .. text)
+end
+
 local function DispatchUpdateFaction(factionID)
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
         xpcall(Addon.ReputationSession.OnFactionUpdate, SafeCallErrorHandler, Addon.ReputationSession)
@@ -40,6 +53,7 @@ local function DispatchRenownLevelChanged(...)
 end
 
 local function DispatchDelvesAccountDataChanged()
+    DebugSecondary("Event DELVES_ACCOUNT_DATA_ELEMENT_CHANGED received")
     if Addon.CompanionSession and Addon.CompanionSession._session and Addon.CompanionSession.OnFactionUpdate then
         xpcall(Addon.CompanionSession.OnFactionUpdate, SafeCallErrorHandler, Addon.CompanionSession)
     end

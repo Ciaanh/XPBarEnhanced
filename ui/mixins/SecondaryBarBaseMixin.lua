@@ -273,18 +273,22 @@ function SecondaryBaseMixin:SavePosition()
     if not configKey or not Addon.db then
         return
     end
-    
-    local point, relativeTo, relativePoint, x, y = self:GetPoint()
-    if not point then
+
+    -- Normalize to UIParent BOTTOMLEFT pixel coordinates so the saved value
+    -- survives reload. Frame object references from GetPoint() can't be
+    -- serialized into SavedVariables.
+    local left = self:GetLeft()
+    local bottom = self:GetBottom()
+    if not left or not bottom then
         return
     end
-    
+
     Addon.db[configKey] = {
-        point = point,
-        relativeTo = relativeTo,
-        relativePoint = relativePoint,
-        x = x,
-        y = y,
+        point = "BOTTOMLEFT",
+        relativeTo = "UIParent",
+        relativePoint = "BOTTOMLEFT",
+        x = left,
+        y = bottom,
     }
 end
 

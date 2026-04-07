@@ -17,6 +17,19 @@ local function SafeCallErrorHandler(err)
     end
 end
 
+local function DebugSecondary(message, ...)
+    local db = Addon and Addon.db
+    if db and db.debugSecondaryBars == false then
+        return
+    end
+
+    local text = tostring(message or "")
+    if select("#", ...) > 0 then
+        text = string.format(text, ...)
+    end
+    print("|cff66ccffXPBE Secondary|r " .. text)
+end
+
 function StyleMixin:OnSecondaryLoad()
     self.Bar:SetStatusBarColor(BAR_COLOR.r, BAR_COLOR.g, BAR_COLOR.b)
     self:ConfigureDragSupport()
@@ -199,6 +212,11 @@ function StyleMixin:OnDragStart()
         return
     end
 
+    if Addon.db.secondaryBarsAttached then
+        DebugSecondary("Companion drag blocked: attached mode enabled")
+        return
+    end
+
     if InCombatLockdown and InCombatLockdown() then
         return
     end
@@ -207,9 +225,16 @@ function StyleMixin:OnDragStart()
 end
 
 function StyleMixin:OnDragStop()
+    local db = Addon and Addon.db
+    if db and db.secondaryBarsAttached then
+        self:StopMovingOrSizing()
+        return
+    end
+
     self:StopMovingOrSizing()
     self:SetUserPlaced(true)
     self:SavePosition()
+    DebugSecondary("Companion drag stop: saved position")
 end
 
 FlatCompanionBarMixin = CreateFromMixins(XPBarSecondaryBaseMixin, StyleMixin)

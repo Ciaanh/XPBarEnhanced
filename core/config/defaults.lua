@@ -5,8 +5,9 @@ local Addon = XPBarEnhanced
 
 local defaults = {
     barStyle = "classic",
-    reputationBarStyle = "none",
-    companionBarStyle = "none",
+    showReputationBar = false,
+    showCompanionBar = false,
+    secondaryBarsAttached = true,
     barLocked = false,
     circularSize = "medium",
     circularSegments = 50,
@@ -41,8 +42,6 @@ local defaults = {
     celebrationSparkles = false,
     celebrationSound = true,
     celebrationSpeed = "normal",
-    maxLevelBehavior = "hide",
-    debugMaxLevelLogs = true,
     fadeWhenInactive = false,
     fadeDelay = 5.0,
     idleOpacity = 0.0,
@@ -74,10 +73,11 @@ local defaults = {
         flat = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
         circular = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
     },
-    reputationBarPosition = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 34},
+    reputationBarPosition = {point = "CENTER", relativeTo = "SecondaryStatusTrackingBarContainer", relativePoint = "CENTER", x = 0, y = 0},
     companionBarPosition  = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 54},
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,
+    debugSecondaryBars = true,
 }
 
 defaults.xpBarColor = defaults.colors.xpBar

@@ -168,10 +168,12 @@ L["OPT_HEADER_FLAT_BAR"] = "Flat Bar"
 L["OPT_HEADER_SECONDARY_BARS"] = "Secondary Bars"
 
 -- Secondary bar options
-L["OPT_REP_BAR_STYLE"] = "Reputation Bar Style"
-L["OPT_REP_BAR_STYLE_DESC"] = "Display style for the watched faction reputation bar. Stacks above the XP bar when visible."
-L["OPT_COMPANION_BAR_STYLE"] = "Companion Bar Style"
-L["OPT_COMPANION_BAR_STYLE_DESC"] = "Display style for the Delve companion (Brann) XP bar. Stacks above the XP bar when visible. Requires Delve companion APIs to be available."
+L["OPT_SHOW_REPUTATION_BAR"] = "Show reputation bar"
+L["OPT_SHOW_REPUTATION_BAR_DESC"] = "Show the watched faction reputation bar as a secondary progress bar."
+L["OPT_SHOW_COMPANION_BAR"] = "Show companion bar"
+L["OPT_SHOW_COMPANION_BAR_DESC"] = "Show the Delve companion (Brann) XP bar as a secondary progress bar. Requires active Delve companion data."
+L["OPT_SECONDARY_BARS_ATTACHED"] = "Attach to XP bar"
+L["OPT_SECONDARY_BARS_ATTACHED_DESC"] = "When enabled, secondary bars are locked to the XP bar position. When disabled, each secondary bar can be positioned independently by dragging."
 
 -- Animation options
 L["OPT_ENABLE_ANIMATIONS"] = "Enable animations"

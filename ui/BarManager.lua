@@ -16,13 +16,6 @@ local function SafeCallErrorHandler(err)
     end
 end
 
-local function ToDebugString(value)
-    if value == nil then
-        return "nil"
-    end
-    return tostring(value)
-end
-
 local StyleTemplateNameMap = {
     classic  = "ClassicBarTemplate",
     flat     = "FlatBarTemplate",
@@ -60,23 +53,6 @@ function BarManager:Initialize()
     self:ApplyDefaultXPBarVisibility()
 end
 
-function BarManager:IsMaxLevelDebugEnabled()
-    return true
-end
-
-function BarManager:LogMaxLevel(...)
-    if not self:IsMaxLevelDebugEnabled() then
-        return
-    end
-
-    local parts = {}
-    for i = 1, select("#", ...) do
-        parts[#parts + 1] = ToDebugString(select(i, ...))
-    end
-
-    print("|cFFFFAA00[XPBarEnhanced:MaxLevel]|r " .. table.concat(parts, " "))
-end
-
 local function IsPlayerAtMaxLevel(currentLevel)
     local level = currentLevel or UnitLevel("player") or 0
     local maxLevel = (GetMaxPlayerLevel and GetMaxPlayerLevel()) or 80
@@ -99,124 +75,16 @@ local function IsPlayerAtMaxLevel(currentLevel)
     return level >= maxLevel
 end
 
-local VALID_MAX_LEVEL_BEHAVIORS = {
-    always_show = true,
-    show_reputation = true,
-    hide = true,
-    show_rested_only = true,
-}
-
-local function CloneContext(source)
-    local clone = {}
-    if not source then
-        return clone
-    end
-
-    for k, v in pairs(source) do
-        clone[k] = v
-    end
-    return clone
-end
-
-function BarManager:GetMaxLevelBehavior()
-    local db = Addon.db or {}
-    local behavior = db.maxLevelBehavior or (Addon.defaults and Addon.defaults.maxLevelBehavior) or "always_show"
-    self:LogMaxLevel("GetMaxLevelBehavior db value:", db.maxLevelBehavior, "default:", Addon.defaults and Addon.defaults.maxLevelBehavior)
-    if not VALID_MAX_LEVEL_BEHAVIORS[behavior] then
-        self:LogMaxLevel("Invalid maxLevelBehavior in db:", behavior, "-> fallback always_show")
-        behavior = "always_show"
-    end
-    self:LogMaxLevel("GetMaxLevelBehavior:", behavior)
-    return behavior
-end
-
-function BarManager:BuildAlwaysShowContext(context)
-    local adjusted = CloneContext(context)
-    if adjusted.xpMax == nil or adjusted.xpMax <= 0 then
-        adjusted.xpMax = math.max(1, adjusted.preLevelXPMax or 1)
-    end
-    adjusted.currentXP = math.max(0, math.min(adjusted.currentXP or 0, adjusted.xpMax))
-    adjusted.maxLevelBehaviorMode = "always_show"
-    return adjusted
-end
-
-function BarManager:BuildRestedOnlyContext(context)
-    local adjusted = self:BuildAlwaysShowContext(context)
-
-    adjusted.currentXP = 0
-    adjusted.xpGained = 0
-    adjusted.hasGainedXP = false
-    adjusted.hasLeveledUp = false
-    adjusted.shouldAnimate = false
-    adjusted.shouldFlash = false
-    adjusted.showQuestXP = false
-    adjusted.showQuestPercent = false
-    adjusted.showCompleteQuestOverlay = false
-    adjusted.showIncompleteQuestOverlay = false
-    adjusted.maxLevelBehaviorMode = "show_rested_only"
-
-    return adjusted
-end
-
-function BarManager:BuildReputationAsPrimaryContext(context)
-    local adjusted = self:BuildAlwaysShowContext(context)
-
-    local repContext = XPBarContextBuilder and XPBarContextBuilder.BuildReputationContext and XPBarContextBuilder.BuildReputationContext()
-    if not repContext or not repContext.isAvailable then
-        self:LogMaxLevel("show_reputation fallback: watched reputation unavailable")
-        return adjusted
-    end
-
-    local repMin = repContext.min or 0
-    local repMax = repContext.max or 1
-    local repCurrent = repContext.current or 0
-    local range = math.max(1, repMax - repMin)
-    local current = math.max(0, math.min(range, repCurrent - repMin))
-
-    adjusted.currentXP = current
-    adjusted.xpMax = range
-    adjusted.xpGained = 0
-    adjusted.hasGainedXP = false
-    adjusted.hasLeveledUp = false
-    adjusted.shouldAnimate = false
-    adjusted.shouldFlash = false
-    adjusted.totalQuestXP = 0
-    adjusted.completeQuestXP = 0
-    adjusted.incompleteQuestXP = 0
-    adjusted.showQuestXP = false
-    adjusted.showQuestPercent = false
-    adjusted.showCompleteQuestOverlay = false
-    adjusted.showIncompleteQuestOverlay = false
-    adjusted.xpPerHour = repContext.repPerHour or 0
-    adjusted.timeToLevel = repContext.timeToNextStanding or 0
-    adjusted.maxLevelBehaviorMode = "show_reputation"
-    adjusted.maxLevelReputationName = repContext.name
-    adjusted.maxLevelReputationStanding = repContext.standingLabel
-
-    return adjusted
-end
-
 function BarManager:AdjustContextForMaxLevel(context)
     if not context then
-        self:LogMaxLevel("AdjustContextForMaxLevel: nil context")
         return context
     end
 
-    local isMax = IsPlayerAtMaxLevel(context.level)
-    self:LogMaxLevel(
-        "AdjustContextForMaxLevel:",
-        "event=", context.event,
-        "level=", context.level,
-        "xpMax=", context.xpMax,
-        "isMax=", isMax
-    )
-    if not isMax then
+    if not IsPlayerAtMaxLevel(context.level) then
         return context
     end
 
-    -- Compatibility policy: keep historical behavior unchanged.
-    -- At max level, the primary XP bar is always hidden.
-    self:LogMaxLevel("AdjustContextForMaxLevel result: forced hide (primary hidden at cap)")
+    -- At max level the primary XP bar is always hidden.
     return nil
 end
 
@@ -233,11 +101,6 @@ function BarManager:ApplyDefaultXPBarVisibility()
             _G.MainStatusTrackingBarContainer:Show()
         end
     end
-    self:DebugContainerState()
-end
-
-function BarManager:DebugContainerState()
-    -- debug logging removed (was too verbose on every visibility update)
 end
 
 -- Install hooksecurefunc hooks to prevent Blizzard's bar from re-showing
@@ -278,21 +141,14 @@ function BarManager:SetStyle(nextStyle)
         nextStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
     end
 
-    self:LogMaxLevel("SetStyle request:", "prev=", previousStyle, "next=", nextStyle)
-
     -- XP-disabled and max-level modes always use Blizzard's default bar.
     if IsXPUserDisabled and IsXPUserDisabled() then
-        self:LogMaxLevel("SetStyle override: XP gain disabled -> none")
         nextStyle = "none"
     elseif IsPlayerAtMaxLevel() then
-        self:LogMaxLevel("SetStyle override: max level -> none")
         nextStyle = "none"
     end
 
-    self:LogMaxLevel("SetStyle effective:", nextStyle)
-
     if previousStyle == nextStyle then
-        self:LogMaxLevel("SetStyle no-op: style unchanged")
         return
     end
 
@@ -338,7 +194,6 @@ function BarManager:SetStyle(nextStyle)
     end
 
     self.currentStyle = nextStyle
-    self:LogMaxLevel("SetStyle applied:", self.currentStyle)
 
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))

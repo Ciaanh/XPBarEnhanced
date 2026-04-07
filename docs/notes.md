@@ -6,15 +6,15 @@ Items that need analysis before they can become backlog items. Partially address
 
 **Goal**: Define one explicit context production/consumption contract across XP, reputation, and companion pipelines.
 
-**Current state**: Phase 7 Slice 2 normalized secondary context sourcing (prefer emitted/cached, bootstrap fallback). But XP and secondary domains still differ — secondary uses session-centric internals while XP is more database-backed.
+**Current state**: The companion/reputation unification (NR-3 rewrite, decision log session 3) will collapse two of the three pipelines into one. After NR-3 lands, this track should re-evaluate whether the remaining XP vs unified-secondary asymmetry still warrants a shared contract or is acceptable as-is.
 
-**Next step**: Compare the three pipelines side-by-side, identify remaining duplication, and propose a staged simplification plan.
+**Next step**: Defer re-evaluation until after NR-3 unified bar is implemented and validated.
 
 ## Track 2: Options Panel Structure
 
 **Goal**: Evaluate whether the options panel needs restructuring as settings grow.
 
-**Current state**: Functional but increasingly crowded with secondary-bar controls added in Phase 6.
+**Current state**: NR-3 unification reduces the secondary controls from three checkboxes to two, easing panel crowding slightly. Functional but still worth evaluating once all near-term work is done.
 
 **Next step**: Review tabbed layout vs grouped sections against Blizzard settings patterns. Recommend information hierarchy and progressive disclosure rules.
 
@@ -22,6 +22,7 @@ Items that need analysis before they can become backlog items. Partially address
 
 **Goal**: Improve folder boundaries to reflect current architecture and module roles.
 
-**Current state**: The `ui/` folder naming no longer cleanly maps to the architecture after Phase 5-7 changes.
+**Current state**: The companion-specific files (`FlatCompanionBarStyle.lua`, `FlatCompanionBarTemplate.xml`, `CompanionSession.lua`, `CompanionCalculations.lua`) will be removed or folded as part of NR-3. This simplifies the file count under `ui/secondary/` and `core/`.
 
-**Next step**: Propose a migration-safe folder structure. Define file-move constraints to avoid TOC/load-order regressions.
+**Next step**: After NR-3, re-assess whether remaining structure warrants a rename pass or is clean enough.
+

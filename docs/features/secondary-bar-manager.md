@@ -4,7 +4,8 @@ The shared infrastructure that manages reputation and companion secondary bars �
 
 ## Capabilities
 
-- **Independent style management**: Reputation and companion bars are activated/deactivated independently
+- **Enable/disable per bar**: Reputation and companion bars are activated via boolean flags (`showReputationBar`, `showCompanionBar`); style is derived from the primary `barStyle`
+- **Attached/free positioning**: `secondaryBarsAttached` toggle locks secondary bars relative to the XP bar or allows independent drag placement
 - **Shared lifecycle contract**: All secondary bars follow OnLoad → OnShow → OnHide → MarkDirty → Render
 - **Drag-to-move**: Shift+drag repositioning with SavedVariables persistence and position lock
 - **Fade animations**: Smooth fade-in/out transitions on availability changes via shared mixin
@@ -36,3 +37,4 @@ The shared infrastructure that manages reputation and companion secondary bars �
 - Blizzard reputation visibility is separate from Blizzard XP visibility
 - Bootstrap emit ownership moved from manager to session layers (Phase 7 Slice 2)
 - Drag semantics hardened: position persistence managed by SavePosition, not drag-stop (Slice 1)
+- **Planned**: Companion and reputation bars will be unified into a single secondary bar per style, with companion-specific decoration when the tracked faction is a delve companion (NR-3 rewrite, decision log session 3)

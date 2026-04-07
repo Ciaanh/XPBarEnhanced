@@ -16,7 +16,10 @@ Why: row insertion can break existing button anchors and visual flow.
 
 ## Architecture
 
-1. EventBus should dispatch, not infer domain behavior.
+1. When two features share the same underlying API data source, they should be one feature with conditional decoration, not two parallel pipelines.
+Why: companion and reputation tracking both read from the same watched-faction / friendship-reputation API. Splitting them into separate services, sessions, context builders, and bar styles created duplication, identity-resolution bugs, and user confusion.
+
+2. EventBus should dispatch, not infer domain behavior.
 Why: XP-only auto-context generation made shared infrastructure domain-coupled.
 
 2. Coalesced rendering should be standard for event-driven bars.

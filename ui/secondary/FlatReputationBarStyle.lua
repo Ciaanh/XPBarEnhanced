@@ -26,17 +26,30 @@ local function SafeCallErrorHandler(err)
     end
 end
 
+local function DebugSecondary(message, ...)
+    local db = Addon and Addon.db
+    if db and db.debugSecondaryBars == false then
+        return
+    end
+
+    local text = tostring(message or "")
+    if select("#", ...) > 0 then
+        text = string.format(text, ...)
+    end
+    print("|cff66ccffXPBE Secondary|r " .. text)
+end
+
 function StyleMixin:GetPositionConfigKey()
     return "reputationBarPosition"
 end
 
 function StyleMixin:GetFallbackPosition()
     return {
-        point = "BOTTOM",
-        relativeTo = "UIParent",
-        relativePoint = "BOTTOM",
+        point = "CENTER",
+        relativeTo = "SecondaryStatusTrackingBarContainer",
+        relativePoint = "CENTER",
         x = 0,
-        y = 34,
+        y = 0,
     }
 end
 
@@ -205,6 +218,11 @@ function StyleMixin:OnDragStart()
         return
     end
 
+    if Addon.db.secondaryBarsAttached then
+        DebugSecondary("Reputation drag blocked: attached mode enabled")
+        return
+    end
+
     if InCombatLockdown and InCombatLockdown() then
         return
     end
@@ -213,9 +231,16 @@ function StyleMixin:OnDragStart()
 end
 
 function StyleMixin:OnDragStop()
+    local db = Addon and Addon.db
+    if db and db.secondaryBarsAttached then
+        self:StopMovingOrSizing()
+        return
+    end
+
     self:StopMovingOrSizing()
     self:SetUserPlaced(true)
     self:SavePosition()
+    DebugSecondary("Reputation drag stop: saved position")
 end
 
 function StyleMixin:OnSecondaryLoad()

@@ -1,10 +1,46 @@
 -- XP Bar Enhanced - Secondary Bar Manager
 -- Manages the reputation and companion secondary progress bars independently.
--- Each bar has its own style setting: "none" (hidden) or "flat".
+-- Each bar is enabled/disabled via a boolean flag; style is derived from the primary barStyle.
 
 local Addon = XPBarEnhanced
 Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 local Manager = Addon.SecondaryBarManager
+
+local function DebugSecondary(message, ...)
+    local db = Addon and Addon.db
+    if db and db.debugSecondaryBars == false then
+        return
+    end
+
+    local text = tostring(message or "")
+    if select("#", ...) > 0 then
+        text = string.format(text, ...)
+    end
+    print("|cff66ccffXPBE Secondary|r " .. text)
+end
+
+local SHOW_CONFIG_KEY = {
+    reputation = "showReputationBar",
+    companion  = "showCompanionBar",
+}
+
+-- Derive the style string from boolean show flag and primary barStyle.
+-- Returns "flat" when the bar is enabled and a primary style is active, else "none".
+local function _DeriveSecondaryStyle(key)
+    local db = Addon.db or {}
+    local showKey = SHOW_CONFIG_KEY[key]
+    if not showKey or not db[showKey] then
+        DebugSecondary("DeriveStyle %s -> none (show disabled)", tostring(key))
+        return "none"
+    end
+    local primaryStyle = db.barStyle or "none"
+    if primaryStyle == "none" then
+        DebugSecondary("DeriveStyle %s -> none (primary style none)", tostring(key))
+        return "none"
+    end
+    DebugSecondary("DeriveStyle %s -> flat (primary style %s)", tostring(key), tostring(primaryStyle))
+    return "flat"
+end
 
 local TEMPLATE_MAP = {
     reputation = { flat = "FlatReputationBarTemplate" },
@@ -53,6 +89,7 @@ function Manager:_SetStyle(key, style)
     self._frames = self._frames or {}
 
     if self._currentStyles[key] == style then
+        DebugSecondary("SetStyle %s unchanged (%s)", tostring(key), tostring(style))
         return
     end
 
@@ -64,6 +101,7 @@ function Manager:_SetStyle(key, style)
     end
 
     self._currentStyles[key] = style
+    DebugSecondary("SetStyle %s -> %s", tostring(key), tostring(style))
 
     if style == "none" then
         return
@@ -84,20 +122,66 @@ function Manager:Initialize()
 
     self:InstallBlizzardBarHooks()
 
-    self:SetReputationStyle(db.reputationBarStyle or "none")
-    self:SetCompanionStyle(db.companionBarStyle or "none")
+    self:SetReputationStyle(_DeriveSecondaryStyle("reputation"))
+    self:SetCompanionStyle(_DeriveSecondaryStyle("companion"))
     self:ApplyDefaultReputationBarVisibility()
+    self:ReapplyAttachedPositions()
 
     Addon.EventBus:Register(
         Addon.EventNames.CONFIG_UPDATED,
         "SecondaryBarManager_ConfigUpdated",
         function(_ctx)
-            local d = Addon.db or {}
-            self:SetReputationStyle(d.reputationBarStyle or "none")
-            self:SetCompanionStyle(d.companionBarStyle or "none")
+            self:SetReputationStyle(_DeriveSecondaryStyle("reputation"))
+            self:SetCompanionStyle(_DeriveSecondaryStyle("companion"))
             self:ApplyDefaultReputationBarVisibility()
+            self:ReapplyAttachedPositions()
         end
     )
+end
+
+-- Stack active secondary bars above the primary XP bar when attached mode is on.
+-- When attached mode is off, restores each bar to its saved/fallback position.
+function Manager:ReapplyAttachedPositions()
+    local db = Addon.db or {}
+
+    if not db.secondaryBarsAttached then
+        DebugSecondary("ReapplyAttachedPositions: detached mode")
+        -- Restore each active frame to its independently saved/fallback position.
+        for key, styleFrames in pairs(self._frames or {}) do
+            local style = self._currentStyles and self._currentStyles[key]
+            if style and style ~= "none" then
+                local frame = styleFrames[style]
+                if frame and frame.ApplyInitialPosition then
+                    frame:ApplyInitialPosition()
+                end
+            end
+        end
+        return
+    end
+
+    local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
+    if not primaryFrame then
+        DebugSecondary("ReapplyAttachedPositions: no primary frame available")
+        return
+    end
+
+    DebugSecondary("ReapplyAttachedPositions: attached mode, primary frame found")
+
+    -- Stack bars bottom-to-top: XP bar → reputation → companion (2px gap).
+    local barOrder = { "reputation", "companion" }
+    local anchorFrame = primaryFrame
+    for _, key in ipairs(barOrder) do
+        local style = self._currentStyles and self._currentStyles[key]
+        if style and style ~= "none" then
+            local frame = self._frames and self._frames[key] and self._frames[key][style]
+            if frame then
+                frame:ClearAllPoints()
+                frame:SetPoint("BOTTOM", anchorFrame, "TOP", 0, 2)
+                DebugSecondary("Attached %s bar above %s", tostring(key), tostring(anchorFrame))
+                anchorFrame = frame
+            end
+        end
+    end
 end
 
 function Manager:ApplyDefaultReputationBarVisibility()

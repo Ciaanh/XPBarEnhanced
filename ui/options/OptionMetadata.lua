@@ -21,27 +21,23 @@ local optionDetails = {
         },
         commandKeys = {"style", "mode", "barstyle"}
     },
-    reputationBarStyle = {
-        key = "reputationBarStyle",
-        type = "dropdown",
-        label = Addon.L["OPT_REP_BAR_STYLE"],
-        description = Addon.L["OPT_REP_BAR_STYLE_DESC"],
-        options = {
-            {value = "none", label = Addon.L["OPT_BAR_STYLE_NONE"]},
-            {value = "flat", label = Addon.L["OPT_BAR_STYLE_FLAT"]},
-        },
-        commandKeys = {"repstyle", "reputationstyle"}
+    showReputationBar = {
+        key = "showReputationBar",
+        label = Addon.L["OPT_SHOW_REPUTATION_BAR"],
+        description = Addon.L["OPT_SHOW_REPUTATION_BAR_DESC"],
+        commandKeys = {}
     },
-    companionBarStyle = {
-        key = "companionBarStyle",
-        type = "dropdown",
-        label = Addon.L["OPT_COMPANION_BAR_STYLE"],
-        description = Addon.L["OPT_COMPANION_BAR_STYLE_DESC"],
-        options = {
-            {value = "none", label = Addon.L["OPT_BAR_STYLE_NONE"]},
-            {value = "flat", label = Addon.L["OPT_BAR_STYLE_FLAT"]},
-        },
-        commandKeys = {"companionstyle"}
+    showCompanionBar = {
+        key = "showCompanionBar",
+        label = Addon.L["OPT_SHOW_COMPANION_BAR"],
+        description = Addon.L["OPT_SHOW_COMPANION_BAR_DESC"],
+        commandKeys = {}
+    },
+    secondaryBarsAttached = {
+        key = "secondaryBarsAttached",
+        label = Addon.L["OPT_SECONDARY_BARS_ATTACHED"],
+        description = Addon.L["OPT_SECONDARY_BARS_ATTACHED_DESC"],
+        commandKeys = {}
     },
     barLocked = {
         key = "barLocked",
@@ -271,8 +267,9 @@ local optionDetails = {
 
 local optionOrder = {
     "barStyle",
-    "reputationBarStyle",
-    "companionBarStyle",
+    "showReputationBar",
+    "showCompanionBar",
+    "secondaryBarsAttached",
     "barLocked",
     "classicBarDraggable",
     "showMinimapButton",

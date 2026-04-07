@@ -33,6 +33,17 @@ function Database:Initialize()
 
     -- Set addon database reference
     Addon.db = XPBarEnhancedDB
+
+    -- Migrate pre-NR-3 style dropdown keys to boolean show flags
+    if Addon.db.reputationBarStyle ~= nil then
+        Addon.db.showReputationBar = Addon.db.reputationBarStyle ~= "none"
+        Addon.db.reputationBarStyle = nil
+    end
+    if Addon.db.companionBarStyle ~= nil then
+        Addon.db.showCompanionBar = Addon.db.companionBarStyle ~= "none"
+        Addon.db.companionBarStyle = nil
+    end
+
     Addon.db.sessionData = Addon.db.sessionData or {}
     Addon.db.reputationSessionData = Addon.db.reputationSessionData or {}
     Addon.db.companionSessionData = Addon.db.companionSessionData or {}

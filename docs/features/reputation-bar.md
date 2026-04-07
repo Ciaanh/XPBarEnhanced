@@ -7,7 +7,7 @@ A secondary progress bar that displays the player's watched faction reputation p
 - **Watched faction tracking**: Displays current standing and progress for the tracked faction
 - **All reputation types**: Handles standard, friendship, major/renown, and paragon factions
 - **Automatic updates**: Reacts to faction gain, standing changes, and tracked faction switches
-- **Independent visibility**: Controlled by `reputationBarStyle` setting, separate from primary XP bar
+- **Independent visibility**: Enabled via `showReputationBar` checkbox in settings; hidden when disabled or when primary XP bar style is "none"
 - **Drag-to-move**: Repositionable with Shift+drag; position persists across sessions
 - **Fade transitions**: Smooth fade-in/out on availability changes
 - **Hover tooltip**: Shows session metrics on mouseover
@@ -29,5 +29,5 @@ A secondary progress bar that displays the player's watched faction reputation p
 
 ## Known Limitations
 
-- Only one visual style currently available (flat)
+- Only one visual style currently available (flat), derived automatically from the primary bar being active
 - Fade polish is optional future work

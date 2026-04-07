@@ -522,19 +522,28 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_reputationBarStyle" inherits="ConfigDropdownTemplate">
+                                    <Frame parentKey="Row_showReputationBar" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
-                                            <KeyValue key="configKey" value="reputationBarStyle" type="string"/>
+                                            <KeyValue key="configKey" value="showReputationBar" type="string"/>
                                             <KeyValue key="layoutIndex" value="52" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_companionBarStyle" inherits="ConfigDropdownTemplate">
+                                    <Frame parentKey="Row_showCompanionBar" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
-                                            <KeyValue key="configKey" value="companionBarStyle" type="string"/>
+                                            <KeyValue key="configKey" value="showCompanionBar" type="string"/>
                                             <KeyValue key="layoutIndex" value="53" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_secondaryBarsAttached" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="secondaryBarsAttached" type="string"/>
+                                            <KeyValue key="layoutIndex" value="54" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                         </KeyValues>
@@ -546,7 +555,7 @@
                             <Button parentKey="ResetSettingsButton" inherits="UIPanelButtonTemplate">
                                 <Size x="150" y="22"/>
                                 <Anchors>
-                                    <Anchor point="TOPLEFT" relativeKey="$parent.OptionsContainer.Row_companionBarStyle" relativePoint="BOTTOMLEFT" x="16" y="-24"/>
+                                    <Anchor point="TOPLEFT" relativeKey="$parent.OptionsContainer.Row_secondaryBarsAttached" relativePoint="BOTTOMLEFT" x="16" y="-24"/>
                                 </Anchors>
                             </Button>
                             <Button parentKey="ResetBarPositionButton" inherits="UIPanelButtonTemplate">
