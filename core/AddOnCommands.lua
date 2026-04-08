@@ -14,6 +14,7 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFoptions|r - Open options panel")
     print("  /xpbe |cFFFFFFFFstats|r - Toggle statistics window")
     print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|terminal>|r - Change bar style")
+    print("  /xpbe |cFFFFFFFFreputations|r - Export all faction IDs")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -91,6 +92,14 @@ local function handleStyle(style)
     end
 end
 
+local function handleReputations()
+    if Addon.ReputationSession and Addon.ReputationSession.ListAllFactions then
+        Addon.ReputationSession:ListAllFactions()
+    else
+        print("|cFFFF0000XP Bar Enhanced:|r Reputation module not available")
+    end
+end
+
 local function handleSlashCommand(message)
     local command, arg = string.match(message or "", "^(%S*)%s*(.-)$")
     command = string.lower(command or "")
@@ -109,6 +118,8 @@ local function handleSlashCommand(message)
         handleResetColors()
     elseif command == "style" or command == "barstyle" or command == "mode" then
         handleStyle(arg)
+    elseif command == "reps" then
+        handleReputations()
     else
         printUnknown(command)
     end

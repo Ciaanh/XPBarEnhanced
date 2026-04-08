@@ -75,6 +75,13 @@ local defaults = {
     },
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,
+
+    -- Known Delve companion factions (by faction ID).
+    -- Maps faction ID -> display name for locale-independent companion detection.
+    delveCompanions = {
+        [2640] = "Brann Bronzebeard",
+        [2744] = "Valeera Sanguinar",
+    },
 }
 
 defaults.xpBarColor = defaults.colors.xpBar

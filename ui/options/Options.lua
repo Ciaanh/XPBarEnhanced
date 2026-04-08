@@ -1009,10 +1009,6 @@ function Options:OnOptionChanged(key)
 
     -- General refresh
     self:Refresh()
-
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
-    end
 end
 
 function Options:OnColorReset()

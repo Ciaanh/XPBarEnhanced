@@ -10,10 +10,6 @@ Addon.ReputationSession = Addon.ReputationSession or {}
 local RepSession = Addon.ReputationSession
 
 local MAX_HISTORY = 200
-local KNOWN_DELVE_COMPANIONS = {
-    ["brann bronzebeard"] = true,
-    ["valeera sanguinar"] = true,
-}
 
 local function NormalizeFactionName(name)
     local value = tostring(name or "")
@@ -22,9 +18,31 @@ local function NormalizeFactionName(name)
     return value:lower()
 end
 
-local function IsKnownDelveCompanion(name)
-    local normalized = NormalizeFactionName(name)
-    return normalized ~= "" and KNOWN_DELVE_COMPANIONS[normalized] or false
+--- Checks if a watched faction is a known Delve companion.
+--- Uses faction ID lookup for locale-independent matching.
+local function IsKnownDelveCompanion(factionID, name)
+    local defaults = Addon.defaults
+    if not defaults then return false end
+
+    local companions = defaults.delveCompanions
+    if not companions then return false end
+
+    -- Faction ID lookup (preferred, locale-independent)
+    if factionID and companions[factionID] then
+        return true
+    end
+
+    -- Name fallback: scan table for matching name (less preferred, locale-dependent)
+    if name then
+        local normalized = NormalizeFactionName(name)
+        if normalized == "" then return false end
+        for _, companionName in pairs(companions) do
+            if NormalizeFactionName(companionName) == normalized then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 local function IsInDelve()
@@ -231,6 +249,22 @@ end
 -- CONTEXT
 -------------------------------------------------------------------
 
+--- Public read accessor for the current reputation context.
+--- Use this instead of calling XPBarContextBuilder.BuildReputationContext() directly
+--- so that the session layer remains the single owner of reputation context creation.
+function RepSession:GetCurrentContext()
+    return self:_BuildContext()
+end
+
+--- Emit REPUTATION_BROADCAST_UPDATE with the current context.
+--- All modules that need to trigger a reputation redraw MUST call this instead
+--- of building a context and emitting from outside the session layer.
+function RepSession:EmitUpdate()
+    if Addon.EventBus and Addon.EventNames then
+        Addon.EventBus:Emit(Addon.EventNames.REPUTATION_BROADCAST_UPDATE, self:_BuildContext())
+    end
+end
+
 function RepSession:_BuildContext()
     if XPBarContextBuilder and XPBarContextBuilder.BuildReputationContext then
         local context = XPBarContextBuilder.BuildReputationContext()
@@ -284,7 +318,7 @@ function RepSession:GetWatchedFactionInfo()
     local totals = session.factionTotals and session.factionTotals[session.watchedFactionID]
     snapshot.sessionGained = (totals and totals.gained) or 0
 
-    local isCompanion = session.watchedFactionType == "friendship" and IsKnownDelveCompanion(snapshot.name)
+    local isCompanion = session.watchedFactionType == "friendship" and IsKnownDelveCompanion(session.watchedFactionID, snapshot.name)
     snapshot.isCompanion = isCompanion
     snapshot.isInDelve = isCompanion and IsInDelve() or false
 
@@ -315,6 +349,37 @@ function RepSession:GetStats()
         timeToNextStanding = self:GetTimeToNextStanding(),
         watchedFactionInfo = self:GetWatchedFactionInfo(),
     }
+end
+
+-------------------------------------------------------------------
+-- FACTION LISTING (for exports)
+-------------------------------------------------------------------
+
+--- Print all factions and their IDs for export.
+function RepSession:ListAllFactions()
+    if not (C_Reputation and C_Reputation.GetNumFactions and C_Reputation.GetFactionDataByIndex) then
+        print("|cFFFF0000XP Bar Enhanced:|r C_Reputation API not available")
+        return
+    end
+
+    print("|cFF00FF00XP Bar Enhanced - Reputation Export|r")
+    print("All factions (name: ID):")
+    print("-----------------------------------------")
+
+    local numFactions = C_Reputation.GetNumFactions()
+    for i = 1, numFactions do
+        local fdata = C_Reputation.GetFactionDataByIndex(i)
+        if fdata then
+            if fdata.isHeader then
+                print("|cFFFFFF00" .. (fdata.name or "?") .. "|r")
+            else
+                local name = fdata.name or "Unknown"
+                local id = fdata.factionID or 0
+                print(string.format("  %s: %d", name, id))
+            end
+        end
+    end
+    print("-----------------------------------------")
 end
 
 -------------------------------------------------------------------

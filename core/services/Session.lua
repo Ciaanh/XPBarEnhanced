@@ -326,10 +326,18 @@ end
 
 function Session:OnRestedChanged()
     -- Rested/exhaustion state changed; notify all bars via EventBus
+    self:EmitUpdate("UPDATE_EXHAUSTION")
+end
+
+---Emit a fresh XP broadcast from the session layer.
+--- All modules (BarManager, Config, Options) that need to trigger an XP redraw
+--- MUST call this instead of building a context locally — keeps context ownership in Session.
+---@param reason string Event label used as context.event
+function Session:EmitUpdate(reason)
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         Addon.EventBus:Emit(
             Addon.EventNames.XPBAR_BROADCAST_UPDATE,
-            XPBarContextBuilder.BuildContext("UPDATE_EXHAUSTION")
+            XPBarContextBuilder.BuildContext(reason or "XPBAR:BROADCAST_UPDATE")
         )
     end
 end

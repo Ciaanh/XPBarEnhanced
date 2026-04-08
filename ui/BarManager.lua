@@ -195,8 +195,9 @@ function BarManager:SetStyle(nextStyle)
 
     self.currentStyle = nextStyle
 
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
+    -- Trigger a broadcast through the session layer so context ownership stays in Session.
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
 
     -- Always hide the Blizzard XP bar when we are using a custom style
@@ -251,12 +252,6 @@ function BarManager:OnLevelUp(newLevel)
     end
 end
 
-function BarManager:OnRestedChanged()
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("UPDATE_EXHAUSTION"))
-    end
-end
-
 function BarManager:Shutdown()
     -- Hide any frames and perform light cleanup
     self.barFrames = self.barFrames or {}
@@ -267,9 +262,6 @@ function BarManager:Shutdown()
     end
     self.currentFrame = nil
     self.currentStyle = nil
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
-    end
 end
 
 return BarManager

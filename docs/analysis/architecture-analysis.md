@@ -28,9 +28,9 @@ libs/LibStub  →  libs/AceLocale  →  locales/enUS.lua
                               defaults.lua  → Config.lua / ConfigHelper.lua
                               AddOnLifecycle.lua  → AddOnCommands.lua
                               Utils.lua  → Colors.lua
-                              XPCalculations / TimeCalculations / ReputationCalculations / CompanionCalculations
-                              QuestXP.lua  → TextFormatter.lua  → EventBus.lua
-                              Database.lua  → Session.lua  → ReputationSession.lua  → CompanionSession.lua
+                              XPCalculations / TimeCalculations / ReputationCalculations
+                              QuestXP.lua  →  TextFormatter.lua  →  EventBus.lua
+                              Database.lua  →  Session.lua  →  ReputationSession.lua
                               ContextBuilder.lua
                                           │
                               UI chain: MinimapButton → mixins → StyleBuilder → BarManager
@@ -46,8 +46,8 @@ libs/LibStub  →  libs/AceLocale  →  locales/enUS.lua
 | WoW Event | Lifecycle Handler | What Happens |
 |---|---|---|
 | `ADDON_LOADED` | `OnAddonLoaded` | Database:Initialize(), Config:Initialize(), sets Addon.db |
-| `PLAYER_LOGIN` | `OnPlayerLogin` | Session:Init, RepSession:Init, CompSession:Init, BarManager:Init, SecondaryBarManager:Init, MinimapButton:Init, Options:Init |
-| `PLAYER_ENTERING_WORLD` | `OnPlayerEnteringWorld` | Session/RepSession/CompSession:OnEnteringWorld, QuestXP invalidate, EventBus broadcast, SecondaryBarManager:OnEnteringWorld, deferred Blizzard bar visibility |
+| `PLAYER_LOGIN` | `OnPlayerLogin` | Session:Init, RepSession:Init, BarManager:Init, SecondaryBarManager:Init, MinimapButton:Init, Options:Init |
+| `PLAYER_ENTERING_WORLD` | `OnPlayerEnteringWorld` | Session/RepSession:OnEnteringWorld, QuestXP invalidate, EventBus broadcast, SecondaryBarManager:OnEnteringWorld, deferred Blizzard bar visibility |
 | `PLAYER_LEVEL_UP` | `OnPlayerLevelUp` | Session:OnLevelUp (cascade to QuestXP, BarManager, Stats, broadcast) |
 | `PLAYER_LOGOUT` | `OnPlayerLogout` | broadcast / Shutdown |
 
@@ -98,13 +98,15 @@ MAJOR_FACTION_RENOWN    ──→  RepSession:OnRenownLevelChanged()
                               ──→  Render(flatContext)
 ```
 
-### Pipeline C — Companion Bar (secondary)
+### ~~Pipeline C — Companion Bar (secondary)~~
+
+> **NR-3 DELETED**: `CompanionSession` and `CompanionCalculations` were removed in NR-3. Companion tracking unified into `ReputationSession`; `COMPANION_BROADCAST_UPDATE` removed. The pipeline below is historical only.
 
 ```
 External WoW Events                     Session Service                  Context Builder           UI Consumer
 ─────────────────                        ───────────────                  ───────────────           ───────────
-UPDATE_FACTION          ──→  CompSession:OnFactionUpdate()
-DELVES_ACCOUNT_DATA     ──→  CompSession:OnFactionUpdate()
+UPDATE_FACTION          ──→  CompSession:OnFactionUpdate()   [DELETED]
+DELVES_ACCOUNT_DATA     ──→  CompSession:OnFactionUpdate()   [DELETED]
                                    │
                                    ↓
                               EventBus:Emit(COMPANION_BROADCAST_UPDATE, self:_BuildContext())

@@ -32,7 +32,7 @@ Current state is stable and functional, but there are inconsistencies in context
 1. Session ownership model differs across domains.
 - XP path is primarily database-backed through `Session:GetCurrent()` and immediate context broadcast in `Session:OnXPUpdate()`.
 - Reputation and companion paths rely on service-local `_session` ownership.
-- References: `core/services/Session.lua`, `core/services/ReputationSession.lua`, `core/services/CompanionSession.lua`.
+- References: `core/services/Session.lua`, `core/services/ReputationSession.lua`.
 
 2. Secondary styles rebuild context on refresh/ticker instead of using a single source.
 - Secondary bars consume emitted context when available via `MarkDirty(context)`.

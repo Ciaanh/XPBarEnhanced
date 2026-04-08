@@ -11,7 +11,7 @@ Extend companion tracking to support multiple delve companions (currently Brann 
 
 ## Motivation
 
-The current `CompanionSession` is implemented generically but may only detect one companion automatically. As WoW adds more delve companions in future patches, the addon should be able to:
+The current companion tracking is handled by `ReputationSession` (NR-3 unified the former `CompanionSession` into it). The pipeline may only detect one companion automatically. As WoW adds more delve companions in future patches, the addon should be able to:
 - Auto-detect all available companions.
 - Let the user choose which companion to track.
 - Display the tracked companion in the companion bar.
@@ -36,13 +36,12 @@ The current `CompanionSession` is implemented generically but may only detect on
 2. Implement companion discovery that finds all available delve companions.
 3. Add `trackedCompanionFactionID` config key (default: auto-detect primary companion).
 4. Add companion selection dropdown to options panel.
-5. Update `CompanionSession` to track the selected companion.
+5. Update `ReputationSession` to track the selected companion (companion detection uses `defaults.delveCompanions` dict, with legacy name fallback).
 6. Add locale strings.
 
 ## Affected Files
 
-- core/services/CompanionSession.lua
-- core/calculations/CompanionCalculations.lua
+- core/services/ReputationSession.lua
 - core/config/defaults.lua
 - ui/options/OptionMetadata.lua
 - ui/options/Options.lua

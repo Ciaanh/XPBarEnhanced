@@ -65,6 +65,32 @@ Key findings:
 
 Next: MQ-3 (UI structure and naming cleanup)
 
+## 2026-04-08 — MQ-5: Manager boundary enforcement + doc normalization
+
+Architectural audit and enforcement pass. Root cause: managers (BarManager, Config, Options) were building XP/Reputation contexts and emitting directly onto EventBus, violating the documented contract that session layer owns context construction.
+
+Changes made:
+- **`Session:EmitUpdate(reason)`** added (`core/services/Session.lua`) — single canonical point for all `XPBAR_BROADCAST_UPDATE` emissions; all callers use this instead of constructing context themselves
+- **`ReputationSession:EmitUpdate()` + `GetCurrentContext()`** added (`core/services/ReputationSession.lua`) — symmetric helpers for reputation domain
+- **`defaults.delveCompanions`** dict added (`core/config/defaults.lua`) mapping faction ID → name for locale-safe companion detection
+- **`BarManager:SetStyle`** emit migrated to `Session:EmitUpdate` — BarManager no longer touches context construction
+- **`BarManager:OnRestedChanged`** removed — dead method never called (EventRouter dispatches direct to `Session:OnRestedChanged`)
+- **`Config:ApplyOptionSideEffects`** two direct EventBus emits replaced with `Session:EmitUpdate` / `ReputationSession:EmitUpdate`
+- **`Options:OnOptionChanged`** unconditional `XPBAR_BROADCAST_UPDATE` emit removed — genuinely redundant: `ApplyOptionSideEffects` always emits `CONFIG_UPDATED`, which `BaseMixin` subscribes to with `MarkDirty` (confirmed by reading BaseMixin.lua line 131)
+- **`FlatSecondaryBarStyle:GetInitialContext()`** now routes through `ReputationSession:GetCurrentContext()` — bootstrap path no longer bypasses the session layer
+- Docs corrected: `architecture-analysis.md` load order + lifecycle table + Pipeline C annotated; `companion-multi-companion.md` CompanionSession references removed; `pre-phase-7` §2.1 reference fixed
+
+## 2026-04-08 — Localization-safe companion detection
+
+Decision: Companion detection should use faction ID lookup instead of name matching.
+Reason: IDs are locale-independent and stable; names are localized and fragile.
+Implementation:
+- `defaults.delveCompanions` is now a dict mapping factionID → display name (not a list).
+- `ReputationSession.IsKnownDelveCompanion(factionID, name)` checks the dict by ID first, with name fallback for legacy compat.
+- Companion faction list can be extended by admins by adding `[id] = "Name"` entries to `delveCompanions`.
+- `/xpbe reputations` command exports all faction IDs for easy reference.
+
+
 ## 2026-04-08 (session 6 continued)
 
 Validation: NR-5 Delve companion decoration confirmed in-game.

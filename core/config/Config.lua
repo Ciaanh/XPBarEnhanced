@@ -260,15 +260,16 @@ function Config:ApplyOptionSideEffects(key)
     end
 
     if needsBarRefresh then
-        -- Update XP bar controller (use new EventBus first)
-        if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-            Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
+        -- Update XP bar via session layer (Session owns context construction).
+        if Addon.Session and Addon.Session.EmitUpdate then
+            Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
         end
     end
 
     if key == "hideCompanionOutsideDelve" then
-        if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder and EventNames and EventNames.REPUTATION_BROADCAST_UPDATE then
-            Addon.EventBus:Emit(EventNames.REPUTATION_BROADCAST_UPDATE, XPBarContextBuilder.BuildReputationContext())
+        -- ReputationSession owns reputation context construction.
+        if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+            Addon.ReputationSession:EmitUpdate()
         end
     end
 

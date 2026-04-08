@@ -81,8 +81,10 @@ function StyleMixin:GetBroadcastEventName()
 end
 
 function StyleMixin:GetInitialContext()
-    if XPBarContextBuilder and XPBarContextBuilder.BuildReputationContext then
-        return XPBarContextBuilder.BuildReputationContext()
+    -- Route through ReputationSession so the session layer is the sole owner
+    -- of reputation context creation; do not bypass it via ContextBuilder directly.
+    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
+        return Addon.ReputationSession:GetCurrentContext()
     end
     return nil
 end

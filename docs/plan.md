@@ -1,6 +1,6 @@
 # XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-08 (Medium-Term complete)
+Last updated: 2026-04-08 (companion localization-safe detection update)
 
 ## Addon Summary
 
@@ -35,12 +35,12 @@ Completed (sessions 4–6):
 Validation status:
 
 - Release package builds successfully (`make-release.ps1`)
-- NR-4 through NR-6 complete; near-term exit gate reached
-- Next focus: Medium-Term code quality tracks (MQ-1 through MQ-4)
+- Near-term and medium-term quality tracks are complete (MQ-1 through MQ-5)
+- Current focus: backlog execution and incremental hardening
 
 ## Goals
 
-### Near-Term: \~\~Complete\~\~ — all NR items done, advancing to Medium-Term
+### Near-Term: ~~Complete~~
 
 ### ~~NR-6: Release-facing docs sync~~ ✅ Complete
 
@@ -66,82 +66,16 @@ All items NR-3 through NR-6 complete, with no unresolved release-blocking defect
 
 ### Medium-Term: Code Quality
 
-**Goal**: Reduce technical debt and improve maintainability across four tracks. Tracks are ordered by dependency and risk — MQ-4 and MQ-3 first (bounded, low-risk), then MQ-2 (design proposal), then MQ-1 (heaviest, refactoring).
+All medium-term tracks are complete.
 
----
+- MQ-1: context/session workflow consistency
+- MQ-2: options panel architecture proposal
+- MQ-3: UI structure and naming cleanup
+- MQ-4: analysis-to-backlog normalization
+- MQ-5: manager boundary enforcement + doc normalization
 
-### ~~MQ-4: Analysis-to-backlog normalization~~ ✅ COMPLETE (2026-04-08)
-
-**Objective**: ensure all actionable findings from prior investigation are tracked or explicitly closed.
-
-**Outcome**:
-- All 6 analysis docs in `docs/analysis/` read, audited, and annotated with MQ-4 status headers
-- `EventRouter.lua` confirmed as single centralized event frame (architecture-analysis §3.3 resolved)
-- `SecondaryBarBaseMixin` confirmed implemented (§3.5/3.6, Phases 2+3 resolved)
-- Session persistence + time refresh ticker already implemented (xp-tracking items 1+2 resolved)
-- `delve-companion-feature.md` and `reputation-bar-feature.md` marked superseded by NR-3
-- `reference-addon-comparison.md` feature matrix updated (reputation/companion now Yes)
-- `pre-phase-7-architecture-compliance-deliverable.md` compliance items audited — most resolved in NR-3/NR-4/session 6
-- New backlog: `docs/backlog/xp-tracking-quick-wins.md` (3 trivial items: isTask filter, expansion events, XP/hr threshold)
-- Open items carried forward: architecture §3.1/3.4 → MQ-1; 12.0 compliance docs checkpoint → MQ-1 or doc pass
-
----
-
-### ~~MQ-3: UI structure and naming cleanup~~ ✅ COMPLETE (2026-04-08)
-
-**Objective**: make `ui/` folder boundaries reflect current architecture cleanly.
-
-**Outcome**:
-- `ui/secondary/` confirmed empty; deleted — no TOC references (secondary style files live in `ui/styles/flat/`)
-- All `ui/` files catalogued with role descriptions in `docs/guidelines/project-structure.md`
-- Secondary style placement rule documented: secondary styles colocate with their primary style in `ui/styles/<style>/`; `SecondaryBarBaseMixin` correctly in `ui/mixins/` as shared infrastructure
-- `ui/templates/XPBarBaseTemplate.xml` confirmed as shared primary-bar base template (correctly loaded before styles in TOC)
-- `ui/stats/` (StatsFrame.xml + Stats.lua via Script tag) and `ui/options/` (OptionsPanel.xml + Options.lua via Script tag) confirmed correct; no orphaned files
-- No file moves or TOC reordering required — structure already matches the documented rule
-
----
-
-### ~~MQ-2: Options panel architecture proposal~~ ✅ COMPLETE (2026-04-08)
-
-**Objective**: define a scalable layout for the options panel before more settings are added.
-
-**Outcome**:
-- Audited all 36 options in `OptionMetadata.lua`; grouped into 9 logical sections
-- Evaluated grouped-scroll vs tabbed panel — **chosen: grouped scroll with conditional style-section visibility**
-  - Rationale: 36 options in 8–9 sections is manageable on a single page; panel is custom canvas layout (not Blizzard Settings.CreateSetting); tabs require custom XML tab widget with no clear UX gain at current option count
-  - Style-specific sections (Circular, Minimap Ring, Terminal) to be hidden when inactive style is selected
-- Decision and section map documented in `docs/features/options-and-config.md`
-- Backlog item filed: `docs/backlog/options-panel-sections.md` (P2, ready to implement)
-
----
-
-### ~~MQ-1: Context/session workflow consistency~~ ✅ COMPLETE (2026-04-08)
-
-**Objective**: resolve the three pipeline inconsistencies identified in `docs/analysis/architecture-analysis.md` (sections 3.1–3.6).
-
-**Outcome (all issues resolved by prior implementation — no code changes required)**:
-
-| # | Problem (from analysis) | Resolution |
-|---|---|---|
-| 3.1 | Context build location inconsistent | RESOLVED: both XP and Reputation emit full contexts via EventBus; `MarkDirty(ctx)` flows emitted context to `Render(ctx)`. Stylistic asymmetry (global ContextBuilder for XP, internal `_BuildContext` for Reputation) is intentional — documented in guidelines |
-| 3.2 | XP emits nil payload | RESOLVED: `Session.lua` calls `XPBarContextBuilder.BuildContext()` at emit time, not nil |
-| 3.3 | 5 independent event frames | RESOLVED: EventRouter is single central frame |
-| 3.4 | Context rebuilt on every render | RESOLVED: `MarkDirty` coalescing + `_pendingContext`/`_lastContext` caching prevents redundant rebuilds |
-| 3.6 | No shared bar contract | RESOLVED: both `BaseMixin` and `SecondaryBarBaseMixin` use identical `MarkDirty` → RunNextFrame → `Render(context)` lifecycle |
-| Companion orphan | CompanionSession / CompanionCalculations exist? | DELETED in NR-3 — both files are gone |
-
-**Documents updated**:
-- `docs/analysis/architecture-analysis.md` — §3.1/3.2/3.4/3.6 all marked RESOLVED
-- `docs/guidelines/code-architecture-choices.md` — CompanionSession reference removed; EventBus contract and XP/Reputation stylistic asymmetry documented
-
----
-
-### ~~Medium-Term Exit Gate~~ ✅ ALL FOUR MQ TRACKS COMPLETE (2026-04-08)
-
-- ~~MQ-4~~: backlog reflects all actionable analysis outputs ✅
-- ~~MQ-3~~: `ui/` structure clean and documented ✅
-- ~~MQ-2~~: options panel direction chosen and backlog-filed ✅
-- ~~MQ-1~~: secondary pipeline inconsistency confirmed resolved; architecture contract documented ✅
+Key implementation note:
+- Companion detection is now localization-safe by design: `defaults.delveCompanions` is a dict mapping factionID → name, with name-based fallback for compatibility.
 
 
 ### Next Phase: Backlog Execution
