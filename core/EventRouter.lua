@@ -94,6 +94,34 @@ local function DispatchPlayerLogout()
     end
 end
 
+local function DispatchLifecyclePlayerEnteringWorld(isInitialLogin, isReloadingUI)
+    local handlers = Addon.LifecycleHandlers
+    if handlers and handlers.OnPlayerEnteringWorld then
+        xpcall(handlers.OnPlayerEnteringWorld, Utils.ReportError, handlers, isInitialLogin, isReloadingUI)
+    end
+end
+
+local function DispatchLifecyclePlayerMaxLevelUpdate()
+    local handlers = Addon.LifecycleHandlers
+    if handlers and handlers.OnPlayerMaxLevelUpdate then
+        xpcall(handlers.OnPlayerMaxLevelUpdate, Utils.ReportError, handlers)
+    end
+end
+
+local function DispatchLifecycleEnableXPGain()
+    local handlers = Addon.LifecycleHandlers
+    if handlers and handlers.OnEnableXPGain then
+        xpcall(handlers.OnEnableXPGain, Utils.ReportError, handlers)
+    end
+end
+
+local function DispatchLifecycleDisableXPGain()
+    local handlers = Addon.LifecycleHandlers
+    if handlers and handlers.OnDisableXPGain then
+        xpcall(handlers.OnDisableXPGain, Utils.ReportError, handlers)
+    end
+end
+
 local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     if Addon.Session and Addon.Session.OnEnteringWorld then
         xpcall(Addon.Session.OnEnteringWorld, Utils.ReportError, Addon.Session, isInitialLogin, isReloadingUI)
@@ -105,22 +133,7 @@ local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
 
     DispatchQuestEvent("PLAYER_ENTERING_WORLD")
 
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-        xpcall(Addon.EventBus.Emit, Utils.ReportError, Addon.EventBus,
-            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
-            XPBarContextBuilder.BuildContext("PLAYER_ENTERING_WORLD"))
-    elseif Addon.BarManager and Addon.BarManager.OnEnteringWorld then
-        xpcall(Addon.BarManager.OnEnteringWorld, Utils.ReportError, Addon.BarManager, isInitialLogin, isReloadingUI)
-    end
-
-    C_Timer.After(0, function()
-        if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
-            xpcall(Addon.BarManager.ApplyDefaultXPBarVisibility, Utils.ReportError, Addon.BarManager)
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ApplyDefaultReputationBarVisibility then
-            xpcall(Addon.SecondaryBarManager.ApplyDefaultReputationBarVisibility, Utils.ReportError, Addon.SecondaryBarManager)
-        end
-    end)
+    DispatchLifecyclePlayerEnteringWorld(isInitialLogin, isReloadingUI)
 end
 
 local function DispatchPlayerLevelUp(level)
@@ -132,44 +145,15 @@ local function DispatchPlayerLevelUp(level)
 end
 
 local function DispatchEnableXPGain()
-    Addon.state.xpGainDisabled = false
-
-    if Addon.Database and Addon.Database.SetXPGainDisabled then
-        xpcall(Addon.Database.SetXPGainDisabled, Utils.ReportError, Addon.Database, false)
-    end
-
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        local db = Addon.db or {}
-        Addon.BarManager.currentStyle = nil
-        xpcall(Addon.BarManager.SetStyle, Utils.ReportError, Addon.BarManager, db.barStyle or "classic")
-    end
+    DispatchLifecycleEnableXPGain()
 end
 
 local function DispatchDisableXPGain()
-    Addon.state.xpGainDisabled = true
-
-    if Addon.Database and Addon.Database.SetXPGainDisabled then
-        xpcall(Addon.Database.SetXPGainDisabled, Utils.ReportError, Addon.Database, true)
-    end
-
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        Addon.BarManager.currentStyle = nil
-        xpcall(Addon.BarManager.SetStyle, Utils.ReportError, Addon.BarManager, "none")
-    end
+    DispatchLifecycleDisableXPGain()
 end
 
 local function DispatchPlayerMaxLevelUpdate()
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        local db = Addon.db or {}
-        Addon.BarManager.currentStyle = nil
-        xpcall(Addon.BarManager.SetStyle, Utils.ReportError, Addon.BarManager, db.barStyle or "classic")
-    end
-
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-        xpcall(Addon.EventBus.Emit, Utils.ReportError, Addon.EventBus,
-            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
-            XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE"))
-    end
+    DispatchLifecyclePlayerMaxLevelUpdate()
 end
 
 local ROUTER_DISPATCH = {

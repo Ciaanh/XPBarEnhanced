@@ -1,5 +1,39 @@
 # Decision Log
 
+## 2026-04-08 — Architecture hardening pass (router boundaries, context ownership, emission normalization)
+
+Decision: Keep `core/EventRouter.lua` as an external-event dispatcher only.
+Reason: Router should own WoW event registration/dispatch, not domain event emission or UI manager orchestration.
+Impact:
+- Router no longer emits XP EventBus updates directly in `PLAYER_ENTERING_WORLD`/max-level paths.
+- Router no longer performs XP enable/disable style orchestration directly.
+- Lifecycle handlers now own entering-world UI visibility reconciliation and XP-gain enable/disable/max-level style transitions.
+
+Decision: Move reputation render-context construction fully into `ReputationSession`.
+Reason: Previous flow introduced a circular dependency (`ReputationSession -> ContextBuilder -> ReputationSession`).
+Impact:
+- `ReputationSession:_BuildContext()` now builds reputation context internally.
+- `XPBarContextBuilder.BuildReputationContext()` removed from `core/services/ContextBuilder.lua`.
+- Secondary bar initial context path stays session-owned (`GetCurrentContext()`).
+
+Decision: Reduce duplicate XP broadcasts in quest-turn-in and config side-effect paths.
+Reason: Several flows emitted both generic config updates and domain XP updates, producing redundant refresh pressure.
+Impact:
+- `Session:OnQuestTurnedIn()` now calls `OnXPUpdate(true)` (no immediate emit) and emits one coalesced `EmitUpdate("QUEST_LOG_UPDATE")`.
+- `Config:ApplyOptionSideEffects()` no longer emits extra XP broadcasts for visual toggles; XP bars refresh via `CONFIG_UPDATED` subscription.
+
+Decision: Add lightweight text ticker context for primary XP bars.
+Reason: Text ticker previously rebuilt full XP context every 2.5s (`BuildContext("MANUAL_REFRESH")`) although only text/time/rate fields are needed.
+Impact:
+- Added `XPBarContextBuilder.BuildTextRefreshContext()`.
+- `BaseMixin` ticker now uses this lightweight path (`TEXT_TICK`) with backward-compatible fallback.
+
+Decision: Close `options-panel-sections` backlog item as already implemented.
+Reason: Audit confirmed grouped headers and style-conditional visibility are already shipping in `Options.lua`.
+Impact:
+- Removed from active backlog index.
+- Marked as closed (historical trace only) in backlog file.
+
 ## 2026-04-08 — xp-tracking-quick-wins implemented
 
 - `core/services/QuestXP.lua`: added `not info.isTask` guard — world quests and bonus objectives now excluded from XP overlay

@@ -6,9 +6,12 @@ User-facing settings, slash commands, and minimap button.
 
 **Current state**: 36 options in a single flat list (`optionOrder` in `OptionMetadata.lua`). Style-specific groups (circular: 4, minimap_ring: 5, terminal: 1) are mixed in at the end with no visual grouping. The panel is registered as a `Settings.RegisterCanvasLayoutCategory` (full custom XML canvas). Layout is driven by `OptionMetadata.lua` + `ControlHelpers.lua` building widgets into a scroll frame.
 
-**Chosen direction: Grouped scroll with conditional style-section visibility**
+### Chosen Direction
+
+Grouped scroll with conditional style-section visibility.
 
 Rationale:
+
 - 36 options across 8 sections (average 4–5 per section) is manageable on a single scrollable page
 - Blizzard's Settings framework supports custom section headers in canvas-layout panels
 - Style-specific sections (Circular, Minimap Ring, Terminal) must already listen for `barStyle` changes to toggle their option states — adding `SetShown()` calls for the whole section header+options block is a natural extension
@@ -17,7 +20,7 @@ Rationale:
 **Proposed section grouping**:
 
 | Section | Options |
-|---------|---------|
+| ------- | ------- |
 | Core | barStyle, barLocked, classicBarDraggable |
 | Secondary Bar | showSecondaryBar, hideCompanionOutsideDelve, secondaryBarsAttached |
 | Minimap | showMinimapButton |
@@ -28,12 +31,11 @@ Rationale:
 | Style: Minimap Ring *(visible only when barStyle = minimap_ring)* | minimapRingPadding, minimapRingSegments, minimapRingCollectButtons, minimapRingSegmentWidth, minimapRingSegmentHeight |
 | Style: Terminal *(visible only when barStyle = terminal)* | terminalUseCustomColors |
 
-**Implementation approach**:
-- Extend `optionOrder` structure (or replace with `optionSections` table keyed by group) to carry a `section` label per option
-- Add a `SectionDivider` widget type to `OptionsPanelTemplates.xml`
-- `ControlHelpers.lua` emits a section header row before the first option in each new section
-- The style-specific sections' header + all contained option widgets are collected into a group; the group receives `SetShown(barStyle == expectedStyle)` calls from a `BAR_STYLE_CHANGED` listener in `Options.lua`
-- Backlog item: see `docs/backlog/options-panel-sections.md`
+**Implementation status (2026-04-08 audit)**:
+
+- Section headers are already implemented in `Options.lua` via localized `*Header.Title` assignments.
+- Style-specific options are already conditionally shown/hidden with `SetShown()` and `container:Layout()`.
+- No additional architecture task is required for base section grouping; only incremental UX polish should be tracked as new backlog items if needed.
 
 ## Settings Panel
 

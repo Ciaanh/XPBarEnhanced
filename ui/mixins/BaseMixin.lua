@@ -135,7 +135,12 @@ function BaseMixin:OnShow()
 	end
 	self._textRefreshTicker = C_Timer.NewTicker(2.5, function()
 		if self and self:IsShown() and self:HasCapability("textBelowBar") then
-			local context = XPBarContextBuilder.BuildContext("MANUAL_REFRESH")
+			local context
+			if XPBarContextBuilder and XPBarContextBuilder.BuildTextRefreshContext then
+				context = XPBarContextBuilder.BuildTextRefreshContext("TEXT_TICK")
+			else
+				context = XPBarContextBuilder.BuildContext("MANUAL_REFRESH")
+			end
 			if self.UpdateSessionText then self:UpdateSessionText(context) end
 			if self.UpdateRateText then self:UpdateRateText(context) end
 		end

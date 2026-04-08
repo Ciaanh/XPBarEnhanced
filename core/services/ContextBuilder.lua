@@ -417,63 +417,45 @@ function ContextBuilder.ResetSession()
 end
 
 -------------------------------------------------------------------
--- SECONDARY BAR CONTEXTS
+-- TEXT REFRESH CONTEXTS
 -------------------------------------------------------------------
 
---- Build a context for the watched reputation bar.
---- Returns a simple table (not immutable) for direct use by secondary bar styles.
----@return table context Reputation context, isAvailable=false if no watched faction
-function XPBarContextBuilder.BuildReputationContext()
-	if not (Addon and Addon.ReputationSession) then
-		return { isAvailable = false }
+--- Build a lightweight context used by periodic text tickers.
+--- Avoids full overlay/session/quest context recomputation on every tick.
+---@param event string Optional event/source label
+---@return table context Immutable context carrying text toggles and rate values
+function XPBarContextBuilder.BuildTextRefreshContext(event)
+	local db = Addon and Addon.db or {}
+	local currentXP = UnitXP("player") or 0
+	local xpMax = UnitXPMax("player") or 1
+
+	local xpPerHour
+	local timeToLevel
+	if Addon and Addon.Session then
+		if Addon.Session.GetXPPerHour then
+			xpPerHour = Addon.Session:GetXPPerHour()
+		end
+		if Addon.Session.GetTimeToLevel then
+			timeToLevel = Addon.Session:GetTimeToLevel()
+		end
 	end
 
-	local repSession = Addon.ReputationSession
-	local info = repSession:GetWatchedFactionInfo()
-
-	if not info then
-		return { isAvailable = false }
-	end
-
-	local stats = repSession:GetStats()
-	local panel = rawget(_G, "XPBarEnhancedOptionsPanel")
-	local isPreviewMode = (Addon.db and Addon.db.barLocked == false) or (panel and panel.IsVisible and panel:IsVisible())
-	local hideCompanionOutsideDelve = Addon.db and Addon.db.hideCompanionOutsideDelve
-	local isCompanionAvailable
-	if hideCompanionOutsideDelve then
-		isCompanionAvailable = not info.isCompanion or (info.isInDelve and not info.isMaxed)
-	else
-		isCompanionAvailable = not info.isCompanion or isPreviewMode or (info.isInDelve and not info.isMaxed)
-	end
-
-	if not isCompanionAvailable then
-		return {
-			isAvailable = false,
-			isCompanion = true,
-			name = info.name or "",
-		}
-	end
-
-	return {
-		isAvailable        = true,
-		name               = info.name or "",
-		standingLabel      = info.standingLabel or "",
-		factionType        = info.factionType or "standard",
-		isCompanion        = info.isCompanion or false,
-		isInDelve          = info.isInDelve or false,
-		currentLevel       = info.currentLevel or 0,
-		maxLevel           = info.maxLevel or 0,
-		current            = info.current or 0,
-		min                = info.min or 0,
-		max                = math.max(1, info.max or 1),
-		ratio              = info.ratio or 0,
-		percent            = info.percent or 0,
-		isMaxed            = info.isMaxed or false,
-		sessionGained      = info.sessionGained or 0,
-		repPerHour         = (stats and stats.repPerHour) or 0,
-		timeToNextStanding = stats and stats.timeToNextStanding,
-		timeToNextLevel    = stats and stats.timeToNextStanding,
+	local eventContext = {
+		event = event or "TEXT_REFRESH",
+		timestamp = time(),
+		source = "TEXT_REFRESH",
+		currentXP = currentXP,
+		xpMax = xpMax,
+		xpPerHour = xpPerHour,
+		timeToLevel = timeToLevel,
+		showXPPerHourText = db.showXPPerHourText,
+		showTimeToLevelText = db.showTimeToLevelText,
+		showSessionTimeText = db.showSessionTimeText,
+		showLevelTimeText = db.showLevelTimeText,
+		abbreviateNumbers = db.abbreviateNumbers,
 	}
+
+	return ContextBuilder.MakeImmutable(eventContext)
 end
 
 ContextBuilder.Initialize()

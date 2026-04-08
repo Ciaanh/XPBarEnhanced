@@ -118,6 +118,54 @@ local function GetFactionSnapshot(factionID, factionType)
     end
 end
 
+local function BuildReputationContext(repSession)
+    local info = repSession:GetWatchedFactionInfo()
+    if not info then
+        return { isAvailable = false }
+    end
+
+    local stats = repSession:GetStats()
+    local panel = rawget(_G, "XPBarEnhancedOptionsPanel")
+    local isPreviewMode = (Addon.db and Addon.db.barLocked == false) or (panel and panel.IsVisible and panel:IsVisible())
+    local hideCompanionOutsideDelve = Addon.db and Addon.db.hideCompanionOutsideDelve
+
+    local isCompanionAvailable
+    if hideCompanionOutsideDelve then
+        isCompanionAvailable = not info.isCompanion or (info.isInDelve and not info.isMaxed)
+    else
+        isCompanionAvailable = not info.isCompanion or isPreviewMode or (info.isInDelve and not info.isMaxed)
+    end
+
+    if not isCompanionAvailable then
+        return {
+            isAvailable = false,
+            isCompanion = true,
+            name = info.name or "",
+        }
+    end
+
+    return {
+        isAvailable        = true,
+        name               = info.name or "",
+        standingLabel      = info.standingLabel or "",
+        factionType        = info.factionType or "standard",
+        isCompanion        = info.isCompanion or false,
+        isInDelve          = info.isInDelve or false,
+        currentLevel       = info.currentLevel or 0,
+        maxLevel           = info.maxLevel or 0,
+        current            = info.current or 0,
+        min                = info.min or 0,
+        max                = math.max(1, info.max or 1),
+        ratio              = info.ratio or 0,
+        percent            = info.percent or 0,
+        isMaxed            = info.isMaxed or false,
+        sessionGained      = info.sessionGained or 0,
+        repPerHour         = (stats and stats.repPerHour) or 0,
+        timeToNextStanding = stats and stats.timeToNextStanding,
+        timeToNextLevel    = stats and stats.timeToNextStanding,
+    }
+end
+
 -------------------------------------------------------------------
 -- INITIALIZE
 -------------------------------------------------------------------
@@ -248,8 +296,7 @@ end
 -------------------------------------------------------------------
 
 --- Public read accessor for the current reputation context.
---- Use this instead of calling XPBarContextBuilder.BuildReputationContext() directly
---- so that the session layer remains the single owner of reputation context creation.
+--- Session remains the single owner of reputation context creation.
 function RepSession:GetCurrentContext()
     return self:_BuildContext()
 end
@@ -264,16 +311,9 @@ function RepSession:EmitUpdate()
 end
 
 function RepSession:_BuildContext()
-    if XPBarContextBuilder and XPBarContextBuilder.BuildReputationContext then
-        local context = XPBarContextBuilder.BuildReputationContext()
-        context.event = Addon.EventNames.REPUTATION_BROADCAST_UPDATE
-        return context
-    end
-
-    return {
-        event = Addon.EventNames.REPUTATION_BROADCAST_UPDATE,
-        isAvailable = false,
-    }
+    local context = BuildReputationContext(self)
+    context.event = Addon.EventNames.REPUTATION_BROADCAST_UPDATE
+    return context
 end
 
 -------------------------------------------------------------------

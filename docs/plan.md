@@ -1,6 +1,6 @@
 # XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-08 (companion localization-safe detection update)
+Last updated: 2026-04-08 (architecture hardening + backlog normalization)
 
 ## Addon Summary
 
@@ -75,24 +75,21 @@ All medium-term tracks are complete.
 - MQ-5: manager boundary enforcement + doc normalization
 
 Key implementation note:
-- Companion detection is now localization-safe by design: `defaults.delveCompanions` is a dict mapping factionID → name, with name-based fallback for compatibility.
 
+- Companion detection is now localization-safe by design: `defaults.delveCompanions` is a dict mapping factionID → name, with name-based fallback for compatibility.
 
 ### Next Phase: Backlog Execution
 
-**Goal**: Work through the two P2 ready-to-implement backlog items, then consider P3 items or new feature work.
+**Goal**: Continue with deferred/approved backlog items after closing documentation drift and architecture debt.
 
-**Active backlog — ready to implement (see `docs/backlog/README.md`)**:
+**Active backlog — implementation candidates (see `docs/backlog/README.md`)**:
 
 | Item | Goal | Notes |
-|------|------|-------|
-| ~~[xp-tracking-quick-wins](docs/backlog/xp-tracking-quick-wins.md)~~ ✅ | isTask filter, expansion events, XP/hr threshold | **Implemented** — all 3 fixes applied |
-| [options-panel-sections](docs/backlog/options-panel-sections.md) | Group 36-option flat list into labelled sections | Requires new SectionDivider template + metadata restructure |
-
-**Recommended order**:
-1. `options-panel-sections` — next ready-to-implement item
+| ---- | ---- | ----- |
+| [secondary-bar-per-style-position](docs/backlog/secondary-bar-per-style-position.md) | Per-style independent saved position for the secondary bar | P2, deferred but actionable after migration design |
 
 **Deferred backlog (P3)**:
+
 - `secondary-bar-styles` — investigation only, not approved for coding
 - `companion-multi-companion` — awaiting C_DelvesUI API review
 

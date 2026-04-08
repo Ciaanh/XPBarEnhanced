@@ -17,7 +17,6 @@ Completed and closed items have been archived to `docs/history/phases.md`. Decis
 | ---- | ---- | ------ | -------- | ------------ |
 | [secondary-bar-styles.md](secondary-bar-styles.md) | Give users visual style options for secondary bars beyond "flat" | Investigation only — not approved for coding | P3 | Architecture review, UX review, delivery plan |
 | [companion-multi-companion.md](companion-multi-companion.md) | Support tracking any delve companion, not just Brann | Deferred — future work | P3 | C_DelvesUI API review |
-| [options-panel-sections.md](options-panel-sections.md) | Group the 36-option flat list into labelled sections; hide inactive style sections | Ready to implement | P2 | None |
 | [secondary-bar-per-style-position.md](secondary-bar-per-style-position.md) | Per-style independent saved position for the secondary bar | Deferred — not approved for coding | P2 | None |
 
 ## Potential New Work (Not Yet Filed)
@@ -37,6 +36,10 @@ See `docs/history/phases.md` for implementation records of:
 - XP tracking quick wins (Phase 7 follow-up)
 - Secondary bar fade, drag, tooltip, live text (Phase 6)
 - Compliance hardening, context contract, max-level behavior (Phase 7, Slices 1-3)
+
+## Closed As Already Implemented
+
+- [options-panel-sections.md](options-panel-sections.md) — closed 2026-04-08 after doc/code audit confirmed grouped section headers and style-conditional visibility already ship in `ui/options/Options.lua`
 
 ## Closed / Not Planned
 

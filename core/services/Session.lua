@@ -145,7 +145,7 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 end
 
-function Session:OnXPUpdate()
+function Session:OnXPUpdate(suppressBroadcast)
     local session = self:GetCurrent()
     if not session then
         return
@@ -196,7 +196,7 @@ function Session:OnXPUpdate()
     end
 
     -- Session is the single source of XP events; broadcast to all registered bars
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+    if not suppressBroadcast and Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         Addon.EventBus:Emit(
             Addon.EventNames.XPBAR_BROADCAST_UPDATE,
             XPBarContextBuilder.BuildContext("PLAYER_XP_UPDATE")
@@ -292,7 +292,7 @@ function Session:OnQuestTurnedIn(questID)
         -- Ensure session XP baseline is up-to-date (XP gains from quest may have triggered PLAYER_XP_UPDATE
         -- before the completed flag became available). Also ensure the centralized quest cache is invalidated
         -- so UI and other services can refresh based on the latest quest state.
-        Session:OnXPUpdate()
+        Session:OnXPUpdate(true)
 
         -- Touch session timestamps so UI/data consumers will refresh.
         local session = Session:GetCurrent()
@@ -307,13 +307,8 @@ function Session:OnQuestTurnedIn(questID)
             xpcall(Addon.QuestXP.InvalidateQuestCache, CallErrorHandler or print, Addon.QuestXP)
         end
 
-        -- Broadcast quest state change to all bars
-        if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-            Addon.EventBus:Emit(
-                Addon.EventNames.XPBAR_BROADCAST_UPDATE,
-                XPBarContextBuilder.BuildContext("QUEST_LOG_UPDATE")
-            )
-        end
+        -- Emit one coalesced update from the session owner after quest state changes.
+        Session:EmitUpdate("QUEST_LOG_UPDATE")
     end
 
     -- Small delay: the quest history/completed flag may not be instantly available.

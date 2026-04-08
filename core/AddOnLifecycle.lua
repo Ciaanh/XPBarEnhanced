@@ -75,4 +75,54 @@ function eventHandlers:OnPlayerLogout()
     end
 end
 
+function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("PLAYER_ENTERING_WORLD")
+    end
+
+    C_Timer.After(0, function()
+        if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
+            Addon.BarManager:ApplyDefaultXPBarVisibility()
+        end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ApplyDefaultReputationBarVisibility then
+            Addon.SecondaryBarManager:ApplyDefaultReputationBarVisibility()
+        end
+    end)
+end
+
+function eventHandlers:OnPlayerMaxLevelUpdate()
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        local db = Addon.db or {}
+        Addon.BarManager.currentStyle = nil
+        Addon.BarManager:SetStyle(db.barStyle or "classic")
+    end
+end
+
+function eventHandlers:OnEnableXPGain()
+    Addon.state.xpGainDisabled = false
+
+    if Addon.Database and Addon.Database.SetXPGainDisabled then
+        Addon.Database:SetXPGainDisabled(false)
+    end
+
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        local db = Addon.db or {}
+        Addon.BarManager.currentStyle = nil
+        Addon.BarManager:SetStyle(db.barStyle or "classic")
+    end
+end
+
+function eventHandlers:OnDisableXPGain()
+    Addon.state.xpGainDisabled = true
+
+    if Addon.Database and Addon.Database.SetXPGainDisabled then
+        Addon.Database:SetXPGainDisabled(true)
+    end
+
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        Addon.BarManager.currentStyle = nil
+        Addon.BarManager:SetStyle("none")
+    end
+end
+
 return eventHandlers

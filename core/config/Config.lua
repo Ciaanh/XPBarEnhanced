@@ -232,39 +232,7 @@ function Config:ApplyOptionSideEffects(key)
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
     end
-    -- Bar visual options that require refresh
-    local barVisualOptions = {
-        "showQuestXP",
-        "showPercentage",
-        "showQuestPercent",
-
-        "showCompleteQuestOverlay",
-        "showIncompleteQuestOverlay",
-        "abbreviateNumbers",
-        "showRemainingXP",
-        "showLevelText",
-        "showXPText",
-        "showXPPerHourText",
-        "showLevelTimeText",
-        "showSessionTimeText",
-        "showTimeToLevelText",
-        "showRestedOverlay"
-    }
-
-    local needsBarRefresh = false
-    for _, optionKey in ipairs(barVisualOptions) do
-        if key == optionKey then
-            needsBarRefresh = true
-            break
-        end
-    end
-
-    if needsBarRefresh then
-        -- Update XP bar via session layer (Session owns context construction).
-        if Addon.Session and Addon.Session.EmitUpdate then
-            Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
-        end
-    end
+    -- XP bars subscribe to CONFIG_UPDATED directly; avoid duplicate domain broadcasts.
 
     if key == "hideCompanionOutsideDelve" then
         -- ReputationSession owns reputation context construction.

@@ -1,8 +1,18 @@
 # Backlog: Options Panel Section Grouping
 
+Status: Closed (already implemented)
+Closed on: 2026-04-08
+
 ## Goal
 
 Replace the flat 36-option list in the settings panel with a visually grouped layout — section headers above each group, style-specific sections visible only when the matching bar style is active.
+
+Resolution note:
+
+- This outcome is already implemented in production code.
+- Section headers are created and localized in `ui/options/Options.lua`.
+- Style-specific rows are shown/hidden dynamically (`circular`, `minimap_ring`, `terminal`) with `SetShown()` + container relayout.
+- Backlog item retained only as historical trace; removed from active backlog index.
 
 ## Motivation
 
@@ -12,12 +22,14 @@ Replace the flat 36-option list in the settings panel with a visually grouped la
 ## Scope
 
 **In scope**:
+
 - Add a `SectionDivider` / section-header widget to `OptionsPanelTemplates.xml`
 - Extend `OptionMetadata.lua` `optionOrder` (or introduce `optionSections`) to carry section labels per-option
 - Modify `ControlHelpers.lua` and `Options.lua` to emit section headers and collect style-specific option groups
 - Implement conditional visibility: style-specific sections (`Circular`, `Minimap Ring`, `Terminal`) shown/hidden via `SetShown()` on barStyle change
 
 **Out of scope**:
+
 - Tabbed or multi-subcategory navigation (decided against in MQ-2; revisit only if option count doubles)
 - Color options (already in a logically separate part of the panel — can be reviewed in a follow-up)
 
@@ -34,7 +46,7 @@ Replace the flat 36-option list in the settings panel with a visually grouped la
 **Proposed sections** (from MQ-2 analysis in `docs/features/options-and-config.md`):
 
 | Section | Count |
-|---------|-------|
+| ------- | ----- |
 | Core | 3 |
 | Secondary Bar | 3 |
 | Minimap | 1 |
@@ -46,12 +58,14 @@ Replace the flat 36-option list in the settings panel with a visually grouped la
 | Style: Terminal *(conditional)* | 1 |
 
 **Option metadata change options**:
+
 - Option A: Add a `section` field to each entry in `optionDetails`; `optionOrder` stays flat; `ControlHelpers.lua` tracks the current section name and emits a divider row when it changes
 - Option B: Replace `optionOrder` with an `optionSections` array of `{label, keys[]}` tables; iteration is explicit and ordered
 
 Option A is smaller scope; Option B is cleaner for long-term maintenance. Recommend B if time allows, otherwise A is sufficient.
 
 **Conditional visibility pattern**:
+
 ```lua
 -- In Options.lua, after all options are built:
 local styleGroupMap = {
