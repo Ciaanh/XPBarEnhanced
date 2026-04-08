@@ -9,6 +9,14 @@ local StyleBuilder = XPBarStyleBuilder
 local EventNames = Addon.EventNames
 local Utils = Addon.Utils
 
+local function ShouldSecondarySuppressMainContainer()
+    local manager = Addon.SecondaryBarManager
+    if manager and manager.ShouldSuppressMainContainer then
+        return manager:ShouldSuppressMainContainer()
+    end
+    return false
+end
+
 local StyleTemplateNameMap = {
     classic  = "ClassicBarTemplate",
     flat     = "FlatBarTemplate",
@@ -91,7 +99,11 @@ function BarManager:ApplyDefaultXPBarVisibility()
     else
         -- Otherwise, restore Blizzard XP bar visibility.
         if _G.MainStatusTrackingBarContainer then
-            _G.MainStatusTrackingBarContainer:Show()
+            if ShouldSecondarySuppressMainContainer() then
+                _G.MainStatusTrackingBarContainer:Hide()
+            else
+                _G.MainStatusTrackingBarContainer:Show()
+            end
         end
     end
 end
@@ -106,14 +118,14 @@ function BarManager:InstallBlizzardBarHooks()
     for _, container in ipairs(containers) do
         if container and container.Show then
             hooksecurefunc(container, "Show", function()
-                if self:IsCustomStyle(self.currentStyle) then
+                if self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer() then
                     container:Hide()
                 end
             end)
         end
         if container and container.SetShown then
             hooksecurefunc(container, "SetShown", function(_, shown)
-                if shown and self:IsCustomStyle(self.currentStyle) then
+                if shown and (self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer()) then
                     container:Hide()
                 end
             end)
@@ -250,7 +262,7 @@ function BarManager:Shutdown()
     self.barFrames = self.barFrames or {}
     for style, frame in pairs(self.barFrames) do
         if frame and frame.Hide then
-            xpcall(frame.Hide, SafeCallErrorHandler, frame)
+            xpcall(frame.Hide, Utils.ReportError, frame)
         end
     end
     self.currentFrame = nil

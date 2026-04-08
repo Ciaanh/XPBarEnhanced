@@ -1,10 +1,36 @@
 # Decision Log
 
+## 2026-04-09 — Contract enforcement and visibility ownership hardening
+
+Decision: Enforce session-owned XP broadcast emissions and remove direct XP context emissions from UI/services.
+Reason: Keep context ownership consistent with architecture rules and avoid redundant emit paths.
+Impact:
+
+- `Options.lua` now refreshes XP bars through `Session:EmitUpdate(...)`.
+- `QuestXP.lua` rebuild path now triggers `Session:EmitUpdate("QUEST_LOG_UPDATE")`.
+
+Decision: Consolidate error handling and main-container suppression coordination.
+Reason: Remove undefined handlers and avoid visibility policy drift between managers.
+Impact:
+
+- `BarManager:Shutdown()` now uses `Utils.ReportError` instead of undefined `SafeCallErrorHandler`.
+- `Session.lua` now uses `Utils.ReportError` for internal `xpcall` guards.
+- `SecondaryBarManager:ShouldSuppressMainContainer()` is now exposed; `BarManager` respects this before showing Blizzard main container.
+
+Decision: Align type/doc contracts with implemented behavior.
+Reason: Static-analysis signals and stale docs were diverging from runtime architecture.
+Impact:
+
+- `EventBus.lua` docs now state mandatory `context` for `Emit` and use module-scoped type aliases.
+- `Colors.lua` LuaCAT annotations renamed to module-scoped symbols to reduce duplicate type diagnostics.
+- `docs/features/reputation-bar.md` now reflects `ReputationSession:GetCurrentContext()` bootstrap flow.
+
 ## 2026-04-08 — Architecture hardening pass (router boundaries, context ownership, emission normalization)
 
 Decision: Keep `core/EventRouter.lua` as an external-event dispatcher only.
 Reason: Router should own WoW event registration/dispatch, not domain event emission or UI manager orchestration.
 Impact:
+
 - Router no longer emits XP EventBus updates directly in `PLAYER_ENTERING_WORLD`/max-level paths.
 - Router no longer performs XP enable/disable style orchestration directly.
 - Lifecycle handlers now own entering-world UI visibility reconciliation and XP-gain enable/disable/max-level style transitions.
@@ -12,6 +38,7 @@ Impact:
 Decision: Move reputation render-context construction fully into `ReputationSession`.
 Reason: Previous flow introduced a circular dependency (`ReputationSession -> ContextBuilder -> ReputationSession`).
 Impact:
+
 - `ReputationSession:_BuildContext()` now builds reputation context internally.
 - `XPBarContextBuilder.BuildReputationContext()` removed from `core/services/ContextBuilder.lua`.
 - Secondary bar initial context path stays session-owned (`GetCurrentContext()`).
@@ -19,18 +46,21 @@ Impact:
 Decision: Reduce duplicate XP broadcasts in quest-turn-in and config side-effect paths.
 Reason: Several flows emitted both generic config updates and domain XP updates, producing redundant refresh pressure.
 Impact:
+
 - `Session:OnQuestTurnedIn()` now calls `OnXPUpdate(true)` (no immediate emit) and emits one coalesced `EmitUpdate("QUEST_LOG_UPDATE")`.
 - `Config:ApplyOptionSideEffects()` no longer emits extra XP broadcasts for visual toggles; XP bars refresh via `CONFIG_UPDATED` subscription.
 
 Decision: Add lightweight text ticker context for primary XP bars.
 Reason: Text ticker previously rebuilt full XP context every 2.5s (`BuildContext("MANUAL_REFRESH")`) although only text/time/rate fields are needed.
 Impact:
+
 - Added `XPBarContextBuilder.BuildTextRefreshContext()`.
 - `BaseMixin` ticker now uses this lightweight path (`TEXT_TICK`) with backward-compatible fallback.
 
 Decision: Close `options-panel-sections` backlog item as already implemented.
 Reason: Audit confirmed grouped headers and style-conditional visibility are already shipping in `Options.lua`.
 Impact:
+
 - Removed from active backlog index.
 - Marked as closed (historical trace only) in backlog file.
 
@@ -47,6 +77,7 @@ Next: `options-panel-sections` backlog item (P2)
 Audited all architecture-analysis §3.1–3.6 pipeline inconsistencies against live code.
 
 All issues were already resolved by prior implementation:
+
 - §3.1 Context location: both XP (`Session.lua` → `XPBarContextBuilder.BuildContext()`) and Reputation (`ReputationSession._BuildContext()`) use emitter-builds. `MarkDirty(ctx)` flows the emitted context directly to `Render(ctx)`
 - §3.2 XP emits nil: FALSE — `Session.lua` line 200-202 emits `XPBarContextBuilder.BuildContext()` (a full context)
 - §3.4 Context rebuilt on every render: FALSE — `MarkDirty` coalescing stores `_pendingContext`; context built once at emit time and cached in `_lastContext`
@@ -56,6 +87,7 @@ All issues were already resolved by prior implementation:
 Remaining intentional asymmetry: XP uses global `XPBarContextBuilder.BuildContext()` (multi-source combiner); Reputation uses internal `ReputationSession._BuildContext()` (session-owned). Both are correct; documented in guidelines.
 
 Updated:
+
 - `docs/analysis/architecture-analysis.md` — §3.1/3.2/3.4/3.6 marked RESOLVED
 - `docs/guidelines/code-architecture-choices.md` — CompanionSession removed; EventBus contract and asymmetry documented
 
@@ -88,6 +120,7 @@ Next: MQ-2 (options panel architecture proposal)
 Completed audit of all 6 analysis docs (`docs/analysis/`). All annotated with MQ-4 status headers.
 
 Key findings:
+
 - `EventRouter.lua` already centralizes all WoW event frames (architecture-analysis §3.3 was pre-EventRouter and is now resolved)
 - `SecondaryBarBaseMixin` resolves §3.5/3.6 and Phase 3 of the roadmap
 - Session persistence and time-refresh ticker were already implemented before this audit
@@ -104,6 +137,7 @@ Next: MQ-3 (UI structure and naming cleanup)
 Architectural audit and enforcement pass. Root cause: managers (BarManager, Config, Options) were building XP/Reputation contexts and emitting directly onto EventBus, violating the documented contract that session layer owns context construction.
 
 Changes made:
+
 - **`Session:EmitUpdate(reason)`** added (`core/services/Session.lua`) — single canonical point for all `XPBAR_BROADCAST_UPDATE` emissions; all callers use this instead of constructing context themselves
 - **`ReputationSession:EmitUpdate()` + `GetCurrentContext()`** added (`core/services/ReputationSession.lua`) — symmetric helpers for reputation domain
 - **`defaults.delveCompanions`** dict added (`core/config/defaults.lua`) mapping faction ID → name for locale-safe companion detection
@@ -119,15 +153,16 @@ Changes made:
 Decision: Companion detection should use faction ID lookup instead of name matching.
 Reason: IDs are locale-independent and stable; names are localized and fragile.
 Implementation:
+
 - `defaults.delveCompanions` is now a dict mapping factionID → display name (not a list).
 - `ReputationSession.IsKnownDelveCompanion(factionID, name)` checks the dict by ID first, with name fallback for legacy compat.
 - Companion faction list can be extended by admins by adding `[id] = "Name"` entries to `delveCompanions`.
 - `/xpbe reps` command exports all faction IDs for easy reference.
 
-
 ## 2026-04-08 (session 6 continued)
 
 Validation: NR-5 Delve companion decoration confirmed in-game.
+
 - Unified secondary bar shows companion flavor (level display, companion text format) when tracking a Delve companion faction inside a Delve.
 - Standard reputation flavor shown when tracking any non-companion faction.
 - Bar correctly hides when outside Delve with `hideCompanionOutsideDelve` enabled and companion faction tracked.
@@ -138,6 +173,7 @@ Validation: NR-5 Delve companion decoration confirmed in-game.
 Decision: Suppress `MainStatusTrackingBarContainer` in addition to `SecondaryStatusTrackingBarContainer` when the addon's secondary bar is active.
 Reason: At max level Blizzard's `StatusTrackingManagerMixin:UpdateBarsShown()` promotes the watched reputation bar into the main container (not the secondary container). Our existing hooks only covered the secondary container, so both bars appeared simultaneously on max-level characters.
 Impact:
+
 - `ShouldSuppressMainContainer()` local helper added to `SecondaryBarManager`; returns true when `Manager._currentStyle` is a custom style and `BarManager.currentStyle` is idle (`"none"`).
 - `ApplyDefaultReputationBarVisibility` now also hides `MainStatusTrackingBarContainer` when the helper returns true.
 - `InstallBlizzardBarHooks` now hooks `MainStatusTrackingBarContainer:Show` and `SetShown` with the same guard.

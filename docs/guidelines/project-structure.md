@@ -15,7 +15,7 @@
 ### ui/ File Catalog
 
 | File | Role |
-|------|------|
+| ---- | ---- |
 | `ui/BarManager.lua` | Manager: primary bar lifecycle, style switching, MarkDirty dispatch |
 | `ui/SecondaryBarManager.lua` | Manager: secondary bar lifecycle, show/hide, subscribe/unsubscribe |
 | `ui/MinimapButton.lua` | Minimap button: icon anchor, drag, right-click menu |

@@ -205,7 +205,6 @@ local ROUTER_DISPATCH = {
         DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")
     end,
     QUEST_TURNED_IN = function(questID)
-        DispatchQuestEvent("QUEST_TURNED_IN")
         DispatchSessionQuestTurnedIn(questID)
     end,
     UPDATE_EXHAUSTION = function()

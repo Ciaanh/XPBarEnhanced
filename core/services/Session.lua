@@ -29,6 +29,7 @@ local Addon = XPBarEnhanced
 Addon.Session = Addon.Session or {}
 
 local Session = Addon.Session
+local Utils = Addon.Utils
 local timePlayedTicker
 
 -------------------------------------------------------------------
@@ -225,13 +226,13 @@ function Session:OnLevelUp(level)
 
     -- Notify dependent systems (consolidated from defunct AddOnLifecycle handlers)
     if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-        xpcall(Addon.QuestXP.InvalidateQuestCache, CallErrorHandler or print, Addon.QuestXP)
+        xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
     end
     if Addon.BarManager and Addon.BarManager.OnLevelUp then
-        xpcall(Addon.BarManager.OnLevelUp, CallErrorHandler or print, Addon.BarManager, level)
+        xpcall(Addon.BarManager.OnLevelUp, Utils.ReportError, Addon.BarManager, level)
     end
     if Addon.Stats and Addon.Stats.OnLevelUp then
-        xpcall(Addon.Stats.OnLevelUp, CallErrorHandler or print, Addon.Stats, level)
+        xpcall(Addon.Stats.OnLevelUp, Utils.ReportError, Addon.Stats, level)
     end
 
     -- Broadcast update to all bars
@@ -260,7 +261,7 @@ function Session:OnTimePlayed(totalTime, levelTime)
     -- Notify Stats module (consolidated from defunct AddOnLifecycle handler)
     local stats = Addon.Stats
     if stats and stats.OnTimePlayed then
-        xpcall(stats.OnTimePlayed, CallErrorHandler or print, stats, totalTime, levelTime)
+        xpcall(stats.OnTimePlayed, Utils.ReportError, stats, totalTime, levelTime)
     end
 end
 
@@ -302,9 +303,9 @@ function Session:OnQuestTurnedIn(questID)
 
         -- Invalidate/rebuild the centralized QuestXP cache to ensure totals reflect the new quest state.
         if Addon.QuestXP and Addon.QuestXP.Rebuild then
-            xpcall(Addon.QuestXP.Rebuild, CallErrorHandler or print, Addon.QuestXP, 0.1)
+            xpcall(Addon.QuestXP.Rebuild, Utils.ReportError, Addon.QuestXP, 0.1)
         elseif Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-            xpcall(Addon.QuestXP.InvalidateQuestCache, CallErrorHandler or print, Addon.QuestXP)
+            xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
         end
 
         -- Emit one coalesced update from the session owner after quest state changes.

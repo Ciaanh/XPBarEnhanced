@@ -37,6 +37,10 @@ local function ShouldSuppressMainContainer()
     return IsCustomStyle(Manager._currentStyle) and barManagerIdle
 end
 
+function Manager:ShouldSuppressMainContainer()
+    return ShouldSuppressMainContainer()
+end
+
 -------------------------------------------------------------------
 -- INTERNAL
 -------------------------------------------------------------------

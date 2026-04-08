@@ -318,9 +318,11 @@ function Config:Reset()
     end
     -- Emit config change so UI updates
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-        local ctx = XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE")
+        local ctx = XPBarContextBuilder.BuildContext("CONFIG_UPDATED")
         Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, ctx)
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE, ctx)
+    end
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
 end
 

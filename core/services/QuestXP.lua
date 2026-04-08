@@ -110,8 +110,8 @@ local function scheduleRebuild(delay)
     C_Timer.After(delay, function()
         buildQuestCache()
         Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_REBUILT, { event = Addon.EventNames.QUESTS_CACHE_REBUILT })
-        if XPBarContextBuilder then
-            Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE, XPBarContextBuilder.BuildContext("QUEST_LOG_UPDATE"))
+        if Addon.Session and Addon.Session.EmitUpdate then
+            Addon.Session:EmitUpdate("QUEST_LOG_UPDATE")
         end
     end)
 end
