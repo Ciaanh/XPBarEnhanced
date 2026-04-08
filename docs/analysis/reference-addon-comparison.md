@@ -3,6 +3,8 @@
 > Side-by-side comparison of XPBarEnhanced (Ciaanh, v1.0.6) and the reference addon
 > (v1.3.2) found in `refs/XPBarEnhanced/`.
 
+> **MQ-4 Audit (2026-04-08)**: Feature matrix below is partially out of date. Since this analysis was written, NR-3 implemented reputation/companion tracking (implemented as a unified secondary bar). The Feature Matrix rows marked **No** for reputation/companion/faction UI are now **Yes**. Remaining genuine gaps: font customization (global + per-bar) and bar size customization — both are low-priority; no backlog items filed.
+
 ## Identity
 
 | Attribute | XPBarEnhanced (ours) | Reference Addon |

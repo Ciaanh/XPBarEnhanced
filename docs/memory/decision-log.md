@@ -1,5 +1,62 @@
 # Decision Log
 
+## 2026-04-08 — MQ-1: Context/session workflow consistency — complete (no code changes)
+
+Audited all architecture-analysis §3.1–3.6 pipeline inconsistencies against live code.
+
+All issues were already resolved by prior implementation:
+- §3.1 Context location: both XP (`Session.lua` → `XPBarContextBuilder.BuildContext()`) and Reputation (`ReputationSession._BuildContext()`) use emitter-builds. `MarkDirty(ctx)` flows the emitted context directly to `Render(ctx)`
+- §3.2 XP emits nil: FALSE — `Session.lua` line 200-202 emits `XPBarContextBuilder.BuildContext()` (a full context)
+- §3.4 Context rebuilt on every render: FALSE — `MarkDirty` coalescing stores `_pendingContext`; context built once at emit time and cached in `_lastContext`
+- §3.6 No shared bar contract: FALSE — both `BaseMixin` and `SecondaryBarBaseMixin` implement identical `MarkDirty` → RunNextFrame → `Render(context)` lifecycle
+- CompanionSession/CompanionCalculations: already deleted; auto-resolved
+
+Remaining intentional asymmetry: XP uses global `XPBarContextBuilder.BuildContext()` (multi-source combiner); Reputation uses internal `ReputationSession._BuildContext()` (session-owned). Both are correct; documented in guidelines.
+
+Updated:
+- `docs/analysis/architecture-analysis.md` — §3.1/3.2/3.4/3.6 marked RESOLVED
+- `docs/guidelines/code-architecture-choices.md` — CompanionSession removed; EventBus contract and asymmetry documented
+
+**MEDIUM-TERM EXIT GATE REACHED: all MQ-1 through MQ-4 complete.**
+
+## 2026-04-08 — MQ-2: Options panel architecture proposal complete
+
+- Audited all 36 options in `OptionMetadata.lua`; grouped into 9 logical sections (Core, Secondary Bar, Minimap, XP Overlays, XP Text, Animations, Style: Circular, Style: Minimap Ring, Style: Terminal)
+- Chosen direction: **grouped scroll** (single page, section headers) — NOT tabbed panels
+  - Panel is `Settings.RegisterCanvasLayoutCategory` (full custom XML canvas); tabs would require custom tab widget
+  - 36 options / 9 sections is well-suited to a single scrollable page
+  - Style-specific sections (Circular, Minimap Ring, Terminal) will be hidden when the matching style is not selected
+- Decision documented in `docs/features/options-and-config.md`
+- Backlog item filed: `docs/backlog/options-panel-sections.md` (P2)
+
+Next: MQ-1 (context/session workflow consistency)
+
+## 2026-04-08 — MQ-3: UI structure and naming cleanup complete
+
+- `ui/secondary/` folder deleted (was empty; secondary style files correctly live in `ui/styles/flat/`)
+- Confirmed: secondary styles colocate with their primary style partner under `ui/styles/<style>/` — no separate `ui/secondary/<style>/` structure needed
+- `SecondaryBarBaseMixin` placement in `ui/mixins/` confirmed intentional (shared infrastructure, not style-specific)
+- All `ui/` files catalogued in `docs/guidelines/project-structure.md` with role descriptions
+- No file moves or TOC changes were required
+
+Next: MQ-2 (options panel architecture proposal)
+
+## 2026-04-08 — MQ-4: Analysis-to-backlog normalization complete
+
+Completed audit of all 6 analysis docs (`docs/analysis/`). All annotated with MQ-4 status headers.
+
+Key findings:
+- `EventRouter.lua` already centralizes all WoW event frames (architecture-analysis §3.3 was pre-EventRouter and is now resolved)
+- `SecondaryBarBaseMixin` resolves §3.5/3.6 and Phase 3 of the roadmap
+- Session persistence and time-refresh ticker were already implemented before this audit
+- `delve-companion-feature.md` and `reputation-bar-feature.md` are superseded by NR-3
+- `reference-addon-comparison.md` feature matrix updated (reputation/companion now Yes)
+- 3 trivial XP improvements filed as `docs/backlog/xp-tracking-quick-wins.md` (isTask filter, expansion events, XP/hr threshold)
+- Open items: architecture §3.1 (context location inconsistency) and §3.4 (context rebuild on every render) → MQ-1
+- 12.0 compliance checklist not yet in `docs/guidelines/` → MQ-1 or doc pass
+
+Next: MQ-3 (UI structure and naming cleanup)
+
 ## 2026-04-08 (session 6 continued)
 
 Validation: NR-5 Delve companion decoration confirmed in-game.

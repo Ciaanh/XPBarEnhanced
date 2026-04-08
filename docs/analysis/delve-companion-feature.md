@@ -3,6 +3,8 @@
 > Analysis of the delve companion XP tracking feature from a reference addon, intended as a
 > specification basis for implementing similar functionality in XPBarEnhanced.
 
+> **MQ-4 Audit (2026-04-08)**: **SUPERSEDED by NR-3 (2026-04-07)**. Companion tracking is implemented as part of the unified tracked-reputation secondary bar. The companion is detected as a watched faction whose `factionID` matches a known friendship/companion faction; the secondary bar renders companion-specific flavor (level display, session gains) when inside a Delve. See `docs/features/secondary-bar-manager.md` and `docs/features/companion-bar.md`. This analysis document is retained as reference for API details only.
+
 ## Overview
 
 Delve companions (Brann Bronzebeard, Valeera Sanguinar) are tracked in the WoW API as

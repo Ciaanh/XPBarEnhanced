@@ -4,6 +4,11 @@
 > a reference addon. Each item includes the rationale, affected files, and step-by-step
 > implementation details.
 
+> **MQ-4 Audit (2026-04-08)**:
+> - Item 1 (session persistence / `resetOnReload`) — **IMPLEMENTED**: `Session.lua` has `sessionAccumTime` accumulator and `resetOnReload` config key
+> - Item 2 (time refresh timer) — **IMPLEMENTED**: `BaseMixin.lua` runs a 2.5 s `C_Timer.NewTicker` for time-text refresh
+> - Items 3, 4, 5 (expansion events, isTask filter, XP/hr threshold) — **NOT IMPLEMENTED**: filed as `docs/backlog/xp-tracking-quick-wins.md`
+
 ---
 
 ## 1. Session Persistence Across `/reload`

@@ -3,6 +3,8 @@
 > Analysis of the reputation tracking bar feature from a reference addon, intended as a
 > specification basis for implementing similar functionality in XPBarEnhanced.
 
+> **MQ-4 Audit (2026-04-08)**: **SUPERSEDED by NR-3 (2026-04-07)**. The reputation bar is implemented as the unified tracked-reputation secondary bar supporting standard, friendship, major-faction/renown, and paragon reputation types. See `docs/features/reputation-bar.md` and `docs/features/secondary-bar-manager.md`. This analysis document is retained as reference for WoW API details and data-model normalization patterns.
+
 ## Overview
 
 A reputation bar is a secondary progress bar (independent of the XP bar) that tracks the

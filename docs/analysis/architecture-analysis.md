@@ -2,6 +2,18 @@
 
 > Produced April 2026 from full codebase read of `feature/reputation-companion-analysis` branch.
 
+> **MQ-4 Audit (2026-04-08)**: Sections annotated below with resolution status.
+> - §3.1 Context location inconsistency — **RESOLVED (MQ-1 2026-04-08)**: Both XP (`Session.lua` → `XPBarContextBuilder.BuildContext()`) and Reputation (`ReputationSession._BuildContext()`) use emitter-builds. Consumer always receives a full context via `MarkDirty(ctx)`. Remaining stylistic asymmetry (global ContextBuilder for XP vs internal method for Reputation) is intentional and documented in `docs/guidelines/code-architecture-choices.md`
+> - §3.2 XP signal-only vs secondary emitter-builds — **RESOLVED (MQ-1 2026-04-08)**: `Session.lua` emits `XPBarContextBuilder.BuildContext()` (not nil). Both XP and Reputation use emitter-builds pattern
+> - §3.3 Five independent event frames — **RESOLVED**: `core/EventRouter.lua` is the single central frame; Session/ReputationSession have no `CreateFrame` of their own
+> - §3.4 Context rebuilt on every render — **RESOLVED (MQ-1 2026-04-08)**: `MarkDirty` coalescing in both `BaseMixin` and `SecondaryBarBaseMixin` prevents redundant renders; context is built once at emit time and cached in `_pendingContext`/`_lastContext` for reuse
+> - §3.5 SecondaryBarManager lifecycle duplication — PARTIALLY RESOLVED: `SecondaryBarBaseMixin` handles subscribe/unsubscribe; manager show/hide paths still use `SetShown` directly
+> - §3.6 No shared bar frame contract — **RESOLVED (MQ-1 2026-04-08)**: Both `BaseMixin` and `SecondaryBarBaseMixin` implement identical `MarkDirty` → RunNextFrame → `Render(context)` lifecycle
+> - §5 Phase 2 (event router) — **RESOLVED**: EventRouter implemented
+> - §5 Phase 3 (secondary bar base mixin) — **RESOLVED**: `SecondaryBarBaseMixin` implemented in Phase 6/NR-3
+> - §5 Phase 4 (config caching) — **RESOLVED**: context is built once at emit time and not rebuilt per-render
+> - `CompanionSession` and `CompanionCalculations` — **DELETED** (NR-3 unification removed both files)
+
 ---
 
 ## 1. Global Initialization Sequence

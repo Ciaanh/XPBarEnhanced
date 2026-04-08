@@ -10,7 +10,8 @@
 - SecondaryBarManager controls Blizzard reputation visibility.
 
 2. Per-domain sessions
-- Session, ReputationSession, CompanionSession remain domain-specific.
+- Session and ReputationSession are domain-specific.
+- CompanionSession was merged into ReputationSession in NR-3 (2026-04-07). Companion tracking is a specialization of reputation tracking, not a separate domain.
 
 3. Event-driven updates
 - Domain changes emit internal events.
@@ -19,6 +20,8 @@
 4. Context-first render model
 - Emitters own context creation.
 - EventBus dispatches and does not infer domain-specific context.
+- **EventBus contract**: every `Emit()` call MUST pass a fully-built context. `nil` is never a valid context payload (EventBus.Emit errors if context is nil).
+- Stylistic asymmetry: XP uses the global `XPBarContextBuilder.BuildContext()` before emitting; Reputation uses `ReputationSession:_BuildContext()` (internal method). Both result in a full immutable context being emitted — the asymmetry is intentional and acceptable. XP context aggregates from many external sources (ContextBuilder is the multi-source combiner); Reputation context is purely session-owned.
 
 5. Deferred rendering where needed
 - Use MarkDirty-style coalescing for burst event domains.

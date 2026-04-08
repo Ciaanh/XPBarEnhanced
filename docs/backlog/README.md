@@ -17,6 +17,8 @@ Completed and closed items have been archived to `docs/history/phases.md`. Decis
 | ---- | ---- | ------ | -------- | ------------ |
 | [secondary-bar-styles.md](secondary-bar-styles.md) | Give users visual style options for secondary bars beyond "flat" | Investigation only — not approved for coding | P3 | Architecture review, UX review, delivery plan |
 | [companion-multi-companion.md](companion-multi-companion.md) | Support tracking any delve companion, not just Brann | Deferred — future work | P3 | C_DelvesUI API review |
+| [xp-tracking-quick-wins.md](xp-tracking-quick-wins.md) | Three trivial XP improvements (isTask filter, expansion events, XP/hr threshold) | Ready to implement | P2 | None |
+| [options-panel-sections.md](options-panel-sections.md) | Group the 36-option flat list into labelled sections; hide inactive style sections | Ready to implement | P2 | None |
 
 ## Potential New Work (Not Yet Filed)
 

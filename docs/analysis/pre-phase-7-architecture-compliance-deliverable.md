@@ -4,6 +4,18 @@ Last updated: 2026-04-06
 Scope: Combined architecture-consistency analysis + Blizzard UI compliance hardening checklist
 Status: Planning artifact (no direct runtime changes)
 
+> **MQ-4 Audit (2026-04-08)**:
+> - §2.1 gap 1 (session ownership model) — PARTIALLY RESOLVED: XP uses SavedVariables-backed Session; secondary uses ReputationSession with `_session` local. Intentional split per architecture guidelines; remaining contract asymmetry tracked in MQ-1.
+> - §2.1 gap 2 (secondary rebuilds context on ticker) — **RESOLVED**: `SecondaryBarBaseMixin` caches `_lastContext`; ticker uses cached context via `GetTextTickerContext()`.
+> - §3.1 Critical: drag persistence semantics — **RESOLVED**: `OnDragStop`/`SavePosition` rewritten in NR-4 and session 6 fixes. `SetUserPlaced` only called after a real drag.
+> - §3.1 Critical: combat-safe movement — **RESOLVED**: `InCombatLockdown()` guards in `OnDragStart`.
+> - §3.2 High: tooltip safety guards — **RESOLVED**: nil-check guards on `GameTooltip` and `_lastContext` in `FlatSecondaryBarStyle`.
+> - §3.2 High: animation lifecycle hygiene — **RESOLVED** in NR-4: fade animation reuses single `_fadeAnim`; stopped on `OnHide`.
+> - §3.2 High: movement/lock semantic parity — **RESOLVED** in session 6: attached/free drag semantics unified; max-level override implemented.
+> - §3.3 Medium: ticker context sourcing — **RESOLVED**: `GetTextTickerContext()` returns `_lastContext` when available.
+> - §3.3 Medium: 12.0 compliance checkpoints — OPEN: documentation in `docs/guidelines/code-architecture-choices.md` not yet updated with explicit checklist. Candidate for MQ-1 or documentation pass.
+> - File path references in this doc point to old `ui/secondary/` paths (removed in NR-3); current paths are `ui/styles/flat/FlatSecondaryBarStyle.lua` and `ui/mixins/SecondaryBarBaseMixin.lua`.
+
 ## 1) Executive Summary
 
 This deliverable stages both required Session 2 outputs in one package:
