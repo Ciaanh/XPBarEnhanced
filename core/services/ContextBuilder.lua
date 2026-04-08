@@ -17,8 +17,7 @@
 ---Build fresh static configuration from database
 ---@return table staticConfig Fresh configuration with current settings
 local function BuildDBConfig()
-	local AddonGlobal = _G["XPBarEnhanced"]
-	local db = AddonGlobal and AddonGlobal.db
+	local db = Addon and Addon.db
 
 	if not db then
 		return {}
@@ -70,7 +69,7 @@ end
 XPBarContextBuilder = {}
 
 local ContextBuilder = XPBarContextBuilder
-XPBarEnhanced.ContextBuilder = ContextBuilder
+Addon.ContextBuilder = ContextBuilder
 
 -------------------------------------------------------------------
 -- INTERNAL HELPERS
@@ -195,13 +194,12 @@ end
 
 -- Update session tracking with a gain and return session snapshot
 function ContextBuilder.UpdateSessionWithGain(xpGained)
-	local AddonGlobal = _G["XPBarEnhanced"]
 	local sessionStart = time()
 	local sessionXP = 0
 	local realLevelTime = 0
 
-	if AddonGlobal and AddonGlobal.Session then
-		local session = AddonGlobal.Session:GetCurrent()
+	if Addon and Addon.Session then
+		local session = Addon.Session:GetCurrent()
 		if session then
 			if session.sessionStart then
 				sessionStart = session.sessionStart
@@ -230,7 +228,6 @@ end
 function ContextBuilder.BuildCoreContext(coreState)
 	local completeQuestXP, incompleteQuestXP = ContextBuilder.GetQuestXP()
 
-	local AddonGlobal = _G["XPBarEnhanced"]
 	local sessionStart = time()
 	local sessionXP = 0
 	local levelSeconds = 0
@@ -238,8 +235,8 @@ function ContextBuilder.BuildCoreContext(coreState)
 	local otherXP = 0
 	local recentXPPerHour = 0
 
-	if AddonGlobal and AddonGlobal.Session then
-		local session = AddonGlobal.Session:GetCurrent()
+	if Addon and Addon.Session then
+		local session = Addon.Session:GetCurrent()
 		if session then
 			if session.sessionStart then
 				sessionStart = session.sessionStart
@@ -257,8 +254,8 @@ function ContextBuilder.BuildCoreContext(coreState)
 			questXPGained = session.questXP or 0
 			otherXP       = session.otherXP  or 0
 		end
-		if AddonGlobal.Session.GetRecentXPPerHour then
-			recentXPPerHour = AddonGlobal.Session:GetRecentXPPerHour()
+		if Addon.Session.GetRecentXPPerHour then
+			recentXPPerHour = Addon.Session:GetRecentXPPerHour()
 		end
 	end
 
@@ -427,7 +424,6 @@ end
 --- Returns a simple table (not immutable) for direct use by secondary bar styles.
 ---@return table context Reputation context, isAvailable=false if no watched faction
 function XPBarContextBuilder.BuildReputationContext()
-	local Addon = _G["XPBarEnhanced"]
 	if not (Addon and Addon.ReputationSession) then
 		return { isAvailable = false }
 	end

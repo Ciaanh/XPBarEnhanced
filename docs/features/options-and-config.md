@@ -79,6 +79,7 @@ Access via `/xpbe options` or minimap button right-click.
 | `/xpbe options` | Open settings |
 | `/xpbe stats` | Toggle statistics window |
 | `/xpbe style <name>` | Set bar style |
+| `/xpbe reps` | Export all faction IDs |
 | `/xpbe reset` | Reset all settings |
 | `/xpbe resetstats` | Reset session statistics |
 | `/xpbe resetcolors` | Reset colors to defaults |

@@ -5,7 +5,7 @@ description: "Complete reference for Patch 12.0.0 (Midnight) API breaking change
 
 # Patch 12.0.0 (Midnight) — Critical API Changes
 
-> **TOC version: `120000`**
+> **TOC version: `120001`**
 > These changes are ACTIVE in pre-patch (12.0.0) and Midnight launch (12.0.1).
 > Prior API knowledge from 11.x and earlier **does not apply** for the systems listed below.
 

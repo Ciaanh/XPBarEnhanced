@@ -42,6 +42,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | `/xpbe options` | Open the options panel |
 | `/xpbe stats` | Toggle the statistics window |
 | `/xpbe style <none\|classic\|flat\|vertical\|circular\|minimap_ring\|terminal>` | Set the active bar style |
+| `/xpbe reps` | Export all faction IDs |
 | `/xpbe reset` | Reset all settings |
 | `/xpbe resetstats` | Reset session statistics |
 | `/xpbe resetcolors` | Reset colors to defaults |

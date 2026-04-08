@@ -34,19 +34,11 @@
 local Addon = XPBarEnhanced
 Addon.EventBus = Addon.EventBus or {}
 local EventBus = Addon.EventBus
+local Utils = Addon.Utils
 
 EventBus.listeners = EventBus.listeners or {}
 EventBus._executingEvents = EventBus._executingEvents or {}
 EventBus._deferredRegistrations = EventBus._deferredRegistrations or {}
-
--- Route errors through Blizzard's error handler when available, fall back to print
-local function SafeCallErrorHandler(err)
-    if CallErrorHandler then
-        CallErrorHandler(err)
-    else
-        print(tostring(err))
-    end
-end
 
 ---Register a handler for an event
 ---@param eventName string The event name to listen for
@@ -131,7 +123,7 @@ function EventBus:Emit(eventName, context)
     self._executingEvents[eventName] = (self._executingEvents[eventName] or 0) + 1
 
     for id, handler in pairs(listenersForEvent) do
-        xpcall(handler, SafeCallErrorHandler, context)
+        xpcall(handler, Utils.ReportError, context)
     end
 
     self._executingEvents[eventName] = self._executingEvents[eventName] - 1

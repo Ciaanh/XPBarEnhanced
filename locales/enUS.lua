@@ -119,8 +119,6 @@ L["OPT_TIME_TO_LEVEL_DESC"] =
     "Display estimated time remaining to reach next level (based on current XP/hour rate) as text beneath the XP bar."
 L["OPT_ABBREVIATE_NUMBERS"] = "Abbreviate numbers"
 L["OPT_ABBREVIATE_NUMBERS_DESC"] = "Use abbreviated number format (K, M, B) instead of full numbers in all displays."
-L["OPT_HIDE_DEFAULT"] = "Hide default XP bar"
-L["OPT_HIDE_DEFAULT_DESC"] = "Hide Blizzard's default experience bar when the addon loads."
 
 -- Subsection headers
 -- (see "Text Display Section Headers" below for the canonical definitions)
@@ -134,10 +132,7 @@ L["OPT_BAR_STYLE_FLAT"] = "Flat (Custom draggable)"
 L["OPT_BAR_STYLE_VERTICAL"] = "Vertical (Falling XP)"
 L["OPT_BAR_STYLE_CIRCULAR"] = "Circular (Progress ring)"
 L["OPT_BAR_STYLE_MINIMAP_RING"] = "Minimap Ring"
-L["OPT_BAR_STYLE_TEST"] = "Test (CommonProgressBar)"
 L["OPT_BAR_STYLE_TERMINAL"] = "Terminal (ASCII progress bar)"
-L["OPT_HIDE_BLIZZARD_BAR"] = "Hide Blizzard bar in Flat mode"
-L["OPT_HIDE_BLIZZARD_BAR_DESC"] = "When using Flat bar style, also hide the Blizzard XP bar. Uncheck to see both bars."
 L["OPT_BAR_LOCKED"] = "Lock bar position"
 L["OPT_BAR_LOCKED_DESC"] = "Prevent the Flat bar from being moved with Shift+Drag. Applies only to Flat bar style."
 L["OPT_SHOW_MINIMAP_BUTTON"] = "Show minimap button"
@@ -164,7 +159,6 @@ L["OPT_HEADER_TEXT_DISPLAY"] = "Text Display"
 L["OPT_HEADER_ANIMATION"] = "Animation"
 L["OPT_HEADER_COLORS"] = "Colors"
 L["OPT_HEADER_CIRCULAR"] = "Circular Bar"
-L["OPT_HEADER_FLAT_BAR"] = "Flat Bar"
 L["OPT_HEADER_SECONDARY_BARS"] = "Secondary Bars"
 
 -- Secondary bar options

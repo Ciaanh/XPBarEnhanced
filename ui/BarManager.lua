@@ -7,14 +7,7 @@ local BarManager = Addon.BarManager
 
 local StyleBuilder = XPBarStyleBuilder
 local EventNames = Addon.EventNames
-
-local function SafeCallErrorHandler(err)
-    if CallErrorHandler then
-        CallErrorHandler(err)
-    else
-        print(tostring(err))
-    end
-end
+local Utils = Addon.Utils
 
 local StyleTemplateNameMap = {
     classic  = "ClassicBarTemplate",
@@ -220,7 +213,7 @@ end
 -- Update animation settings for views (emit broadcast for views to reconfigure)
 function BarManager:UpdateAnimationSettings()
     if Addon.AnimationManager and Addon.AnimationManager.UpdateSettings then
-        xpcall(Addon.AnimationManager.UpdateSettings, SafeCallErrorHandler, Addon.AnimationManager)
+        xpcall(Addon.AnimationManager.UpdateSettings, Utils.ReportError, Addon.AnimationManager)
         return true
     end
     return false
@@ -230,7 +223,7 @@ end
 function BarManager:OnEnteringWorld()
     -- Invalidate Quest cache and notify listeners
     if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-        xpcall(Addon.QuestXP.InvalidateQuestCache, SafeCallErrorHandler, Addon.QuestXP)
+        xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
         return true
     end
     return false

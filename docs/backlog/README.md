@@ -17,7 +17,6 @@ Completed and closed items have been archived to `docs/history/phases.md`. Decis
 | ---- | ---- | ------ | -------- | ------------ |
 | [secondary-bar-styles.md](secondary-bar-styles.md) | Give users visual style options for secondary bars beyond "flat" | Investigation only — not approved for coding | P3 | Architecture review, UX review, delivery plan |
 | [companion-multi-companion.md](companion-multi-companion.md) | Support tracking any delve companion, not just Brann | Deferred — future work | P3 | C_DelvesUI API review |
-| [xp-tracking-quick-wins.md](xp-tracking-quick-wins.md) | Three trivial XP improvements (isTask filter, expansion events, XP/hr threshold) | ~~Ready to implement~~ **Implemented** | P2 | None |
 | [options-panel-sections.md](options-panel-sections.md) | Group the 36-option flat list into labelled sections; hide inactive style sections | Ready to implement | P2 | None |
 | [secondary-bar-per-style-position.md](secondary-bar-per-style-position.md) | Per-style independent saved position for the secondary bar | Deferred — not approved for coding | P2 | None |
 
@@ -35,6 +34,7 @@ See `docs/history/phases.md` for implementation records of:
 - Shared bar contract (Phase 5)
 - Event router consolidation (Phase 5, 3 stages)
 - Session persistence across /reload (Phase 5)
+- XP tracking quick wins (Phase 7 follow-up)
 - Secondary bar fade, drag, tooltip, live text (Phase 6)
 - Compliance hardening, context contract, max-level behavior (Phase 7, Slices 1-3)
 

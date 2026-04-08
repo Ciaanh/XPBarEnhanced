@@ -70,12 +70,7 @@ function eventHandlers:OnPlayerLogin()
 end
 
 function eventHandlers:OnPlayerLogout()
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-        Addon.EventBus:Emit(
-            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
-            XPBarContextBuilder.BuildContext("XPBAR:BROADCAST_UPDATE")
-        )
-    elseif Addon.BarManager and Addon.BarManager.Shutdown then
+    if Addon.BarManager and Addon.BarManager.Shutdown then
         Addon.BarManager:Shutdown()
     end
 end

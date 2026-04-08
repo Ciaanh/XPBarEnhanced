@@ -39,11 +39,11 @@ Colors.Key = {
 ---@param colorKey string The color key to look up
 ---@return Color color The color table with r,g,b,a fields
 function Colors:Get(colorKey)
-    local db = Addon.db or {}
-    local colors = db.colors or (Addon.defaults and Addon.defaults.colors)
-
-    if colors and colors[colorKey] then
-        return colors[colorKey]
+    if Addon.Config and Addon.Config.GetColor then
+        local color = Addon.Config:GetColor(colorKey)
+        if color then
+            return color
+        end
     end
 
     -- Fallback to white if color not found
@@ -54,28 +54,42 @@ end
 ---@param colorKey string The color key to set
 ---@param color Color|table The color to set (can be {r,g,b,a} or array)
 function Colors:Set(colorKey, color)
-    if not Addon.db then
-        return
-    end
-
-    if not Addon.db.colors then
-        Addon.db.colors = {}
-    end
-
-    Addon.db.colors[colorKey] = {
+    local normalized = {
         r = color.r or color[1] or 1,
         g = color.g or color[2] or 1,
         b = color.b or color[3] or 1,
         a = color.a or color[4] or 1
     }
+
+    if Addon.Config and Addon.Config.SetColor then
+        local hex = string.format(
+            "%02X%02X%02X%02X",
+            math.floor(normalized.r * 255 + 0.5),
+            math.floor(normalized.g * 255 + 0.5),
+            math.floor(normalized.b * 255 + 0.5),
+            math.floor(normalized.a * 255 + 0.5)
+        )
+        Addon.Config:SetColor(colorKey, hex, true)
+        return
+    end
+
+    if not Addon.db then
+        return
+    end
+
+    Addon.db.colors = Addon.db.colors or {}
+    Addon.db.colors[colorKey] = normalized
 end
 
 ---Get default color from the defaults table
 ---@param colorKey string The color key to look up
 ---@return Color color The default color table
 function Colors:GetDefault(colorKey)
-    if not Addon.defaults or not Addon.defaults.colors then
-        return {r = 1, g = 1, b = 1, a = 1}
+    if Addon.Config and Addon.Config.GetDefaultColor then
+        local color = Addon.Config:GetDefaultColor(colorKey)
+        if color then
+            return color
+        end
     end
 
     return Addon.defaults.colors[colorKey] or {r = 1, g = 1, b = 1, a = 1}
@@ -84,6 +98,11 @@ end
 ---Reset a color to its default value
 ---@param colorKey string The color key to reset
 function Colors:Reset(colorKey)
+    if Addon.Config and Addon.Config.ResetColor then
+        Addon.Config:ResetColor(colorKey, true)
+        return
+    end
+
     local defaultColor = self:GetDefault(colorKey)
     self:Set(colorKey, defaultColor)
 end

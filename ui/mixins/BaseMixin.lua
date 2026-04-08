@@ -15,15 +15,7 @@ local Addon = XPBarEnhanced
 Addon.UI.Mixins.Base = XPBarMixinBase
 
 local EventNames = Addon.EventNames
-
--- Route errors through Blizzard's handler when available
-local function SafeCallErrorHandler(err)
-	if CallErrorHandler then
-		CallErrorHandler(err)
-	else
-		print(tostring(err))
-	end
-end
+local Utils = Addon.Utils
 
 -------------------------------------------------------------------
 -- PUBLIC API SURFACE
@@ -176,9 +168,9 @@ function BaseMixin:MarkDirty(context)
 			self_ref._pendingContext = nil
 			if self_ref and self_ref:IsShown() then
 				if ctx then
-					xpcall(self_ref.TriggerBarRefresh, SafeCallErrorHandler, self_ref, ctx)
+					xpcall(self_ref.TriggerBarRefresh, Utils.ReportError, self_ref, ctx)
 				else
-					xpcall(self_ref.Refresh, SafeCallErrorHandler, self_ref)
+					xpcall(self_ref.Refresh, Utils.ReportError, self_ref)
 				end
 			end
 		end)

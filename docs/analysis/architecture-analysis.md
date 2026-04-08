@@ -9,6 +9,7 @@
 > - §3.4 Context rebuilt on every render — **RESOLVED (MQ-1 2026-04-08)**: `MarkDirty` coalescing in both `BaseMixin` and `SecondaryBarBaseMixin` prevents redundant renders; context is built once at emit time and cached in `_pendingContext`/`_lastContext` for reuse
 > - §3.5 SecondaryBarManager lifecycle duplication — PARTIALLY RESOLVED: `SecondaryBarBaseMixin` handles subscribe/unsubscribe; manager show/hide paths still use `SetShown` directly
 > - §3.6 No shared bar frame contract — **RESOLVED (MQ-1 2026-04-08)**: Both `BaseMixin` and `SecondaryBarBaseMixin` implement identical `MarkDirty` → RunNextFrame → `Render(context)` lifecycle
+> - §5 Phase 1 (context contract normalization) — **RESOLVED (MQ-5 2026-04-08)**: Listeners use emitted context via `MarkDirty(context)`; `EventBus` auto-build path removed; `MarkDirty` coalescing in both `BaseMixin` and `SecondaryBarBaseMixin`
 > - §5 Phase 2 (event router) — **RESOLVED**: EventRouter implemented
 > - §5 Phase 3 (secondary bar base mixin) — **RESOLVED**: `SecondaryBarBaseMixin` implemented in Phase 6/NR-3
 > - §5 Phase 4 (config caching) — **RESOLVED**: context is built once at emit time and not rebuilt per-render
@@ -92,7 +93,7 @@ MAJOR_FACTION_RENOWN    ──→  RepSession:OnRenownLevelChanged()
                               EventBus:Emit(REPUTATION_BROADCAST_UPDATE, self:_BuildContext())
                               ↑ emits WITH a pre-built internal context                          │
                                                                                                   ↓
-                              FlatReputationBarMixin (EventBus listener)
+                              XPBarFlatReputationMixin (EventBus listener)
                               handler: IGNORES the emitted context and calls
                                        XPBarContextBuilder.BuildReputationContext()
                               ──→  Render(flatContext)
@@ -112,7 +113,7 @@ DELVES_ACCOUNT_DATA     ──→  CompSession:OnFactionUpdate()   [DELETED]
                               EventBus:Emit(COMPANION_BROADCAST_UPDATE, self:_BuildContext())
                               ↑ emits WITH pre-built internal context                            │
                                                                                                   ↓
-                              FlatCompanionBarMixin (EventBus listener)
+                              legacy companion secondary mixin (EventBus listener)
                               handler: IGNORES the emitted context and calls
                                        XPBarContextBuilder.BuildCompanionContext()
                               ──→  Render(flatContext)
@@ -142,17 +143,18 @@ Neither approach is bad on its own, but having both patterns in the same EventBu
 
 ### 3.3 Session services own WoW event frames; AddOnLifecycle also owns one
 
-There are **5 independent `CreateFrame("Frame")` + RegisterEvent** sites:
+> **RESOLVED** — See header audit note. `core/EventRouter.lua` is the single central event frame; domain services have no `CreateFrame` of their own. Historical state below for reference.
+
+Before `EventRouter.lua` was introduced, there were **4 independent `CreateFrame("Frame")` + RegisterEvent** sites (`CompanionSession.lua` was later deleted in NR-3):
 
 | Owner | Events Registered |
 |---|---|
 | `AddOnLifecycle.lua` | ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD, PLAYER_LEVEL_UP, ENABLE/DISABLE_XP_GAIN, PLAYER_LOGOUT, PLAYER_MAX_LEVEL_UPDATE |
 | `Session.lua` | PLAYER_XP_UPDATE, TIME_PLAYED_MSG, QUEST_TURNED_IN, QUEST_LOG_UPDATE, UPDATE_EXHAUSTION, PLAYER_UPDATE_RESTING |
 | `ReputationSession.lua` | UPDATE_FACTION, CHAT_MSG_COMBAT_FACTION_CHANGE, MAJOR_FACTION_RENOWN_LEVEL_CHANGED |
-| `CompanionSession.lua` | UPDATE_FACTION, DELVES_ACCOUNT_DATA_ELEMENT_CHANGED |
 | `QuestXP.lua` | QUEST_LOG_UPDATE, QUEST_DATA_LOAD_RESULT, PLAYER_ENTERING_WORLD, PLAYER_LEVEL_UP, ZONE_CHANGED_NEW_AREA, UNIT_QUEST_LOG_CHANGED, QUEST_TURNED_IN |
 
-**Overlap:** `UPDATE_FACTION` is registered by both ReputationSession and CompanionSession. `QUEST_LOG_UPDATE` is registered by both Session and QuestXP. `PLAYER_ENTERING_WORLD` and `PLAYER_LEVEL_UP` and `QUEST_TURNED_IN` are registered by both AddOnLifecycle/Session and QuestXP.
+**Overlap (historical):** `QUEST_LOG_UPDATE` was registered by both Session and QuestXP. `PLAYER_ENTERING_WORLD` and `PLAYER_LEVEL_UP` and `QUEST_TURNED_IN` were registered by both AddOnLifecycle/Session and QuestXP.
 
 This is not a bug — each handler does different work — but it makes the event flow hard to trace and risks redundant broadcasts (e.g. QuestXP fires XPBAR_BROADCAST_UPDATE from its scheduled rebuild, while Session:OnQuestTurnedIn also fires XPBAR_BROADCAST_UPDATE).
 
@@ -178,6 +180,8 @@ Both contracts are correct, but adding features like fade animations or tooltip 
 
 ## 4. Proposed Streamlined Architecture
 
+> **Note (NR-3 2026-04-08)**: Companion tracking has been unified into `ReputationSession` — there is no longer a separate `CompanionManager` or `BuildCompanionContext()`. The proposed diagram below retains the companion domain for conceptual clarity; in the actual implementation companion data flows through the reputation pipeline with a delve-context gate in `ReputationSession`.
+
 ### Goal: Unified "bar pipeline" with domain-specific data sources
 
 ```
@@ -190,30 +194,29 @@ Both contracts are correct, but adding features like fade animations or tooltip 
 │                                                                     │
 │  PLAYER_XP_UPDATE        → SessionManager.OnXPUpdate()              │
 │  UPDATE_FACTION           → ReputationManager.OnFactionUpdate()     │
-│                           → CompanionManager.OnFactionUpdate()      │
 │  QUEST_TURNED_IN          → SessionManager.OnQuestTurnedIn()        │
 │                           → QuestXPCache.OnQuestTurnedIn()          │
 │  etc.                                                               │
 └─────────────────────────────────────────────────────────────────────┘
-                    │                │                    │
-                    ↓                ↓                    ↓
-┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐
-│ XP Session   │ │ Rep Session  │ │ Companion Session    │
-│ (data only)  │ │ (data only)  │ │ (data only)          │
-│ No frames    │ │ No frames    │ │ No frames            │
-│ No events    │ │ No events    │ │ No events            │
-│ Pure state   │ │ Pure state   │ │ Pure state           │
-└──────┬───────┘ └──────┬───────┘ └──────────┬───────────┘
-       │                │                     │
+                    │                │
+                    ↓                ↓
+┌──────────────┐ ┌──────────────────────────────┐
+│ XP Session   │ │ Reputation Session            │
+│ (data only)  │ │ (data only — incl. companion) │
+│ No frames    │ │ No frames                     │
+│ No events    │ │ No events                     │
+│ Pure state   │ │ Pure state                    │
+└──────┬───────┘ └──────────────┬────────────────┘
+       │                        │
        │  Each session's Update method returns a "did change" flag
-       │                │                     │
-       ↓                ↓                     ↓
+       │                        │
+       ↓                        ↓
 ┌─────────────────────────────────────────────────────────────────────┐
 │  LAYER 2: Domain Context Builders (pure functions, no side effects) │
 │  ─────────────────────────────────────────────────────────────────── │
 │  BuildXPContext()         — reads XP Session + game APIs            │
 │  BuildReputationContext() — reads Rep Session + game APIs           │
-│  BuildCompanionContext()  — reads Comp Session + game APIs          │
+│                           (companion-aware via delve gate)          │
 │                                                                     │
 │  Each returns a frozen, flat table. Config flags are merged in.     │
 │  Called ONLY when the domain's session signals a change.            │
@@ -225,7 +228,6 @@ Both contracts are correct, but adding features like fade animations or tooltip 
 │  ─────────────────────────────────────────────────────────────────── │
 │  Emit("XP:UPDATE", xpContext)                                       │
 │  Emit("REP:UPDATE", repContext)                                     │
-│  Emit("COMPANION:UPDATE", compContext)                              │
 │  Emit("CONFIG:UPDATED")  — no context, bars re-read db             │
 │                                                                     │
 │  Every emit carries the pre-built context. No lazy build inside     │
@@ -236,7 +238,7 @@ Both contracts are correct, but adding features like fade animations or tooltip 
 ┌─────────────────────────────────────────────────────────────────────┐
 │  LAYER 4: Bar Frames (unified contract via shared base mixin)       │
 │  ─────────────────────────────────────────────────────────────────── │
-│  ALL bars (XP, Rep, Companion, future) implement:                   │
+│  ALL bars (XP, Rep, secondary, future) implement:                   │
 │    OnLoad()    — wire visuals                                       │
 │    OnShow()    — EventBus:RegisterWithHandle(DOMAIN_EVENT)          │
 │    OnHide()    — handle.Unregister()                                │
@@ -256,7 +258,7 @@ Both contracts are correct, but adding features like fade animations or tooltip 
 
 ### Phase 1 — Normalize event contracts (LOW risk, HIGH clarity)
 
-1. **Make secondary bar listeners USE the emitted context** instead of discarding it and rebuilding. Change `_BuildContext()` in RepSession/CompSession to return the same flat format as `BuildReputationContext()` / `BuildCompanionContext()`, or have the session Emit call the public `Build*Context()` and pass that.
+1. **Make secondary bar listeners USE the emitted context** instead of discarding it and rebuilding. Have `ReputationSession._BuildContext()` return the same flat format consumed by `XPBarFlatReputationMixin`, or have the session Emit call `BuildReputationContext()` and pass that. _(Companion tracking is now unified into `ReputationSession`; no separate CompanionSession or `BuildCompanionContext()` is needed.)_
 
 2. **Eliminate the nil-context path in EventBus:Emit**. Have Session call `BuildContext()` before emitting and pass the result. Remove the auto-build fallback from EventBus — it should be a pure dispatch mechanism.
 
@@ -264,7 +266,7 @@ Both contracts are correct, but adding features like fade animations or tooltip 
 
 ### Phase 2 — Consolidate event frame registration (MEDIUM risk, MEDIUM clarity)
 
-4. **Create a single central event router frame** in AddOnLifecycle (or a new `EventRouter.lua`). Register ALL external WoW events there and dispatch to domain handlers. Remove individual `CreateFrame` + `RegisterEvent` from Session, ReputationSession, CompanionSession, QuestXP.
+4. **Create a single central event router frame** in AddOnLifecycle (or a new `EventRouter.lua`). Register ALL external WoW events there and dispatch to domain handlers. Remove individual `CreateFrame` + `RegisterEvent` from Session, ReputationSession, and QuestXP. _(CompanionSession was deleted in NR-3.)_
 
    _Benefit:_ One place to see every external event the addon cares about. Easier to add/remove events. No accidental double-registration.
 
@@ -272,7 +274,7 @@ Both contracts are correct, but adding features like fade animations or tooltip 
 
 ### Phase 3 — Unify bar mixin contract (MEDIUM risk, HIGH future value)
 
-5. **Extract a `SecondaryBarBaseMixin`** from the common parts of FlatReputationBarMixin and FlatCompanionBarMixin. This mixin provides: EventBus subscribe/unsubscribe, `MarkDirty`, `SetAlpha` fade transitions, and the `Render(context)` contract.
+5. **Extract a `SecondaryBarBaseMixin`** from the common parts of XPBarFlatReputationMixin and the former companion secondary mixin. This mixin provides: EventBus subscribe/unsubscribe, `MarkDirty`, `SetAlpha` fade transitions, and the `Render(context)` contract.
 
 6. **Add fade animation as a shared utility** (not part of the AnimationBase system which is XP-specific). A simple `FadeController` table with `FadeIn(frame, duration)` / `FadeOut(frame, duration)` using `UIFrameFadeIn`/`UIFrameFadeOut` or raw `SetAlpha` + OnUpdate.
 

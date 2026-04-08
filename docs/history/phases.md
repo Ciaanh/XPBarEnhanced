@@ -65,6 +65,12 @@ Scope: Preserve historical max-level contract.
 2. Secondary reputation/companion bars remain style-driven and independently visible
 3. Explored configurable modes (always_show, show_reputation, etc.) but reverted to unconditional hide per historical contract
 
+## Phase 7 Follow-up — XP Tracking Quick Wins (2026-04-08)
+
+1. Excluded `isTask` quests from quest XP overlays so world quests and bonus objectives no longer inflate pending XP
+2. Added `UPDATE_EXPANSION_LEVEL` and `MAX_EXPANSION_LEVEL_UPDATED` to the event router so max-level visibility re-evaluates immediately
+3. Lowered XP/hour warm-up thresholds from 30 seconds to 10 seconds for faster initial rate display
+
 ## Pre-Phase-7 Analysis Artifacts
 
 - Architecture consistency analysis: `docs/analysis/pre-phase-7-architecture-compliance-deliverable.md`

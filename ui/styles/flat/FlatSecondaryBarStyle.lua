@@ -3,8 +3,8 @@
 
 local Addon = XPBarEnhanced
 
----@class FlatReputationBarMixin
-FlatReputationBarMixin = {}
+---@class XPBarFlatReputationMixin
+XPBarFlatReputationMixin = {}
 local StyleMixin = {}
 
 local FACTION_COLORS = {
@@ -258,4 +258,4 @@ function StyleMixin:OnSecondaryLoad()
     self:ConfigureDragSupport()
 end
 
-FlatReputationBarMixin = CreateFromMixins(XPBarSecondaryBaseMixin, StyleMixin)
+XPBarFlatReputationMixin = CreateFromMixins(XPBarSecondaryBaseMixin, StyleMixin)

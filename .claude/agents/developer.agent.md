@@ -51,7 +51,7 @@ Your API knowledge is organized into domain-specific skills. **Always consult `w
 
 ### TOC File Structure
 ```
-## Interface: 120000
+## Interface: 120001
 ## Title: MyAddon
 ## Notes: Description of the addon
 ## Author: AuthorName

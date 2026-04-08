@@ -37,7 +37,7 @@ Current state is stable and functional, but there are inconsistencies in context
 2. Secondary styles rebuild context on refresh/ticker instead of using a single source.
 - Secondary bars consume emitted context when available via `MarkDirty(context)`.
 - On `Refresh()` and 1s text ticker callbacks, styles call `GetInitialContext()` which rebuilds context from `XPBarContextBuilder`.
-- References: `ui/mixins/SecondaryBarBaseMixin.lua`, `ui/secondary/FlatReputationBarStyle.lua`, `ui/secondary/FlatCompanionBarStyle.lua`.
+- References: `ui/mixins/SecondaryBarBaseMixin.lua`, `ui/styles/flat/FlatSecondaryBarStyle.lua`.
 
 3. Context lifecycle is not fully unified across bar types.
 - XP and secondary bars share event-driven rendering but still differ in context rehydration behavior and some interaction semantics.
@@ -69,19 +69,19 @@ Priority legend: Critical > High > Medium.
 1. Drag persistence semantics: stop using `SetUserPlaced(false)` on drag stop.
 - Risk: can conflict with expected user-placement behavior.
 - Target: set user placement consistently only after successful move-save flow.
-- References: `ui/secondary/FlatReputationBarStyle.lua`, `ui/secondary/FlatCompanionBarStyle.lua`.
+- References: `ui/styles/flat/FlatSecondaryBarStyle.lua`.
 
 2. Combat-safe movement toggles for draggable bars.
 - Risk: frame movement configuration updates during combat can taint protected flows.
 - Target: gate movement state changes with combat-safe checks and defer if needed.
-- References: `ui/secondary/FlatReputationBarStyle.lua`, `ui/secondary/FlatCompanionBarStyle.lua`, `ui/mixins/SecondaryBarBaseMixin.lua`.
+- References: `ui/styles/flat/FlatSecondaryBarStyle.lua`, `ui/mixins/SecondaryBarBaseMixin.lua`.
 
 ### 3.2 High
 
 1. Tooltip safety guards.
 - Risk: `GameTooltip` assumptions in edge/runtime states.
 - Target: add guard checks and safe early returns in hover handlers.
-- References: `ui/secondary/FlatReputationBarStyle.lua`, `ui/secondary/FlatCompanionBarStyle.lua`.
+- References: `ui/styles/flat/FlatSecondaryBarStyle.lua`.
 
 2. Animation lifecycle hygiene.
 - Risk: repeated fade animation object growth and stale animation state.
@@ -91,14 +91,14 @@ Priority legend: Critical > High > Medium.
 3. Movement/lock semantic parity.
 - Risk: divergence from primary bar interaction expectations.
 - Target: codify and validate one lock/drag policy across primary and secondary bars.
-- References: `ui/secondary/FlatReputationBarStyle.lua`, `ui/secondary/FlatCompanionBarStyle.lua`, `ui/SecondaryBarManager.lua`.
+- References: `ui/styles/flat/FlatSecondaryBarStyle.lua`, `ui/SecondaryBarManager.lua`.
 
 ### 3.3 Medium
 
 1. Ticker context sourcing optimization.
 - Risk: unnecessary repeated context rebuilding while shown.
 - Target: prefer `_lastContext` for ticker display updates when valid.
-- References: `ui/mixins/SecondaryBarBaseMixin.lua`, `ui/secondary/FlatReputationBarStyle.lua`, `ui/secondary/FlatCompanionBarStyle.lua`.
+- References: `ui/mixins/SecondaryBarBaseMixin.lua`, `ui/styles/flat/FlatSecondaryBarStyle.lua`.
 
 2. Document 12.0 compliance checkpoints in architecture guidance.
 - Risk: future regressions toward restricted APIs/patterns.

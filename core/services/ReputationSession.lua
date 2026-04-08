@@ -49,9 +49,7 @@ local function IsInDelve()
     if C_Garrison and C_Garrison.IsInDelve then
         return C_Garrison.IsInDelve() and true or false
     end
-
-    local _, instanceType = IsInInstance()
-    return instanceType == "scenario"
+    return false
 end
 
 -------------------------------------------------------------------

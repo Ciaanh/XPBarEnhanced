@@ -3,7 +3,7 @@
 World of Warcraft Addon project targeting Retail Patch 12.0.0+ (Midnight).
 
 ## Interface Version
-120000
+120001
 
 ## Language & Framework
 - Lua 5.1 (WoW variant — no os/io/debug libraries)

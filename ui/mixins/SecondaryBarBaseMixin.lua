@@ -2,20 +2,13 @@
 -- Shared lifecycle contract for secondary bars (reputation/companion).
 
 local Addon = XPBarEnhanced
+local Utils = Addon.Utils
 
 ---@class XPBarSecondaryBaseMixin
 XPBarSecondaryBaseMixin = {}
 Addon.UI.Mixins.SecondaryBase = XPBarSecondaryBaseMixin
 
 local SecondaryBaseMixin = XPBarSecondaryBaseMixin
-
-local function SafeCallErrorHandler(err)
-    if CallErrorHandler then
-        CallErrorHandler(err)
-    else
-        print(tostring(err))
-    end
-end
 
 local function GetFallbackAnchor(anchor)
     if not anchor then
@@ -93,7 +86,7 @@ function SecondaryBaseMixin:StartTextTicker()
             context = self_ref:GetTextTickerContext()
         end
 
-        xpcall(self_ref.OnTextTick, SafeCallErrorHandler, self_ref, context)
+        xpcall(self_ref.OnTextTick, Utils.ReportError, self_ref, context)
     end)
 end
 
@@ -132,7 +125,7 @@ function SecondaryBaseMixin:Refresh()
 
     local context = self:GetLatestContext()
     if context then
-        xpcall(self.Render, SafeCallErrorHandler, self, context)
+        xpcall(self.Render, Utils.ReportError, self, context)
     end
 end
 
@@ -176,9 +169,9 @@ function SecondaryBaseMixin:MarkDirty(context)
         end
 
         if pending then
-            xpcall(self_ref.Render, SafeCallErrorHandler, self_ref, pending)
+            xpcall(self_ref.Render, Utils.ReportError, self_ref, pending)
         else
-            xpcall(self_ref.Refresh, SafeCallErrorHandler, self_ref)
+            xpcall(self_ref.Refresh, Utils.ReportError, self_ref)
         end
     end)
 end

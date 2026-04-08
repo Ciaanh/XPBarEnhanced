@@ -4,6 +4,7 @@
 local Addon = XPBarEnhanced
 Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 local Manager = Addon.SecondaryBarManager
+local Utils = Addon.Utils
 
 local TEMPLATE_MAP = {
     flat = "FlatReputationBarTemplate",
@@ -39,14 +40,6 @@ end
 -------------------------------------------------------------------
 -- INTERNAL
 -------------------------------------------------------------------
-
-local function SafeCallErrorHandler(err)
-    if CallErrorHandler then
-        CallErrorHandler(err)
-    else
-        print(tostring(err))
-    end
-end
 
 function Manager:_GetOrCreateFrame(style)
     self._frames = self._frames or {}
@@ -211,7 +204,7 @@ function Manager:InstallBlizzardBarHooks()
 end
 
 function Manager:SetSecondaryStyle(style)
-    xpcall(self._SetStyle, SafeCallErrorHandler, self, style)
+    xpcall(self._SetStyle, Utils.ReportError, self, style)
     self:ApplyDefaultReputationBarVisibility()
 end
 

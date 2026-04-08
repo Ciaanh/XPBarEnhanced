@@ -88,7 +88,7 @@ Implementation:
 - `defaults.delveCompanions` is now a dict mapping factionID → display name (not a list).
 - `ReputationSession.IsKnownDelveCompanion(factionID, name)` checks the dict by ID first, with name fallback for legacy compat.
 - Companion faction list can be extended by admins by adding `[id] = "Name"` entries to `delveCompanions`.
-- `/xpbe reputations` command exports all faction IDs for easy reference.
+- `/xpbe reps` command exports all faction IDs for easy reference.
 
 
 ## 2026-04-08 (session 6 continued)
@@ -247,7 +247,7 @@ Impact: `XPBarSecondaryBaseMixin` now owns `OnLoad`/`OnShow`/`OnHide`/`Refresh`/
 
 Decision: Keep shared-contract Phase 1 scoped to secondary bars first.
 Reason: minimize blast radius and preserve stable primary XP behavior while validating the contract pattern.
-Impact: `FlatReputationBarMixin` and `FlatCompanionBarMixin` now compose from the shared base; XP primary mixin remains unchanged for this step.
+Impact: `XPBarFlatReputationMixin` and the former companion secondary mixin now compose from the shared base; XP primary mixin remains unchanged for this step.
 
 Decision: Add optional secondary text ticker support to shared lifecycle mixin.
 Reason: enable follow-on live text/tooltip polish without re-adding per-style ticker wiring.
@@ -269,7 +269,7 @@ Decision: Introduce `core/EventRouter.lua` for staged secondary-domain event own
 Reason: continue modularization by reducing distributed hidden event frames while keeping migration incremental.
 Impact: router now owns `UPDATE_FACTION`, `CHAT_MSG_COMBAT_FACTION_CHANGE`, `MAJOR_FACTION_RENOWN_LEVEL_CHANGED`, and `DELVES_ACCOUNT_DATA_ELEMENT_CHANGED` dispatch for reputation/companion services.
 
-Decision: Remove event frame creation from `ReputationSession` and `CompanionSession`.
+Decision: Remove event frame creation from `ReputationSession` (and the former `CompanionSession`, deleted in NR-3).
 Reason: event ownership moved to router; duplicate registration would cause redundant updates.
 Impact: these services are now state/handler modules for external events rather than event-frame owners.
 
