@@ -1,6 +1,12 @@
 -- XP Bar Enhanced - Context Builder
 -- Standalone utility module for building immutable context objects
 
+local Addon = XPBarEnhanced
+if not Addon then
+	XPBarEnhanced = {}
+	Addon = XPBarEnhanced
+end
+
 ---@class CoreState
 ---@field currentXP number Current player XP
 ---@field xpMax number Maximum XP for current level
