@@ -152,12 +152,11 @@ All items NR-3 through NR-6 complete, with no unresolved release-blocking defect
 
 | Item | Goal | Notes |
 |------|------|-------|
-| [xp-tracking-quick-wins](docs/backlog/xp-tracking-quick-wins.md) | isTask filter, expansion events, XP/hr threshold | 3 trivial one-line changes across 3 files |
+| ~~[xp-tracking-quick-wins](docs/backlog/xp-tracking-quick-wins.md)~~ ✅ | isTask filter, expansion events, XP/hr threshold | **Implemented** — all 3 fixes applied |
 | [options-panel-sections](docs/backlog/options-panel-sections.md) | Group 36-option flat list into labelled sections | Requires new SectionDivider template + metadata restructure |
 
 **Recommended order**:
-1. `xp-tracking-quick-wins` first — trivial, low-risk, delivers real correctness improvements
-2. `options-panel-sections` second — moderate scope, no runtime risk
+1. `options-panel-sections` — next ready-to-implement item
 
 **Deferred backlog (P3)**:
 - `secondary-bar-styles` — investigation only, not approved for coding

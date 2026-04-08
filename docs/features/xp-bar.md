@@ -40,7 +40,8 @@ The primary addon feature — an enhanced experience bar that replaces and exten
 - `ui/BarManager.lua` — Style activation, frame lifecycle, Blizzard bar visibility
 - `ui/mixins/BaseMixin.lua` — Shared bar lifecycle (OnLoad → OnShow → Render)
 
-## Known Limitations
+## Notes
 
-- External WoW event ownership still has some distribution across service frames
-- Level-up dependents use targeted cross-service calls (router-dispatch candidates)
+- **Quest XP overlay filtering**: `isTask` quests (world quests, bonus objectives) are excluded from the overlay — they cannot be turned in normally and would inflate the pending-XP display
+- **XP/hr rate warm-up**: Rate is held at zero for the first 10 seconds of a new session; the display shows `--` until enough data is available
+- **Expansion level handling**: `UPDATE_EXPANSION_LEVEL` and `MAX_EXPANSION_LEVEL_UPDATED` route through `EventRouter` alongside `PLAYER_MAX_LEVEL_UPDATE`; all three call `DispatchPlayerMaxLevelUpdate()` to keep the max-level cap current

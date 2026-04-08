@@ -62,7 +62,7 @@ local function buildQuestCache()
 
     for i = 1, numEntries do
         local info = getQuestInfo(i)
-        if info and not info.isHeader and not info.isHidden and info.questID then
+        if info and not info.isHeader and not info.isHidden and not info.isTask and info.questID then
             local questID = info.questID
             local key = tostring(questID)
 

@@ -240,6 +240,12 @@ local ROUTER_DISPATCH = {
     PLAYER_MAX_LEVEL_UPDATE = function()
         DispatchPlayerMaxLevelUpdate()
     end,
+    UPDATE_EXPANSION_LEVEL = function()
+        DispatchPlayerMaxLevelUpdate()
+    end,
+    MAX_EXPANSION_LEVEL_UPDATED = function()
+        DispatchPlayerMaxLevelUpdate()
+    end,
 }
 
 function EventRouter:Initialize()

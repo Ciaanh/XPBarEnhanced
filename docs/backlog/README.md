@@ -17,15 +17,14 @@ Completed and closed items have been archived to `docs/history/phases.md`. Decis
 | ---- | ---- | ------ | -------- | ------------ |
 | [secondary-bar-styles.md](secondary-bar-styles.md) | Give users visual style options for secondary bars beyond "flat" | Investigation only — not approved for coding | P3 | Architecture review, UX review, delivery plan |
 | [companion-multi-companion.md](companion-multi-companion.md) | Support tracking any delve companion, not just Brann | Deferred — future work | P3 | C_DelvesUI API review |
-| [xp-tracking-quick-wins.md](xp-tracking-quick-wins.md) | Three trivial XP improvements (isTask filter, expansion events, XP/hr threshold) | Ready to implement | P2 | None |
+| [xp-tracking-quick-wins.md](xp-tracking-quick-wins.md) | Three trivial XP improvements (isTask filter, expansion events, XP/hr threshold) | ~~Ready to implement~~ **Implemented** | P2 | None |
 | [options-panel-sections.md](options-panel-sections.md) | Group the 36-option flat list into labelled sections; hide inactive style sections | Ready to implement | P2 | None |
+| [secondary-bar-per-style-position.md](secondary-bar-per-style-position.md) | Per-style independent saved position for the secondary bar | Deferred — not approved for coding | P2 | None |
 
 ## Potential New Work (Not Yet Filed)
 
 Ideas that have surfaced but don't have backlog files yet. File them when they're ready for investigation.
 
-- **Options panel restructure** — Tabbed or grouped layout for growing settings (noted in `docs/notes.md` Track 2)
-- **UI folder naming cleanup** — Migration-safe folder/file rename pass (noted in `docs/notes.md` Track 3)
 - **Dead code cleanup** — Remove unused max-level context builders and vestigial config keys from Slice 3 exploration
 - **Debug log removal** — Remove or gate investigation logs before release build
 

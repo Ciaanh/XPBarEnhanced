@@ -1,6 +1,6 @@
 # Backlog: XP Tracking Quick Wins
 
-Status: Ready for implementation
+Status: ~~Ready for implementation~~ **IMPLEMENTED (2026-04-08)**
 Priority: P2
 Effort: Trivial (3 one-to-two line changes)
 Risk: Low

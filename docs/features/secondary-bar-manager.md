@@ -40,15 +40,4 @@ The shared infrastructure that manages reputation and companion secondary bars �
 
 ## Backlog
 
-### Per-style Secondary Bar Position (deferred)
-
-Priority: P2 · Effort: Small · Status: Not approved for coding
-
-Currently all secondary bar styles share a single `secondaryBarPosition` saved variable. Each XP bar style should have its own independent saved position for the secondary bar, mirroring how `barPositions` works for the primary bar.
-
-**Proposed approach:**
-- Replace `db.secondaryBarPosition` (single key) with `db.secondaryBarPositions` (table keyed by style, e.g. `{ flat = {...}, classic = {...} }`)
-- `GetPositionConfigKey()` returns a per-style key or the mixin resolves into the sub-table
-- `GetFallbackPosition()` continues to derive from `Addon.defaults.barPositions[barStyle]` + y-offset
-- Reset clears the per-style entry rather than the entire shared key
-- Migration: on first load, copy existing `secondaryBarPosition` into the appropriate style slot
+- **Per-style Secondary Bar Position** (deferred, not approved for coding) — see `docs/backlog/secondary-bar-per-style-position.md`

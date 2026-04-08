@@ -16,10 +16,11 @@ A secondary progress bar that displays the player's watched faction reputation p
 
 ## Architecture
 
-- **Data pipeline**: `ReputationSession` → `ContextBuilder` (BuildReputationContext) → `EventBus` → bar style
-- **Session layer**: `ReputationSession` snapshots watched faction data and tracks session gains
+- **Primary data pipeline**: `ReputationSession._BuildContext()` → `EventBus.Emit(REPUTATION_BROADCAST_UPDATE, ctx)` → `SecondaryBarBaseMixin.MarkDirty(ctx)` → `FlatSecondaryBarStyle.Render(ctx)`
+- **Bootstrap fallback** (first-show only, no cached context): `ContextBuilder.BuildReputationContext()` called from `FlatSecondaryBarStyle.GetInitialContext()`
+- **Session layer**: `ReputationSession` owns all faction state, session gains, and context construction; `ContextBuilder.BuildReputationContext()` is not in the normal update path
 - **Visibility ownership**: `SecondaryBarManager` controls both custom and Blizzard reputation bar visibility
-- **Render model**: Bar renders from emitted context payloads; no listener-side rebuilding
+- **Render model**: Bar renders from emitted context payloads via `MarkDirty` coalescing; no listener-side context rebuilding during normal updates
 
 ## Key Components
 

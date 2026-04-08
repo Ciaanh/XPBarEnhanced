@@ -22,8 +22,8 @@ function TimeCalc.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, cur
     local now = time()
     local elapsed = now - (sessionStart or now)
 
-    -- Minimum elapsed time to avoid division issues (30 seconds)
-    if elapsed < 30 then
+    -- Minimum elapsed time to avoid division issues (10 seconds)
+    if elapsed < 10 then
         return 0
     end
 
@@ -256,7 +256,7 @@ function TimeCalc.RecentXPPerHour(recentGains, windowSeconds)
     end
 
     local elapsed = now - oldestInWindow
-    if elapsed < 30 or totalXP <= 0 then
+    if elapsed < 10 or totalXP <= 0 then
         return 0
     end
 

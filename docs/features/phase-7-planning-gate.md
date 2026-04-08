@@ -1,13 +1,17 @@
-# Feature: Phase 7 Planning Gate (No Implementation)
+# Feature: Phase 7 Planning Gate (Archived)
 
-Status: Active (post-Slice 3)
-Last updated: 2026-04-07
+Status: **Closed — all Phase 7 slices complete**
+Last updated: 2026-04-08
 
-## Purpose
+## Summary
 
-Define what must be completed before any Phase 7 implementation can begin.
+Phase 7 (compliance hardening) is fully complete across all three slices:
 
-Global status view: `docs/plan.md` (Global Phase and Slice View section)
+- Slice 1: Combat safety, drag position hardening, taint guards
+- Slice 2: Context contract enforcement, bootstrap emit ownership moved to session layers
+- Slice 3: Max-level behavior, secondary bar style derivation, free-drag correctness
+
+This gate file is retained for historical reference. No further work is tracked here.
 
 ## Closed / Not Planned Items
 
@@ -29,34 +33,6 @@ Approval prerequisites:
 1. Architecture compatibility review with shared lifecycle contracts.
 2. UX review for compact secondary-bar readability and style parity goals.
 3. Incremental delivery plan with effort/risk estimate.
-
-## Pre-Phase-7 Analysis Tracks
-
-1. Session/context workflow consistency between XP and secondary domains.
-2. Options panel structure review against Blizzard UI patterns.
-3. UI folder structure and naming clarity improvements.
-
-Current consolidated output:
-
-- `docs/analysis/pre-phase-7-architecture-compliance-deliverable.md` (architecture consistency + Blizzard compliance hardening checklist)
-
-Selected first implementation slice:
-
-- `docs/features/phase-7-slice-1-compliance-hardening.md` (approval-ready)
-
-## Entry Criteria For Any Phase 7 Coding
-
-All items below must be complete:
-
-1. Backlog and plan documents are aligned with current scope decisions.
-2. Analysis outputs are captured in docs with a recommended implementation sequence.
-3. Risks and validation matrix are updated for the approved slice.
-4. Explicit approval is recorded in this feature file and summarized in `docs/memory/decision-log.md`.
-
-## Exit Criteria For This Gate
-
-1. One implementation slice is approved with clear scope and acceptance criteria.
-2. Non-approved items remain excluded from active roadmap execution.
 
 ## Immediate Approval Checklist (Next Slice)
 

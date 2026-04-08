@@ -1,5 +1,13 @@
 # Decision Log
 
+## 2026-04-08 — xp-tracking-quick-wins implemented
+
+- `core/services/QuestXP.lua`: added `not info.isTask` guard — world quests and bonus objectives now excluded from XP overlay
+- `core/EventRouter.lua`: added `UPDATE_EXPANSION_LEVEL` and `MAX_EXPANSION_LEVEL_UPDATED` to `ROUTER_DISPATCH` → both route to `DispatchPlayerMaxLevelUpdate()`
+- `core/calculations/TimeCalculations.lua`: lowered both `elapsed < 30` thresholds to `elapsed < 10` — XP/hr rate now appears within 10 s of first XP gain
+
+Next: `options-panel-sections` backlog item (P2)
+
 ## 2026-04-08 — MQ-1: Context/session workflow consistency — complete (no code changes)
 
 Audited all architecture-analysis §3.1–3.6 pipeline inconsistencies against live code.
