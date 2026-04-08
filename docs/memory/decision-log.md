@@ -1,5 +1,38 @@
 # Decision Log
 
+## 2026-04-08 (session 6 continued)
+
+Validation: NR-5 Delve companion decoration confirmed in-game.
+- Unified secondary bar shows companion flavor (level display, companion text format) when tracking a Delve companion faction inside a Delve.
+- Standard reputation flavor shown when tracking any non-companion faction.
+- Bar correctly hides when outside Delve with `hideCompanionOutsideDelve` enabled and companion faction tracked.
+- Transitions between companion and non-companion watched factions are clean.
+
+## 2026-04-07 (session 6)
+
+Decision: Suppress `MainStatusTrackingBarContainer` in addition to `SecondaryStatusTrackingBarContainer` when the addon's secondary bar is active.
+Reason: At max level Blizzard's `StatusTrackingManagerMixin:UpdateBarsShown()` promotes the watched reputation bar into the main container (not the secondary container). Our existing hooks only covered the secondary container, so both bars appeared simultaneously on max-level characters.
+Impact:
+- `ShouldSuppressMainContainer()` local helper added to `SecondaryBarManager`; returns true when `Manager._currentStyle` is a custom style and `BarManager.currentStyle` is idle (`"none"`).
+- `ApplyDefaultReputationBarVisibility` now also hides `MainStatusTrackingBarContainer` when the helper returns true.
+- `InstallBlizzardBarHooks` now hooks `MainStatusTrackingBarContainer:Show` and `SetShown` with the same guard.
+
+Decision: `DeriveSecondaryStyle` uses `TEMPLATE_MAP` lookup instead of hardcoded `"flat"` return.
+Reason: The hardcoded return would silently show the flat secondary bar for styles that have no secondary template defined, and would not scale as new styles are added.
+Impact: Style derivation returns the primary style key when a matching secondary template exists, otherwise `"none"`. `TEMPLATE_MAP` moved above `DeriveSecondaryStyle` to avoid a forward-reference bug.
+
+Decision: Secondary bar at max level behaves as freely moveable (drag enabled, position saved) when `secondaryBarsAttached` is true but the primary frame is hidden.
+Reason: In attached mode the bar is supposed to follow the primary bar's position. At max level the primary bar is hidden and `GetCurrentFrame()` returns nil — there is no target to attach to. Locking drag in this state offered no benefit and made the bar immovable without a config toggle.
+Impact: `OnDragStart` and `OnDragStop` in `FlatSecondaryBarStyle` now check for a live primary frame before enforcing the attached-mode lock. `ReapplyAttachedPositions` in `SecondaryBarManager` uses the same nil-primary guard to fall back to `ApplyInitialPosition`.
+
+Decision: Remove `secondaryBarPosition` from `defaults.lua`; make `GetFallbackPosition()` the sole dynamic default.
+Reason: `ApplyInitialPosition` checks `defaults[configKey]` before calling `GetFallbackPosition()`. The static entry in defaults always won, so the per-style dynamic fallback (derived from `barPositions[barStyle]` + y-offset) was never reached. Removing the static entry lets the dynamic fallback run correctly.
+Impact: `defaults.secondaryBarPosition` removed. `Manager:ResetBarPositions` simplified (the static-fallback branch removed). On reset, the secondary bar now lands at a position derived from the active XP bar style's default anchor.
+
+Decision: Log per-style secondary bar position as a deferred backlog item.
+Reason: Currently all styles share one `secondaryBarPosition` saved variable. Each style should eventually have its own independent saved position (mirroring `barPositions` for the primary bar). Not approved for immediate coding — complexity is low but requires a migration path and is not blocking anything now.
+Impact: Documented in `docs/features/secondary-bar-manager.md` Backlog section with proposed approach.
+
 ## 2026-04-07 (session 4)
 
 Decision: Add a user option to hide the secondary bar when the watched faction is a Delve companion and the player is outside a Delve.

@@ -1,6 +1,6 @@
 # XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-07 (session 5)
+Last updated: 2026-04-08 (session 6)
 
 ## Addon Summary
 
@@ -17,7 +17,7 @@ The addon is feature-complete for its core scope:
 
 All Phase 5 (foundations), Phase 6 (secondary polish), and Phase 7 (hardening) work is complete and validated. See `docs/history/phases.md` for implementation records.
 
-Completed (sessions 4–5):
+Completed (sessions 4–6):
 
 - **NR-1**: Dead Slice 3 exploration code removed
 - **NR-2**: MaxLevel debug logs removed
@@ -28,40 +28,21 @@ Completed (sessions 4–5):
 - **Interaction**: click on secondary bar opens Character Reputation panel
 - **New option**: `hideCompanionOutsideDelve` hides companion bar when outside Delves
 - **NR-4 complete**: full regression pass — 3 bugs found and fixed (debug default shipped on, dead `__isDragging` flag, fade-in symmetry); `debugSecondaryBars` infrastructure removed entirely; all 7 primary styles, secondary bar, lifecycle paths, and Blizzard bar ownership validated in-game
+- Max-level fixes (session 6): resolved duplicate Blizzard reputation bar at max level; secondary bar style derivation now TEMPLATE_MAP-driven; free drag and correct reset position at max level when primary bar is hidden; `secondaryBarPosition` static default removed in favour of dynamic `GetFallbackPosition()`
+- **NR-5 complete**: Delve companion decoration validated in-game — companion flavor triggers correctly inside Delve, standard reputation flavor outside, transitions between companion/non-companion factions clean
+- **NR-6 complete**: README updated to reflect reputation/companion secondary bar, new config options, fixed `portrait_arc` ghost in slash command help
 
 Validation status:
 
 - Release package builds successfully (`make-release.ps1`)
-- NR-4 regression pass complete with no outstanding defects
-- Next gate: NR-5 companion decoration validation (requires in-Delve gameplay)
+- NR-4 through NR-6 complete; near-term exit gate reached
+- Next focus: Medium-Term code quality tracks (MQ-1 through MQ-4)
 
 ## Goals
 
-### Near-Term: NR-5 — Delve companion decoration validation
+### Near-Term: \~\~Complete\~\~ — all NR items done, advancing to Medium-Term
 
-### NR-5: Delve companion decoration validation
-
-Objective: validate companion-flavored behavior of the unified secondary bar under real Delve gameplay data.
-
-Execution steps:
-
-1. Set watched faction to a delve companion (Brann). Confirm bar displays companion flavor outside delve only when settings/unlock mode is open.
-2. Enter an active Delve session. Confirm bar transitions to visible with companion text format.
-3. Validate XP progression updates and text/tooltip correctness during Delve progress.
-4. Exit Delve and confirm bar hides (companion gate) or reverts to standard rep display.
-5. Switch watched faction to a non-companion. Confirm bar shows standard reputation behavior everywhere.
-
-Expected output:
-
-- Validation notes confirming companion decoration triggers correctly based on watched faction + delve context.
-
-Definition of done:
-
-- Unified bar shows companion flavor inside delve when tracking a companion faction.
-- Unified bar shows standard reputation flavor when tracking any other faction.
-- Transitions between companion/non-companion tracked factions are clean.
-
-### NR-6: Release-facing docs sync
+### ~~NR-6: Release-facing docs sync~~ ✅ Complete
 
 Objective: ensure public docs match current shipped behavior.
 
@@ -85,86 +66,135 @@ All items NR-3 through NR-6 complete, with no unresolved release-blocking defect
 
 ### Medium-Term: Code Quality
 
-**Goal**: Reduce technical debt and improve maintainability.
+**Goal**: Reduce technical debt and improve maintainability across four tracks. Tracks are ordered by dependency and risk — MQ-4 and MQ-3 first (bounded, low-risk), then MQ-2 (design proposal), then MQ-1 (heaviest, refactoring).
 
-### MQ-1: Track 1 implementation plan (workflow consistency)
-
-Objective: harmonize XP/reputation/companion context-session contracts.
-
-Execution steps:
-
-1. Map current XP vs secondary context production/consumption paths side-by-side.
-2. Identify remaining duplicated or asymmetric patterns.
-3. Define a staged migration sequence with low blast radius.
-4. Convert plan into backlog item(s) with clear acceptance criteria.
-
-Expected output:
-
-- Approved technical plan for Track 1 with implementation slices.
-
-Definition of done:
-
-- Track 1 has an actionable backlog item and sequencing rationale.
-
-### MQ-2: Track 2 options panel architecture proposal
-
-Objective: improve settings scalability and discoverability.
-
-Execution steps:
-
-1. Inventory current options and groupings by user intent.
-2. Propose at least two layout approaches (grouped sections vs tabbed/hybrid).
-3. Evaluate against Blizzard UX patterns and addon complexity.
-4. Select preferred direction and document migration constraints.
-
-Expected output:
-
-- Options panel restructuring proposal with chosen direction.
-
-Definition of done:
-
-- Preferred structure is documented and ready to be scoped into backlog work.
-
-### MQ-3: Track 3 UI structure and naming cleanup plan
-
-Objective: make `ui/` boundaries align with current architecture.
-
-Execution steps:
-
-1. Catalog current UI files by responsibility (manager/mixin/style/options/templates).
-2. Propose target folder taxonomy and naming conventions.
-3. Define migration safety rules for TOC ordering and load dependencies.
-4. Break migration into incremental, low-risk file move batches.
-
-Expected output:
-
-- Migration-safe refactor plan for UI structure/naming clarity.
-
-Definition of done:
-
-- Refactor plan is actionable with explicit safety checks and batch order.
+---
 
 ### MQ-4: Analysis-to-backlog normalization
 
-Objective: ensure research outputs become trackable work.
+**Objective**: ensure all actionable findings from prior investigation are tracked or explicitly closed.
 
-Execution steps:
+**Why first**: cheap, bounded, and surfaces issues that inform MQ-1 and MQ-3 scope.
 
-1. Audit `docs/analysis/*.md` for actionable but untracked recommendations.
-2. Create/update backlog items for qualified work.
-3. Mark non-actionable findings as reference-only in analysis docs.
+**Execution steps**:
 
-Expected output:
+1. Read each of the 6 analysis docs under `docs/analysis/`:
+   - `architecture-analysis.md`
+   - `delve-companion-feature.md`
+   - `pre-phase-7-architecture-compliance-deliverable.md`
+   - `reference-addon-comparison.md`
+   - `reputation-bar-feature.md`
+   - `xp-tracking-improvements-plan.md`
+2. For each doc extract every recommendation, warning, or "next step" that has no matching backlog item.
+3. For qualified items: create or update a backlog file under `docs/backlog/`.
+4. For resolved or obsolete items: annotate the analysis doc with "superseded by …" or "NR-3/NR-4 resolved".
+5. Update `docs/backlog/README.md` table to reflect current state.
 
-- Backlog fully reflects actionable analysis outputs.
+**Definition of done**: No high-value actionable recommendation in any analysis doc is untracked. Every backlog item has a clear goal, not just a task description.
 
-Definition of done:
+---
 
-- No high-value actionable recommendation remains untracked.
+### MQ-3: UI structure and naming cleanup
+
+**Objective**: make `ui/` folder boundaries reflect current architecture cleanly.
+
+**Why second**: concrete, surgical, and prepares a tidy surface before MQ-1 refactoring touches the same files.
+
+**Current issues identified**:
+- `ui/secondary/` folder is **empty** (cleaned up during NR-3 unification) — needs removal from TOC
+- `FlatSecondaryBarStyle.lua` and its XML template live under `ui/styles/flat/` — assess whether this is the right permanent home or if a `ui/styles/flat/secondary/` sub-folder would be clearer
+- `ui/templates/` contents unknown — needs cataloguing
+- `ui/stats/` role relative to mixins needs documenting
+- `SecondaryBarBaseMixin.lua` lives under `ui/mixins/` but is architecture-level shared infrastructure — confirm placement is intentional
+
+**Execution steps**:
+
+1. Catalog every file under `ui/` with a one-line role description (manager / mixin / style / secondary-style / options / stats / template).
+2. Confirm `ui/secondary/` is empty and safe to remove; remove from `XPBarEnhanced.toc` if referenced.
+3. Decide: should secondary style files stay in `ui/styles/<style>/` or move to a dedicated `ui/secondary/` per-style folder? Document the chosen rule in `docs/guidelines/project-structure.md`.
+4. Audit `ui/templates/` and `ui/stats/` for any orphaned or mislabelled files.
+5. Draft a migration batch (file moves + TOC reorder) that can be applied incrementally without breaking load order.
+6. Validate each batch step by confirming `make-release.ps1` still succeeds.
+
+**Definition of done**: `ui/` structure matches the documented guidelines, no empty folders, no files in the wrong domain, `docs/guidelines/project-structure.md` updated.
+
+---
+
+### MQ-2: Options panel architecture proposal
+
+**Objective**: define a scalable layout for the options panel before more settings are added.
+
+**Why third**: independent of MQ-1 code changes but should be decided before any context-contract refactoring introduces new config keys.
+
+**Current state**: 36 flat options in a single-page list (`optionOrder` in `OptionMetadata.lua`). Style-specific options (circular, minimap ring, terminal) are mixed into the generic list. Secondary bar options are grouped by proximity only.
+
+**Execution steps**:
+
+1. Group the current 36 options by user intent into sections:
+   - **Core** — bar style, bar lock
+   - **Secondary Bar** — show/attach/companion gate
+   - **XP Display** — text rows, percentages, overlays, abbreviation
+   - **Animations** — enable, flash, level-up mode, speed
+   - **Style: Circular** — size, segments, texture, center text
+   - **Style: Minimap Ring** — padding, segments, button collection, dimensions
+   - **Style: Terminal** — custom color toggle
+   - **Minimap** — button visibility
+2. Evaluate two layout approaches:
+   - **Grouped scroll** — single page with section headers above each group (minimal XML change)
+   - **Tabbed panel** — top-level tabs per section (larger XML change, cleaner for many settings)
+3. Evaluate each approach against: Blizzard UX patterns, number of options per group, current XML template infrastructure.
+4. Select preferred direction. Document chosen approach, rationale, and known migration constraints in `docs/features/options-and-config.md`.
+5. File a backlog item under `docs/backlog/` for the actual implementation.
+
+**Definition of done**: Preferred layout approach chosen and documented. Backlog item filed with scope, acceptance criteria, and TOC/XML migration notes.
+
+---
+
+### MQ-1: Context/session workflow consistency
+
+**Objective**: resolve the three pipeline inconsistencies identified in `docs/analysis/architecture-analysis.md` (sections 3.1–3.6).
+
+**Why last**: highest blast radius; benefits from knowing MQ-3 file layout and MQ-4 backlog completeness.
+
+**Known problems to address** (from architecture analysis):
+
+| # | Problem | Impact |
+|---|---------|--------|
+| 3.1 | Context build location inconsistent: XP builds at emit-time; secondary ignores emitted context and rebuilds | Wasted work; unclear contract |
+| 3.2 | XP emits nil payload (signal-only); secondary emits built context that consumer discards | Two patterns in one EventBus |
+| 3.3 | 5 independent WoW event frame sites; `UPDATE_FACTION`, `QUEST_LOG_UPDATE`, `PLAYER_ENTERING_WORLD` registered more than once | Redundant broadcast risk, hard to trace |
+| 3.6 | No shared bar frame contract: XP uses MarkDirty coalescing; secondary uses direct Render | Secondary can't share animation or coalescing logic |
+
+**Execution steps**:
+
+1. **Decide the canonical context contract** — choose one of:
+   - *Emitter-builds*: Session builds and emits context; consumer uses it directly. Secondary already does this; XP needs updating.
+   - *Signal-only*: Session emits nil; consumer builds lazily. XP already does this; secondary needs updating.
+   - Preferred direction: **emitter-builds** — sessions already own the data and already build `_BuildContext()`, so the cost is paid; consumers should use what they receive.
+2. **Fix the secondary consumer mismatch** (slice 1 — low risk):
+   - `SecondaryBarBaseMixin`'s EventBus handler currently calls `GetInitialContext()` (which calls `BuildReputationContext()`) instead of using the emitted context.
+   - Change: pass the emitted context directly to `Render(ctx)`. Keep `GetInitialContext()` as bootstrap-only fallback.
+   - Acceptance: no redundant `BuildReputationContext()` calls during normal event flow.
+3. **Audit CompanionSession post-NR-3** (slice 2 — scoping):
+   - After NR-3 unification, `CompanionSession` may be orphaned (no UI consumer). Verify whether its `UPDATE_FACTION` listener is still wired and whether it can be safely removed or folded into `ReputationSession`.
+4. **Plan XP pipeline alignment** (slice 3 — design only, no code):
+   - Document what changing the XP pipeline to emitter-builds would require (Session emits a full context; ContextBuilder moves into Session or is called by Session before emit).
+   - Assess risk and scope. If too large, accept asymmetry and document it as intentional.
+5. **Document chosen contract** — update `docs/guidelines/code-architecture-choices.md` with the resolved contract rule.
+6. Convert remaining items into backlog slices if full XP alignment is not done in this track.
+
+**Definition of done**: Secondary consumer mismatch fixed and validated. CompanionSession status resolved. Architecture guidelines updated with the canonical context contract. Remaining XP alignment work (if deferred) filed as a backlog item.
+
+---
 
 ### Medium-Term Exit Gate
 
-All tracks in `docs/notes.md` have an approved execution plan and corresponding backlog representation.
+All four MQ tracks complete:
+- MQ-4: backlog reflects all actionable analysis outputs
+- MQ-3: `ui/` structure clean and documented
+- MQ-2: options panel direction chosen and backlog-filed
+- MQ-1: secondary pipeline inconsistency fixed; architecture contract documented
+
 
 ### Future: Feature Expansion
 

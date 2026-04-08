@@ -73,7 +73,6 @@ local defaults = {
         flat = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
         circular = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
     },
-    secondaryBarPosition = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 34},
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,
 }

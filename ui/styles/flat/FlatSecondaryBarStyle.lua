@@ -49,6 +49,24 @@ function StyleMixin:GetPositionConfigKey()
 end
 
 function StyleMixin:GetFallbackPosition()
+    -- Derive the reset position from the configured XP bar style's defaults so
+    -- the secondary bar resets to a sensible location at every level (including max).
+    local db = Addon and Addon.db
+    local configuredStyle = db and db.barStyle
+    if configuredStyle and configuredStyle ~= "none" then
+        local barDefPos = Addon.defaults
+            and Addon.defaults.barPositions
+            and Addon.defaults.barPositions[configuredStyle]
+        if barDefPos then
+            return {
+                point         = barDefPos.point or "BOTTOM",
+                relativeTo    = barDefPos.relativeTo or "UIParent",
+                relativePoint = barDefPos.relativePoint or "BOTTOM",
+                x             = barDefPos.x or 0,
+                y             = (barDefPos.y or 0) + 20,
+            }
+        end
+    end
     return {
         point = "BOTTOM",
         relativeTo = "UIParent",
@@ -201,7 +219,12 @@ function StyleMixin:OnDragStart()
     end
 
     if AddonGlobal.db.secondaryBarsAttached then
-        return
+        -- In attached mode the bar follows the primary. At max level the primary is
+        -- hidden, so treat the secondary as freely moveable instead of locking it.
+        local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
+        if primaryFrame then
+            return
+        end
     end
 
     if InCombatLockdown and InCombatLockdown() then
@@ -216,8 +239,12 @@ function StyleMixin:OnDragStop()
     self.__isDragging = nil
     local db = Addon and Addon.db
     if db and db.secondaryBarsAttached then
-        self:StopMovingOrSizing()
-        return
+        -- At max level the primary bar is hidden — allow position to be saved.
+        local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
+        if primaryFrame then
+            self:StopMovingOrSizing()
+            return
+        end
     end
 
     self:StopMovingOrSizing()

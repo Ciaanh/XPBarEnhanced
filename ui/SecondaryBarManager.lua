@@ -5,6 +5,10 @@ local Addon = XPBarEnhanced
 Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 local Manager = Addon.SecondaryBarManager
 
+local TEMPLATE_MAP = {
+    flat = "FlatReputationBarTemplate",
+}
+
 local function DeriveSecondaryStyle()
     local db = Addon.db or {}
     if not db.showSecondaryBar then
@@ -12,19 +16,24 @@ local function DeriveSecondaryStyle()
     end
     -- Use db.barStyle (user preference) not runtime style — secondary bar should
     -- remain visible at max level even though the primary bar hides itself.
+    -- Only show a secondary bar when a matching template exists for the selected style.
     local primaryStyle = db.barStyle or "none"
-    if primaryStyle == "none" then
-        return "none"
+    if TEMPLATE_MAP[primaryStyle] then
+        return primaryStyle
     end
-    return "flat"
+    return "none"
 end
-
-local TEMPLATE_MAP = {
-    flat = "FlatReputationBarTemplate",
-}
 
 local function IsCustomStyle(style)
     return style and TEMPLATE_MAP[style] ~= nil
+end
+
+-- Returns true when our secondary bar is active at max level and Blizzard
+-- would otherwise promote the reputation bar into the main status bar container.
+local function ShouldSuppressMainContainer()
+    local barManagerStyle = Addon.BarManager and Addon.BarManager.currentStyle
+    local barManagerIdle = not barManagerStyle or barManagerStyle == "none"
+    return IsCustomStyle(Manager._currentStyle) and barManagerIdle
 end
 
 -------------------------------------------------------------------
@@ -106,27 +115,24 @@ function Manager:Initialize()
 end
 
 -- Stack active secondary bars above the primary XP bar when attached mode is on.
--- When attached mode is off, restores each bar to its saved/fallback position.
+-- When attached mode is off, or when at max level (primary bar hidden), restores
+-- each bar to its saved/fallback position.
 function Manager:ReapplyAttachedPositions()
     local db = Addon.db or {}
-
-    if not db.secondaryBarsAttached then
-        local frame = self:GetCurrentFrame()
-        if frame and frame.ApplyInitialPosition then
-            frame:ApplyInitialPosition()
-        end
-        return
-    end
-
     local frame = self:GetCurrentFrame()
     if not frame then
         return
     end
 
+    -- At max level BarManager:GetCurrentFrame() returns nil (runtime style = "none").
+    -- In that case no functional attachment target exists, so act as detached.
     local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
-    if not primaryFrame then
-        -- Primary bar unavailable (e.g. max level) — fall back to saved/default position
-        frame:ApplyInitialPosition()
+    local isAttachedAndPrimaryVisible = db.secondaryBarsAttached and primaryFrame ~= nil
+
+    if not isAttachedAndPrimaryVisible then
+        if frame.ApplyInitialPosition then
+            frame:ApplyInitialPosition()
+        end
         return
     end
 
@@ -150,6 +156,11 @@ function Manager:ApplyDefaultReputationBarVisibility()
         if _G.SecondaryStatusTrackingBarContainer then
             _G.SecondaryStatusTrackingBarContainer:Hide()
         end
+        -- At max level Blizzard promotes the reputation bar to the main container.
+        -- Suppress it there too so only our secondary bar is visible.
+        if ShouldSuppressMainContainer() and _G.MainStatusTrackingBarContainer then
+            _G.MainStatusTrackingBarContainer:Hide()
+        end
     else
         if _G.SecondaryStatusTrackingBarContainer then
             _G.SecondaryStatusTrackingBarContainer:Show()
@@ -162,18 +173,36 @@ function Manager:InstallBlizzardBarHooks()
         return
     end
 
-    local container = _G.SecondaryStatusTrackingBarContainer
-    if container and container.Show then
-        hooksecurefunc(container, "Show", function()
+    local secondaryContainer = _G.SecondaryStatusTrackingBarContainer
+    if secondaryContainer and secondaryContainer.Show then
+        hooksecurefunc(secondaryContainer, "Show", function()
             if IsCustomStyle(self._currentStyle) then
-                container:Hide()
+                secondaryContainer:Hide()
             end
         end)
     end
-    if container and container.SetShown then
-        hooksecurefunc(container, "SetShown", function(_, shown)
+    if secondaryContainer and secondaryContainer.SetShown then
+        hooksecurefunc(secondaryContainer, "SetShown", function(_, shown)
             if shown and IsCustomStyle(self._currentStyle) then
-                container:Hide()
+                secondaryContainer:Hide()
+            end
+        end)
+    end
+
+    -- At max level Blizzard promotes the watched reputation bar into the main
+    -- status bar container. Hook it so we can suppress it when our own bar is active.
+    local mainContainer = _G.MainStatusTrackingBarContainer
+    if mainContainer and mainContainer.Show then
+        hooksecurefunc(mainContainer, "Show", function()
+            if ShouldSuppressMainContainer() then
+                mainContainer:Hide()
+            end
+        end)
+    end
+    if mainContainer and mainContainer.SetShown then
+        hooksecurefunc(mainContainer, "SetShown", function(_, shown)
+            if shown and ShouldSuppressMainContainer() then
+                mainContainer:Hide()
             end
         end)
     end
@@ -187,26 +216,16 @@ function Manager:SetSecondaryStyle(style)
 end
 
 function Manager:ResetBarPositions()
-    local defaults = Addon.defaults or {}
     local db = Addon.db or {}
-    local posInfo = {configKey = "secondaryBarPosition", defaultPos = defaults.secondaryBarPosition}
+    local configKey = "secondaryBarPosition"
 
-    if db[posInfo.configKey] then
-        db[posInfo.configKey] = nil
+    if db[configKey] then
+        db[configKey] = nil
     end
 
     local frame = self:GetCurrentFrame()
     if frame and frame.ResetPosition then
         frame:ResetPosition()
-    elseif frame and frame.ClearAllPoints and posInfo.defaultPos then
-        frame:ClearAllPoints()
-        frame:SetPoint(
-            posInfo.defaultPos.point,
-            posInfo.defaultPos.relativeTo or "UIParent",
-            posInfo.defaultPos.relativePoint,
-            posInfo.defaultPos.x or 0,
-            posInfo.defaultPos.y or 0
-        )
     end
 
     self:ReapplyAttachedPositions()

@@ -10,6 +10,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 - **Quest XP Overlay** — See pending and completed quest XP directly on the bar
 - **Session Tracking** — Track XP gained, time played, levels gained, and XP/hour rate
 - **Statistics Window** — Detailed breakdown of your leveling progress
+- **Reputation & Companion Tracking** — A secondary bar tracks your watched faction; shows companion-specific flavor (level, session gains) when tracking a Delve companion such as Brann
 - **Color Customization** — Full control over bar and overlay colors
 - **Minimap Button** — Quick access to options and stats
 - **Edit Mode Support** — Bars become draggable when Edit Mode is active
@@ -55,6 +56,7 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 - **Bar Style** — Choose between all available styles
 - **Colors** — Customize XP bar, rested XP, quest XP overlays
 - **Display** — Toggle text rows, quest overlays, animations, and minimap button
+- **Reputation / Companion Bar** — Enable the secondary tracked-faction bar; optionally attach it above the XP bar or position it freely; hide the companion bar when outside a Delve
 - **Circular Bar** — Ring size (Small/Medium/Large/Huge), segment count, texture style, and optional center text scaling
 - **Minimap Ring** — Ring padding, segment count, segment dimensions, and optional minimap button collection
 - **Terminal** — Toggle between authentic terminal colors and custom color scheme
@@ -66,7 +68,7 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 
 ## Credits
 
-This addon was inspired byt the WeakAura from Luxthos [https://wago.io/LuxthosExperienceBar] for the flat bar design.
+This addon was inspired by the WeakAura from Luxthos [https://wago.io/LuxthosExperienceBar] for the flat bar design.
 
 ## License
 

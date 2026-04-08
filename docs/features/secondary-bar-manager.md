@@ -37,3 +37,18 @@ The shared infrastructure that manages reputation and companion secondary bars �
 - Bootstrap emit ownership moved from manager to session layers (Phase 7 Slice 2)
 - Drag semantics hardened: position persistence managed by SavePosition, not drag-stop (Slice 1)
 - Companion and reputation rendering share one secondary frame and one style lifecycle
+
+## Backlog
+
+### Per-style Secondary Bar Position (deferred)
+
+Priority: P2 · Effort: Small · Status: Not approved for coding
+
+Currently all secondary bar styles share a single `secondaryBarPosition` saved variable. Each XP bar style should have its own independent saved position for the secondary bar, mirroring how `barPositions` works for the primary bar.
+
+**Proposed approach:**
+- Replace `db.secondaryBarPosition` (single key) with `db.secondaryBarPositions` (table keyed by style, e.g. `{ flat = {...}, classic = {...} }`)
+- `GetPositionConfigKey()` returns a per-style key or the mixin resolves into the sub-table
+- `GetFallbackPosition()` continues to derive from `Addon.defaults.barPositions[barStyle]` + y-offset
+- Reset clears the per-style entry rather than the entire shared key
+- Migration: on first load, copy existing `secondaryBarPosition` into the appropriate style slot
