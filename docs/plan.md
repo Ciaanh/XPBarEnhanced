@@ -1,97 +1,83 @@
 # XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-08 (architecture hardening + backlog normalization)
+Last updated: 2026-04-12
 
 ## Addon Summary
 
-Enhanced XP bar addon for WoW Retail with 7 visual styles, quest XP overlay, session statistics, reputation tracking, companion tracking, and full color customization.
+Enhanced XP bar addon for WoW Retail with 7 visual styles, quest XP overlay, session statistics, reputation tracking, companion tracking, and full color customization. Current version: **1.1.0**.
 
 ## Current State
 
-The addon is feature-complete for its core scope:
+The addon is feature-complete for its core scope (v1.1.0, shipped 2026-04-12):
 
 - **Primary XP bar**: 7 styles, animations, quest overlay, session tracking, max-level auto-hide
 - **Unified secondary bar**: Watched-faction tracking with companion-aware display, fade, drag, tooltip, live text
 - **Architecture**: Centralized event router, context-first render model, shared secondary lifecycle
-- **Quality**: Compliance hardened (combat safety, fade lifecycle, context contracts)
+- **Quality**: Compliance hardened (combat safety, fade lifecycle, context contracts, emission ownership)
 
-All Phase 5 (foundations), Phase 6 (secondary polish), and Phase 7 (hardening) work is complete and validated. See `docs/history/phases.md` for implementation records.
-
-Completed (sessions 4–6):
-
-- **NR-1**: Dead Slice 3 exploration code removed
-- **NR-2**: MaxLevel debug logs removed
-- **Bug fix**: `SavePosition` frame-reference serialization bug corrected
-- **Default position**: Secondary bar default anchor corrected; attached mode re-anchors to active XP bar
-- **NR-3 complete**: companion/reputation pipelines unified into one tracked-reputation secondary bar
-- **UI regrouping**: flat secondary style/template moved under `ui/styles/flat/`
-- **Interaction**: click on secondary bar opens Character Reputation panel
-- **New option**: `hideCompanionOutsideDelve` hides companion bar when outside Delves
-- **NR-4 complete**: full regression pass — 3 bugs found and fixed (debug default shipped on, dead `__isDragging` flag, fade-in symmetry); `debugSecondaryBars` infrastructure removed entirely; all 7 primary styles, secondary bar, lifecycle paths, and Blizzard bar ownership validated in-game
-- Max-level fixes (session 6): resolved duplicate Blizzard reputation bar at max level; secondary bar style derivation now TEMPLATE_MAP-driven; free drag and correct reset position at max level when primary bar is hidden; `secondaryBarPosition` static default removed in favour of dynamic `GetFallbackPosition()`
-- **NR-5 complete**: Delve companion decoration validated in-game — companion flavor triggers correctly inside Delve, standard reputation flavor outside, transitions between companion/non-companion factions clean
-- **NR-6 complete**: README updated to reflect reputation/companion secondary bar, new config options, fixed `portrait_arc` ghost in slash command help
-
-Validation status:
-
-- Release package builds successfully (`make-release.ps1`)
-- Near-term and medium-term quality tracks are complete (MQ-1 through MQ-5)
-- Current focus: backlog execution and incremental hardening
+See `docs/history/phases.md` for full implementation history.
 
 ## Goals
 
-### Near-Term: ~~Complete~~
+### Next Session
 
-### ~~NR-6: Release-facing docs sync~~ ✅ Complete
+#### 1. README Update
 
-Objective: ensure public docs match current shipped behavior.
+Sync public-facing documentation to v1.1.0.
 
-Execution steps:
+Steps:
+1. Update version string (`1.0.7` → `1.1.0`) in README header.
+2. Verify feature list matches current shipped behavior (unified secondary bar, companion decoration, options).
+3. Confirm slash command table is accurate.
 
-1. Compare README feature list against actual behavior after NR-3..NR-5.
-2. Update wording for any changed behavior or known constraints.
-3. Ensure docs avoid implementation-phase language and remain feature-focused.
+Definition of done: README version matches TOC; no feature described in README differs from actual behavior.
 
-Expected output:
+---
 
-- README aligned with current behavior and constraints.
+#### 2. Code Cleanup
 
-Definition of done:
+Remove two stale artifacts in `core/services/Session.lua`.
 
-- No mismatch between documented and observed behavior in release-critical paths.
+Steps:
+1. Grep for all call sites of `Session:SetupEventFrame()`. If none found, delete the method body entirely (keep `@deprecated` note as a one-line comment if referenced in tests).
+2. Grep for all read sites of `session.sessionXP`. If only the annotation references it, remove the `@field` doc line and confirm no SavedVariables migration needed.
 
-### Near-Term Exit Gate
+Definition of done: no dead methods or misleading annotations remain in Session.lua.
 
-All items NR-3 through NR-6 complete, with no unresolved release-blocking defects.
+---
 
-### Medium-Term: Code Quality
+#### 3. Per-Style Secondary Bar Position
 
-All medium-term tracks are complete.
+**Approved 2026-04-12.** Full scope in [docs/backlog/secondary-bar-per-style-position.md](docs/backlog/secondary-bar-per-style-position.md).
 
-- MQ-1: context/session workflow consistency
-- MQ-2: options panel architecture proposal
-- MQ-3: UI structure and naming cleanup
-- MQ-4: analysis-to-backlog normalization
-- MQ-5: manager boundary enforcement + doc normalization
+Steps:
+1. Replace `db.secondaryBarPosition` (single table) with `db.secondaryBarPositions` (table keyed by primary style name — e.g. `{ flat = {...}, classic = {...} }`) in `Database.lua` seeding and `defaults.lua`.
+2. Update `SecondaryBarBaseMixin`: `SavePosition` writes to `db.secondaryBarPositions[currentPrimaryStyle]`; `GetSavedPosition` reads the same key.
+3. Update `GetFallbackPosition()` — no change needed (already derives from `barPositions[barStyle]`).
+4. Update `ResetBarPositions` in `SecondaryBarManager` to clear only the current style's entry, not the whole table.
+5. Add one-time migration in `Database:Initialize()`: if `db.secondaryBarPosition` exists and `db.secondaryBarPositions` is nil, copy the value into the slot for the currently active style then clear the old key.
+6. Validation: switch primary styles and confirm secondary bar position is independently saved per style; test free-drag and attached-mode paths; test reset; test reload persistence.
 
-Key implementation note:
+Definition of done: dragging secondary bar in style A does not affect its position in style B; no nil errors on first login after upgrade; existing drag/attach paths unaffected.
 
-- Companion detection is now localization-safe by design: `defaults.delveCompanions` is a dict mapping factionID → name, with name-based fallback for compatibility.
+---
 
-### Next Phase: Backlog Execution
+### Under Investigation
 
-**Goal**: Continue with deferred/approved backlog items after closing documentation drift and architecture debt.
+#### Secondary Bar Styles
 
-**Active backlog — implementation candidates (see `docs/backlog/README.md`)**:
+Dedicated analysis document: [docs/analysis/secondary-bar-styles-investigation.md](docs/analysis/secondary-bar-styles-investigation.md)
 
-| Item | Goal | Notes |
-| ---- | ---- | ----- |
-| [secondary-bar-per-style-position](docs/backlog/secondary-bar-per-style-position.md) | Per-style independent saved position for the secondary bar | P2, deferred but actionable after migration design |
+Goal: determine which additional visual styles are viable for the secondary bar, how they integrate with the existing primary XP bar style system, and what the delivery plan should look like. Outcome will be either an approved backlog item with scope or a decision to keep flat-only.
 
-**Deferred backlog (P3)**:
+---
 
-- `secondary-bar-styles` — investigation only, not approved for coding
-- `companion-multi-companion` — awaiting C_DelvesUI API review
+## Open Backlog
+
+| Item | Priority | Status |
+| ---- | -------- | ------ |
+| [secondary-bar-per-style-position](docs/backlog/secondary-bar-per-style-position.md) | P2 | **Approved** — next session |
+| [secondary-bar-styles](docs/backlog/secondary-bar-styles.md) | P3 | Investigation in progress — see analysis doc |
 
 ## How to Start a Session
 

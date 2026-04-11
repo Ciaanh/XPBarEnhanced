@@ -2,37 +2,49 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
-## [1.0.7] - 2026-04-02
+## [1.1.0] - 2026-04-12
 
 ### Added
 
-- **Secondary Bars UI**: New `SecondaryBarManager` controls independent reputation and companion flat bars
-    - `FlatReputationBarTemplate` renders the watched faction name, standing, and progress (with faction-type colour coding: standard=purple, friendship=green, major=blue, paragon=gold)
-    - `FlatCompanionBarTemplate` renders the Delve companion name, level, and XP progress
-    - Both bars use `frameStrata="HIGH"` to remain above action-bar elements
-    - `XPBarContextBuilder.BuildReputationContext()` and `BuildCompanionContext()` provide flat UI-ready context tables
-- **Options — Secondary Bars**: New "Secondary Bars" section in the settings panel with `reputationBarStyle` and `companionBarStyle` dropdowns (none / flat)
+- **Secondary Reputation Bar**: New `SecondaryBarManager` with unified tracked-reputation secondary bar
+    - `FlatReputationBarTemplate` renders the watched faction name, standing, and progress (faction-type colour coding: standard=purple, friendship=green, major=blue, paragon=gold)
+    - Companion decoration mode: when tracking a Delve companion faction, bar switches to companion flavor (level display, teal colour) driven by `isCompanion` context flag
+    - Locale-safe companion detection via `defaults.delveCompanions` factionID → name map (Brann 2640, Valeera 2744); ID-first lookup with name fallback
+    - Fade transitions, drag-to-move with SavedVariables persistence, hover tooltips, live text refresh
+    - Attached mode stacks secondary bar above primary; free drag at max level when primary is hidden
+    - TEMPLATE_MAP-driven style derivation scales correctly as new styles are added
+    - `ShouldSuppressMainContainer()` prevents duplicate Blizzard reputation bar at max level
+- **Options — Secondary Bar**: `showSecondaryBar` toggle and `hideCompanionOutsideDelve` option to hide companion bar outside Delves
+- **Options Panel Sections**: Grouped scroll layout with 9 section headers and style-conditional visibility for Circular, Minimap Ring, and Terminal options
 - **Reputation Tracking**: New `ReputationSession` service tracks the player's watched faction gains per session
     - Supports all four faction types: standard, friendship, major (renown), and paragon
+    - Companion tracking integrated as decoration mode (not a separate domain)
+    - Session-owned context building via `ReputationSession._BuildContext()`
     - Computes rep/hour rate and estimated time to next standing
-    - Emits `REPUTATION:BROADCAST_UPDATE` on every faction change
-- **Companion Tracking**: New `CompanionSession` service tracks Delve companion (Brann) XP gains per session
-    - Guarded against missing `C_DelvesUI` / `C_GossipInfo` APIs for forward compatibility
-    - Computes XP/hour rate and estimated time to next level
-    - Emits `COMPANION:BROADCAST_UPDATE` on every companion XP gain
+    - Emits `REPUTATION_BROADCAST_UPDATE` on every faction change
 - **Reputation Calculations**: Pure stateless helpers in `ReputationCalculations` for all four WoW reputation types
     - `NormalizeRepData` produces a uniform `{current, min, max, ratio, percent, name, standingLabel, factionType, isMaxed}` table
-- **Companion Calculations**: Pure stateless helpers in `CompanionCalculations` for Delve companion progress
-    - `NormalizeCompanionData` converts raw `C_GossipInfo` friendship data into a uniform table
 - **Session XP Breakdown**: Session now separately tracks `questXP` and `otherXP` alongside total XP gained
 - **Sliding-Window XP Rate**: `Session.GetRecentXPPerHour()` uses a 20-entry rolling window for more responsive XP/hour estimates
+- **Text Ticker**: Lightweight `BuildTextRefreshContext()` path for periodic text refresh; avoids full context rebuild every 2.5s
+- **Max-Level Events**: `UPDATE_EXPANSION_LEVEL` and `MAX_EXPANSION_LEVEL_UPDATED` added to EventRouter for immediate max-level visibility re-evaluation
 - **Release Script**: `make-release.ps1` packages addon files from the project root into `XPBarEnhanced-<version>.zip` placed in `.build/`
 
 ### Changed
 
-- **EventBus**: Added `REPUTATION:BROADCAST_UPDATE` and `COMPANION:BROADCAST_UPDATE` to the known event registry
-- **Database**: Seeds `reputationSessionData` and `companionSessionData` tables on initialization
-- **Config**: `ResetStats` now also clears reputation and companion session data
+- **Context Ownership**: Session layers (`Session:EmitUpdate`, `ReputationSession:EmitUpdate`) are the sole emitters of domain EventBus events; managers and Config no longer build context directly
+- **XP/hour Warm-up**: Lowered threshold from 30s to 10s for faster initial rate display
+- **Quest XP Overlay**: Excluded `isTask` quests (world quests, bonus objectives) from XP overlay totals
+- **Secondary Bar Position**: Dynamic `GetFallbackPosition()` derived from active XP bar style replaces static default
+- **EventBus**: Added `REPUTATION_BROADCAST_UPDATE` to the known event registry
+- **Database**: Seeds `reputationSessionData` table on initialization
+- **Config**: `ResetStats` now also clears reputation session data
+
+### Fixed
+
+- **Duplicate Blizzard Reputation Bar**: At max level, `MainStatusTrackingBarContainer` now suppressed when custom secondary bar is active
+- **Fade-In Symmetry**: Fade-in and fade-out now use consistent animation patterns
+- **SavePosition Bug**: Frame-reference serialization corrected to use UIParent BOTTOMLEFT normalization
 
 ## [1.0.6] - 2026-03-22
 

@@ -3,7 +3,7 @@
 
 ---@class SessionData
 ---@field sessionStart number Unix timestamp when session started
----@field sessionXP number Total XP at session start (deprecated, use gainedXP)
+---@field sessionXP number Legacy field preserved for SavedVariables compatibility
 ---@field gainedXP number Total XP gained this session
 ---@field sessionAccumTime number Persisted elapsed session seconds used to preserve session continuity across /reload
 ---@field lastXP number Last recorded current XP
@@ -106,8 +106,8 @@ function Session:Initialize()
 end
 
 -- Initialize event frame for session-relevant events
+--- @deprecated Router architecture owns event registration. No-op retained for call-site compat.
 function Session:SetupEventFrame()
-    -- Deprecated in router architecture. Kept as a no-op for compatibility.
     return false
 end
 

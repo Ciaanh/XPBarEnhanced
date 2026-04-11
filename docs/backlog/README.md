@@ -15,16 +15,8 @@ Completed and closed items have been archived to `docs/history/phases.md`. Decis
 
 | Item | Goal | Status | Priority | Prerequisite |
 | ---- | ---- | ------ | -------- | ------------ |
-| [secondary-bar-styles.md](secondary-bar-styles.md) | Give users visual style options for secondary bars beyond "flat" | Investigation only — not approved for coding | P3 | Architecture review, UX review, delivery plan |
-| [companion-multi-companion.md](companion-multi-companion.md) | Support tracking any delve companion, not just Brann | Deferred — future work | P3 | C_DelvesUI API review |
-| [secondary-bar-per-style-position.md](secondary-bar-per-style-position.md) | Per-style independent saved position for the secondary bar | Deferred — not approved for coding | P2 | None |
-
-## Potential New Work (Not Yet Filed)
-
-Ideas that have surfaced but don't have backlog files yet. File them when they're ready for investigation.
-
-- **Dead code cleanup** — Remove unused max-level context builders and vestigial config keys from Slice 3 exploration
-- **Debug log removal** — Remove or gate investigation logs before release build
+| [secondary-bar-styles.md](secondary-bar-styles.md) | Give users visual style options for secondary bars beyond "flat" | Investigation in progress — see `docs/analysis/secondary-bar-styles-investigation.md` | P3 | Architecture review, UX review, delivery plan |
+| [secondary-bar-per-style-position.md](secondary-bar-per-style-position.md) | Per-style independent saved position for the secondary bar | **Approved — next session** | P2 | None |
 
 ## Completed Work (Archived)
 
@@ -37,15 +29,18 @@ See `docs/history/phases.md` for implementation records of:
 - Secondary bar fade, drag, tooltip, live text (Phase 6)
 - Compliance hardening, context contract, max-level behavior (Phase 7, Slices 1-3)
 
-## Closed As Already Implemented
+## Closed / Archived
 
-- [options-panel-sections.md](options-panel-sections.md) — closed 2026-04-08 after doc/code audit confirmed grouped section headers and style-conditional visibility already ship in `ui/options/Options.lua`
+- `options-panel-sections` — closed 2026-04-08; already implemented. Archived to `docs/history/`
+- `max-level-enhancements` — completed Phase 7 Slice 3. Archived to `docs/history/`
+- `phase-7-planning-gate` — all slices complete. Archived to `docs/history/`
 
 ## Closed / Not Planned
 
-These were explicitly closed on 2026-04-06 (rationale in decision-log):
-
-- Faction selection dropdown
-- Bar size/scale options
-- Per-bar font customization
-- Multi-language localization
+- Faction selection dropdown — closed 2026-04-06
+- Bar size/scale options — closed 2026-04-06
+- Per-bar font customization — closed 2026-04-06
+- Multi-language localization — closed 2026-04-06
+- Companion multi-companion (`companion-multi-companion.md`) — closed 2026-04-12; C_DelvesUI API review not warranted; current Brann + Valeera ID list in `defaults.delveCompanions` is sufficient
+- Font customization (global) — closed 2026-04-12; not a prioritized feature
+- Edit Mode compat validation — closed 2026-04-12; too complex to implement correctly given Blizzard's internal Edit Mode architecture; current behavior preserved as-is

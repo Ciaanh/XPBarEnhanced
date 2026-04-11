@@ -1,9 +1,10 @@
 # Backlog: Multi-Companion Support
 
-Priority: P3
-Effort: Small
-Risk: Low
-Source: docs/analysis/delve-companion-feature.md
+**Status: CLOSED — 2026-04-12**
+
+Closed without implementation. Rationale: the `defaults.delveCompanions` faction ID dictionary (Brann 2640, Valeera 2744) is sufficient for the current companion roster. A `C_DelvesUI` API review and dynamic discovery system are not warranted at this time. If Blizzard adds further companions, extend the dictionary directly.
+
+---
 
 ## Summary
 
