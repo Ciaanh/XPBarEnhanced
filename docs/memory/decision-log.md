@@ -1,5 +1,37 @@
 # Decision Log
 
+## 2026-04-13 — Secondary bar style selection model simplified; Classic label restored
+
+Decision: Remove `AUTO_PAIR`, `secondaryBarStyle` config key, and the options dropdown. Replace with a direct `TEMPLATE_MAP[db.barStyle]` lookup.
+Reason: User clarified that style pairing should be 1:1 (primary style key = secondary template). No per-user override needed. New styles are added progressively by inserting entries into `TEMPLATE_MAP` only.
+Impact:
+- `SecondaryBarManager.lua`: `TEMPLATE_MAP` now only has `flat` and `classic` entries. `DeriveSecondaryStyle()` is a direct map lookup, returning `"none"` for unmapped primaries.
+- `defaults.lua`: `secondaryBarStyle = "auto"` removed.
+- `OptionMetadata.lua`: `secondaryBarStyle` dropdown and its `optionOrder` entry removed.
+- `locales/enUS.lua`: 6 `OPT_SECONDARY_BAR_STYLE*` strings removed.
+- `MinimalSecondaryBarStyle.lua` + `MinimalSecondaryBarTemplate.xml` remain on disk but are dormant — no `TEMPLATE_MAP` entry activates them.
+
+Decision: Restore the text label on the Classic secondary bar.
+Reason: The original reason for removal was text overlap with the primary bar's `QuestSummaryText`. The root cause (`y="30"` anchor in `ClassicBarTemplate.xml`) was fixed separately. With that fix in place the label is safe to restore.
+Impact:
+- `ClassicBarTemplate.xml`: `QuestSummaryText` anchor changed from `y="30"` to `y="-24"` (below rate/session text line, never bleeds into secondary bar space).
+- `ClassicSecondaryBarStyle.lua`: `BuildLabel`, `GetTextTickerInterval`, `GetTextTickerContext`, `OnTextTick` restored; `Render` now also updates the label.
+- `ClassicSecondaryBarTemplate.xml`: `LabelContainer` with centered `GameFontNormalSmall` FontString re-added.
+- All secondary bar templates at `frameStrata="MEDIUM"` (was LOW; raised to match primary text frames).
+
+## 2026-04-12 — Classic and Minimal secondary bar styles implemented
+
+Decision: Add Classic and Minimal secondary bar styles alongside the existing Flat style.
+Reason: Approved by user 2026-04-12. Classic provides a visual match for the Classic primary bar (Blizzard atlas fill, bordered). Minimal provides a compact 6 px option suitable for non-bar primaries.
+Implementation:
+
+- `ClassicReputationBarTemplate` (566×12): Blizzard-style bordered bar, standing-color atlas fill via `UI-HUD-ExperienceBar-Fill-Reputation-Faction-{Red/Orange/Yellow/Green/Blue}`. Atlas applied at runtime in `Render`; falls back to `WHITE8X8` + solid color when atlas unavailable. `C_Texture.GetAtlasInfo` + `SetAtlas` pattern mirrors `PaintMixin:ApplyBarAtlasOrTexture`.
+- `MinimalReputationBarTemplate` (565×6): Slim solid-color bar, no label frame. All information via same tooltip as Flat. Suitable for Vertical, Circular, Minimap Ring, Terminal primaries.
+- `TEMPLATE_MAP` and `AUTO_PAIR` added to `SecondaryBarManager.lua`. `DeriveSecondaryStyle` checks `db.secondaryBarStyle` override first, then pairs from `AUTO_PAIR` using `db.barStyle`.
+- `db.secondaryBarStyle = "auto"` added to defaults.
+- `secondaryBarStyle` dropdown added to `OptionMetadata.lua` and `optionOrder`.
+- Six locale strings added to `enUS.lua` (`OPT_SECONDARY_BAR_STYLE`, `OPT_SECONDARY_BAR_STYLE_DESC`, `OPT_SECONDARY_STYLE_AUTO/FLAT/CLASSIC/MINIMAL`).
+
 ## 2026-04-12 — v1.1.0 session: README sync, Session.lua cleanup, per-style secondary position
 
 Decision: Implement per-style secondary bar position (`secondaryBarPositions` keyed by primary bar style).

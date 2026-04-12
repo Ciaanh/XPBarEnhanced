@@ -1,7 +1,8 @@
 # Investigation: Secondary Bar Visual Styles
 
-Status: In Progress
+Status: **Findings complete — pending decision**
 Created: 2026-04-12
+Last updated: 2026-04-12 (session 3)
 Owner: `docs/backlog/secondary-bar-styles.md`
 
 ## Purpose
@@ -187,9 +188,46 @@ If approved, the recommended first increment is:
 
 ## Open Questions
 
-1. Should secondary style selection be per-primary-style (e.g., "when primary=classic, secondary=classic") or a single global setting? Global is simpler; per-primary could be combined with the per-style-position backlog item.
-2. What atlas textures are appropriate for a "classic" secondary reputation bar? The XP atlas (`UI-HUD-ExperienceBar-Fill-XP`) is XP-specific; a reputation equivalent should be identified (check `AtlasInfo.lua` for StatusBar-type atlases).
-3. Is the minimal style height configurable or fixed? A fixed 4px default with no user control is simplest.
+All three open questions are now resolved (2026-04-12):
+
+### 1. Global vs. per-primary style selection — RESOLVED
+
+**Decision: Global single setting (`db.secondaryBarStyle`).**
+
+Rationale: The per-style-position work (implemented this session) already provides style-specific secondary bar behaviour. A global secondary style selection is simpler to implement, simpler to explain in the UI, and sufficient for the expected use case (players pick one secondary look and stick with it). Per-primary-style secondary selection can be revisited if user demand surfaces it.
+
+### 2. Atlas textures for Classic secondary — RESOLVED
+
+**Available atlases confirmed from `AtlasInfo.lua` and Blizzard source (`ReputationBar.lua`, `ReputationBarOverrides.lua`):**
+
+Blizzard's own `ReputationStatusBarMixin` uses the **same `UI-HUD-ExperienceBar-*` atlas family** for reputation bars — there is no semantic XP-only limit. The reputation-specific subset:
+
+| Atlas | Role |
+|---|---|
+| `UI-HUD-ExperienceBar-Background` | Background fill (same across all bar types) |
+| `UI-HUD-ExperienceBar-Frame` | Overlay frame chrome |
+| `UI-HUD-ExperienceBar-Fill-Reputation` | Default reputation fill (major/paragon override) |
+| `UI-HUD-ExperienceBar-Fill-Reputation-Faction-Red` | Hostile / Unfriendly fill |
+| `UI-HUD-ExperienceBar-Fill-Reputation-Faction-Orange` | Neutral fill |
+| `UI-HUD-ExperienceBar-Fill-Reputation-Faction-Yellow` | Friendly fill |
+| `UI-HUD-ExperienceBar-Fill-Reputation-Faction-Green` | Honored / Revered / Exalted fill |
+| `UI-HUD-ExperienceBar-Fill-Reputation-Faction-Blue` | Major faction / renown fill |
+
+Blizzard selects fill color by `reactionLevel` index (1–8, mapping Hated→Exalted) using `SetBarTexture(atlas)` on a `GradualAnimatedStatusBarTemplate`-based StatusBar. The Classic secondary style should follow the same pattern: select fill atlas by faction standing from context.
+
+The existing `StatusTrackingBarTemplate.xml` (Blizzard source) shows the exact frame shape used by all classic-style status bars (804×11 px outer, 804×10 StatusBar child, `UI-HUD-ExperienceBar-Background` background, `UI-HUD-ExperienceBar-Frame` not set in template but applied at runtime).
+
+### 3. Minimal style height — RESOLVED
+
+**Decision: Fixed height, no user control. 6 px StatusBar child, no background texture, no frame chrome.**
+
+Rationale: making height configurable adds option noise for a "minimal by design" style. 6 px is visible at normal UI scale without feeling intrusive. Users who want a taller bar should choose Classic instead.
+
+---
+
+## Open Questions
+
+~~All questions resolved above. See resolved findings above.~~
 
 ---
 
@@ -197,9 +235,9 @@ If approved, the recommended first increment is:
 
 This investigation is complete when:
 
-- [ ] Open questions above are resolved
-- [ ] Atlas options for classic style are identified (see `BlizzardInterfaceResources/AtlasInfo.lua`)
-- [ ] UX decision on global vs. per-primary style selection is made
-- [ ] Recommended scope above is accepted or revised
+- [x] Open questions resolved
+- [x] Atlas options for classic style identified (`UI-HUD-ExperienceBar-Fill-Reputation-Faction-*` family confirmed)
+- [x] UX decision on global vs. per-primary style selection made (global)
+- [ ] Recommended scope (Classic + Minimal) accepted or revised
 - [ ] Entry added to `docs/memory/decision-log.md` with approval or rejection rationale
 - [ ] `docs/backlog/secondary-bar-styles.md` updated with final scope if approved

@@ -91,7 +91,10 @@ ui\templates\XPBarBaseTemplate.xml
 ui\styles\flat\FlatBarTemplate.xml
 ui\styles\flat\FlatSecondaryBarTemplate.xml
 ui\styles\classic\ClassicBarTemplate.xml
+ui\styles\classic\ClassicSecondaryBarTemplate.xml
 ui\styles\vertical\VerticalBarTemplate.xml
+ui\styles\vertical\VerticalSecondaryBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
 ui\styles\minimap_ring\MinimapRingBarTemplate.xml
 ui\styles\terminal\TerminalBarTemplate.xml
+ui\styles\terminal\TerminalSecondaryBarTemplate.xml

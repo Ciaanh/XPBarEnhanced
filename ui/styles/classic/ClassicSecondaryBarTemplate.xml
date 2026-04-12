@@ -1,0 +1,89 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\Blizzard_SharedXML\UI.xsd">
+
+    <!-- XP Bar Enhanced - Classic Secondary Bar Template -->
+    <!-- Blizzard-style bordered reputation bar with standing-color atlas fill -->
+
+    <Script file="ClassicSecondaryBarStyle.lua"/>
+
+    <Frame name="ClassicReputationBarTemplate" virtual="true" mixin="XPBarClassicReputationMixin" frameStrata="MEDIUM" fixedFrameStrata="true" enableMouse="true">
+        <Size x="566" y="12"/>
+        <Frames>
+            <!-- Background layer drawn behind the status bar -->
+            <Frame parentKey="BackgroundFrame" enableMouse="false">
+                <Anchors>
+                    <Anchor point="TOPLEFT"/>
+                    <Anchor point="BOTTOMRIGHT"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture parentKey="Background" file="Interface\AddOns\XPBarEnhanced\assets\legacy-background">
+                            <Anchors>
+                                <Anchor point="TOPLEFT"/>
+                                <Anchor point="BOTTOMRIGHT"/>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+            <!-- Status bar fill; atlas applied at runtime in Render -->
+            <StatusBar parentKey="Bar" minValue="0" maxValue="1" defaultValue="0">
+                <Size x="566" y="10"/>
+                <Anchors>
+                    <Anchor point="CENTER" x="0" y="0"/>
+                </Anchors>
+                <BarTexture file="Interface\Buttons\WHITE8X8"/>
+                <BarColor r="1" g="1" b="1"/>
+            </StatusBar>
+
+            <!-- Border drawn on top of the status bar -->
+            <Frame parentKey="BorderFrame" enableMouse="false">
+                <Anchors>
+                    <Anchor point="TOPLEFT"/>
+                    <Anchor point="BOTTOMRIGHT"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture parentKey="Border" file="Interface\AddOns\XPBarEnhanced\assets\legacy-border">
+                            <Anchors>
+                                <Anchor point="TOPLEFT"/>
+                                <Anchor point="BOTTOMRIGHT"/>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+            <!-- Text label centered on the bar -->
+            <Frame parentKey="LabelContainer" frameStrata="MEDIUM" setAllPoints="true">
+                <Layers>
+                    <Layer level="ARTWORK" textureSubLevel="5">
+                        <FontString parentKey="Label" inherits="GameFontNormalSmall" justifyH="CENTER">
+                            <Size x="566" y="12"/>
+                            <Anchors>
+                                <Anchor point="TOPLEFT"/>
+                            </Anchors>
+                            <Color r="1.0" g="1.0" b="1.0"/>
+                            <Shadow>
+                                <Offset x="1" y="-1"/>
+                                <Color r="0" g="0" b="0" a="0.8"/>
+                            </Shadow>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+        </Frames>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+            <OnShow method="OnShow"/>
+            <OnHide method="OnHide"/>
+            <OnEnter method="OnEnter"/>
+            <OnLeave method="OnLeave"/>
+            <OnMouseUp method="OnMouseUp"/>
+            <OnDragStart method="OnDragStart"/>
+            <OnDragStop method="OnDragStop"/>
+        </Scripts>
+    </Frame>
+
+</Ui>

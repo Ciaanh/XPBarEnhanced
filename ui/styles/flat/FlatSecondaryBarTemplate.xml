@@ -5,7 +5,7 @@
 
     <Script file="FlatSecondaryBarStyle.lua"/>
 
-    <Frame name="FlatReputationBarTemplate" virtual="true" mixin="XPBarFlatReputationMixin" frameStrata="LOW" fixedFrameStrata="true" enableMouse="true">
+    <Frame name="FlatReputationBarTemplate" virtual="true" mixin="XPBarFlatReputationMixin" frameStrata="MEDIUM" fixedFrameStrata="true" enableMouse="true">
         <Size x="565" y="18"/>
         <Layers>
             <Layer level="BACKGROUND">

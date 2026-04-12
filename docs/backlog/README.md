@@ -13,10 +13,13 @@ Completed and closed items have been archived to `docs/history/phases.md`. Decis
 
 ## Active Backlog Items
 
-| Item | Goal | Status | Priority | Prerequisite |
-| ---- | ---- | ------ | -------- | ------------ |
-| [secondary-bar-styles.md](secondary-bar-styles.md) | Give users visual style options for secondary bars beyond "flat" | Investigation in progress — see `docs/analysis/secondary-bar-styles-investigation.md` | P3 | Architecture review, UX review, delivery plan |
-| [secondary-bar-per-style-position.md](secondary-bar-per-style-position.md) | Per-style independent saved position for the secondary bar | **Approved — next session** | P2 | None |
+*(No active items — all backlog items are complete or deferred.)*
+
+## Deferred / Investigation-Only
+
+| Item | Goal | Status | Notes |
+| ---- | ---- | ------ | ----- |
+| [secondary-bar-styles.md](secondary-bar-styles.md) | Secondary bars for Vertical, Circular, Minimap Ring, Terminal primary styles | Investigation-only | Do not implement without dedicated analysis per style |
 
 ## Completed Work (Archived)
 

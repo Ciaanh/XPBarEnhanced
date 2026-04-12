@@ -2,6 +2,32 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [Unreleased] - 2026-04-13
+
+### Added
+
+- **Classic Secondary Bar**: Label restored — displays faction name, standing, and progress % centered on the bar (same `BuildLabel` pattern as Flat; `GameFontNormalSmall` with drop shadow)
+- **Classic Secondary Bar**: Text ticker refreshes the label every 1 second via `GetTextTickerInterval` / `OnTextTick`
+- **Vertical Secondary Bar** (`VerticalReputationBarTemplate`): 20×300 vertical `StatusBar` (`orientation="VERTICAL"`) that attaches to the right side of the primary column via `GetAttachedAnchor() → "LEFT", "RIGHT", 2, 0`; solid faction fill color, `ANCHOR_RIGHT` tooltip, fallback position 44 px right of primary center
+- **Terminal Secondary Bar** (`TerminalReputationBarTemplate`): single-line 650×22 ASCII phosphor bar using `DejaVuSansMono.ttf` (applied at runtime in `OnSecondaryLoad`); 20-character `█`/`░` block fill mapped to 8 standing-level phosphor colors; inline faction name, standing, %, and session delta; near-black background to match the terminal primary
+- **`GetAttachedAnchor()` hook**: optional method on secondary bar style mixins; when present, `ReapplyAttachedPositions()` in `SecondaryBarManager` calls it to determine `(point, relPoint, x, y)` instead of defaulting to `BOTTOM → TOP`
+
+### Changed
+
+- **Secondary Bar Style Model**: Replaced `AUTO_PAIR` table and `secondaryBarStyle` user config with a direct 1:1 `TEMPLATE_MAP[db.barStyle]` lookup. Primary styles without an entry produce no secondary bar. No user-facing override config.
+- **Secondary Bar Strata**: All secondary bar templates raised from `frameStrata="LOW"` to `frameStrata="MEDIUM"` to match the draw layer of primary bar text frames
+
+### Fixed
+
+- **Classic Bar — QuestSummaryText Overlap**: `QuestSummaryText` anchor in `ClassicBarTemplate.xml` was `y="30"` (above the bar), causing it to render into the secondary bar's space. Corrected to `y="-24"` (below rate/session text line)
+
+### Removed
+
+- `secondaryBarStyle` SavedVariables key and dropdown option (superseded by automatic 1:1 pairing)
+- `AUTO_PAIR` table from `SecondaryBarManager.lua`
+- Six `OPT_SECONDARY_BAR_STYLE*` locale strings
+- `MinimalSecondaryBarStyle.lua` and `MinimalSecondaryBarTemplate.xml` — dead code, never referenced in `TEMPLATE_MAP`, deleted
+
 ## [1.1.0] - 2026-04-12
 
 ### Added

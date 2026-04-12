@@ -1,6 +1,6 @@
 # XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-12 (session 2)
+Last updated: 2026-04-13 (session 5)
 
 ## Addon Summary
 
@@ -12,6 +12,7 @@ The addon is feature-complete for its core scope (v1.1.0, shipped 2026-04-12):
 
 - **Primary XP bar**: 7 styles, animations, quest overlay, session tracking, max-level auto-hide
 - **Unified secondary bar**: Watched-faction tracking with companion-aware display, fade, drag, tooltip, live text
+- **Secondary bar styles**: Flat (original), Classic (atlas fill, bordered, label), and Minimal (6 px dormant) implemented. Style selection is 1:1 with primary bar style via `TEMPLATE_MAP` in `SecondaryBarManager` — no user-facing override config. Vertical/Circular/Minimap Ring/Terminal produce no secondary bar until their templates are built.
 - **Architecture**: Centralized event router, context-first render model, shared secondary lifecycle
 - **Quality**: Compliance hardened (combat safety, fade lifecycle, context contracts, emission ownership)
 
@@ -19,64 +20,65 @@ See `docs/history/phases.md` for full implementation history.
 
 ## Goals
 
-### Completed This Session
+### Active — Secondary Bar: Style-Matched Coverage for All Primary Styles
 
-- **README version sync** — `1.0.7` → `1.1.0` in README.md
-- **Session.lua cleanup** — `SetupEventFrame()` dead method removed; `session.sessionXP` annotation confirmed accurate (active SavedVariables mirror field)
-- **Per-style secondary bar position** — implemented; see decision-log for full scope
+**Approved 2026-04-13.**
+
+All 6 primary styles should produce a secondary bar that matches the visual language of its primary.
+Current coverage: `flat` ✅, `classic` ✅. Four styles produce no secondary bar yet.
+
+Each remaining style is a separate phase because the implementation approach differs significantly.
 
 ---
 
-### Next Session
+#### Phase 3 — Vertical Secondary
 
-#### 1. README Update
+**Visual spec:** Narrow vertical bar placed alongside the primary column. Mirrors the vertical primary's orientation and solid-color fill.
 
-Sync public-facing documentation to v1.1.0.
+- **Primary shape**: 60×300 px, `StatusBar orientation="VERTICAL"`
+- **Secondary shape**: ~20×300 px, `StatusBar orientation="VERTICAL"`, same height, placed to the left (or right) of the primary
+- **Fill**: solid `SetStatusBarColor` using the same `FACTION_COLORS` map as Flat/Classic secondary
+- **Label**: tooltip-only — too narrow for readable on-bar text
+- **Position**: `GetFallbackPosition()` offsets left by primary width + gap; uses `secondaryBarPositions` for user drag
 
 Steps:
-1. Update version string (`1.0.7` → `1.1.0`) in README header.
-2. Verify feature list matches current shipped behavior (unified secondary bar, companion decoration, options).
-3. Confirm slash command table is accurate.
+1. Create `ui/styles/vertical/VerticalSecondaryBarStyle.lua` — 3 hooks + drag/tooltip/load. `Render`: solid color fill, min/max/value. No label.
+2. Create `ui/styles/vertical/VerticalSecondaryBarTemplate.xml` — 20×300 root frame, single `StatusBar orientation="VERTICAL"` at full size, `frameStrata="MEDIUM"`.
+3. `ui/SecondaryBarManager.lua`: add `vertical = "VerticalReputationBarTemplate"` to `TEMPLATE_MAP`.
+4. `XPBarEnhanced.toc`: add `ui\styles\vertical\VerticalSecondaryBarTemplate.xml` in Styles section.
 
-Definition of done: README version matches TOC; no feature described in README differs from actual behavior.
-
----
-
-#### 2. Code Cleanup
-
-Remove two stale artifacts in `core/services/Session.lua`.
-
-Steps:
-1. Grep for all call sites of `Session:SetupEventFrame()`. If none found, delete the method body entirely (keep `@deprecated` note as a one-line comment if referenced in tests).
-2. Grep for all read sites of `session.sessionXP`. If only the annotation references it, remove the `@field` doc line and confirm no SavedVariables migration needed.
-
-Definition of done: no dead methods or misleading annotations remain in Session.lua.
+Verification: primary=vertical → vertical reputation bar appears to one side; fill reflects faction color; tooltip shows faction data; drag/save works independently.
 
 ---
 
-#### 3. Per-Style Secondary Bar Position
+#### Phase 5 — Circular Secondary (Investigation required before implementation)
 
-**Approved 2026-04-12.** Full scope in [docs/backlog/secondary-bar-per-style-position.md](docs/backlog/secondary-bar-per-style-position.md).
+**Not started.**
 
-Steps:
-1. Replace `db.secondaryBarPosition` (single table) with `db.secondaryBarPositions` (table keyed by primary style name — e.g. `{ flat = {...}, classic = {...} }`) in `Database.lua` seeding and `defaults.lua`.
-2. Update `SecondaryBarBaseMixin`: `SavePosition` writes to `db.secondaryBarPositions[currentPrimaryStyle]`; `GetSavedPosition` reads the same key.
-3. Update `GetFallbackPosition()` — no change needed (already derives from `barPositions[barStyle]`).
-4. Update `ResetBarPositions` in `SecondaryBarManager` to clear only the current style's entry, not the whole table.
-5. Add one-time migration in `Database:Initialize()`: if `db.secondaryBarPosition` exists and `db.secondaryBarPositions` is nil, copy the value into the slot for the currently active style then clear the old key.
-6. Validation: switch primary styles and confirm secondary bar position is independently saved per style; test free-drag and attached-mode paths; test reset; test reload persistence.
+The Circular primary uses a 100-segment ring built by `CircularBarStyleTemplate:CreateRingSegments()` — each segment is a manually positioned and rotated `Texture` quad arranged around a center point. There is no `StatusBar` widget. A style-matched secondary must use the same or a factored version of this infrastructure.
 
-Definition of done: dragging secondary bar in style A does not affect its position in style B; no nil errors on first login after upgrade; existing drag/attach paths unaffected.
+Key questions before implementation:
+- **Shape**: inner concentric ring (smaller radius) vs. a separate floating ring?
+- **Reuse**: can `CreateRingSegments` be parameterized (radius, width, count) to share the implementation, or does the secondary need its own copy?
+- **Anchor**: where does the secondary ring sit relative to the 256×256 primary frame?
+- **Text**: abbreviated faction name + standing below or inside the ring?
+
+Deliver a `docs/analysis/circular-secondary-investigation.md` before starting code.
 
 ---
 
-### Under Investigation
+#### Phase 6 — Minimap Ring Secondary (Investigation required before implementation)
 
-#### Secondary Bar Styles
+**Not started.**
 
-Dedicated analysis document: [docs/analysis/secondary-bar-styles-investigation.md](docs/analysis/secondary-bar-styles-investigation.md)
+The Minimap Ring sits at `BACKGROUND` strata and positions segments dynamically around the minimap button's circumference. A secondary ring would need a different radius (inside or outside the XP ring). Additional constraint: the minimap ring manages the button collection (`MinimapButtonCollection`) and must not be disrupted.
 
-Goal: determine which additional visual styles are viable for the secondary bar, how they integrate with the existing primary XP bar style system, and what the delivery plan should look like. Outcome will be either an approved backlog item with scope or a decision to keep flat-only.
+Key questions before implementation:
+- **Radius**: inner ring (inside XP ring) or outer ring (outside)? Does either interfere with minimap interaction?
+- **Button collection**: does a second ring at a different radius conflict with the button repositioning logic?
+- **Strata**: secondary ring must not occlude the minimap or its buttons.
+
+Deliver a `docs/analysis/minimap-ring-secondary-investigation.md` before starting code.
 
 ---
 
@@ -84,7 +86,6 @@ Goal: determine which additional visual styles are viable for the secondary bar,
 
 | Item | Priority | Status |
 | ---- | -------- | ------ |
-| [secondary-bar-styles](docs/backlog/secondary-bar-styles.md) | P3 | Investigation in progress — see analysis doc |
 
 ## How to Start a Session
 

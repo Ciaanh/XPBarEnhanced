@@ -1,0 +1,42 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\Blizzard_SharedXML\UI.xsd">
+
+    <!-- XP Bar Enhanced - Terminal Secondary Bar Template -->
+    <!-- Single-line ASCII reputation display matching the terminal primary aesthetic. -->
+    <!-- Same near-black background, same monospace font (applied at runtime). -->
+    <!-- No StatusBar: rendering is purely text-based via the RepLine FontString. -->
+
+    <Script file="TerminalSecondaryBarStyle.lua"/>
+
+    <Frame name="TerminalReputationBarTemplate" virtual="true" mixin="XPBarTerminalReputationMixin" frameStrata="MEDIUM" fixedFrameStrata="true" enableMouse="true">
+        <Size x="650" y="22"/>
+        <Layers>
+            <!-- Near-black terminal background (matches TerminalBarTemplate) -->
+            <Layer level="BACKGROUND" textureSubLevel="0">
+                <Texture parentKey="Background" setAllPoints="true">
+                    <Color r="0.02" g="0.02" b="0.02" a="0.92"/>
+                </Texture>
+            </Layer>
+
+            <!-- Single reputation line; font overridden to DejaVuSansMono in OnSecondaryLoad -->
+            <Layer level="ARTWORK" textureSubLevel="5">
+                <FontString parentKey="RepLine" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Anchors>
+                        <Anchor point="LEFT" x="8" y="0"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+            <OnShow method="OnShow"/>
+            <OnHide method="OnHide"/>
+            <OnEnter method="OnEnter"/>
+            <OnLeave method="OnLeave"/>
+            <OnMouseUp method="OnMouseUp"/>
+            <OnDragStart method="OnDragStart"/>
+            <OnDragStop method="OnDragStop"/>
+        </Scripts>
+    </Frame>
+
+</Ui>

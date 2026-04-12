@@ -6,8 +6,13 @@ Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 local Manager = Addon.SecondaryBarManager
 local Utils = Addon.Utils
 
+-- Maps each primary bar style key to its secondary bar template name.
+-- Add entries here as new secondary styles are implemented.
 local TEMPLATE_MAP = {
-    flat = "FlatReputationBarTemplate",
+    flat     = "FlatReputationBarTemplate",
+    classic  = "ClassicReputationBarTemplate",
+    vertical = "VerticalReputationBarTemplate",
+    terminal = "TerminalReputationBarTemplate",
 }
 
 local function DeriveSecondaryStyle()
@@ -15,9 +20,9 @@ local function DeriveSecondaryStyle()
     if not db.showSecondaryBar then
         return "none"
     end
-    -- Use db.barStyle (user preference) not runtime style — secondary bar should
-    -- remain visible at max level even though the primary bar hides itself.
-    -- Only show a secondary bar when a matching template exists for the selected style.
+    -- The secondary bar style is determined solely by the selected primary bar
+    -- style. Use db.barStyle (user preference) rather than the runtime style so
+    -- the secondary bar remains visible at max level even when the primary hides.
     local primaryStyle = db.barStyle or "none"
     if TEMPLATE_MAP[primaryStyle] then
         return primaryStyle
@@ -134,7 +139,12 @@ function Manager:ReapplyAttachedPositions()
     end
 
     frame:ClearAllPoints()
-    frame:SetPoint("BOTTOM", primaryFrame, "TOP", 0, 2)
+    if frame.GetAttachedAnchor then
+        local pt, relPt, x, y = frame:GetAttachedAnchor()
+        frame:SetPoint(pt, primaryFrame, relPt, x, y)
+    else
+        frame:SetPoint("BOTTOM", primaryFrame, "TOP", 0, 2)
+    end
 end
 
 function Manager:GetCurrentFrame()
