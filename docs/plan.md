@@ -1,6 +1,6 @@
 # XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-12
+Last updated: 2026-04-12 (session 2)
 
 ## Addon Summary
 
@@ -18,6 +18,14 @@ The addon is feature-complete for its core scope (v1.1.0, shipped 2026-04-12):
 See `docs/history/phases.md` for full implementation history.
 
 ## Goals
+
+### Completed This Session
+
+- **README version sync** — `1.0.7` → `1.1.0` in README.md
+- **Session.lua cleanup** — `SetupEventFrame()` dead method removed; `session.sessionXP` annotation confirmed accurate (active SavedVariables mirror field)
+- **Per-style secondary bar position** — implemented; see decision-log for full scope
+
+---
 
 ### Next Session
 
@@ -76,7 +84,6 @@ Goal: determine which additional visual styles are viable for the secondary bar,
 
 | Item | Priority | Status |
 | ---- | -------- | ------ |
-| [secondary-bar-per-style-position](docs/backlog/secondary-bar-per-style-position.md) | P2 | **Approved** — next session |
 | [secondary-bar-styles](docs/backlog/secondary-bar-styles.md) | P3 | Investigation in progress — see analysis doc |
 
 ## How to Start a Session

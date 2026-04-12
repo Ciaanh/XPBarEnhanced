@@ -34,9 +34,17 @@ function SecondaryBaseMixin:ApplyInitialPosition()
     self:ClearAllPoints()
 
     local key = self.GetPositionConfigKey and self:GetPositionConfigKey()
+    local styleKey = self.GetPositionStyleKey and self:GetPositionStyleKey()
     local db = Addon and Addon.db
-    local defaults = Addon and Addon.defaults
-    local pos = (key and db and db[key]) or (key and defaults and defaults[key])
+    local pos
+    if key and db then
+        local store = db[key]
+        if styleKey and store then
+            pos = store[styleKey]
+        elseif store then
+            pos = store
+        end
+    end
 
     if pos then
         self:SetPoint(pos.point, pos.relativeTo or "UIParent", pos.relativePoint, pos.x or 0, pos.y or 0)
@@ -261,8 +269,16 @@ end
 -- POSITION PERSISTENCE SUPPORT
 -------------------------------------------------------------------
 
+-- Returns the primary bar style key used to namespace per-style saved positions.
+-- Override in a style mixin to return a different key.
+function SecondaryBaseMixin:GetPositionStyleKey()
+    local db = Addon and Addon.db
+    return db and db.barStyle
+end
+
 function SecondaryBaseMixin:SavePosition()
     local configKey = self.GetPositionConfigKey and self:GetPositionConfigKey()
+    local styleKey = self.GetPositionStyleKey and self:GetPositionStyleKey()
     if not configKey or not Addon.db then
         return
     end
@@ -276,22 +292,34 @@ function SecondaryBaseMixin:SavePosition()
         return
     end
 
-    Addon.db[configKey] = {
+    local posData = {
         point = "BOTTOMLEFT",
         relativeTo = "UIParent",
         relativePoint = "BOTTOMLEFT",
         x = left,
         y = bottom,
     }
+
+    if styleKey then
+        Addon.db[configKey] = Addon.db[configKey] or {}
+        Addon.db[configKey][styleKey] = posData
+    else
+        Addon.db[configKey] = posData
+    end
 end
 
 function SecondaryBaseMixin:ResetPosition()
     local configKey = self.GetPositionConfigKey and self:GetPositionConfigKey()
+    local styleKey = self.GetPositionStyleKey and self:GetPositionStyleKey()
     if not configKey or not Addon.db then
         return
     end
-    
-    Addon.db[configKey] = nil
+
+    if styleKey and Addon.db[configKey] then
+        Addon.db[configKey][styleKey] = nil
+    else
+        Addon.db[configKey] = nil
+    end
     self:ApplyInitialPosition()
 end
 

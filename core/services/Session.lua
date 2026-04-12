@@ -105,12 +105,6 @@ function Session:Initialize()
     -- External event ownership is centralized in EventRouter.
 end
 
--- Initialize event frame for session-relevant events
---- @deprecated Router architecture owns event registration. No-op retained for call-site compat.
-function Session:SetupEventFrame()
-    return false
-end
-
 function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     local session = self:GetCurrent()
     if not session then

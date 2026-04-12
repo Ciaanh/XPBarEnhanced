@@ -468,7 +468,7 @@ function XPBarEnhancedOptionsMixin:OnResetBarPositionClicked()
     end
     -- Clear persisted secondary bar positions so bars return to default anchors
     if Addon.db then
-        Addon.db.secondaryBarPosition = nil
+        Addon.db.secondaryBarPositions = nil
     end
     if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ResetBarPositions then
         Addon.SecondaryBarManager:ResetBarPositions()

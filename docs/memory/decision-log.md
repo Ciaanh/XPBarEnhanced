@@ -1,5 +1,25 @@
 # Decision Log
 
+## 2026-04-12 — v1.1.0 session: README sync, Session.lua cleanup, per-style secondary position
+
+Decision: Implement per-style secondary bar position (`secondaryBarPositions` keyed by primary bar style).
+Reason: Approved 2026-04-12; mirrors how `barPositions` works for primary bars; prevents position bleed between styles.
+Implementation:
+
+- `db.secondaryBarPositions` (table) replaces `db.secondaryBarPosition` (single table) as the SavedVariables key.
+- `SecondaryBarBaseMixin` gains `GetPositionStyleKey()` returning `db.barStyle`; `SavePosition`, `ApplyInitialPosition`, `ResetPosition` all use the two-level `db[configKey][styleKey]` read/write pattern.
+- `FlatSecondaryBarStyle.GetPositionConfigKey()` now returns `"secondaryBarPositions"`.
+- `SecondaryBarManager:ResetBarPositions()` clears only the current style's entry.
+- `Options.lua` `OnResetBarPositionClicked` clears the entire `secondaryBarPositions` table (full reset intent).
+- One-time migration in `Database:Initialize()`: if old `secondaryBarPosition` key exists, copy to `secondaryBarPositions[barStyle]` and remove the old key.
+
+Decision: Remove `Session:SetupEventFrame()` (dead method, no callers).
+Reason: The router architecture owns all event registration; this method was a no-op returning false, tagged `@deprecated`.
+Decision: `session.sessionXP` field retained (actively written as a SavedVariables mirror of `gainedXP`); annotation kept accurate.
+
+Decision: Update README version from 1.0.7 to 1.1.0.
+Reason: README was the last file still referencing the old version.
+
 ## 2026-04-09 — Contract enforcement and visibility ownership hardening
 
 Decision: Enforce session-owned XP broadcast emissions and remove direct XP context emissions from UI/services.

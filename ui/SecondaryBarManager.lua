@@ -214,10 +214,11 @@ end
 
 function Manager:ResetBarPositions()
     local db = Addon.db or {}
-    local configKey = "secondaryBarPosition"
+    local configKey = "secondaryBarPositions"
+    local style = db.barStyle
 
-    if db[configKey] then
-        db[configKey] = nil
+    if db[configKey] and style then
+        db[configKey][style] = nil
     end
 
     local frame = self:GetCurrentFrame()

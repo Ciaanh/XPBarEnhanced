@@ -49,6 +49,16 @@ function Database:Initialize()
         }
     end
 
+    -- Migrate single secondaryBarPosition to per-style secondaryBarPositions table.
+    -- Runs once; after migration the old key is removed.
+    if Addon.db.secondaryBarPosition then
+        if not Addon.db.secondaryBarPositions then
+            local style = Addon.db.barStyle or "flat"
+            Addon.db.secondaryBarPositions = { [style] = Addon.db.secondaryBarPosition }
+        end
+        Addon.db.secondaryBarPosition = nil
+    end
+
     Addon.db.sessionData = Addon.db.sessionData or {}
     Addon.db.reputationSessionData = Addon.db.reputationSessionData or {}
 

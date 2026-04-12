@@ -45,7 +45,7 @@ local function BuildLabel(context)
 end
 
 function StyleMixin:GetPositionConfigKey()
-    return "secondaryBarPosition"
+    return "secondaryBarPositions"
 end
 
 function StyleMixin:GetFallbackPosition()

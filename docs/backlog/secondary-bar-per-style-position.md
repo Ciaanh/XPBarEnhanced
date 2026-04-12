@@ -1,6 +1,14 @@
 # Backlog: Per-style Secondary Bar Position
 
-Priority: P2 · Effort: Small · Status: Not approved for coding
+Priority: P2 · Effort: Small · Status: **IMPLEMENTED — 2026-04-12**
+
+Implemented in session 2026-04-12. See `docs/memory/decision-log.md` for implementation notes.
+
+## Summary
+
+Replaced `db.secondaryBarPosition` (single key) with `db.secondaryBarPositions` (table keyed by primary bar style).
+Each primary style now saves its secondary bar position independently, mirroring how `barPositions` works for the primary bar.
+One-time migration handles existing SavedVariables.
 
 ## Goal
 
