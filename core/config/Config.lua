@@ -242,7 +242,7 @@ function Config:ApplyOptionSideEffects(key)
     end
 
     if key == "circularSecondaryFullCircle" or key == "minimapArcStartExpanded"
-       or key == "minimapArcIconScale" or key == "minimapArcDisplayAngle" or key == "minimapArcIconAngle" then
+       or key == "minimapArcDisplayAngle" or key == "minimapArcIconAngle" then
         if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
             Addon.ReputationSession:EmitUpdate()
         end

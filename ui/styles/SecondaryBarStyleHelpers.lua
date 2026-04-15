@@ -45,3 +45,22 @@ function StyleHelpers.BuildTooltipProgressText(context)
 
     return string.format("%d / %d (%d%%)", context and context.current or 0, context and context.max or 1, context and context.percent or 0)
 end
+
+function StyleHelpers.GetMinimapRingSegmentHeight()
+    local rawHeight = Addon and Addon.db and Addon.db.minimapRingSegmentHeight or 25
+    return math.max(5, math.min(25, math.floor(tonumber(rawHeight) or 25)))
+end
+
+function StyleHelpers.GetMinimapRingRadius(frame)
+    if not Minimap then
+        return 112
+    end
+
+    local minimapEffScale = Minimap:GetEffectiveScale() or 1
+    local frameEffScale = frame and frame.GetEffectiveScale and frame:GetEffectiveScale() or 1
+    local minimapRadius = ((Minimap:GetWidth() / 2) - 2) * (minimapEffScale / frameEffScale)
+
+    local padding = Addon and Addon.db and Addon.db.minimapRingPadding or 14
+    padding = math.max(0, math.min(32, math.floor(tonumber(padding) or 14)))
+    return minimapRadius + padding
+end

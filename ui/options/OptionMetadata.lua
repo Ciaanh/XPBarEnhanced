@@ -218,7 +218,7 @@ local optionDetails = {
         type = "slider",
         label = Addon.L["OPT_MINIMAP_RING_PADDING"],
         description = Addon.L["OPT_MINIMAP_RING_PADDING_DESC"],
-        min = 4,
+        min = 0,
         max = 32,
         step = 1,
         format = "%.0f",
@@ -257,8 +257,8 @@ local optionDetails = {
         type = "slider",
         label = Addon.L["OPT_MINIMAP_RING_SEGMENT_HEIGHT"],
         description = Addon.L["OPT_MINIMAP_RING_SEGMENT_HEIGHT_DESC"],
-        min = 4,
-        max = 24,
+        min = 5,
+        max = 25,
         step = 1,
         format = "%.0f",
         commandKeys = {"segmentheight", "ringsegmentheight"}
@@ -268,17 +268,6 @@ local optionDetails = {
         label = Addon.L["OPT_MINIMAP_ARC_START_EXPANDED"],
         description = Addon.L["OPT_MINIMAP_ARC_START_EXPANDED_DESC"],
         commandKeys = {"arcstartexpanded", "minimaparcexpanded"}
-    },
-    minimapArcIconScale = {
-        key = "minimapArcIconScale",
-        type = "slider",
-        label = Addon.L["OPT_MINIMAP_ARC_ICON_SCALE"],
-        description = Addon.L["OPT_MINIMAP_ARC_ICON_SCALE_DESC"],
-        min = 0.8,
-        max = 1.4,
-        step = 0.05,
-        format = "%.2f",
-        commandKeys = {"arciconscale", "minimaparciconscale"}
     },
     terminalUseCustomColors = {
         key = "terminalUseCustomColors",
@@ -326,7 +315,6 @@ local optionOrder = {
     "minimapRingSegmentWidth",
     "minimapRingSegmentHeight",
     "minimapArcStartExpanded",
-    "minimapArcIconScale",
     "terminalUseCustomColors"
 }
 

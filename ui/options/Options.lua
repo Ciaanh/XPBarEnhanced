@@ -832,7 +832,6 @@ function XPBarEnhancedOptionsMixin:Refresh()
             "minimapRingSegmentWidth",
             "minimapRingSegmentHeight",
             "minimapArcStartExpanded",
-            "minimapArcIconScale",
         }
         for _, key in ipairs(minimapRingRowKeys) do
             local rowFrame = container["Row_" .. key]
@@ -1007,6 +1006,12 @@ function Options:OnOptionChanged(key)
             local bar = Addon.BarManager:GetCurrentFrame()
             if bar and bar.QueueReposition then
                 bar:QueueReposition()
+            end
+        end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
+            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
+            if secondaryBar and secondaryBar.QueueReposition then
+                secondaryBar:QueueReposition()
             end
         end
     elseif

@@ -197,14 +197,6 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_minimapArcIconScale" inherits="ConfigSliderTemplate" hidden="true">
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="minimapArcIconScale" type="string"/>
-                                            <KeyValue key="layoutIndex" value="16.2" type="number"/>
-                                            <KeyValue key="expand" value="true" type="boolean"/>
-                                        </KeyValues>
-                                    </Frame>
-
                                     <!-- ==================== Terminal Bar ==================== -->
 
                                     <Frame parentKey="Row_terminalUseCustomColors" inherits="ConfigCheckboxTemplate" hidden="true">

@@ -10,11 +10,11 @@ local StyleMixin = {}
 
 local MAX_SEGMENTS = 60
 local DISPLAY_SEGMENTS = 40
-local SEGMENT_WIDTH_PX = 7
-local SEGMENT_HEIGHT_PX = 12
+local SEGMENT_WIDTH_PX = 5
+local SEGMENT_HEIGHT_PX = 10
 local SEGMENT_BORDER_PAD_PX = 2
 local BASE_ICON_SIZE = 28
-local REPUTATION_ARC_RADIUS = 22
+local RINGS_GAP = 6
 local REPUTATION_ICON_TEXTURE = "Interface\\Minimap\\Minimap_shield_normal"
 
 local EMPTY_COLOR = {r = 0.10, g = 0.10, b = 0.10, a = 0.35}
@@ -127,7 +127,7 @@ function StyleMixin:OnSecondaryLoad()
         self:RegisterForDrag("LeftButton")
     end
     self:_CreateArcSegments()
-    self:_ApplyIconScale()
+    self:SetSize(BASE_ICON_SIZE, BASE_ICON_SIZE)
     self:_ApplyInitialExpandedState()
     self:_UpdateMinimapAnchor()
 
@@ -154,7 +154,6 @@ function StyleMixin:OnSecondaryShow()
     -- Style switches can show this frame before a new reputation context arrives.
     -- Keep the icon visible so the minimap control does not appear missing.
     self:SetAlpha(1)
-    self:_ApplyIconScale()
     self:_UpdateMinimapAnchor()
 
     if self.IconTexture and self.IconTexture.SetAlpha then
@@ -191,35 +190,10 @@ function StyleMixin:_CreateArcSegments()
     end
 end
 
-function StyleMixin:_ApplyIconScale()
-    local rawScale = Addon.db and Addon.db.minimapArcIconScale or 1.0
-    local iconScale = Clamp(tonumber(rawScale) or 1.0, 0.8, 1.4)
-    if self._iconScale == iconScale then
-        return
-    end
-
-    self._iconScale = iconScale
-    local iconSize = BASE_ICON_SIZE * iconScale
-    self:SetSize(iconSize, iconSize)
-end
-
-function StyleMixin:_ComputeRingRadius()
-    if not Minimap then
-        return 92
-    end
-
-    local minimapEffScale = Minimap:GetEffectiveScale() or 1
-    local selfEffScale = self:GetEffectiveScale() or 1
-    local minimapRadius = (Minimap:GetWidth() / 2) * (minimapEffScale / selfEffScale)
-    local padding = Addon and Addon.db and Addon.db.minimapRingPadding or 10
-    padding = math.max(4, math.min(32, math.floor(tonumber(padding) or 10)))
-    return minimapRadius + padding
-end
-
 function StyleMixin:_GetButtonOffset()
     local angleDegrees = GetIconAngleDegrees()
     local angleRadians = math.rad(angleDegrees)
-    local distance = self:_ComputeRingRadius() + 18
+    local distance = StyleHelpers.GetMinimapRingRadius(self) + StyleHelpers.GetMinimapRingSegmentHeight() + (RINGS_GAP/2)
     return math.cos(angleRadians) * distance, math.sin(angleRadians) * distance
 end
 
@@ -273,7 +247,7 @@ function StyleMixin:_RebuildArcGeometryIfNeeded()
         return
     end
 
-    local radius = self:_ComputeRingRadius() + REPUTATION_ARC_RADIUS
+    local radius = StyleHelpers.GetMinimapRingRadius(self) + StyleHelpers.GetMinimapRingSegmentHeight() + (SEGMENT_HEIGHT_PX / 2) + RINGS_GAP
     local arcSweep = GetArcSweepRadians()
     local iconAngleRad = math.rad(GetIconAngleDegrees())
     -- Arc spans symmetrically around the icon position
@@ -368,7 +342,6 @@ function StyleMixin:Render(context)
         self:SetAlpha(1)
     end
 
-    self:_ApplyIconScale()
     self:_UpdateMinimapAnchor()
 
     local configuredStartExpanded = Addon.db and Addon.db.minimapArcStartExpanded == true
@@ -501,6 +474,18 @@ function StyleMixin:OnDragStop()
 
     self._isDraggingAngle = nil
     self:SetScript("OnUpdate", nil)
+end
+
+function StyleMixin:QueueReposition()
+    -- Invalidate cached geometry so _RebuildArcGeometryIfNeeded recomputes from scratch
+    self._arcRadius = nil
+    self:_UpdateMinimapAnchor()
+    if self._arcExpanded and self.ArcFrame then
+        self:_RebuildArcGeometryIfNeeded()
+        if self._lastContext then
+            self:_RenderArc(self._lastContext)
+        end
+    end
 end
 
 XPBarMinimapArcReputationMixin = CreateFromMixins(XPBarSecondaryBaseMixin, StyleMixin)

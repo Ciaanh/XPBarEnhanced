@@ -3,6 +3,7 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
 end
 
 local Addon = XPBarEnhanced
+local StyleHelpers = Addon.UI.StyleHelpers
 
 local MAX_SEGMENTS = 100
 local DEFAULT_SEGMENTS = 60
@@ -63,7 +64,6 @@ function MinimapRingBarStyleTemplate:_SetupRingTooltipHitFrames()
         f:SetPoint(anchorPoint, ringBar, anchorPoint)
         f:EnableMouse(true)
         f:EnableMouseWheel(true)
-        f:RegisterForClicks("anyUp")
         f:SetScript("OnEnter", function() ringBar:OnEnter() end)
         f:SetScript("OnLeave", function() ringBar:OnLeave() end)
         f:SetScript("OnMouseDown", function(_, button) ringBar:OnMouseDown(button) end)
@@ -215,7 +215,7 @@ end
 
 function MinimapRingBarStyleTemplate:GetSegmentHeight()
     if Addon and Addon.db and type(Addon.db.minimapRingSegmentHeight) == "number" then
-        return math.max(4, math.min(24, Addon.db.minimapRingSegmentHeight))
+        return math.max(5, math.min(25, Addon.db.minimapRingSegmentHeight))
     end
     return MINIMAP_RING_STYLE.SEGMENT_HEIGHT_PX
 end
@@ -244,19 +244,11 @@ end
 function MinimapRingBarStyleTemplate:GetRingPadding()
     local padding = Addon and Addon.db and Addon.db.minimapRingPadding or 14
     padding = math.floor(tonumber(padding) or 14)
-    return math.max(4, math.min(32, padding))
+    return math.max(0, math.min(32, padding))
 end
 
 function MinimapRingBarStyleTemplate:ComputeRingRadius()
-    if not Minimap then
-        return 112
-    end
-
-    local minimapEffScale = Minimap:GetEffectiveScale() or 1
-    local ringEffScale = self:GetEffectiveScale() or 1
-    local minimapRadius = (Minimap:GetWidth() / 2) * (minimapEffScale / ringEffScale)
-
-    return minimapRadius + self:GetRingPadding()
+    return StyleHelpers.GetMinimapRingRadius(self)
 end
 
 function MinimapRingBarStyleTemplate:GetBagAnchorOffset()
@@ -285,9 +277,9 @@ end
 function MinimapRingBarStyleTemplate:RepositionSegments()
     local displayCount = self:GetDisplaySegmentCount()
     local clockwise = -1
-    local ringRadius = self:ComputeRingRadius()
     local segmentWidth = self:GetSegmentWidth(displayCount)
     local segmentHeight = self:GetSegmentHeight()
+    local ringRadius = self:ComputeRingRadius() + (segmentHeight / 2)
     local texturePath = self:GetSegmentTexturePath()
     local frameDiameter = 2 * (ringRadius + (segmentHeight / 2) + 2)
     local startAngle = math.pi / 2

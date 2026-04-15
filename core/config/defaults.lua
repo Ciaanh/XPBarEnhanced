@@ -21,9 +21,9 @@ local defaults = {
     minimapArcIconAngle = 315,
     minimapArcDisplayAngle = 135,
     minimapRingSegmentWidth = 8,
-    minimapRingSegmentHeight = 24,
+    minimapRingSegmentHeight = 25,
     minimapArcStartExpanded = false,
-    minimapArcIconScale = 1.0,
+
     showPercentage = true,
     showMilestoneTicks = false,
     showQuestXP = true,
