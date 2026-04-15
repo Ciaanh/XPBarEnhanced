@@ -658,6 +658,120 @@ function CircularBarStyleTemplate:UpdateBarColors(context, barName)
     -- This is kept for compatibility but does nothing
 end
 
+-------------------------------------------------------------------
+-- CIRCULAR REPUTATION INTEGRATION
+-- Mouse events belong to the XP bar frame; the circular reputation overlay
+-- is mouse-passthrough (enableMouse=false). The XP bar surfaces reputation
+-- data in its own tooltip and handles reputation click actions.
+-------------------------------------------------------------------
+
+local function GetReputationContext()
+    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
+        local ctx = Addon.ReputationSession:GetCurrentContext()
+        if ctx and ctx.isAvailable then
+            return ctx
+        end
+    end
+    return nil
+end
+
+local function IsReputationSecondaryActive()
+    return Addon.SecondaryBarManager
+        and Addon.SecondaryBarManager._currentStyle == "circular"
+        and Addon.SecondaryBarManager:GetCurrentFrame() ~= nil
+end
+
+local function OpenReputationPanel()
+    if ToggleCharacter then
+        ToggleCharacter("ReputationFrame")
+    end
+end
+
+--- Append reputation section to the in-progress GameTooltip.
+--- Called after the XP tooltip has already been opened and populated.
+function CircularBarStyleTemplate:AppendReputationToTooltip()
+    local repCtx = GetReputationContext()
+    if not repCtx then
+        return
+    end
+
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine(repCtx.name or "", 1, 0.82, 0)
+
+    if repCtx.isCompanion and repCtx.currentLevel and repCtx.currentLevel > 0 then
+        GameTooltip:AddLine(string.format("Level: %d", repCtx.currentLevel), 0.7, 0.7, 0.7)
+    elseif repCtx.standingLabel and repCtx.standingLabel ~= "" then
+        GameTooltip:AddLine(repCtx.standingLabel, 0.7, 0.7, 0.7)
+    end
+
+    local StyleHelpers = Addon.UI.StyleHelpers
+    GameTooltip:AddLine(
+        string.format("Rep: %s", StyleHelpers.BuildTooltipProgressText(repCtx)),
+        0.7, 1, 0.7
+    )
+
+    local fmt = Addon.TextFormatter
+    if not repCtx.isMaxed and fmt then
+        local cur = fmt:FormatNumber(repCtx.current or 0, false)
+        local max = fmt:FormatNumber(repCtx.max or 0, false)
+        GameTooltip:AddDoubleLine("Current:", cur .. " / " .. max, 0.7, 0.7, 0.7, 0.7, 0.9, 1)
+    end
+    if repCtx.sessionGained and repCtx.sessionGained > 0 and fmt then
+        GameTooltip:AddDoubleLine("Gained:", "+" .. fmt:FormatNumber(repCtx.sessionGained, false), 0.7, 0.7, 0.7, 0.5, 1, 0.5)
+    end
+    if repCtx.repPerHour and repCtx.repPerHour > 0 and fmt then
+        GameTooltip:AddDoubleLine("Rate:", fmt:FormatNumber(repCtx.repPerHour, false) .. "/hr", 0.7, 0.7, 0.7, 0.5, 0.8, 1)
+    end
+    if repCtx.timeToNextLevel and repCtx.timeToNextLevel > 0 and fmt then
+        GameTooltip:AddDoubleLine("Next:", fmt:FormatTime(repCtx.timeToNextLevel, true), 0.7, 0.7, 0.7, 0.8, 0.8, 0.5)
+    end
+end
+
+--- Override OnEnter: show XP tooltip then append reputation section.
+function CircularBarStyleTemplate:OnEnter()
+    -- Base tooltip (XP data, session, hints)
+    XPBarTooltipMixin.OnEnter(self)
+
+    -- Append reputation section if the circular secondary bar is active
+    if not IsReputationSecondaryActive() then
+        return
+    end
+
+    self:AppendReputationToTooltip()
+    GameTooltip:Show()
+end
+
+--- Override OnRightClick: open Reputation panel when secondary bar is active.
+function CircularBarStyleTemplate:OnRightClick()
+    if IsReputationSecondaryActive() then
+        OpenReputationPanel()
+    end
+end
+
+--- Override GetHintText: add reputation hints when the secondary bar is active.
+function CircularBarStyleTemplate:GetHintText()
+    local L = XPBarEnhanced and XPBarEnhanced.L or {}
+
+    local isDraggable = false
+    if self.GetPositionMode then
+        isDraggable = self:GetPositionMode() == "DRAGGABLE"
+    end
+
+    local hints = {}
+    if isDraggable then
+        table.insert(hints, L["TT_HINT_DRAG"])
+    end
+    table.insert(hints, L["TT_HINT_ALT_OPTIONS"])
+    table.insert(hints, L["TT_HINT_CTRL_STATS"])
+
+    -- Reputation hint: right-click opens the Reputation panel
+    if IsReputationSecondaryActive() then
+        table.insert(hints, "Right-click: open Reputation")
+    end
+
+    return table.concat(hints, "\n")
+end
+
 --- Override OnHide to clean up animations
 function CircularBarStyleTemplate:OnHide()
     -- Cancel any running per-frame arc animation

@@ -813,13 +813,27 @@ function XPBarEnhancedOptionsMixin:Refresh()
 
     if container then
         -- Circular rows
-        local circularRowKeys = {"circularSize", "circularSegments", "circularUseTexture", "circularScaleCenterText"}
+        local circularRowKeys = {
+            "circularSize",
+            "circularSegments",
+            "circularUseTexture",
+            "circularScaleCenterText",
+            "circularSecondaryFullCircle"
+        }
         for _, key in ipairs(circularRowKeys) do
             local rowFrame = container["Row_" .. key]
             if rowFrame then rowFrame:SetShown(isCircularMode) end
         end
 
-        local minimapRingRowKeys = {"minimapRingPadding", "minimapRingSegments", "minimapRingCollectButtons", "minimapRingSegmentWidth", "minimapRingSegmentHeight"}
+        local minimapRingRowKeys = {
+            "minimapRingPadding",
+            "minimapRingSegments",
+            "minimapRingCollectButtons",
+            "minimapRingSegmentWidth",
+            "minimapRingSegmentHeight",
+            "minimapArcStartExpanded",
+            "minimapArcIconScale",
+        }
         for _, key in ipairs(minimapRingRowKeys) do
             local rowFrame = container["Row_" .. key]
             if rowFrame then rowFrame:SetShown(isMinimapRingMode) end

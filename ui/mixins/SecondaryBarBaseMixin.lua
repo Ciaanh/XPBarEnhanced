@@ -56,6 +56,10 @@ function SecondaryBaseMixin:ApplyInitialPosition()
 end
 
 function SecondaryBaseMixin:OnShow()
+    if self.OnSecondaryShow then
+        self:OnSecondaryShow()
+    end
+
     self:Subscribe()
     self:StartTextTicker()
     self:Refresh()

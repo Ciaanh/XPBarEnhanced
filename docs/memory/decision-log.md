@@ -1,5 +1,38 @@
 # Decision Log
 
+## 2026-04-13 — Circular and minimap secondary prototypes implemented with options coverage
+
+Decision: Activate secondary style mapping for `circular` and `minimap_ring` in `SecondaryBarManager.TEMPLATE_MAP`.
+Reason: Prototype implementation approved for C3/C1 hybrid circular secondary and minimap icon-centered arc secondary.
+Impact:
+
+- `SecondaryBarManager.lua`: `circular` now maps to `CircularReputationBarTemplate`; `minimap_ring` maps to `MinimapArcReputationBarTemplate`.
+- `SecondaryBarManager:ReapplyAttachedPositions()` now respects optional `frame:ShouldAttachToPrimary()` so styles can explicitly opt out of attachment behavior.
+
+Decision: Implement circular secondary as an inner segment arc with optional full-circle mode.
+Reason: Preserve visual coherence with the circular primary while reducing center clutter by default.
+Impact:
+
+- Added `CircularSecondaryBarTemplate.xml` + `CircularSecondaryBarStyle.lua`.
+- Default rendering is semi-circular; `circularSecondaryFullCircle` toggles 360-degree mode.
+- Style remains attachable to the primary bar center in attached mode.
+
+Decision: Implement minimap secondary as a draggable icon that toggles a centered arc.
+Reason: Matches desired interaction model where icon position controls arc position and avoids permanent minimap ring clutter.
+Impact:
+
+- Added `MinimapArcSecondaryBarTemplate.xml` + `MinimapArcSecondaryBarStyle.lua`.
+- Left-click toggles arc visibility; shift-drag repositions icon/arc together.
+- Style opts out of primary attached mode (`ShouldAttachToPrimary() == false`).
+
+Decision: Add option panel coverage for all new prototype settings.
+Reason: Ensure prototype behavior is user-adjustable without editing SavedVariables manually.
+Impact:
+
+- `defaults.lua`: added `circularSecondaryFullCircle`, `minimapArcStartExpanded`, `minimapArcIconScale`.
+- `OptionMetadata.lua`, `OptionsPanel.xml`, `Options.lua`, `locales/enUS.lua`: added and surfaced new controls in the options panel with style-conditional visibility.
+- `XPBarEnhanced.toc`: added new circular/minimap secondary template files.
+
 ## 2026-04-13 — Secondary bar style selection model simplified; Classic label restored
 
 Decision: Remove `AUTO_PAIR`, `secondaryBarStyle` config key, and the options dropdown. Replace with a direct `TEMPLATE_MAP[db.barStyle]` lookup.

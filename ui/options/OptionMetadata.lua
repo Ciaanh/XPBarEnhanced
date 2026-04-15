@@ -207,6 +207,12 @@ local optionDetails = {
         description = Addon.L["OPT_CIRCULAR_SCALE_CENTER_TEXT_DESC"],
         commandKeys = {"scalecentertext", "scaletext"}
     },
+    circularSecondaryFullCircle = {
+        key = "circularSecondaryFullCircle",
+        label = Addon.L["OPT_CIRCULAR_SECONDARY_FULL_CIRCLE"],
+        description = Addon.L["OPT_CIRCULAR_SECONDARY_FULL_CIRCLE_DESC"],
+        commandKeys = {"secondaryfullcircle", "circlefull"}
+    },
     minimapRingPadding = {
         key = "minimapRingPadding",
         type = "slider",
@@ -257,6 +263,23 @@ local optionDetails = {
         format = "%.0f",
         commandKeys = {"segmentheight", "ringsegmentheight"}
     },
+    minimapArcStartExpanded = {
+        key = "minimapArcStartExpanded",
+        label = Addon.L["OPT_MINIMAP_ARC_START_EXPANDED"],
+        description = Addon.L["OPT_MINIMAP_ARC_START_EXPANDED_DESC"],
+        commandKeys = {"arcstartexpanded", "minimaparcexpanded"}
+    },
+    minimapArcIconScale = {
+        key = "minimapArcIconScale",
+        type = "slider",
+        label = Addon.L["OPT_MINIMAP_ARC_ICON_SCALE"],
+        description = Addon.L["OPT_MINIMAP_ARC_ICON_SCALE_DESC"],
+        min = 0.8,
+        max = 1.4,
+        step = 0.05,
+        format = "%.2f",
+        commandKeys = {"arciconscale", "minimaparciconscale"}
+    },
     terminalUseCustomColors = {
         key = "terminalUseCustomColors",
         label = Addon.L["OPT_TERMINAL_USE_CUSTOM_COLORS"],
@@ -296,11 +319,14 @@ local optionOrder = {
     "circularSegments",
     "circularUseTexture",
     "circularScaleCenterText",
+    "circularSecondaryFullCircle",
     "minimapRingPadding",
     "minimapRingSegments",
     "minimapRingCollectButtons",
     "minimapRingSegmentWidth",
     "minimapRingSegmentHeight",
+    "minimapArcStartExpanded",
+    "minimapArcIconScale",
     "terminalUseCustomColors"
 }
 

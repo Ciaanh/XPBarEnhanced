@@ -37,6 +37,53 @@ function MinimapRingBarStyleTemplate:OnLoad()
     end
 end
 
+-- MinimapCluster (LOW, toplevel) intercepts mouse events before they reach the ring
+-- bar (BACKGROUND). Override GetBestAnchor so tooltip follows the cursor rather than
+-- trying to anchor to the occluded BACKGROUND frame.
+function MinimapRingBarStyleTemplate:GetBestAnchor()
+    return "ANCHOR_CURSOR"
+end
+
+-- Create thin MEDIUM-strata frames at the four cardinal positions of the ring
+-- circumference. These capture OnEnter/OnLeave events that MinimapCluster blocks
+-- on the BACKGROUND ring frame, and forward them to the ring bar's tooltip system.
+-- IsMouseOver() returns true during these calls because the cursor is still within
+-- the ring bar's 256x256 hit rect.
+function MinimapRingBarStyleTemplate:_SetupRingTooltipHitFrames()
+    if self._ringHitFrames then
+        return
+    end
+
+    local ringBar = self
+
+    local function MakeHitFrame(width, height, anchorPoint)
+        local f = CreateFrame("Frame", nil, UIParent)
+        f:SetFrameStrata("MEDIUM")
+        f:SetSize(width, height)
+        f:SetPoint(anchorPoint, ringBar, anchorPoint)
+        f:EnableMouse(true)
+        f:EnableMouseWheel(true)
+        f:SetScript("OnEnter", function() ringBar:OnEnter() end)
+        f:SetScript("OnLeave", function() ringBar:OnLeave() end)
+        f:SetScript("OnMouseWheel", function(_, delta)
+            if delta > 0 then
+                Minimap_ZoomIn()
+            else
+                Minimap_ZoomOut()
+            end
+        end)
+        return f
+    end
+
+    -- 4 thin strips at cardinal edges of the 256x256 ring frame
+    self._ringHitFrames = {
+        MakeHitFrame(120, 30, "TOP"),
+        MakeHitFrame(120, 30, "BOTTOM"),
+        MakeHitFrame(30, 120, "LEFT"),
+        MakeHitFrame(30, 120, "RIGHT"),
+    }
+end
+
 function MinimapRingBarStyleTemplate:OnShow()
     if XPBarMixinBase and XPBarMixinBase.OnShow then
         XPBarMixinBase.OnShow(self)
@@ -45,6 +92,12 @@ function MinimapRingBarStyleTemplate:OnShow()
     self:QueueReposition()
     self:UpdateButtonCollection(true)
     self:StartButtonScanTimer()
+    self:_SetupRingTooltipHitFrames()
+    if self._ringHitFrames then
+        for _, f in ipairs(self._ringHitFrames) do
+            f:Show()
+        end
+    end
 end
 
 function MinimapRingBarStyleTemplate:OnHide()
@@ -57,6 +110,12 @@ function MinimapRingBarStyleTemplate:OnHide()
 
     if XPBarMixinBase and XPBarMixinBase.OnHide then
         XPBarMixinBase.OnHide(self)
+    end
+
+    if self._ringHitFrames then
+        for _, f in ipairs(self._ringHitFrames) do
+            f:Hide()
+        end
     end
 end
 

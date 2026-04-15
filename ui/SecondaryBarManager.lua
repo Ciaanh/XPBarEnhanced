@@ -11,6 +11,8 @@ local Utils = Addon.Utils
 local TEMPLATE_MAP = {
     flat     = "FlatReputationBarTemplate",
     classic  = "ClassicReputationBarTemplate",
+    circular = "CircularReputationBarTemplate",
+    minimap_ring = "MinimapArcReputationBarTemplate",
     vertical = "VerticalReputationBarTemplate",
     terminal = "TerminalReputationBarTemplate",
 }
@@ -129,7 +131,13 @@ function Manager:ReapplyAttachedPositions()
     -- At max level BarManager:GetCurrentFrame() returns nil (runtime style = "none").
     -- In that case no functional attachment target exists, so act as detached.
     local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
-    local isAttachedAndPrimaryVisible = db.secondaryBarsAttached and primaryFrame ~= nil
+    local canAttachToPrimary = true
+    if frame.ShouldAttachToPrimary then
+        canAttachToPrimary = frame:ShouldAttachToPrimary() ~= false
+    end
+
+    local forceAttachedStyle = (self._currentStyle == "circular")
+    local isAttachedAndPrimaryVisible = (forceAttachedStyle or db.secondaryBarsAttached) and primaryFrame ~= nil and canAttachToPrimary
 
     if not isAttachedAndPrimaryVisible then
         if frame.ApplyInitialPosition then

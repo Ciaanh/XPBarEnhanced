@@ -78,6 +78,9 @@ ui\StyleBuilder.lua
 ui\BarManager.lua
 ui\SecondaryBarManager.lua
 
+# Shared style helpers
+ui\styles\SecondaryBarStyleHelpers.lua
+
 #  Frames
 ui\options\OptionsPanelTemplates.xml
 ui\options\OptionMetadata.lua
@@ -95,6 +98,8 @@ ui\styles\classic\ClassicSecondaryBarTemplate.xml
 ui\styles\vertical\VerticalBarTemplate.xml
 ui\styles\vertical\VerticalSecondaryBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
+ui\styles\circular\CircularSecondaryBarTemplate.xml
 ui\styles\minimap_ring\MinimapRingBarTemplate.xml
+ui\styles\minimap_ring\MinimapArcSecondaryBarTemplate.xml
 ui\styles\terminal\TerminalBarTemplate.xml
 ui\styles\terminal\TerminalSecondaryBarTemplate.xml

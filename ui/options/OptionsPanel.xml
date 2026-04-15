@@ -140,6 +140,14 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_circularSecondaryFullCircle" inherits="ConfigCheckboxTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="circularSecondaryFullCircle" type="string"/>
+                                            <KeyValue key="layoutIndex" value="11.1" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <Frame parentKey="Row_minimapRingPadding" inherits="ConfigSliderTemplate" hidden="true">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="minimapRingPadding" type="string"/>
@@ -177,6 +185,22 @@
                                         <KeyValues>
                                             <KeyValue key="configKey" value="minimapRingSegmentHeight" type="string"/>
                                             <KeyValue key="layoutIndex" value="16" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_minimapArcStartExpanded" inherits="ConfigCheckboxTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="minimapArcStartExpanded" type="string"/>
+                                            <KeyValue key="layoutIndex" value="16.1" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_minimapArcIconScale" inherits="ConfigSliderTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="minimapArcIconScale" type="string"/>
+                                            <KeyValue key="layoutIndex" value="16.2" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                         </KeyValues>
                                     </Frame>

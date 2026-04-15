@@ -241,6 +241,13 @@ function Config:ApplyOptionSideEffects(key)
         end
     end
 
+    if key == "circularSecondaryFullCircle" or key == "minimapArcStartExpanded"
+       or key == "minimapArcIconScale" or key == "minimapArcDisplayAngle" or key == "minimapArcIconAngle" then
+        if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+            Addon.ReputationSession:EmitUpdate()
+        end
+    end
+
     -- Request time played if time text options enabled
     if key == "showLevelTimeText" or key == "showSessionTimeText" then
         local session = Addon.db.sessionData

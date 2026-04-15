@@ -247,7 +247,12 @@ function StyleMixin:OnEnter()
         GameTooltip:AddLine(string.format("Next: %s", timeStr), 0.8, 0.8, 0.5)
     end
 
-    GameTooltip:AddLine("Click to open Reputation", 0.4, 0.4, 0.4)
+    GameTooltip:AddLine("Right-click: open Reputation", 0.4, 0.4, 0.4)
+    local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
+    local isAttachedToPrimary = Addon.db and Addon.db.secondaryBarsAttached and primaryFrame ~= nil
+    if not isAttachedToPrimary then
+        GameTooltip:AddLine("Shift+Drag to move", 0.4, 0.4, 0.4)
+    end
     GameTooltip:Show()
 end
 
@@ -267,12 +272,12 @@ function StyleMixin:OnMouseUp(button)
         return
     end
 
-    if button == "LeftButton" and not IsShiftKeyDown() then
-        self:OnLeftClick()
+    if button == "RightButton" then
+        self:OnRightClick()
     end
 end
 
-function StyleMixin:OnLeftClick()
+function StyleMixin:OnRightClick()
     if ToggleCharacter then
         ToggleCharacter("ReputationFrame")
     end

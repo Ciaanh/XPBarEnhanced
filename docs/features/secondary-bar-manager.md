@@ -5,6 +5,8 @@ The shared infrastructure that manages reputation and companion secondary bars �
 ## Capabilities
 
 - **Single tracked-reputation bar**: One secondary bar renders the watched faction and applies companion-specific decoration when the watched faction is a delve companion
+- **Circular inner-arc secondary style**: Circular primary style now maps to an inner reputation arc with a semi-circle default and optional full-circle rendering
+- **Minimap icon+arc secondary style**: Minimap ring primary style now maps to a draggable icon that toggles a centered reputation arc
 - **Attached/free positioning**: `secondaryBarsAttached` toggle locks the secondary bar relative to the XP bar or allows independent drag placement
 - **Shared lifecycle contract**: All secondary bars follow OnLoad → OnShow → OnHide → MarkDirty → Render
 - **Drag-to-move**: Shift+drag repositioning with SavedVariables persistence and position lock
@@ -29,6 +31,8 @@ The shared infrastructure that manages reputation and companion secondary bars �
 - `ui/SecondaryBarManager.lua` — Style activation, frame lifecycle, Blizzard visibility
 - `ui/mixins/SecondaryBarBaseMixin.lua` — Shared lifecycle, fade, tooltip, ticker, drag
 - `ui/styles/flat/FlatSecondaryBarStyle.lua` — Flat secondary bar rendering
+- `ui/styles/circular/CircularSecondaryBarStyle.lua` — Circular inner-arc secondary rendering
+- `ui/styles/minimap_ring/MinimapArcSecondaryBarStyle.lua` — Minimap icon + arc toggle secondary rendering
 
 ## Design Decisions
 
@@ -37,6 +41,14 @@ The shared infrastructure that manages reputation and companion secondary bars �
 - Bootstrap emit ownership moved from manager to session layers (Phase 7 Slice 2)
 - Drag semantics hardened: position persistence managed by SavePosition, not drag-stop (Slice 1)
 - Companion and reputation rendering share one secondary frame and one style lifecycle
+- `TEMPLATE_MAP` now includes `circular` and `minimap_ring` entries, preserving the 1:1 primary→secondary model
+- Minimap arc style opts out of attached positioning intentionally (`ShouldAttachToPrimary() == false`), while circular style remains attachable to the primary center
+
+## User-Facing Options
+
+- `circularSecondaryFullCircle`: Circular inner secondary arc uses 360-degree full ring when enabled; defaults to semi-circle when disabled
+- `minimapArcStartExpanded`: Minimap icon style starts with the arc shown when enabled
+- `minimapArcIconScale`: Scales the minimap secondary icon size for readability and placement preference
 
 ## Backlog
 
