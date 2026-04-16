@@ -13,13 +13,13 @@ Completed and closed items have been archived to `docs/history/phases.md`. Decis
 
 ## Active Backlog Items
 
-*(No active items — all backlog items are complete or deferred.)*
+*(No active items — all backlog items are either complete or deferred to docs/plan.md phases.)*
 
 ## Deferred / Investigation-Only
 
 | Item | Goal | Status | Notes |
 | ---- | ---- | ------ | ----- |
-| [secondary-bar-styles.md](secondary-bar-styles.md) | Secondary bars for Vertical, Circular, Minimap Ring, Terminal primary styles | Investigation-only | Do not implement without dedicated analysis per style |
+| [secondary-bar-styles.md](secondary-bar-styles.md) | Secondary bars for all primary styles | **Complete** — all 6 styles in TEMPLATE_MAP as of 2026-04-13 | Remaining style quality/polish tracked in docs/plan.md |
 
 ## Completed Work (Archived)
 

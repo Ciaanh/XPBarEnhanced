@@ -4,6 +4,7 @@ end
 
 local Addon = XPBarEnhanced
 local StyleHelpers = Addon.UI.StyleHelpers
+local SharedStyleHelpers = Addon.UI.SharedStyleHelpers
 
 local MAX_SEGMENTS = 100
 local DEFAULT_SEGMENTS = 60
@@ -430,29 +431,17 @@ end
 
 function MinimapRingBarStyleTemplate:UpdateSegmentColors(hasRestedXP)
     local Colors = Addon.Colors
-    local colorNormal = Colors:Get(Colors.Key.XpBar)
-    local colorRested = Colors:Get(Colors.Key.Rested)
-    local colorXpBarRested = Colors:Get(Colors.Key.XpBarRested)
-    local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
-    local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
-    local currentXPColor = hasRestedXP and colorXpBarRested or colorNormal
-    local displayCount = self:GetDisplaySegmentCount()
+    local colors = {
+        currentXP = SharedStyleHelpers.GetXPBarColor({hasRestedXP = hasRestedXP}),
+        rested = Colors:Get(Colors.Key.Rested),
+        questComplete = Colors:Get(Colors.Key.QuestComplete),
+        questIncomplete = Colors:Get(Colors.Key.QuestIncomplete),
+    }
 
+    local displayCount = self:GetDisplaySegmentCount()
     for index = 1, displayCount do
         local segment = self.segments[index]
-        local segmentType = self.segmentTypes[index]
-
-        if segmentType == SEGMENT_TYPE.CURRENT_XP then
-            segment:SetVertexColor(currentXPColor.r, currentXPColor.g, currentXPColor.b, currentXPColor.a or 1)
-        elseif segmentType == SEGMENT_TYPE.QUEST_COMPLETE then
-            segment:SetVertexColor(colorQuestComplete.r, colorQuestComplete.g, colorQuestComplete.b, colorQuestComplete.a or 1)
-        elseif segmentType == SEGMENT_TYPE.QUEST_INCOMPLETE then
-            segment:SetVertexColor(colorQuestIncomplete.r, colorQuestIncomplete.g, colorQuestIncomplete.b, colorQuestIncomplete.a or 1)
-        elseif segmentType == SEGMENT_TYPE.RESTED then
-            segment:SetVertexColor(colorRested.r, colorRested.g, colorRested.b, colorRested.a or 1)
-        else
-            segment:SetVertexColor(EMPTY_SEGMENT_COLOR.r, EMPTY_SEGMENT_COLOR.g, EMPTY_SEGMENT_COLOR.b, EMPTY_SEGMENT_COLOR.a)
-        end
+        SharedStyleHelpers.ApplySegmentTypeColor(segment, self.segmentTypes[index], colors, EMPTY_SEGMENT_COLOR, 1.0)
     end
 end
 
@@ -544,9 +533,7 @@ function MinimapRingBarStyleTemplate:AnimateBarEffect(iterationData, eventContex
 
     local lastIdx = self._lastXPSegmentIndex
     if flashActive and lastIdx and lastIdx > 0 and self._segmentPositions and self._segmentPositions[lastIdx] then
-        local Colors = Addon.Colors
-        local colorKey = eventContext and eventContext.hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
-        local color = Colors:Get(colorKey)
+        local color = SharedStyleHelpers.GetXPBarColor(eventContext)
         local pos = self._segmentPositions[lastIdx]
 
         self.segmentGlow:ClearAllPoints()

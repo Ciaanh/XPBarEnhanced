@@ -77,6 +77,87 @@ XPBarContextBuilder = {}
 local ContextBuilder = XPBarContextBuilder
 Addon.ContextBuilder = ContextBuilder
 
+ContextBuilder._contextCache = ContextBuilder._contextCache or {}
+ContextBuilder._contextCacheFlushPending = false
+ContextBuilder._debugStats = ContextBuilder._debugStats or {
+	fullBuilds = 0,
+	fullHits = 0,
+	textBuilds = 0,
+	textHits = 0,
+	lastLogAt = 0,
+}
+
+local function GetFrameToken()
+	if GetTimePreciseSec then
+		return math.floor((GetTimePreciseSec() or 0) * 1000)
+	end
+	return math.floor((GetTime() or 0) * 1000)
+end
+
+local function ScheduleCacheFlush()
+	if ContextBuilder._contextCacheFlushPending then
+		return
+	end
+
+	ContextBuilder._contextCacheFlushPending = true
+	C_Timer.After(0, function()
+		ContextBuilder._contextCache = {}
+		ContextBuilder._contextCacheFlushPending = false
+	end)
+end
+
+local function BuildContextCacheKey(event, ...)
+	local arg1, arg2 = ...
+	return table.concat({ tostring(event or "UNKNOWN"), tostring(arg1), tostring(arg2) }, "|")
+end
+
+local function IsContextDebugEnabled()
+	if not GetCVar then
+		return false
+	end
+
+	local value = GetCVar("XPBE_DEBUG_CONTEXT")
+	return value == "1"
+end
+
+local function RecordDebugStat(statKey)
+	local stats = ContextBuilder._debugStats
+	if not stats then
+		return
+	end
+
+	stats[statKey] = (stats[statKey] or 0) + 1
+
+	if not IsContextDebugEnabled() then
+		return
+	end
+
+	local now = GetTime and GetTime() or 0
+	if (now - (stats.lastLogAt or 0)) < 10 then
+		return
+	end
+
+	stats.lastLogAt = now
+	local fullBuilds = stats.fullBuilds or 0
+	local fullHits = stats.fullHits or 0
+	local textBuilds = stats.textBuilds or 0
+	local textHits = stats.textHits or 0
+	local fullTotal = fullBuilds + fullHits
+	local textTotal = textBuilds + textHits
+	local fullHitRate = fullTotal > 0 and math.floor((fullHits / fullTotal) * 100 + 0.5) or 0
+	local textHitRate = textTotal > 0 and math.floor((textHits / textTotal) * 100 + 0.5) or 0
+
+	print(string.format(
+		"XPBE ContextCache full b=%d h=%d hit=%d%% | text b=%d h=%d hit=%d%%",
+		fullBuilds,
+		fullHits,
+		fullHitRate,
+		textBuilds,
+		textHits,
+		textHitRate
+	))
+end
+
 -------------------------------------------------------------------
 -- INTERNAL HELPERS
 -------------------------------------------------------------------
@@ -300,6 +381,14 @@ local XP_CONSUMING_EVENTS = {
 
 function XPBarContextBuilder.BuildContext(event, ...)
 	local args = {...}
+	local frameToken = GetFrameToken()
+	local cacheKey = BuildContextCacheKey(event, unpack(args))
+	local cached = ContextBuilder._contextCache[cacheKey]
+	if cached and cached.frameToken == frameToken and cached.context then
+		RecordDebugStat("fullHits")
+		return cached.context
+	end
+
 	local coreState = ContextBuilder.GetCoreState()
 	local coreContext = ContextBuilder.BuildCoreContext(coreState)
 
@@ -386,7 +475,15 @@ function XPBarContextBuilder.BuildContext(event, ...)
 		eventContext.shouldFlash = false
 	end
 
-	return ContextBuilder.MakeImmutable(eventContext, coreContext)
+	local context = ContextBuilder.MakeImmutable(eventContext, coreContext)
+	ContextBuilder._contextCache[cacheKey] = {
+		frameToken = frameToken,
+		context = context,
+	}
+	RecordDebugStat("fullBuilds")
+	ScheduleCacheFlush()
+
+	return context
 end
 
 -------------------------------------------------------------------
@@ -410,6 +507,15 @@ end
 function ContextBuilder.Initialize()
 	-- UnitXP may return nil/0 before PLAYER_LOGIN fires; keep _lastXP nil in that
 	-- case so ComputeXPGained defaults it to currentXP (zero gain on first event).
+	ContextBuilder._contextCache = {}
+	ContextBuilder._contextCacheFlushPending = false
+	ContextBuilder._debugStats = {
+		fullBuilds = 0,
+		fullHits = 0,
+		textBuilds = 0,
+		textHits = 0,
+		lastLogAt = 0,
+	}
 	local xp = UnitXP("player")
 	if xp and xp > 0 then
 		ContextBuilder._lastXP = xp
@@ -418,6 +524,15 @@ function ContextBuilder.Initialize()
 end
 
 function ContextBuilder.ResetSession()
+	ContextBuilder._contextCache = {}
+	ContextBuilder._contextCacheFlushPending = false
+	ContextBuilder._debugStats = {
+		fullBuilds = 0,
+		fullHits = 0,
+		textBuilds = 0,
+		textHits = 0,
+		lastLogAt = 0,
+	}
 	ContextBuilder._lastXP = UnitXP("player") or 0
 	ContextBuilder._lastMaxXP = UnitXPMax("player") or 1
 end
@@ -431,6 +546,14 @@ end
 ---@param event string Optional event/source label
 ---@return table context Immutable context carrying text toggles and rate values
 function XPBarContextBuilder.BuildTextRefreshContext(event)
+	local frameToken = GetFrameToken()
+	local cacheKey = BuildContextCacheKey("TEXT_REFRESH", event)
+	local cached = ContextBuilder._contextCache[cacheKey]
+	if cached and cached.frameToken == frameToken and cached.context then
+		RecordDebugStat("textHits")
+		return cached.context
+	end
+
 	local db = Addon and Addon.db or {}
 	local currentXP = UnitXP("player") or 0
 	local xpMax = UnitXPMax("player") or 1
@@ -461,7 +584,15 @@ function XPBarContextBuilder.BuildTextRefreshContext(event)
 		abbreviateNumbers = db.abbreviateNumbers,
 	}
 
-	return ContextBuilder.MakeImmutable(eventContext)
+	local context = ContextBuilder.MakeImmutable(eventContext)
+	ContextBuilder._contextCache[cacheKey] = {
+		frameToken = frameToken,
+		context = context,
+	}
+	RecordDebugStat("textBuilds")
+	ScheduleCacheFlush()
+
+	return context
 end
 
 ContextBuilder.Initialize()

@@ -1,10 +1,13 @@
 -- XP Bar Enhanced - Core.lua
 
-local ADDON_NAME = "XPBarEnhanced"
+local addonName, ns = ...
+local ADDON_NAME = addonName or "XPBarEnhanced"
 
--- Initialize addon namespace
-XPBarEnhanced = XPBarEnhanced or {}
-local Addon = XPBarEnhanced
+-- Initialize addon namespace from WoW's addon-private table and keep
+-- a compatibility global for existing module load pattern.
+ns = ns or {}
+XPBarEnhanced = ns
+local Addon = ns
 Addon.L = LibStub("AceLocale-3.0"):GetLocale(ADDON_NAME, true)
 
 Addon.EventNames = {

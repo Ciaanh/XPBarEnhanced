@@ -103,19 +103,23 @@ end
 function Manager:Initialize()
     self:InstallBlizzardBarHooks()
 
-    self:SetSecondaryStyle(DeriveSecondaryStyle())
-    self:ApplyDefaultReputationBarVisibility()
-    self:ReapplyAttachedPositions()
+    self:RefreshForPrimaryStyleChange()
 
     Addon.EventBus:Register(
         Addon.EventNames.CONFIG_UPDATED,
         "SecondaryBarManager_ConfigUpdated",
         function(_ctx)
-            self:SetSecondaryStyle(DeriveSecondaryStyle())
-            self:ApplyDefaultReputationBarVisibility()
-            self:ReapplyAttachedPositions()
+            self:RefreshForPrimaryStyleChange()
         end
     )
+end
+
+-- Re-evaluate style/visibility/position using the currently configured primary
+-- style (db.barStyle), not runtime primary frame visibility.
+function Manager:RefreshForPrimaryStyleChange()
+    self:SetSecondaryStyle(DeriveSecondaryStyle())
+    self:ApplyDefaultReputationBarVisibility()
+    self:ReapplyAttachedPositions()
 end
 
 -- Stack active secondary bars above the primary XP bar when attached mode is on.

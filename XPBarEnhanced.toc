@@ -79,6 +79,7 @@ ui\BarManager.lua
 ui\SecondaryBarManager.lua
 
 # Shared style helpers
+ui\styles\SharedStyleHelpers.lua
 ui\styles\SecondaryBarStyleHelpers.lua
 
 #  Frames

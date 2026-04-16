@@ -2,6 +2,7 @@
 -- Displays a minimap-linked icon that toggles a centered reputation arc.
 
 local Addon = XPBarEnhanced
+local SharedStyleHelpers = Addon.UI.SharedStyleHelpers
 local StyleHelpers = Addon.UI.StyleHelpers
 
 ---@class XPBarMinimapArcReputationMixin
@@ -87,14 +88,8 @@ local function GetArcFillOrder(startAngle, sweep)
     return order
 end
 
-local function OpenReputationPanel()
-    if ToggleCharacter then
-        ToggleCharacter("ReputationFrame")
-    end
-end
-
 function StyleMixin:GetPositionConfigKey()
-    return "secondaryBarPositions"
+    return SharedStyleHelpers.GetSecondaryPositionConfigKey()
 end
 
 function StyleMixin:GetFallbackPosition()
@@ -112,14 +107,11 @@ function StyleMixin:ShouldAttachToPrimary()
 end
 
 function StyleMixin:GetBroadcastEventName()
-    return Addon.EventNames.REPUTATION_BROADCAST_UPDATE
+    return SharedStyleHelpers.GetSecondaryBroadcastEventName()
 end
 
 function StyleMixin:GetInitialContext()
-    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
-        return Addon.ReputationSession:GetCurrentContext()
-    end
-    return nil
+    return SharedStyleHelpers.GetSecondaryInitialContext()
 end
 
 function StyleMixin:OnSecondaryLoad()
@@ -318,28 +310,8 @@ function StyleMixin:_RenderArc(context)
 end
 
 function StyleMixin:Render(context)
-    if not context then
+    if not SharedStyleHelpers.BeginSecondaryRender(self, context) then
         return
-    end
-
-    local wasAvailable = self._lastContext and self._lastContext.isAvailable
-    local isAvailable = context.isAvailable
-    self._lastContext = context
-
-    if wasAvailable and not isAvailable then
-        self:FadeToAlpha(0)
-        return
-    end
-
-    if not isAvailable then
-        self:SetAlpha(0)
-        return
-    end
-
-    if not wasAvailable then
-        self:FadeToAlpha(1)
-    else
-        self:SetAlpha(1)
     end
 
     self:_UpdateMinimapAnchor()
@@ -372,21 +344,12 @@ function StyleMixin:Render(context)
 end
 
 function StyleMixin:OnEnter()
-    if not GameTooltip or not self._lastContext then
+    if not self._lastContext then
         return
     end
 
     local context = self._lastContext
-    GameTooltip:SetOwner(self, "ANCHOR_TOP")
-    GameTooltip:AddLine(context.name or "", 1, 1, 1)
-
-    if context.isCompanion and context.currentLevel and context.currentLevel > 0 then
-        GameTooltip:AddLine(string.format("Level: %d", context.currentLevel), 0.7, 0.7, 0.7)
-    elseif context.standingLabel and context.standingLabel ~= "" then
-        GameTooltip:AddLine(context.standingLabel, 0.7, 0.7, 0.7)
-    end
-
-    GameTooltip:AddLine(string.format("Progress: %s", StyleHelpers.BuildTooltipProgressText(context)), 0.7, 1, 0.7)
+    SharedStyleHelpers.ShowSecondaryTooltip(self, context, "ANCHOR_TOP")
 
     if not context.isMaxed and Addon.TextFormatter then
         local current = Addon.TextFormatter:FormatNumber(context.current or 0, false)
@@ -409,13 +372,11 @@ function StyleMixin:OnEnter()
     GameTooltip:AddLine("Left-click: Toggle arc", 0.4, 0.4, 0.4)
     GameTooltip:AddLine("Right-click: open Reputation", 0.4, 0.4, 0.4)
     GameTooltip:AddLine("Drag: rotate icon around minimap", 0.4, 0.4, 0.4)
-    GameTooltip:Show()
+    SharedStyleHelpers.FinishSecondaryTooltip()
 end
 
 function StyleMixin:OnLeave()
-    if GameTooltip then
-        GameTooltip:Hide()
-    end
+    SharedStyleHelpers.HideTooltip()
 end
 
 function StyleMixin:OnMouseUp(button)
@@ -432,7 +393,7 @@ function StyleMixin:OnMouseUp(button)
     end
 
     if button == "RightButton" then
-        OpenReputationPanel()
+        SharedStyleHelpers.OpenReputationPanel()
         return
     end
 

@@ -1,5 +1,176 @@
 # Decision Log
 
+## 2026-04-16 — A1 implemented, A2 started
+
+Decision: Implement A1 by switching addon entrypoint namespace initialization to WoW vararg pattern while preserving compatibility global access.
+Reason: Eliminate bare-global bootstrap pattern and align with architecture plan A1.
+Impact:
+
+- `XPBarEnhanced.lua`: now initializes namespace via `local addonName, ns = ...` and binds `XPBarEnhanced = ns` for compatibility with existing module imports.
+- `tools/tests/architecture-contracts.ps1`: added contract assertions for vararg namespace pattern in entrypoint.
+
+Decision: Start A2 with per-frame context caching in `ContextBuilder` for full and text-refresh contexts.
+Reason: Reduce repeated expensive state/API reads when multiple UI paths request context within the same frame.
+Impact:
+
+- `core/services/ContextBuilder.lua`: added frame-token cache for `BuildContext()` and `BuildTextRefreshContext()`, next-frame flush scheduling, and cache reset on initialize/reset.
+
+Decision: Complete A2 with optional cache metrics via `XPBE_DEBUG_CONTEXT` CVar.
+Reason: Provide low-overhead validation of cache effectiveness during live play without enabling permanent debug spam.
+Impact:
+
+- `core/services/ContextBuilder.lua`: added debug counters (`fullBuilds/fullHits/textBuilds/textHits`) and throttled 10s log output when `XPBE_DEBUG_CONTEXT=1`.
+- Added stat recording for cache hits/builds in both full and text-refresh context paths.
+- Reset debug counters on context initialize/reset to keep sessions readable.
+
+Decision: Start A3 with shared secondary-style render helper extraction.
+Reason: Secondary styles duplicated the same availability/fade/alpha transition logic in each `Render()` implementation.
+Impact:
+
+- Added `ui/styles/SharedStyleHelpers.lua` with:
+  - `BeginSecondaryRender(frame, context)` for common availability/fade lifecycle.
+  - `ApplyStatusBarProgress(bar, context, color)` for common min/max/value/color apply.
+- `XPBarEnhanced.toc`: added `ui\styles\SharedStyleHelpers.lua` before `SecondaryBarStyleHelpers.lua`.
+- Refactored secondary styles to use the shared helper lifecycle:
+  - `ui/styles/flat/FlatSecondaryBarStyle.lua`
+  - `ui/styles/classic/ClassicSecondaryBarStyle.lua`
+  - `ui/styles/vertical/VerticalSecondaryBarStyle.lua`
+  - `ui/styles/terminal/TerminalSecondaryBarStyle.lua`
+  - `ui/styles/circular/CircularSecondaryBarStyle.lua`
+  - `ui/styles/minimap_ring/MinimapArcSecondaryBarStyle.lua`
+
+Decision: Continue A3 with shared secondary tooltip extraction.
+Reason: Flat/Classic/Vertical/Terminal/Minimap secondary styles duplicated nearly identical `OnEnter/OnLeave` tooltip rendering blocks.
+Impact:
+
+- `ui/styles/SharedStyleHelpers.lua`: added tooltip helpers:
+  - `ShowSecondaryTooltip(frame, context, anchor)`
+  - `AddSecondaryTooltipMoveHint(context)`
+  - `FinishSecondaryTooltip()`
+  - `HideTooltip()`
+- Refactored tooltip handlers to use shared helpers:
+  - `ui/styles/flat/FlatSecondaryBarStyle.lua`
+  - `ui/styles/classic/ClassicSecondaryBarStyle.lua`
+  - `ui/styles/vertical/VerticalSecondaryBarStyle.lua`
+  - `ui/styles/terminal/TerminalSecondaryBarStyle.lua`
+  - `ui/styles/minimap_ring/MinimapArcSecondaryBarStyle.lua`
+- Preserved minimap-arc-specific tooltip actions (`Left-click: Toggle arc`, drag hint) and extra current/max info lines.
+
+Decision: Continue A3 with shared secondary drag behavior extraction.
+Reason: Flat/Classic/Vertical/Terminal styles duplicated the same shift-drag, combat lock, attached-mode, and save-position logic.
+Impact:
+
+- `ui/styles/SharedStyleHelpers.lua`: added
+  - `BeginSecondaryShiftDrag(frame)`
+  - `EndSecondaryDrag(frame)`
+- Refactored drag handlers to use shared helpers:
+  - `ui/styles/flat/FlatSecondaryBarStyle.lua`
+  - `ui/styles/classic/ClassicSecondaryBarStyle.lua`
+  - `ui/styles/vertical/VerticalSecondaryBarStyle.lua`
+  - `ui/styles/terminal/TerminalSecondaryBarStyle.lua`
+- Minimap arc style intentionally unchanged for drag behavior (it uses custom angle-rotation drag semantics).
+
+Decision: Continue A3 with shared secondary label and mouse-up handling extraction.
+Reason: Flat/Classic duplicated label composition and multiple styles duplicated standard right-click/mouse-up behavior.
+Impact:
+
+- `ui/styles/SharedStyleHelpers.lua`: added
+  - `BuildSecondaryLabel(context)`
+  - `OpenReputationPanel()`
+  - `HandleStandardSecondaryMouseUp(frame, button, onRightClick)`
+- Refactored to shared helpers:
+  - `ui/styles/flat/FlatSecondaryBarStyle.lua`
+  - `ui/styles/classic/ClassicSecondaryBarStyle.lua`
+  - `ui/styles/vertical/VerticalSecondaryBarStyle.lua`
+  - `ui/styles/terminal/TerminalSecondaryBarStyle.lua`
+
+Decision: Continue A3 with shared fallback-position helpers for configured primary style offsets.
+Reason: Flat/Classic/Terminal/Vertical secondary styles duplicated near-identical `GetFallbackPosition()` logic.
+Impact:
+
+- `ui/styles/SharedStyleHelpers.lua`: added
+  - `BuildConfiguredStyleOffsetFallback(defaultPoint, defaultX, defaultY, yOffset)`
+  - `BuildConfiguredStyleCenterFallback(defaultX, defaultY, xOffset, yOffset)`
+- Refactored fallback builders:
+  - `ui/styles/flat/FlatSecondaryBarStyle.lua`
+  - `ui/styles/classic/ClassicSecondaryBarStyle.lua`
+  - `ui/styles/terminal/TerminalSecondaryBarStyle.lua`
+  - `ui/styles/vertical/VerticalSecondaryBarStyle.lua`
+- Circular and minimap-arc styles intentionally unchanged here due to distinct geometry/anchor semantics.
+
+Decision: Continue A3 with shared secondary contract getter extraction.
+Reason: All secondary styles repeated identical implementations for core contract methods (`GetPositionConfigKey`, `GetBroadcastEventName`, `GetInitialContext`).
+Impact:
+
+- `ui/styles/SharedStyleHelpers.lua`: added
+  - `GetSecondaryPositionConfigKey()`
+  - `GetSecondaryBroadcastEventName()`
+  - `GetSecondaryInitialContext()`
+- Delegated repeated methods to shared helpers in:
+  - `ui/styles/flat/FlatSecondaryBarStyle.lua`
+  - `ui/styles/classic/ClassicSecondaryBarStyle.lua`
+  - `ui/styles/vertical/VerticalSecondaryBarStyle.lua`
+  - `ui/styles/terminal/TerminalSecondaryBarStyle.lua`
+  - `ui/styles/circular/CircularSecondaryBarStyle.lua`
+  - `ui/styles/minimap_ring/MinimapArcSecondaryBarStyle.lua`
+
+Decision: Continue A3 by removing remaining small helper duplication in Classic and Minimap Arc secondary styles.
+Reason: Keep style behavior consistent while converging on shared helper usage.
+Impact:
+
+- `ui/styles/classic/ClassicSecondaryBarStyle.lua`:
+  - switched fallback faction color resolution to `StyleHelpers.GetFactionColor(context)`
+  - reused `SharedStyleHelpers.ApplyStatusBarProgress()` for min/max/value application
+- `ui/styles/minimap_ring/MinimapArcSecondaryBarStyle.lua`:
+  - replaced local reputation-open helper with `SharedStyleHelpers.OpenReputationPanel()`
+
+Decision: Continue A3 into primary styles by extracting shared rested-vs-normal XP color selection.
+Reason: Multiple primary style files duplicated the same rested color branching logic.
+Impact:
+
+- `ui/styles/SharedStyleHelpers.lua`:
+  - added `GetXPBarColor(context)` for standard XP/rested color selection
+- `ui/styles/flat/FlatBarStyle.lua`:
+  - milestone tick coloring now reuses `SharedStyleHelpers.GetXPBarColor(context)`
+- `ui/styles/vertical/VerticalBarStyle.lua`:
+  - `UpdateBarColors` now reuses `SharedStyleHelpers.GetXPBarColor(context)`
+
+Decision: Expand A3 helper adoption to circular and minimap ring primary styles.
+Reason: Remaining primary segment rendering still duplicated the same XP/rested color selection logic.
+Impact:
+
+- `ui/styles/circular/CircularBarStyle.lua`:
+  - segment coloring now uses `SharedStyleHelpers.GetXPBarColor(...)` for current-XP segments
+- `ui/styles/minimap_ring/MinimapRingBarStyle.lua`:
+  - ring segment color selection now uses `SharedStyleHelpers.GetXPBarColor(...)`
+  - glow flash color selection now uses `SharedStyleHelpers.GetXPBarColor(eventContext)`
+
+Decision: Continue A3 with terminal color-resolution dedupe.
+Reason: Terminal bar and terminal tooltip each duplicated the same custom-color resolution branch.
+Impact:
+
+- `ui/styles/terminal/TerminalBarStyle.lua`:
+  - added `ResolveTerminalPalette(db)` and `ResolveHexColor(...)`
+  - `BuildColoredBar(...)` now reuses resolved palette values
+  - `BuildTerminalTooltipText(...)` now reuses the same resolved palette values
+
+## 2026-04-15 — Scope lock + max-level secondary visibility sync
+
+Decision: Lock active implementation scope to A1, A2, A3, A4, A5, B1, B2, C4, and D1. Drop B3, C1, C2, C3, D2, D3, and D4 from active roadmap.
+Reason: Product-direction alignment after architecture + UI/UX audit.
+Impact:
+
+- `docs/plan.md`: roadmap and priority summary trimmed to approved scope only.
+- `docs/plan.md`: added explicit scope-lock section with approved and removed items.
+
+Decision: Secondary companion/reputation bar must remain visible at max level when the primary XP bar is hidden.
+Reason: Preserve secondary tracking continuity at max level and avoid visibility regressions during style transitions.
+Impact:
+
+- `ui/SecondaryBarManager.lua`: added `RefreshForPrimaryStyleChange()` and used it in `Initialize()` and config-update handling.
+- `ui/BarManager.lua`: now calls `SecondaryBarManager:RefreshForPrimaryStyleChange()` on all style evaluation paths, including unchanged style and `nextStyle = "none"` transitions.
+- Behavior: when runtime primary style becomes `none` at max level, secondary style/visibility/position are re-applied from configured `db.barStyle` and remain visible.
+
 ## 2026-04-13 — Circular and minimap secondary prototypes implemented with options coverage
 
 Decision: Activate secondary style mapping for `circular` and `minimap_ring` in `SecondaryBarManager.TEMPLATE_MAP`.

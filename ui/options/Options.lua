@@ -69,6 +69,100 @@ end
 -- ControlHelpers is used for centralized option control setup
 local ControlHelpers = Addon.UI.ControlHelpers
 
+-- Style preview appearance data keyed by barStyle value
+local STYLE_PREVIEW = {
+    none        = {r=0.4,  g=0.4,  b=0.4,  fill=0,   label="None"},
+    classic     = {r=0.2,  g=0.5,  b=1.0,  fill=0.72, label="Classic"},
+    flat        = {r=0.2,  g=0.8,  b=0.3,  fill=0.60, label="Flat"},
+    vertical    = {r=0.9,  g=0.7,  b=0.1,  fill=0.55, label="Vertical"},
+    circular    = {r=0.6,  g=0.2,  b=0.9,  fill=0.80, label="Circular"},
+    minimap_ring= {r=0.1,  g=0.8,  b=0.8,  fill=0.45, label="Minimap Ring"},
+    terminal    = {r=0.0,  g=1.0,  b=0.3,  fill=0.65, label="Terminal"},
+}
+
+function XPBarEnhancedOptionsMixin:UpdateStylePreview(styleName)
+    local preview = self.ContentFrame and self.ContentFrame.OptionsContainer and
+                    self.ContentFrame.OptionsContainer.StylePreviewFrame
+    if not preview then return end
+
+    local data = STYLE_PREVIEW[styleName] or STYLE_PREVIEW["flat"]
+    if preview.PreviewBar then
+        preview.PreviewBar:SetStatusBarColor(data.r, data.g, data.b, 1)
+        preview.PreviewBar:SetValue(data.fill * 100)
+    end
+    if preview.PreviewLabel and preview.PreviewLabel.StyleName then
+        preview.PreviewLabel.StyleName:SetText(data.label)
+    end
+end
+
+-- Tab definitions in display order
+local TABS = {
+    {id = "visual",    label = "Visual"},
+    {id = "text",      label = "Text"},
+    {id = "behavior",  label = "Behavior"},
+    {id = "secondary", label = "Secondary Bar"},
+    {id = "colors",    label = "Colors"},
+}
+
+function XPBarEnhancedOptionsMixin:SelectTab(tabId)
+    self._activeTab = tabId
+
+    -- Update tab button states
+    if self.TabContainer then
+        for _, tab in ipairs(TABS) do
+            local btn = self.TabContainer["Tab_" .. tab.id]
+            if btn then
+                if tab.id == tabId then
+                    PanelTemplates_SelectTab(btn)
+                else
+                    PanelTemplates_DeselectTab(btn)
+                end
+            end
+        end
+    end
+
+    -- Show/hide container children by their optionTab attribute
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    if not container then return end
+
+    local children = {container:GetChildren()}
+    for _, child in ipairs(children) do
+        local childTab = child and child.optionTab
+        if childTab then
+            -- A row is visible only if: correct tab AND not hidden by style conditions
+            local tabMatch = (childTab == tabId)
+            local styleOk = (child._styleVisible == nil or child._styleVisible == true)
+            child:SetShown(tabMatch and styleOk)
+        end
+    end
+
+    -- Re-run vertical layout so hidden rows collapse
+    if container.Layout then
+        container:Layout()
+    end
+
+    -- Recalculate scroll height
+    self:RefreshScrollLayout()
+end
+
+function XPBarEnhancedOptionsMixin:SetupTabs()
+    if not self.TabContainer then return end
+    local tabId = 1
+    for _, tab in ipairs(TABS) do
+        local btn = self.TabContainer["Tab_" .. tab.id]
+        if btn then
+            btn:SetText(tab.label)
+            btn:SetScript("OnClick", function()
+                self:SelectTab(tab.id)
+            end)
+            PanelTemplates_TabResize(btn, 0)
+            btn.id = tabId
+            tabId = tabId + 1
+        end
+    end
+    PanelTemplates_SetNumTabs(self, #TABS)
+end
+
 function XPBarEnhancedOptionsMixin:OnLoad()
     Options.frame = self
     self.controls = {}
@@ -284,7 +378,11 @@ function XPBarEnhancedOptionsMixin:OnLoad()
 
     self:BuildOptionCheckboxes()
     self:BuildColorControls()
+    self:SetupTabs()
+    self:SelectTab("visual")
     self:Refresh()
+    local initialStyle = Config:GetOptionValue("barStyle") or "flat"
+    self:UpdateStylePreview(initialStyle)
     self:RegisterCategory()
 
     local observerId = self:GetName() or ("_bar_" .. tostring(self))
@@ -683,16 +781,15 @@ function XPBarEnhancedOptionsMixin:Refresh()
                     self.ContentFrame and self.ContentFrame.OptionsContainer and
                     self.ContentFrame.OptionsContainer[rowKey]
 
+                if rowFrame then
+                    rowFrame._styleVisible = not isNoneMode
+                end
                 if isNoneMode then
                     checkbox:Hide()
-                    if rowFrame then
-                        rowFrame:Hide()
-                    end
+                    if rowFrame then rowFrame:Hide() end
                 else
                     checkbox:Show()
-                    if rowFrame then
-                        rowFrame:Show()
-                    end
+                    if rowFrame then rowFrame:Show() end
                 end
             elseif key == "classicBarDraggable" then
                 -- Only show classicBarDraggable when Classic style is selected
@@ -702,22 +799,24 @@ function XPBarEnhancedOptionsMixin:Refresh()
                     self.ContentFrame.OptionsContainer[rowKey]
 
                 local isClassicMode = (barStyle == "classic")
+                if rowFrame then
+                    rowFrame._styleVisible = isClassicMode
+                end
                 if isClassicMode then
                     checkbox:Show()
-                    if rowFrame then
-                        rowFrame:Show()
-                    end
+                    if rowFrame then rowFrame:Show() end
                 else
                     checkbox:Hide()
-                    if rowFrame then
-                        rowFrame:Hide()
-                    end
+                    if rowFrame then rowFrame:Hide() end
                 end
             elseif key == "showMilestoneTicks" then
                 local rowKey = "Row_" .. key
                 local container = self.ContentFrame and self.ContentFrame.OptionsContainer
                 local rowFrame = container and container[rowKey]
                 local isFlatMode = (barStyle == "flat")
+                if rowFrame then
+                    rowFrame._styleVisible = isFlatMode
+                end
                 if isFlatMode then
                     checkbox:Show()
                     if rowFrame then rowFrame:Show() end
@@ -822,7 +921,7 @@ function XPBarEnhancedOptionsMixin:Refresh()
         }
         for _, key in ipairs(circularRowKeys) do
             local rowFrame = container["Row_" .. key]
-            if rowFrame then rowFrame:SetShown(isCircularMode) end
+            if rowFrame then rowFrame._styleVisible = isCircularMode end
         end
 
         local minimapRingRowKeys = {
@@ -835,17 +934,28 @@ function XPBarEnhancedOptionsMixin:Refresh()
         }
         for _, key in ipairs(minimapRingRowKeys) do
             local rowFrame = container["Row_" .. key]
-            if rowFrame then rowFrame:SetShown(isMinimapRingMode) end
+            if rowFrame then rowFrame._styleVisible = isMinimapRingMode end
         end
 
         -- Terminal rows
         if container.Row_terminalUseCustomColors then
-            container.Row_terminalUseCustomColors:SetShown(isTerminalMode)
+            container.Row_terminalUseCustomColors._styleVisible = isTerminalMode
         end
 
-        -- Reflow and update scroll height
-        container:Layout()
-        self:RefreshScrollLayout()
+        -- Re-apply tab filter (respects both style visibility and tab selection)
+        if self._activeTab then
+            self:SelectTab(self._activeTab)
+        else
+            -- Apply _styleVisible flags directly when no tab is active
+            local children = {container:GetChildren()}
+            for _, child in ipairs(children) do
+                if child._styleVisible ~= nil then
+                    child:SetShown(child._styleVisible)
+                end
+            end
+            container:Layout()
+            self:RefreshScrollLayout()
+        end
     end
 
     -- Refresh radio groups
@@ -936,6 +1046,11 @@ function Options:OnOptionChanged(key)
         local value = Addon.db and Addon.db.barStyle or "classic"
         if Addon.BarManager and Addon.BarManager.SetStyle then
             Addon.BarManager:SetStyle(value)
+        end
+        -- Update style preview
+        local panel = self.frame
+        if panel and panel.UpdateStylePreview then
+            panel:UpdateStylePreview(value)
         end
     elseif key == "hideBlizzardBar" then
         -- Update Blizzard bar visibility (handled by Config side effects)

@@ -446,4 +446,12 @@ function BaseMixin:RenderBar(context)
 	error("Style must implement RenderBar(context)")
 end
 
+--- Default level-up celebration: brief flash of the frame using UIFrameFlash.
+--- Individual styles may override this for style-specific effects.
+function BaseMixin:OnLevelUpCelebration()
+	if UIFrameFlash then
+		UIFrameFlash(self, 0.15, 0.15, 0.6, false, 0.1, 0)
+	end
+end
+
 return BaseMixin

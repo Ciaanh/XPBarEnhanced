@@ -11,6 +11,7 @@
 --   Major/Paragon  → blue          Companion  → cyan
 
 local Addon = XPBarEnhanced
+local SharedStyleHelpers = Addon.UI.SharedStyleHelpers
 
 ---@class XPBarTerminalReputationMixin
 XPBarTerminalReputationMixin = {}
@@ -125,35 +126,11 @@ end
 -------------------------------------------------------------------
 
 function StyleMixin:GetPositionConfigKey()
-    return "secondaryBarPositions"
+    return SharedStyleHelpers.GetSecondaryPositionConfigKey()
 end
 
 function StyleMixin:GetFallbackPosition()
-    local db = Addon and Addon.db
-    local configuredStyle = db and db.barStyle
-    if configuredStyle and configuredStyle ~= "none" then
-        local barDefPos = Addon.defaults
-            and Addon.defaults.barPositions
-            and Addon.defaults.barPositions[configuredStyle]
-        if barDefPos then
-            return {
-                point         = barDefPos.point or "CENTER",
-                relativeTo    = barDefPos.relativeTo or "UIParent",
-                relativePoint = barDefPos.relativePoint or "CENTER",
-                x             = barDefPos.x or 0,
-                -- Below primary: half of primary height (21) + gap (4) + half of secondary (11) = 36
-                y             = (barDefPos.y or 0) - 36,
-            }
-        end
-    end
-    -- Terminal primary has no barPositions default; place below screen center.
-    return {
-        point         = "CENTER",
-        relativeTo    = "UIParent",
-        relativePoint = "CENTER",
-        x             = 0,
-        y             = -36,
-    }
+    return SharedStyleHelpers.BuildConfiguredStyleCenterFallback(0, -36, 0, -36)
 end
 
 -------------------------------------------------------------------
@@ -161,40 +138,16 @@ end
 -------------------------------------------------------------------
 
 function StyleMixin:GetBroadcastEventName()
-    return Addon.EventNames.REPUTATION_BROADCAST_UPDATE
+    return SharedStyleHelpers.GetSecondaryBroadcastEventName()
 end
 
 function StyleMixin:GetInitialContext()
-    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
-        return Addon.ReputationSession:GetCurrentContext()
-    end
-    return nil
+    return SharedStyleHelpers.GetSecondaryInitialContext()
 end
 
 function StyleMixin:Render(context)
-    if not context then
+    if not SharedStyleHelpers.BeginSecondaryRender(self, context) then
         return
-    end
-
-    local wasAvailable = self._lastContext and self._lastContext.isAvailable
-    local isAvailable = context.isAvailable
-
-    self._lastContext = context
-
-    if wasAvailable and not isAvailable then
-        self:FadeToAlpha(0)
-        return
-    end
-
-    if not isAvailable then
-        self:SetAlpha(0)
-        return
-    end
-
-    if not wasAvailable then
-        self:FadeToAlpha(1)
-    else
-        self:SetAlpha(1)
     end
 
     if self.RepLine then
@@ -207,121 +160,34 @@ end
 -------------------------------------------------------------------
 
 function StyleMixin:OnEnter()
-    if not GameTooltip or not self._lastContext then
+    if not self._lastContext then
         return
     end
-
     local context = self._lastContext
-    GameTooltip:SetOwner(self, "ANCHOR_TOP")
-    GameTooltip:AddLine(context.name, 1, 1, 1)
-
-    if context.isCompanion and context.currentLevel and context.currentLevel > 0 then
-        GameTooltip:AddLine(string.format("Level: %d", context.currentLevel), 0.7, 0.7, 0.7)
-    elseif context.standingLabel and context.standingLabel ~= "" then
-        GameTooltip:AddLine(context.standingLabel, 0.7, 0.7, 0.7)
-    end
-
-    if context.isMaxed then
-        GameTooltip:AddLine("Progress: MAX", 0.7, 1, 0.7)
-    else
-        local TextFormatter = Addon.TextFormatter
-        local progressText = TextFormatter:FormatPercent(context.current, context.max)
-        GameTooltip:AddLine(string.format("Progress: %s", progressText), 0.7, 1, 0.7)
-    end
-
-    if context.sessionGained and context.sessionGained > 0 then
-        local TextFormatter = Addon.TextFormatter
-        local gained = TextFormatter:FormatNumber(context.sessionGained, false)
-        GameTooltip:AddLine(string.format("Gained: +%s", gained), 0.5, 1, 0.5)
-    end
-
-    if context.repPerHour and context.repPerHour > 0 then
-        local TextFormatter = Addon.TextFormatter
-        local rate = TextFormatter:FormatNumber(context.repPerHour, false)
-        GameTooltip:AddLine(string.format("Rate: %s/hr", rate), 0.5, 0.8, 1)
-    end
-
-    if context.timeToNextLevel and context.timeToNextLevel > 0 then
-        local TextFormatter = Addon.TextFormatter
-        local timeStr = TextFormatter:FormatTime(context.timeToNextLevel, true)
-        GameTooltip:AddLine(string.format("Next: %s", timeStr), 0.8, 0.8, 0.5)
-    end
-
+    SharedStyleHelpers.ShowSecondaryTooltip(self, context, "ANCHOR_TOP")
     GameTooltip:AddLine("Right-click: open Reputation", 0.4, 0.4, 0.4)
-    local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
-    local isAttachedToPrimary = Addon.db and Addon.db.secondaryBarsAttached and primaryFrame ~= nil
-    if not isAttachedToPrimary then
-        GameTooltip:AddLine("Shift+Drag to move", 0.4, 0.4, 0.4)
-    end
-    GameTooltip:Show()
+    SharedStyleHelpers.AddSecondaryTooltipMoveHint(context)
+    SharedStyleHelpers.FinishSecondaryTooltip()
 end
 
 function StyleMixin:OnLeave()
-    if GameTooltip then
-        GameTooltip:Hide()
-    end
+    SharedStyleHelpers.HideTooltip()
 end
 
 function StyleMixin:OnMouseUp(button)
-    if self.__isDragging then
-        self:StopMovingOrSizing()
-        self.__isDragging = nil
-        if self.SavePosition then
-            self:SavePosition()
-        end
-        return
-    end
-
-    if button == "RightButton" then
-        self:OnRightClick()
-    end
+    SharedStyleHelpers.HandleStandardSecondaryMouseUp(self, button, self.OnRightClick)
 end
 
 function StyleMixin:OnRightClick()
-    if ToggleCharacter then
-        ToggleCharacter("ReputationFrame")
-    end
+    SharedStyleHelpers.OpenReputationPanel()
 end
 
 function StyleMixin:OnDragStart()
-    if not IsShiftKeyDown() then
-        return
-    end
-
-    local AddonGlobal = XPBarEnhanced
-    if not AddonGlobal.db or AddonGlobal.db.barLocked then
-        return
-    end
-
-    if AddonGlobal.db.secondaryBarsAttached then
-        local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
-        if primaryFrame then
-            return
-        end
-    end
-
-    if InCombatLockdown and InCombatLockdown() then
-        return
-    end
-
-    self:StartMoving()
-    self.__isDragging = true
+    SharedStyleHelpers.BeginSecondaryShiftDrag(self)
 end
 
 function StyleMixin:OnDragStop()
-    self.__isDragging = nil
-    local db = Addon and Addon.db
-    if db and db.secondaryBarsAttached then
-        local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
-        if primaryFrame then
-            self:StopMovingOrSizing()
-            return
-        end
-    end
-
-    self:StopMovingOrSizing()
-    self:SetUserPlaced(true)
-    self:SavePosition()
+    SharedStyleHelpers.EndSecondaryDrag(self)
 end
 
 function StyleMixin:OnSecondaryLoad()

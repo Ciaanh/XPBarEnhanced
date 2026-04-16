@@ -154,6 +154,9 @@ function BarManager:SetStyle(nextStyle)
     end
 
     if previousStyle == nextStyle then
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+            Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+        end
         return
     end
 
@@ -167,6 +170,9 @@ function BarManager:SetStyle(nextStyle)
         end
         self.currentStyle = "none"
         self:ApplyDefaultXPBarVisibility()
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+            Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+        end
         return
     end
 
@@ -207,6 +213,10 @@ function BarManager:SetStyle(nextStyle)
 
     -- Always hide the Blizzard XP bar when we are using a custom style
     self:ApplyDefaultXPBarVisibility()
+
+    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+        Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+    end
 end
 
 function BarManager:GetCurrentStyle()
@@ -241,12 +251,26 @@ function BarManager:OnEnteringWorld()
     return false
 end
 
+function BarManager:TriggerStyleCelebration()
+    local db = Addon.db or {}
+    -- Only trigger when animations are enabled
+    if db.enableAnimations == false then return end
+
+    local frame = self:GetCurrentFrame()
+    if frame and frame.OnLevelUpCelebration then
+        xpcall(frame.OnLevelUpCelebration, Utils.ReportError, frame)
+    end
+end
+
 function BarManager:OnLevelUp(newLevel)
     -- Re-evaluate style in case player hit max level.
     -- Use the level passed from PLAYER_LEVEL_UP event for accuracy.
     local level = newLevel or (UnitLevel("player") or 0)
     local db = Addon.db or {}
     local userStyle = db.barStyle or "classic"
+
+    -- Fire style-specific celebration hook before switching style
+    self:TriggerStyleCelebration()
 
     if (IsXPUserDisabled and IsXPUserDisabled()) then
         self:SetStyle("none")

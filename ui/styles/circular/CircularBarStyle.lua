@@ -13,6 +13,7 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
 end
 
 local Addon = XPBarEnhanced
+local SharedStyleHelpers = Addon.UI.SharedStyleHelpers
 
 -------------------------------------------------------------------
 -- CONSTANTS
@@ -390,58 +391,20 @@ end
 -- @param hasRestedXP boolean: Whether player has rested XP available
 function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha)
     local Colors = XPBarEnhanced.Colors
-    local colorNormal = Colors:Get(Colors.Key.XpBar)
-    local colorRested = Colors:Get(Colors.Key.Rested)
-    local colorXpBarRested = Colors:Get(Colors.Key.XpBarRested)
-    local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
-    local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
+    local colors = {
+        currentXP = SharedStyleHelpers.GetXPBarColor({hasRestedXP = hasRestedXP}),
+        rested = Colors:Get(Colors.Key.Rested),
+        questComplete = Colors:Get(Colors.Key.QuestComplete),
+        questIncomplete = Colors:Get(Colors.Key.QuestIncomplete),
+    }
 
-    -- Use provided parameter only; no fallback to persistent cached values
-    hasRestedXP = hasRestedXP == true
     overlayAlpha = overlayAlpha or 1.0
-
-    local currentXPColor = hasRestedXP and colorXpBarRested or colorNormal
-
-    -- Only process visible segments
     local totalSegments = self:GetDisplaySegmentCount()
-
-    -- Cache empty color components as locals to avoid repeated table indexing in the loop
-    local emptyR = EMPTY_SEGMENT_COLOR.r
-    local emptyG = EMPTY_SEGMENT_COLOR.g
-    local emptyB = EMPTY_SEGMENT_COLOR.b
-    local emptyA = EMPTY_SEGMENT_COLOR.a
 
     for i = 1, totalSegments do
         local segment = self.segments[i]
         if segment then
-            local segType = self.segmentTypes[i]
-            if segType == SEGMENT_TYPE.CURRENT_XP then
-                if currentXPColor and currentXPColor.r then
-                    segment:SetVertexColor(currentXPColor.r, currentXPColor.g, currentXPColor.b, (currentXPColor.a or 1) * overlayAlpha)
-                else
-                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
-                end
-            elseif segType == SEGMENT_TYPE.QUEST_COMPLETE then
-                if colorQuestComplete and colorQuestComplete.r then
-                    segment:SetVertexColor(colorQuestComplete.r, colorQuestComplete.g, colorQuestComplete.b, (colorQuestComplete.a or 1) * overlayAlpha)
-                else
-                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
-                end
-            elseif segType == SEGMENT_TYPE.QUEST_INCOMPLETE then
-                if colorQuestIncomplete and colorQuestIncomplete.r then
-                    segment:SetVertexColor(colorQuestIncomplete.r, colorQuestIncomplete.g, colorQuestIncomplete.b, (colorQuestIncomplete.a or 1) * overlayAlpha)
-                else
-                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
-                end
-            elseif segType == SEGMENT_TYPE.RESTED then
-                if colorRested and colorRested.r then
-                    segment:SetVertexColor(colorRested.r, colorRested.g, colorRested.b, colorRested.a)
-                else
-                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
-                end
-            else
-                segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
-            end
+            SharedStyleHelpers.ApplySegmentTypeColor(segment, self.segmentTypes[i], colors, EMPTY_SEGMENT_COLOR, overlayAlpha)
             segment:Show()
         end
     end

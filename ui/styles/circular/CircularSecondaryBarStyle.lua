@@ -2,6 +2,7 @@
 -- Displays tracked reputation as an inner arc for the circular primary style.
 
 local Addon = XPBarEnhanced
+local SharedStyleHelpers = Addon.UI.SharedStyleHelpers
 local StyleHelpers = Addon.UI.StyleHelpers
 
 ---@class XPBarCircularReputationMixin
@@ -28,7 +29,7 @@ local function Clamp(value, minValue, maxValue)
 end
 
 function StyleMixin:GetPositionConfigKey()
-    return "secondaryBarPositions"
+    return SharedStyleHelpers.GetSecondaryPositionConfigKey()
 end
 
 function StyleMixin:GetFallbackPosition()
@@ -57,14 +58,11 @@ function StyleMixin:GetAttachedAnchor()
 end
 
 function StyleMixin:GetBroadcastEventName()
-    return Addon.EventNames.REPUTATION_BROADCAST_UPDATE
+    return SharedStyleHelpers.GetSecondaryBroadcastEventName()
 end
 
 function StyleMixin:GetInitialContext()
-    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
-        return Addon.ReputationSession:GetCurrentContext()
-    end
-    return nil
+    return SharedStyleHelpers.GetSecondaryInitialContext()
 end
 
 function StyleMixin:OnSecondaryLoad()
@@ -148,28 +146,8 @@ function StyleMixin:_RenderArc(context)
 end
 
 function StyleMixin:Render(context)
-    if not context then
+    if not SharedStyleHelpers.BeginSecondaryRender(self, context) then
         return
-    end
-
-    local wasAvailable = self._lastContext and self._lastContext.isAvailable
-    local isAvailable = context.isAvailable
-    self._lastContext = context
-
-    if wasAvailable and not isAvailable then
-        self:FadeToAlpha(0)
-        return
-    end
-
-    if not isAvailable then
-        self:SetAlpha(0)
-        return
-    end
-
-    if not wasAvailable then
-        self:FadeToAlpha(1)
-    else
-        self:SetAlpha(1)
     end
 
     self:_RebuildArcIfNeeded()

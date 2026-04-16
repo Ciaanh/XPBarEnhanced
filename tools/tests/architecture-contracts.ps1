@@ -39,4 +39,7 @@ Assert-PatternPresent -Path "core/services/Session.lua" -Pattern 'Session:EmitUp
 
 Assert-PatternAbsent -Path "docs/backlog/README.md" -Pattern "\| \[options-panel-sections\.md\]" -Message "Closed backlog items must be removed from active backlog list."
 
+Assert-PatternPresent -Path "XPBarEnhanced.lua" -Pattern "local\s+addonName\s*,\s*ns\s*=\s*\.\.\." -Message "Entrypoint must use WoW addon namespace varargs pattern (local addonName, ns = ...)."
+Assert-PatternPresent -Path "XPBarEnhanced.lua" -Pattern "XPBarEnhanced\s*=\s*ns" -Message "Entrypoint must keep XPBarEnhanced compatibility global bound to ns table."
+
 Write-Host "architecture-contracts.ps1: all checks passed"
