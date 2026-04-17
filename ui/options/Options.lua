@@ -1162,7 +1162,7 @@ function Options:OnColorReset()
     end
 end
 
-function Options:OnColorChanged()
+function Options:OnColorChanged(colorKey, hex)
     self:UpdateColorControls()
     -- Refresh bars to apply new colors
     if Addon.Session and Addon.Session.EmitUpdate then
@@ -1170,7 +1170,7 @@ function Options:OnColorChanged()
     end
 end
 
-function Options:OnColorCancel()
+function Options:OnColorCancel(colorKey, previousHex)
     self:UpdateColorControls()
     -- Refresh bars to apply new colors
     if Addon.Session and Addon.Session.EmitUpdate then

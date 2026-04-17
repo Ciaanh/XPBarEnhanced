@@ -118,7 +118,15 @@ function EventBus:Emit(eventName, context)
     -- Increment re-entrancy depth so Register() knows to defer new subscriptions
     self._executingEvents[eventName] = (self._executingEvents[eventName] or 0) + 1
 
-    for id, handler in pairs(listenersForEvent) do
+    -- Iterate over a stable snapshot so handlers can safely unregister during emit
+    -- without causing skipped callbacks due to table mutation during pairs().
+    local dispatchList = {}
+    for _, handler in pairs(listenersForEvent) do
+        dispatchList[#dispatchList + 1] = handler
+    end
+
+    for i = 1, #dispatchList do
+        local handler = dispatchList[i]
         xpcall(handler, Utils.ReportError, context)
     end
 
