@@ -7,13 +7,14 @@ local BarManager = Addon.BarManager
 
 local StyleBuilder = XPBarStyleBuilder
 local EventNames = Addon.EventNames
+local Utils = Addon.Utils
 
-local function SafeCallErrorHandler(err)
-    if CallErrorHandler then
-        CallErrorHandler(err)
-    else
-        print(tostring(err))
+local function ShouldSecondarySuppressMainContainer()
+    local manager = Addon.SecondaryBarManager
+    if manager and manager.ShouldSuppressMainContainer then
+        return manager:ShouldSuppressMainContainer()
     end
+    return false
 end
 
 local StyleTemplateNameMap = {
@@ -75,30 +76,36 @@ local function IsPlayerAtMaxLevel(currentLevel)
     return level >= maxLevel
 end
 
+function BarManager:AdjustContextForMaxLevel(context)
+    if not context then
+        return context
+    end
+
+    if not IsPlayerAtMaxLevel(context.level) then
+        return context
+    end
+
+    -- At max level the primary XP bar is always hidden.
+    return nil
+end
+
 function BarManager:ApplyDefaultXPBarVisibility()
-    -- Hide both Blizzard bar containers whenever we are using a custom style
-    -- (classic, flat, vertical, circular)
+    -- Hide only the Blizzard XP bar container when a custom XP style is active.
+    -- Secondary/reputation tracking is managed independently by SecondaryBarManager.
     if self:IsCustomStyle(self.currentStyle) then
         if _G.MainStatusTrackingBarContainer then
             _G.MainStatusTrackingBarContainer:Hide()
         end
-        if _G.SecondaryStatusTrackingBarContainer then
-            _G.SecondaryStatusTrackingBarContainer:Hide()
-        end
     else
-        -- Otherwise, restore Blizzard defaults
+        -- Otherwise, restore Blizzard XP bar visibility.
         if _G.MainStatusTrackingBarContainer then
-            _G.MainStatusTrackingBarContainer:Show()
-        end
-        if _G.SecondaryStatusTrackingBarContainer then
-            _G.SecondaryStatusTrackingBarContainer:Show()
+            if ShouldSecondarySuppressMainContainer() then
+                _G.MainStatusTrackingBarContainer:Hide()
+            else
+                _G.MainStatusTrackingBarContainer:Show()
+            end
         end
     end
-    self:DebugContainerState()
-end
-
-function BarManager:DebugContainerState()
-    -- debug logging removed (was too verbose on every visibility update)
 end
 
 -- Install hooksecurefunc hooks to prevent Blizzard's bar from re-showing
@@ -106,20 +113,19 @@ end
 function BarManager:InstallBlizzardBarHooks()
     local containers = {
         _G.MainStatusTrackingBarContainer,
-        _G.SecondaryStatusTrackingBarContainer,
     }
 
     for _, container in ipairs(containers) do
         if container and container.Show then
             hooksecurefunc(container, "Show", function()
-                if self:IsCustomStyle(self.currentStyle) then
+                if self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer() then
                     container:Hide()
                 end
             end)
         end
         if container and container.SetShown then
             hooksecurefunc(container, "SetShown", function(_, shown)
-                if shown and self:IsCustomStyle(self.currentStyle) then
+                if shown and (self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer()) then
                     container:Hide()
                 end
             end)
@@ -140,12 +146,17 @@ function BarManager:SetStyle(nextStyle)
         nextStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
     end
 
-    -- If player is at max level or XP gain is disabled, force Blizzard bar
-    if IsPlayerAtMaxLevel() or (IsXPUserDisabled and IsXPUserDisabled()) then
+    -- XP-disabled and max-level modes always use Blizzard's default bar.
+    if IsXPUserDisabled and IsXPUserDisabled() then
+        nextStyle = "none"
+    elseif IsPlayerAtMaxLevel() then
         nextStyle = "none"
     end
 
     if previousStyle == nextStyle then
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+            Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+        end
         return
     end
 
@@ -159,6 +170,9 @@ function BarManager:SetStyle(nextStyle)
         end
         self.currentStyle = "none"
         self:ApplyDefaultXPBarVisibility()
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+            Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+        end
         return
     end
 
@@ -192,12 +206,17 @@ function BarManager:SetStyle(nextStyle)
 
     self.currentStyle = nextStyle
 
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    -- Trigger a broadcast through the session layer so context ownership stays in Session.
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
 
     -- Always hide the Blizzard XP bar when we are using a custom style
     self:ApplyDefaultXPBarVisibility()
+
+    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+        Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+    end
 end
 
 function BarManager:GetCurrentStyle()
@@ -216,7 +235,7 @@ end
 -- Update animation settings for views (emit broadcast for views to reconfigure)
 function BarManager:UpdateAnimationSettings()
     if Addon.AnimationManager and Addon.AnimationManager.UpdateSettings then
-        xpcall(Addon.AnimationManager.UpdateSettings, SafeCallErrorHandler, Addon.AnimationManager)
+        xpcall(Addon.AnimationManager.UpdateSettings, Utils.ReportError, Addon.AnimationManager)
         return true
     end
     return false
@@ -226,30 +245,39 @@ end
 function BarManager:OnEnteringWorld()
     -- Invalidate Quest cache and notify listeners
     if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-        xpcall(Addon.QuestXP.InvalidateQuestCache, SafeCallErrorHandler, Addon.QuestXP)
+        xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
         return true
     end
     return false
 end
 
-function BarManager:OnLevelUp(newLevel)
-    -- Re-evaluate style in case player hit max level (will hide bar if at max)
-    -- Use the level passed from PLAYER_LEVEL_UP event for accuracy
-    local level = newLevel or (UnitLevel("player") or 0) + 1
+function BarManager:TriggerStyleCelebration()
     local db = Addon.db or {}
-    local userStyle = db.barStyle or "classic"
+    -- Only trigger when animations are enabled
+    if db.enableAnimations == false then return end
 
-    -- UnitXPMax() reaches 0 as soon as the player can no longer earn XP.
-    if (UnitXPMax("player") or 0) <= 0 or IsPlayerAtMaxLevel(level) then
-        self:SetStyle("none")
-    else
-        self:SetStyle(userStyle)
+    local frame = self:GetCurrentFrame()
+    if frame and frame.OnLevelUpCelebration then
+        xpcall(frame.OnLevelUpCelebration, Utils.ReportError, frame)
     end
 end
 
-function BarManager:OnRestedChanged()
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+function BarManager:OnLevelUp(newLevel)
+    -- Re-evaluate style in case player hit max level.
+    -- Use the level passed from PLAYER_LEVEL_UP event for accuracy.
+    local level = newLevel or (UnitLevel("player") or 0)
+    local db = Addon.db or {}
+    local userStyle = db.barStyle or "classic"
+
+    -- Fire style-specific celebration hook before switching style
+    self:TriggerStyleCelebration()
+
+    if (IsXPUserDisabled and IsXPUserDisabled()) then
+        self:SetStyle("none")
+    elseif IsPlayerAtMaxLevel(level) then
+        self:SetStyle("none")
+    else
+        self:SetStyle(userStyle)
     end
 end
 
@@ -258,14 +286,11 @@ function BarManager:Shutdown()
     self.barFrames = self.barFrames or {}
     for style, frame in pairs(self.barFrames) do
         if frame and frame.Hide then
-            xpcall(frame.Hide, SafeCallErrorHandler, frame)
+            xpcall(frame.Hide, Utils.ReportError, frame)
         end
     end
     self.currentFrame = nil
     self.currentStyle = nil
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
-    end
 end
 
 return BarManager

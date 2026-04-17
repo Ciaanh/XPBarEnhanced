@@ -38,6 +38,7 @@ function Config:Initialize()
                 Addon.db.barPositions = {}
             end
         end
+
     end
 end
 
@@ -173,7 +174,7 @@ function Config:SetColor(key, hex, silent)
 
     -- Emit a dedicated color update event so views can update only their color previews
     if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.COLORS_UPDATED)
+        Addon.EventBus:Emit(EventNames.COLORS_UPDATED, { event = EventNames.COLORS_UPDATED })
     end
 
     return true, normalized
@@ -192,7 +193,7 @@ function Config:ResetColor(key, silent)
     end
 
     if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.COLORS_UPDATED)
+        Addon.EventBus:Emit(EventNames.COLORS_UPDATED, { event = EventNames.COLORS_UPDATED })
     end
 
     return true, normalized
@@ -218,41 +219,32 @@ end
 -------------------------------------------------------------------
 
 function Config:ApplyOptionSideEffects(key)
-    -- Emit a config-level event for fine-grained subscribers; also leave broadcast for compatibility
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED)
-    end
-    -- Bar visual options that require refresh
-    local barVisualOptions = {
-        "showQuestXP",
-        "showPercentage",
-        "showQuestPercent",
-
-        "showCompleteQuestOverlay",
-        "showIncompleteQuestOverlay",
-        "abbreviateNumbers",
-        "showRemainingXP",
-        "showLevelText",
-        "showXPText",
-        "showXPPerHourText",
-        "showLevelTimeText",
-        "showSessionTimeText",
-        "showTimeToLevelText",
-        "showRestedOverlay"
-    }
-
-    local needsBarRefresh = false
-    for _, optionKey in ipairs(barVisualOptions) do
-        if key == optionKey then
-            needsBarRefresh = true
-            break
+    -- Apply primary bar style switch BEFORE emitting CONFIG_UPDATED so that
+    -- secondary bars can attach to the new frame in the same event cycle.
+    if key == "barStyle" then
+        local newStyle = Addon.db.barStyle
+        if Addon.BarManager and Addon.BarManager.SetStyle then
+            Addon.BarManager:SetStyle(newStyle)
         end
     end
 
-    if needsBarRefresh then
-        -- Update XP bar controller (use new EventBus first)
-        if Addon.EventBus and Addon.EventBus.Emit then
-            Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    -- Emit a config-level event for fine-grained subscribers; also leave broadcast for compatibility
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
+    end
+    -- XP bars subscribe to CONFIG_UPDATED directly; avoid duplicate domain broadcasts.
+
+    if key == "hideCompanionOutsideDelve" then
+        -- ReputationSession owns reputation context construction.
+        if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+            Addon.ReputationSession:EmitUpdate()
+        end
+    end
+
+    if key == "circularSecondaryFullCircle" or key == "minimapArcStartExpanded"
+       or key == "minimapArcDisplayAngle" or key == "minimapArcIconAngle" then
+        if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+            Addon.ReputationSession:EmitUpdate()
         end
     end
 
@@ -295,14 +287,6 @@ function Config:ApplyOptionSideEffects(key)
         end
     end
 
-    -- Bar style changed
-    if key == "barStyle" then
-        local newStyle = Addon.db.barStyle
-        if Addon.BarManager and Addon.BarManager.SetStyle then
-            Addon.BarManager:SetStyle(newStyle)
-        end
-    end
-
     -- Classic bar draggable mode changed
     if key == "classicBarDraggable" then
         local currentStyle = Addon.db and Addon.db.barStyle
@@ -340,16 +324,20 @@ function Config:Reset()
         Addon.Database:Initialize()
     end
     -- Emit config change so UI updates
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED)
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        local ctx = XPBarContextBuilder.BuildContext("CONFIG_UPDATED")
+        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, ctx)
+    end
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
 end
 
 function Config:ResetStats()
     if Addon and Addon.db then
-        Addon.db.sessionData = {}
-        Addon.db.stats = {}
+        Addon.db.sessionData            = {}
+        Addon.db.stats                  = {}
+        Addon.db.reputationSessionData  = {}
     end
     if Addon.ContextBuilder and Addon.ContextBuilder.ResetSession then
         Addon.ContextBuilder.ResetSession()
@@ -357,12 +345,15 @@ function Config:ResetStats()
     if Addon.Session and Addon.Session.Initialize then
         Addon.Session:Initialize()
     end
+    if Addon.ReputationSession and Addon.ReputationSession.Initialize then
+        Addon.ReputationSession:Initialize()
+    end
     local stats = Addon.Stats
     if stats and stats.Update then
         stats:Update()
     end
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
     end
 end
 

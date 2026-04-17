@@ -56,6 +56,39 @@ local C_LABEL  = Hex(0.00, 0.65, 0.00)  -- dimmer green (brackets, pct, level)
 local C_STATS  = Hex(0.00, 0.48, 0.00)  -- even dimmer (stats prompt line)
 local C_DELTA  = Hex(0.45, 1.00, 0.45)  -- bright mint ("+XP" popup)
 
+local function ResolveHexColor(color, fallbackHex)
+    if not color then
+        return fallbackHex
+    end
+    return Hex(color.r or 0, color.g or 0, color.b or 0)
+end
+
+local function ResolveTerminalPalette(db)
+    local palette = {
+        earned = C_EARNED,
+        quest = C_QUEST,
+        questIncomplete = C_QUEST_INC,
+        rested = C_RESTED,
+        empty = C_EMPTY,
+    }
+
+    if not (db and db.terminalUseCustomColors == true) then
+        return palette
+    end
+
+    local Colors = Addon and Addon.Colors
+    if not Colors then
+        return palette
+    end
+
+    palette.earned = ResolveHexColor(Colors:Get(Colors.Key.XpBar), C_EARNED)
+    palette.quest = ResolveHexColor(Colors:Get(Colors.Key.QuestComplete), C_QUEST)
+    palette.questIncomplete = ResolveHexColor(Colors:Get(Colors.Key.QuestIncomplete), C_QUEST_INC)
+    palette.rested = ResolveHexColor(Colors:Get(Colors.Key.Rested), C_RESTED)
+
+    return palette
+end
+
 -------------------------------------------------------------------
 -- BAR STRING BUILDER
 -------------------------------------------------------------------
@@ -70,37 +103,14 @@ local function BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, res
     local parts     = {}
     local lastColor = nil
 
-    -- Determine if using custom colors (from user-defined color settings)
-    -- or hardcoded terminal colors
     local db = Addon.db or {}
-    local useCustomColors = db.terminalUseCustomColors == true
+    local palette = ResolveTerminalPalette(db)
 
-    -- Resolve colors for this rendering
-    local useEarned, useQuest, useQuestInc, useRested, useEmpty
-    if useCustomColors then
-        -- Use user-defined colors from the Colors system
-        local Colors = Addon and Addon.Colors
-        if Colors then
-            local colorNormal = Colors:Get(Colors.Key.XpBar)
-            local colorXpBarRested = Colors:Get(Colors.Key.XpBarRested)
-            local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
-            local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
-            local colorRested = Colors:Get(Colors.Key.Rested)
-
-            useEarned = colorNormal and Hex(colorNormal.r or 0, colorNormal.g or 0, colorNormal.b or 0) or C_EARNED
-            useQuest = colorQuestComplete and Hex(colorQuestComplete.r or 0, colorQuestComplete.g or 0, colorQuestComplete.b or 0) or C_QUEST
-            useQuestInc = colorQuestIncomplete and Hex(colorQuestIncomplete.r or 0, colorQuestIncomplete.g or 0, colorQuestIncomplete.b or 0) or C_QUEST_INC
-            useRested = colorRested and Hex(colorRested.r or 0, colorRested.g or 0, colorRested.b or 0) or C_RESTED
-        else
-            -- Fallback to hardcoded if Colors system is unavailable
-            useEarned, useQuest, useQuestInc, useRested = C_EARNED, C_QUEST, C_QUEST_INC, C_RESTED
-        end
-    else
-        -- Use hardcoded terminal colors (default aesthetic)
-        useEarned, useQuest, useQuestInc, useRested = C_EARNED, C_QUEST, C_QUEST_INC, C_RESTED
-    end
-
-    useEmpty = C_EMPTY  -- Empty is always dim (never customized)
+    local useEarned = palette.earned
+    local useQuest = palette.quest
+    local useQuestInc = palette.questIncomplete
+    local useRested = palette.rested
+    local useEmpty = palette.empty
 
     for i = 1, BAR_CHARS do
         local ch, col
@@ -337,28 +347,12 @@ local function BuildTerminalTooltipText(context)
     local db  = Addon.db or {}
     local sep = C_STATS .. string.rep(CH_SEP, 42) .. "|r"
     local lines = {}
+    local palette = ResolveTerminalPalette(db)
 
-    -- Resolve colors for this tooltip (same logic as bar rendering)
-    local useCustomColors = db.terminalUseCustomColors == true
-    local colorEarned, colorQuest, colorQuestInc, colorRested
-    if useCustomColors then
-        local Colors = Addon and Addon.Colors
-        if Colors then
-            local colorNormal = Colors:Get(Colors.Key.XpBar)
-            local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
-            local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
-            local colorRestedUser = Colors:Get(Colors.Key.Rested)
-
-            colorEarned = colorNormal and Hex(colorNormal.r or 0, colorNormal.g or 0, colorNormal.b or 0) or C_EARNED
-            colorQuest = colorQuestComplete and Hex(colorQuestComplete.r or 0, colorQuestComplete.g or 0, colorQuestComplete.b or 0) or C_QUEST
-            colorQuestInc = colorQuestIncomplete and Hex(colorQuestIncomplete.r or 0, colorQuestIncomplete.g or 0, colorQuestIncomplete.b or 0) or C_QUEST_INC
-            colorRested = colorRestedUser and Hex(colorRestedUser.r or 0, colorRestedUser.g or 0, colorRestedUser.b or 0) or C_RESTED
-        else
-            colorEarned, colorQuest, colorQuestInc, colorRested = C_EARNED, C_QUEST, C_QUEST_INC, C_RESTED
-        end
-    else
-        colorEarned, colorQuest, colorQuestInc, colorRested = C_EARNED, C_QUEST, C_QUEST_INC, C_RESTED
-    end
+    local colorEarned = palette.earned
+    local colorQuest = palette.quest
+    local colorQuestInc = palette.questIncomplete
+    local colorRested = palette.rested
 
     -- Header
     local level = context.level or (UnitLevel and UnitLevel("player")) or "?"

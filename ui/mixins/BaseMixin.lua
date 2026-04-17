@@ -15,15 +15,7 @@ local Addon = XPBarEnhanced
 Addon.UI.Mixins.Base = XPBarMixinBase
 
 local EventNames = Addon.EventNames
-
--- Route errors through Blizzard's handler when available
-local function SafeCallErrorHandler(err)
-	if CallErrorHandler then
-		CallErrorHandler(err)
-	else
-		print(tostring(err))
-	end
-end
+local Utils = Addon.Utils
 
 -------------------------------------------------------------------
 -- PUBLIC API SURFACE
@@ -143,7 +135,12 @@ function BaseMixin:OnShow()
 	end
 	self._textRefreshTicker = C_Timer.NewTicker(2.5, function()
 		if self and self:IsShown() and self:HasCapability("textBelowBar") then
-			local context = XPBarContextBuilder.BuildContext("MANUAL_REFRESH")
+			local context
+			if XPBarContextBuilder and XPBarContextBuilder.BuildTextRefreshContext then
+				context = XPBarContextBuilder.BuildTextRefreshContext("TEXT_TICK")
+			else
+				context = XPBarContextBuilder.BuildContext("MANUAL_REFRESH")
+			end
 			if self.UpdateSessionText then self:UpdateSessionText(context) end
 			if self.UpdateRateText then self:UpdateRateText(context) end
 		end
@@ -176,9 +173,9 @@ function BaseMixin:MarkDirty(context)
 			self_ref._pendingContext = nil
 			if self_ref and self_ref:IsShown() then
 				if ctx then
-					xpcall(self_ref.TriggerBarRefresh, SafeCallErrorHandler, self_ref, ctx)
+					xpcall(self_ref.TriggerBarRefresh, Utils.ReportError, self_ref, ctx)
 				else
-					xpcall(self_ref.Refresh, SafeCallErrorHandler, self_ref)
+					xpcall(self_ref.Refresh, Utils.ReportError, self_ref)
 				end
 			end
 		end)
@@ -278,9 +275,6 @@ function BaseMixin:HasCapability(cap)
 	return caps[cap] ~= false
 end
 
---- Determine if this event should force a full render
----@param event string|nil Event name from context
----@return boolean
 local FORCE_RENDER_EVENTS = {
 	["FULL_UPDATE"]             = true,
 	["XPBAR:BROADCAST_UPDATE"]  = true,
@@ -289,6 +283,9 @@ local FORCE_RENDER_EVENTS = {
 	["CVAR_UPDATE"]             = true,
 }
 
+--- Determine if this event should force a full render.
+---@param event string|nil Event name from context
+---@return boolean
 local function ShouldForceRender(event)
 	return FORCE_RENDER_EVENTS[event] == true
 end
@@ -387,10 +384,27 @@ function BaseMixin:TriggerBarRefresh(context)
 		error("Style must implement RenderBar(context) method")
 	end
 
-	-- Hide bar at max level (UnitXPMax returns 0 when no more XP can be earned)
 	local Addon = XPBarEnhanced
-	if (context.xpMax ~= nil and context.xpMax <= 0) or (UnitXPMax("player") or 1) <= 0 then
-		local manager = Addon and Addon.BarManager
+	local manager = Addon and Addon.BarManager
+
+	-- Let BarManager hide the bar at max level.
+	if manager and manager.AdjustContextForMaxLevel then
+		context = manager:AdjustContextForMaxLevel(context)
+		if not context then
+			if manager.GetCurrentFrame and manager:GetCurrentFrame() == self and manager.SetStyle then
+				manager:SetStyle("none")
+			else
+				if self.CleanupAnimation then
+					self:CleanupAnimation()
+				end
+				self:Hide()
+			end
+			return
+		end
+	end
+
+	-- Non-max-level guard: if context cannot represent progress, hide safely.
+	if context.xpMax ~= nil and context.xpMax <= 0 then
 		if manager and manager.GetCurrentFrame and manager:GetCurrentFrame() == self and manager.SetStyle then
 			manager:SetStyle("none")
 		else
@@ -430,6 +444,14 @@ end
 --- Override this in your style: render all visuals from context.
 function BaseMixin:RenderBar(context)
 	error("Style must implement RenderBar(context)")
+end
+
+--- Default level-up celebration: brief flash of the frame using UIFrameFlash.
+--- Individual styles may override this for style-specific effects.
+function BaseMixin:OnLevelUpCelebration()
+	if UIFrameFlash then
+		UIFrameFlash(self, 0.15, 0.15, 0.6, false, 0.1, 0)
+	end
 end
 
 return BaseMixin

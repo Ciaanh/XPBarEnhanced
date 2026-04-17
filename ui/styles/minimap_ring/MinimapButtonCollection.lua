@@ -48,6 +48,7 @@ local IGNORE_PATTERNS = {
 
 local BUTTON_SIZE   = 31    -- displayed size of each collected button
 local MIN_BUTTON_SIZE = 20  -- ignore tiny minimap icon widgets (nodes/POIs)
+local DEFAULT_BUTTON_SIZE = 31
 local BAG_SIZE      = 31    -- bag toggle button (matches standard minimap button size)
 local PANEL_PAD     = 10    -- padding inside the panel
 local PANEL_SPACING = 4     -- gap between icons
@@ -136,7 +137,9 @@ function Collection:EnsureFrames()
     -- Bag / toggle button
     self.bagButton = self.bagButton or CreateFrame("Button", "XPBEMinimapButtonBag", UIParent)
     self.bagButton:SetSize(BAG_SIZE, BAG_SIZE)
-    self.bagButton:SetFrameStrata("MEDIUM")
+    -- Keep the draggable bag above tooltip hit-capture strips from MinimapRingBarStyle.
+    self.bagButton:SetFrameStrata("HIGH")
+    self.bagButton:SetFrameLevel(30)
     self.bagButton:EnableMouse(true)
 
     if not self.bagButton.xpbeBuilt then
@@ -169,7 +172,8 @@ function Collection:EnsureFrames()
     -- Collection panel
     self.panel = self.panel or CreateFrame(
         "Frame", "XPBEMinimapButtonBagPanel", UIParent, "BackdropTemplate")
-    self.panel:SetFrameStrata("MEDIUM")
+    self.panel:SetFrameStrata("HIGH")
+    self.panel:SetFrameLevel(20)
     self.panel:Hide()
 
     if not self.panel.xpbeBuilt then

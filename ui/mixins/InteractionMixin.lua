@@ -85,6 +85,8 @@ function InteractionMixin:OnMouseUp(button)
 	-- Regular click (no modifiers)
 	if button == "LeftButton" then
 		self:OnLeftClick()
+	elseif button == "RightButton" then
+		self:OnRightClick()
 	end
 end
 
@@ -109,11 +111,9 @@ function InteractionMixin:OnLeftClick()
 	-- Styles can override this method for custom behavior
 end
 
---- OnRightClick - Handle right mouse click
+--- OnRightClick - Handle right mouse click (no modifier)
 function InteractionMixin:OnRightClick()
-	-- Right-click intentionally disabled to match classic interaction parity.
-	-- Keep this method present so styles can override if they really need it,
-	-- but do nothing by default to avoid unexpected context menu behavior.
+	-- No default action. Styles override to provide right-click behaviour.
 end
 
 -------------------------------------------------------------------

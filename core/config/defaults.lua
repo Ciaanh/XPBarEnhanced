@@ -5,17 +5,25 @@ local Addon = XPBarEnhanced
 
 local defaults = {
     barStyle = "classic",
+    showSecondaryBar = false,
+    hideCompanionOutsideDelve = false,
+    secondaryBarsAttached = true,
     barLocked = false,
     circularSize = "medium",
     circularSegments = 50,
     circularUseTexture = true,
     circularScaleCenterText = false,
-    minimapRingPadding = 10,
+    circularSecondaryFullCircle = false,
+    minimapRingPadding = 0,
     minimapRingSegments = 100,
     minimapRingCollectButtons = false,
     minimapRingBagAngle = 200,
+    minimapArcIconAngle = 315,
+    minimapArcDisplayAngle = 135,
     minimapRingSegmentWidth = 8,
-    minimapRingSegmentHeight = 24,
+    minimapRingSegmentHeight = 25,
+    minimapArcStartExpanded = false,
+
     showPercentage = true,
     showMilestoneTicks = false,
     showQuestXP = true,
@@ -23,14 +31,15 @@ local defaults = {
     showXPPerHourText = true,
     showLevelTimeText = true,
     showSessionTimeText = true,
+    resetOnReload = false,
     showTimeToLevelText = true,
     abbreviateNumbers = true,
     showRemainingXP = true,
-
     showLevelText = true,
     showXPText = true,
     showCompleteQuestOverlay = true,
     showIncompleteQuestOverlay = false,
+    showRestedOverlay = true,
     enableAnimations = true,
     flashOnGain = true,
     twoPhaseOnLevelUp = true,
@@ -38,7 +47,6 @@ local defaults = {
     celebrationSparkles = false,
     celebrationSound = true,
     celebrationSpeed = "normal",
-    maxLevelBehavior = "always_show",
     fadeWhenInactive = false,
     fadeDelay = 5.0,
     idleOpacity = 0.0,
@@ -68,7 +76,15 @@ local defaults = {
     barPositions = {
         classic = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 12},
         flat = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
-        circular = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
+        circular = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
+    },
+    secondaryFadeInSpeed = 0.3,
+    secondaryFadeOutSpeed = 0.5,
+    -- Known Delve companion factions (by faction ID).
+    -- Maps faction ID -> display name for locale-independent companion detection.
+    delveCompanions = {
+        [2640] = "Brann Bronzebeard",
+        [2744] = "Valeera Sanguinar"
     }
 }
 

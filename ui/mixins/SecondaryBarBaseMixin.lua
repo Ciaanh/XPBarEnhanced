@@ -1,0 +1,329 @@
+-- XP Bar Enhanced - Secondary Bar Base Mixin
+-- Shared lifecycle contract for secondary bars (reputation/companion).
+
+local Addon = XPBarEnhanced
+local Utils = Addon.Utils
+
+---@class XPBarSecondaryBaseMixin
+XPBarSecondaryBaseMixin = {}
+Addon.UI.Mixins.SecondaryBase = XPBarSecondaryBaseMixin
+
+local SecondaryBaseMixin = XPBarSecondaryBaseMixin
+
+local function GetFallbackAnchor(anchor)
+    if not anchor then
+        return "BOTTOM", "UIParent", "BOTTOM", 0, 0
+    end
+
+    return anchor.point or "BOTTOM",
+        anchor.relativeTo or "UIParent",
+        anchor.relativePoint or anchor.point or "BOTTOM",
+        anchor.x or 0,
+        anchor.y or 0
+end
+
+function SecondaryBaseMixin:OnLoad()
+    if self.OnSecondaryLoad then
+        self:OnSecondaryLoad()
+    end
+
+    self:ApplyInitialPosition()
+end
+
+function SecondaryBaseMixin:ApplyInitialPosition()
+    self:ClearAllPoints()
+
+    local key = self.GetPositionConfigKey and self:GetPositionConfigKey()
+    local styleKey = self.GetPositionStyleKey and self:GetPositionStyleKey()
+    local db = Addon and Addon.db
+    local pos
+    if key and db then
+        local store = db[key]
+        if styleKey and store then
+            pos = store[styleKey]
+        elseif store then
+            pos = store
+        end
+    end
+
+    if pos then
+        self:SetPoint(pos.point, pos.relativeTo or "UIParent", pos.relativePoint, pos.x or 0, pos.y or 0)
+        return
+    end
+
+    local point, relativeTo, relativePoint, x, y = GetFallbackAnchor(self.GetFallbackPosition and self:GetFallbackPosition())
+    self:SetPoint(point, relativeTo, relativePoint, x, y)
+end
+
+function SecondaryBaseMixin:OnShow()
+    if self.OnSecondaryShow then
+        self:OnSecondaryShow()
+    end
+
+    self:Subscribe()
+    self:StartTextTicker()
+    self:Refresh()
+end
+
+function SecondaryBaseMixin:OnHide()
+    self:StopTextTicker()
+    self:Unsubscribe()
+    if self._fadeAnim and self._fadeAnim:IsPlaying() then
+        self._fadeAnim:Stop()
+    end
+    self._dirty = nil
+    self._pendingContext = nil
+end
+
+function SecondaryBaseMixin:StartTextTicker()
+    self:StopTextTicker()
+
+    if not self.OnTextTick then
+        return
+    end
+
+    local interval = self.GetTextTickerInterval and self:GetTextTickerInterval() or nil
+    if not interval or interval <= 0 then
+        return
+    end
+
+    local self_ref = self
+    self._textTicker = C_Timer.NewTicker(interval, function()
+        if not self_ref or not self_ref:IsShown() then
+            return
+        end
+
+        local context = self_ref:GetLatestContext()
+        if not context and self_ref.GetTextTickerContext then
+            context = self_ref:GetTextTickerContext()
+        end
+
+        xpcall(self_ref.OnTextTick, Utils.ReportError, self_ref, context)
+    end)
+end
+
+function SecondaryBaseMixin:StopTextTicker()
+    if self._textTicker then
+        self._textTicker:Cancel()
+        self._textTicker = nil
+    end
+end
+
+function SecondaryBaseMixin:Subscribe()
+    local eventName = self.GetBroadcastEventName and self:GetBroadcastEventName()
+    if not eventName or not Addon.EventBus or not Addon.EventBus.RegisterWithHandle then
+        return
+    end
+
+    local self_ref = self
+    self._busHandle = Addon.EventBus:RegisterWithHandle(eventName, function(ctx)
+        if self_ref then
+            self_ref:MarkDirty(ctx)
+        end
+    end)
+end
+
+function SecondaryBaseMixin:Unsubscribe()
+    if self._busHandle then
+        self._busHandle:Unregister()
+        self._busHandle = nil
+    end
+end
+
+function SecondaryBaseMixin:Refresh()
+    if not self.Render then
+        return
+    end
+
+    local context = self:GetLatestContext()
+    if context then
+        xpcall(self.Render, Utils.ReportError, self, context)
+    end
+end
+
+function SecondaryBaseMixin:GetLatestContext()
+    local context = self._pendingContext or self._lastContext
+    if context then
+        return context
+    end
+
+    if self.GetInitialContext then
+        return self:GetInitialContext()
+    end
+
+    return nil
+end
+
+function SecondaryBaseMixin:MarkDirty(context)
+    self._pendingContext = context
+
+    if self._dirty then
+        return
+    end
+
+    self._dirty = true
+    local self_ref = self
+    local runFn = RunNextFrame or function(fn)
+        C_Timer.After(0, fn)
+    end
+
+    runFn(function()
+        if not self_ref then
+            return
+        end
+
+        local pending = self_ref._pendingContext
+        self_ref._pendingContext = nil
+        self_ref._dirty = nil
+
+        if not self_ref:IsShown() then
+            return
+        end
+
+        if pending then
+            xpcall(self_ref.Render, Utils.ReportError, self_ref, pending)
+        else
+            xpcall(self_ref.Refresh, Utils.ReportError, self_ref)
+        end
+    end)
+end
+
+-------------------------------------------------------------------
+-- FADE/ANIMATION SUPPORT
+-------------------------------------------------------------------
+
+function SecondaryBaseMixin:FadeToAlpha(targetAlpha)
+    local fadeSpeed = targetAlpha == 1 and (Addon.db and Addon.db.secondaryFadeInSpeed or (Addon.defaults and Addon.defaults.secondaryFadeInSpeed or 0.3))
+                      or (Addon.db and Addon.db.secondaryFadeOutSpeed or (Addon.defaults and Addon.defaults.secondaryFadeOutSpeed or 0.5))
+    
+    if not self:IsShown() then
+        self:SetAlpha(targetAlpha)
+        return
+    end
+    
+    local currentAlpha = self:GetAlpha() or 0
+    if math.abs(currentAlpha - targetAlpha) < 0.01 then
+        return
+    end
+    
+    if not self._fadeAnim then
+        self._fadeAnim = self:CreateAnimationGroup()
+        self._fadeAlpha = self._fadeAnim:CreateAnimation("Alpha")
+        self._fadeAnim:SetLooping("NONE")
+        self._fadeAnim:SetScript("OnFinished", function()
+            if self and self._fadeTargetAlpha ~= nil then
+                self:SetAlpha(self._fadeTargetAlpha)
+            end
+        end)
+    end
+
+    if self._fadeAnim:IsPlaying() then
+        self._fadeAnim:Stop()
+    end
+
+    self._fadeTargetAlpha = targetAlpha
+    self._fadeAlpha:SetDuration(fadeSpeed)
+    self._fadeAlpha:SetFromAlpha(currentAlpha)
+    self._fadeAlpha:SetToAlpha(targetAlpha)
+
+    self._fadeAnim:Play()
+end
+
+-------------------------------------------------------------------
+-- INTERACTION SAFETY SUPPORT
+-------------------------------------------------------------------
+
+function SecondaryBaseMixin:ConfigureDragSupport()
+    if not self.SetMovable then
+        return
+    end
+
+    if InCombatLockdown and InCombatLockdown() then
+        if self._dragSetupPending then
+            return
+        end
+
+        self._dragSetupPending = true
+        if not self._dragSetupFrame then
+            self._dragSetupFrame = CreateFrame("Frame")
+        end
+
+        self._dragSetupFrame:SetScript("OnEvent", function(frame, event)
+            if event ~= "PLAYER_REGEN_ENABLED" then
+                return
+            end
+
+            frame:UnregisterEvent("PLAYER_REGEN_ENABLED")
+            self._dragSetupPending = nil
+            self:ConfigureDragSupport()
+        end)
+        self._dragSetupFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+        return
+    end
+
+    self:SetMovable(true)
+    self:SetClampedToScreen(true)
+    if self.RegisterForDrag then
+        self:RegisterForDrag("LeftButton")
+    end
+    self._dragSetupPending = nil
+end
+
+-------------------------------------------------------------------
+-- POSITION PERSISTENCE SUPPORT
+-------------------------------------------------------------------
+
+-- Returns the primary bar style key used to namespace per-style saved positions.
+-- Override in a style mixin to return a different key.
+function SecondaryBaseMixin:GetPositionStyleKey()
+    local db = Addon and Addon.db
+    return db and db.barStyle
+end
+
+function SecondaryBaseMixin:SavePosition()
+    local configKey = self.GetPositionConfigKey and self:GetPositionConfigKey()
+    local styleKey = self.GetPositionStyleKey and self:GetPositionStyleKey()
+    if not configKey or not Addon.db then
+        return
+    end
+
+    -- Normalize to UIParent BOTTOMLEFT pixel coordinates so the saved value
+    -- survives reload. Frame object references from GetPoint() can't be
+    -- serialized into SavedVariables.
+    local left = self:GetLeft()
+    local bottom = self:GetBottom()
+    if not left or not bottom then
+        return
+    end
+
+    local posData = {
+        point = "BOTTOMLEFT",
+        relativeTo = "UIParent",
+        relativePoint = "BOTTOMLEFT",
+        x = left,
+        y = bottom,
+    }
+
+    if styleKey then
+        Addon.db[configKey] = Addon.db[configKey] or {}
+        Addon.db[configKey][styleKey] = posData
+    else
+        Addon.db[configKey] = posData
+    end
+end
+
+function SecondaryBaseMixin:ResetPosition()
+    local configKey = self.GetPositionConfigKey and self:GetPositionConfigKey()
+    local styleKey = self.GetPositionStyleKey and self:GetPositionStyleKey()
+    if not configKey or not Addon.db then
+        return
+    end
+
+    if styleKey and Addon.db[configKey] then
+        Addon.db[configKey][styleKey] = nil
+    else
+        Addon.db[configKey] = nil
+    end
+    self:ApplyInitialPosition()
+end
+

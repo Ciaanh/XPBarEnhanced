@@ -22,8 +22,8 @@ function TimeCalc.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, cur
     local now = time()
     local elapsed = now - (sessionStart or now)
 
-    -- Minimum elapsed time to avoid division issues (30 seconds)
-    if elapsed < 30 then
+    -- Minimum elapsed time to avoid division issues (10 seconds)
+    if elapsed < 10 then
         return 0
     end
 
@@ -223,6 +223,44 @@ function TimeCalc.AdjustedLevelTime(realLevelTime, lastTimePlayedRequest)
     end
 
     return realLevelTime + elapsed
+end
+
+-------------------------------------------------------------------
+-- RECENT RATE CALCULATIONS
+-------------------------------------------------------------------
+
+--- Calculate XP per hour from a recent gains buffer (sliding window).
+--- Returns 0 if insufficient data (< 30s elapsed or no gains in window).
+---@param recentGains table Array of {timestamp: number, amount: number} entries
+---@param windowSeconds number|nil Window size in seconds (default 300 = 5 min)
+---@return number xpPerHour Recent XP/hour rate
+function TimeCalc.RecentXPPerHour(recentGains, windowSeconds)
+    windowSeconds = windowSeconds or 300
+    if not recentGains or #recentGains == 0 then
+        return 0
+    end
+
+    local now = time()
+    local cutoff = now - windowSeconds
+    local totalXP = 0
+    local oldestInWindow = now
+
+    for i = #recentGains, 1, -1 do
+        local entry = recentGains[i]
+        if entry.timestamp >= cutoff then
+            totalXP = totalXP + (entry.amount or 0)
+            if entry.timestamp < oldestInWindow then
+                oldestInWindow = entry.timestamp
+            end
+        end
+    end
+
+    local elapsed = now - oldestInWindow
+    if elapsed < 10 or totalXP <= 0 then
+        return 0
+    end
+
+    return math.floor((totalXP / elapsed) * 3600)
 end
 
 -------------------------------------------------------------------

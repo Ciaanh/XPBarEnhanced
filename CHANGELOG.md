@@ -2,6 +2,66 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [Unreleased]
+
+## [1.1.0] - 2026-04-17
+
+### Added
+
+- **Secondary Reputation Bar**: New `SecondaryBarManager` with unified tracked-reputation secondary bar
+    - `FlatReputationBarTemplate` renders the watched faction name, standing, and progress (faction-type colour coding: standard=purple, friendship=green, major=blue, paragon=gold)
+    - `ClassicReputationBarTemplate` label restored and refreshed by text ticker (`GetTextTickerInterval` / `OnTextTick`)
+    - `VerticalReputationBarTemplate`: 20×300 vertical `StatusBar` (`orientation="VERTICAL"`) with right-side attachment via `GetAttachedAnchor() → "LEFT", "RIGHT", 2, 0`, `ANCHOR_RIGHT` tooltip, and style-aware fallback positioning
+    - `TerminalReputationBarTemplate`: single-line 650×22 ASCII phosphor reputation bar using `DejaVuSansMono.ttf` in `OnSecondaryLoad`; 20-character `█`/`░` fill, standing-aware phosphor colors, and inline faction/standing/%/session delta text
+    - Companion decoration mode: when tracking a Delve companion faction, bar switches to companion flavor (level display, teal colour) driven by `isCompanion` context flag
+    - Locale-safe companion detection via `defaults.delveCompanions` factionID → name map (Brann 2640, Valeera 2744); ID-first lookup with name fallback
+    - Fade transitions, drag-to-move with SavedVariables persistence, hover tooltips, live text refresh
+    - Attached mode stacks secondary bar above primary; free drag at max level when primary is hidden
+    - TEMPLATE_MAP-driven style derivation scales correctly as new styles are added
+    - `ShouldSuppressMainContainer()` prevents duplicate Blizzard reputation bar at max level
+- **Options — Secondary Bar**: `showSecondaryBar` toggle and `hideCompanionOutsideDelve` option to hide companion bar outside Delves
+- **Options Panel Sections**: Grouped scroll layout with 9 section headers and style-conditional visibility for Circular, Minimap Ring, and Terminal options
+- **Reputation Tracking**: New `ReputationSession` service tracks the player's watched faction gains per session
+    - Supports all four faction types: standard, friendship, major (renown), and paragon
+    - Companion tracking integrated as decoration mode (not a separate domain)
+    - Session-owned context building via `ReputationSession._BuildContext()`
+    - Computes rep/hour rate and estimated time to next standing
+    - Emits `REPUTATION_BROADCAST_UPDATE` on every faction change
+- **Reputation Calculations**: Pure stateless helpers in `ReputationCalculations` for all four WoW reputation types
+    - `NormalizeRepData` produces a uniform `{current, min, max, ratio, percent, name, standingLabel, factionType, isMaxed}` table
+- **Session XP Breakdown**: Session now separately tracks `questXP` and `otherXP` alongside total XP gained
+- **Sliding-Window XP Rate**: `Session.GetRecentXPPerHour()` uses a 20-entry rolling window for more responsive XP/hour estimates
+- **Text Ticker**: Lightweight `BuildTextRefreshContext()` path for periodic text refresh; avoids full context rebuild every 2.5s
+- **Max-Level Events**: `UPDATE_EXPANSION_LEVEL` and `MAX_EXPANSION_LEVEL_UPDATED` added to EventRouter for immediate max-level visibility re-evaluation
+- **Release Script**: `make-release.ps1` packages addon files from the project root into `XPBarEnhanced-<version>.zip` placed in `.build/`
+
+### Changed
+
+- **Context Ownership**: Session layers (`Session:EmitUpdate`, `ReputationSession:EmitUpdate`) are the sole emitters of domain EventBus events; managers and Config no longer build context directly
+- **XP/hour Warm-up**: Lowered threshold from 30s to 10s for faster initial rate display
+- **Quest XP Overlay**: Excluded `isTask` quests (world quests, bonus objectives) from XP overlay totals
+- **Secondary Bar Position**: Dynamic `GetFallbackPosition()` derived from active XP bar style replaces static default
+- **Secondary Bar Attachment API**: Added optional `GetAttachedAnchor()` hook on secondary style mixins; `ReapplyAttachedPositions()` in `SecondaryBarManager` now uses style-provided `(point, relPoint, x, y)` anchors when present
+- **Secondary Bar Style Model**: Replaced `AUTO_PAIR` table and `secondaryBarStyle` user config with direct 1:1 `TEMPLATE_MAP[db.barStyle]` derivation. Primary styles without an entry produce no secondary bar.
+- **Secondary Bar Strata**: Raised all secondary bar templates from `frameStrata="LOW"` to `frameStrata="MEDIUM"` to match primary text draw layer
+- **EventBus**: Added `REPUTATION_BROADCAST_UPDATE` to the known event registry
+- **Database**: Seeds `reputationSessionData` table on initialization
+- **Config**: `ResetStats` now also clears reputation session data
+
+### Fixed
+
+- **Duplicate Blizzard Reputation Bar**: At max level, `MainStatusTrackingBarContainer` now suppressed when custom secondary bar is active
+- **Fade-In Symmetry**: Fade-in and fade-out now use consistent animation patterns
+- **SavePosition Bug**: Frame-reference serialization corrected to use UIParent BOTTOMLEFT normalization
+- **Classic Bar — QuestSummaryText Overlap**: `QuestSummaryText` anchor in `ClassicBarTemplate.xml` was `y="30"` (above the bar), causing overlap with secondary bar space; corrected to `y="-14"`
+
+### Removed
+
+- `secondaryBarStyle` SavedVariables key and dropdown option (superseded by automatic 1:1 pairing)
+- `AUTO_PAIR` table from `SecondaryBarManager.lua`
+- Six `OPT_SECONDARY_BAR_STYLE*` locale strings
+- `MinimalSecondaryBarStyle.lua` and `MinimalSecondaryBarTemplate.xml` (dead code, unreferenced by `TEMPLATE_MAP`)
+
 ## [1.0.6] - 2026-03-22
 
 ### Fixed

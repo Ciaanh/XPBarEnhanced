@@ -14,6 +14,10 @@ end
 
 local Addon = XPBarEnhanced
 
+local function GetSharedStyleHelpers()
+    return Addon and Addon.UI and Addon.UI.SharedStyleHelpers
+end
+
 -------------------------------------------------------------------
 -- STYLE TEMPLATE
 -------------------------------------------------------------------
@@ -80,11 +84,15 @@ function VerticalBarStyleTemplate:UpdateBarColors(context, barName)
         return
     end
 
-    local Colors = Addon.Colors
-    -- Select color based on whether player has rested XP
-    local hasRestedXP = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
-    local colorKey = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
-    local color = Colors:Get(colorKey)
+    local shared = GetSharedStyleHelpers()
+    local color = shared and shared.GetXPBarColor and shared.GetXPBarColor(context)
+    if not color or not color.r then
+        local Colors = Addon and Addon.Colors
+        if Colors and Colors.Get and Colors.Key then
+            color = Colors:Get(Colors.Key.XpBar)
+        end
+    end
+    color = color or {r = 1, g = 1, b = 1, a = 1}
 
     -- Use SetStatusBarColor for StatusBar widget
     self.StatusBar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)

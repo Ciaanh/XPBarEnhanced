@@ -13,7 +13,8 @@ local function showHelp()
     print("|cff33ff99XP Bar Enhanced|r Commands:")
     print("  /xpbe |cFFFFFFFFoptions|r - Open options panel")
     print("  /xpbe |cFFFFFFFFstats|r - Toggle statistics window")
-    print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|portrait_arc|terminal>|r - Change bar style")
+    print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|terminal>|r - Change bar style")
+    print("  /xpbe |cFFFFFFFFreps|r - Export all faction IDs")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -79,15 +80,22 @@ local function handleStyle(style)
         return
     end
     if style == "none" or style == "classic" or style == "flat" or style == "vertical" or style == "circular" or style == "minimap_ring" or style == "terminal" then
-        if Addon.BarManager and Addon.BarManager.SetStyle then
-            Addon.BarManager:SetStyle(style)
-            Addon.db.barStyle = style
+        if Addon.Config and Addon.Config.SetOptionKey then
+            Addon.Config:SetOptionKey("barStyle", style)
             print("|cFF00FF00XP Bar Enhanced:|r Bar style set to: " .. style)
         else
-            print("|cFFFF0000XP Bar Enhanced:|r XP Bar module or BarManager not available")
+            print("|cFFFF0000XP Bar Enhanced:|r Config module not available")
         end
     else
         print("|cFFFF0000XP Bar Enhanced:|r Invalid style. Use: none, classic, flat, vertical, circular, minimap_ring, terminal")
+    end
+end
+
+local function handleReps()
+    if Addon.ReputationSession and Addon.ReputationSession.ListAllFactions then
+        Addon.ReputationSession:ListAllFactions()
+    else
+        print("|cFFFF0000XP Bar Enhanced:|r Reputation module not available")
     end
 end
 
@@ -109,6 +117,8 @@ local function handleSlashCommand(message)
         handleResetColors()
     elseif command == "style" or command == "barstyle" or command == "mode" then
         handleStyle(arg)
+    elseif command == "reps" then
+        handleReps()
     else
         printUnknown(command)
     end
