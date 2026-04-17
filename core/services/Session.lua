@@ -31,6 +31,41 @@ Addon.Session = Addon.Session or {}
 local Session = Addon.Session
 local Utils = Addon.Utils
 local timePlayedTicker
+local PENDING_QUEST_TURNIN_WINDOW_SECONDS = 3
+
+local function PurgeExpiredPendingQuestTurnIns(list, now)
+    local i = 1
+    while i <= #list do
+        local entry = list[i]
+        if not entry or (entry.expiresAt and entry.expiresAt <= now) then
+            table.remove(list, i)
+        else
+            i = i + 1
+        end
+    end
+end
+
+function Session:_QueuePendingQuestTurnIn(questID)
+    self._pendingQuestTurnIns = self._pendingQuestTurnIns or {}
+    local now = time()
+    PurgeExpiredPendingQuestTurnIns(self._pendingQuestTurnIns, now)
+    self._pendingQuestTurnIns[#self._pendingQuestTurnIns + 1] = {
+        questID = questID,
+        queuedAt = now,
+        expiresAt = now + PENDING_QUEST_TURNIN_WINDOW_SECONDS,
+    }
+end
+
+function Session:_ConsumePendingQuestTurnInForXPGain()
+    self._pendingQuestTurnIns = self._pendingQuestTurnIns or {}
+    local now = time()
+    PurgeExpiredPendingQuestTurnIns(self._pendingQuestTurnIns, now)
+    if #self._pendingQuestTurnIns == 0 then
+        return false
+    end
+    table.remove(self._pendingQuestTurnIns, 1)
+    return true
+end
 
 -------------------------------------------------------------------
 -- SESSION HELPERS
@@ -102,6 +137,7 @@ end
 
 function Session:Initialize()
     self:GetCurrent()
+    self._pendingQuestTurnIns = {}
     -- External event ownership is centralized in EventRouter.
 end
 
@@ -130,6 +166,7 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     if isInitialLogin or isReloadingUI then
         session.lastXP = UnitXP("player")
         session.maxXP = UnitXPMax("player")
+        self._pendingQuestTurnIns = {}
     end
 
     updateSessionAccumTime(session)
@@ -163,8 +200,7 @@ function Session:OnXPUpdate(suppressBroadcast)
 
     -- Track gain source and record in history
     if gained > 0 then
-        local source = self._pendingQuestTurnIn and "quest" or "other"
-        self._pendingQuestTurnIn = nil
+        local source = self:_ConsumePendingQuestTurnInForXPGain() and "quest" or "other"
 
         local entry = {
             timestamp = time(),
@@ -220,13 +256,13 @@ function Session:OnLevelUp(level)
 
     -- Notify dependent systems (consolidated from defunct AddOnLifecycle handlers)
     if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-        xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
+        Addon.QuestXP:InvalidateQuestCache()
     end
     if Addon.BarManager and Addon.BarManager.OnLevelUp then
-        xpcall(Addon.BarManager.OnLevelUp, Utils.ReportError, Addon.BarManager, level)
+        Addon.BarManager:OnLevelUp(level)
     end
     if Addon.Stats and Addon.Stats.OnLevelUp then
-        xpcall(Addon.Stats.OnLevelUp, Utils.ReportError, Addon.Stats, level)
+        Addon.Stats:OnLevelUp()
     end
 
     -- Broadcast update to all bars
@@ -266,8 +302,9 @@ function Session:OnQuestTurnedIn(questID)
         return
     end
 
-    -- Flag the next XP gain as quest-sourced (cleared inside OnXPUpdate)
-    self._pendingQuestTurnIn = true
+    -- Queue the turn-in so the next XP gain can be attributed to quests.
+    -- Entries expire quickly to avoid stale quest attribution.
+    self:_QueuePendingQuestTurnIn(questID)
 
     local function RefreshCompletedQuests()
         -- Touch the API to ensure it's updated

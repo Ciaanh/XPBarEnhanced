@@ -76,11 +76,25 @@ function eventHandlers:OnPlayerLogout()
 end
 
 function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
+    if not Addon._changelogChecked then
+        Addon._changelogChecked = true
+        if Addon.Changelog and Addon.Changelog.CheckForUpdates then
+            Addon.Changelog:CheckForUpdates()
+        end
+    end
+
     if Addon.Session and Addon.Session.EmitUpdate then
         Addon.Session:EmitUpdate("PLAYER_ENTERING_WORLD")
     end
 
     C_Timer.After(0, function()
+        if Addon.BarManager and Addon.BarManager.SetStyle then
+            local db = Addon.db or {}
+            local defaultStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
+            Addon.BarManager.currentStyle = nil
+            Addon.BarManager:SetStyle(db.barStyle or defaultStyle)
+        end
+
         if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
             Addon.BarManager:ApplyDefaultXPBarVisibility()
         end

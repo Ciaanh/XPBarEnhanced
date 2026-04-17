@@ -55,24 +55,18 @@ function BarManager:Initialize()
 end
 
 local function IsPlayerAtMaxLevel(currentLevel)
-    local level = currentLevel or UnitLevel("player") or 0
-    local maxLevel = (GetMaxPlayerLevel and GetMaxPlayerLevel()) or 80
-
-    -- When PLAYER_LEVEL_UP provides the new level, trust it immediately.
-    -- IsPlayerAtEffectiveMaxLevel() can lag one frame behind the event.
-    if currentLevel and level >= maxLevel then
-        return true
+    local level = tonumber(currentLevel)
+    if not level then
+        level = tonumber(UnitLevel("player")) or 0
     end
 
-    -- Prefer IsPlayerAtEffectiveMaxLevel() which accounts for expansion state
-    if IsPlayerAtEffectiveMaxLevel then
-        local atEffectiveMax = IsPlayerAtEffectiveMaxLevel()
-        if atEffectiveMax then
-            return true
-        end
+    local maxLevel = tonumber((GetMaxPlayerLevel and GetMaxPlayerLevel()) or 80) or 80
+    if level <= 0 then
+        return false
     end
 
-    -- Fallback for older API
+    -- Use an explicit level comparison only. Effective-max APIs can transiently
+    -- report true during login/level transitions and incorrectly force style "none".
     return level >= maxLevel
 end
 
@@ -258,7 +252,7 @@ function BarManager:TriggerStyleCelebration()
 
     local frame = self:GetCurrentFrame()
     if frame and frame.OnLevelUpCelebration then
-        xpcall(frame.OnLevelUpCelebration, Utils.ReportError, frame)
+        frame:OnLevelUpCelebration()
     end
 end
 

@@ -61,9 +61,17 @@ local StyleMixin = {}
 local MAX_SEGMENTS = 60
 local FULL_CIRCLE_SEGMENTS = 50
 local SEMI_CIRCLE_SEGMENTS = 30
+local BASE_FRAME_SIZE = 256
 local INNER_RADIUS_PX = 60
 local SEGMENT_WIDTH_PX = 3
 local SEGMENT_HEIGHT_PX = 10
+
+local CIRCULAR_SIZE_SCALES = {
+    small = 0.75,
+    medium = 1.0,
+    large = 1.5,
+    huge = 2.0,
+}
 
 local EMPTY_COLOR = {r = 0.10, g = 0.10, b = 0.10, a = 0.40}
 
@@ -75,6 +83,18 @@ local function Clamp(value, minValue, maxValue)
         return maxValue
     end
     return value
+end
+
+local function GetCircularScale()
+    local size = Addon and Addon.db and Addon.db.circularSize or "medium"
+    if type(size) ~= "string" or not CIRCULAR_SIZE_SCALES[size] then
+        size = "medium"
+    end
+    return CIRCULAR_SIZE_SCALES[size] or 1.0
+end
+
+local function ShouldScaleInnerArc()
+    return Addon and Addon.db and Addon.db.circularScaleCenterText == true
 end
 
 function StyleMixin:GetPositionConfigKey()
@@ -147,25 +167,32 @@ function StyleMixin:_RebuildArcIfNeeded()
     self:_CreateSegments()
 
     local displayCount, startAngle, sweep = self:_GetArcConfig()
-    if self._displayCount == displayCount and self._startAngle == startAngle and self._sweep == sweep then
+    local scale = ShouldScaleInnerArc() and GetCircularScale() or 1.0
+    if self._displayCount == displayCount and self._startAngle == startAngle and self._sweep == sweep and self._arcScale == scale then
         return
     end
 
     self._displayCount = displayCount
     self._startAngle = startAngle
     self._sweep = sweep
+    self._arcScale = scale
+
+    local radius = INNER_RADIUS_PX * scale
+    local segmentWidth = SEGMENT_WIDTH_PX * scale
+    local segmentHeight = SEGMENT_HEIGHT_PX * scale
+    self:SetSize(BASE_FRAME_SIZE * scale, BASE_FRAME_SIZE * scale)
 
     local clockwise = -1
     local denominator = math.max(displayCount - 1, 1)
 
     for index = 1, displayCount do
         local angle = startAngle + ((index - 1) / denominator) * sweep
-        local xOffset = math.cos(angle) * INNER_RADIUS_PX
-        local yOffset = math.sin(angle) * INNER_RADIUS_PX * clockwise
+        local xOffset = math.cos(angle) * radius
+        local yOffset = math.sin(angle) * radius * clockwise
         local rotation = (clockwise * angle) + startAngle
         local segment = self._segments[index]
 
-        segment:SetSize(SEGMENT_WIDTH_PX, SEGMENT_HEIGHT_PX)
+        segment:SetSize(segmentWidth, segmentHeight)
         segment:ClearAllPoints()
         segment:SetPoint("CENTER", self, "CENTER", xOffset, yOffset)
         if segment.SetRotation then
@@ -177,6 +204,34 @@ function StyleMixin:_RebuildArcIfNeeded()
     for index = displayCount + 1, MAX_SEGMENTS do
         self._segments[index]:Hide()
     end
+end
+
+function StyleMixin:QueueReposition()
+    if self._repositionQueued then
+        return
+    end
+
+    self._repositionQueued = true
+    C_Timer.After(0, function()
+        if not self then
+            return
+        end
+
+        self._repositionQueued = nil
+        self._arcScale = nil
+        self._displayCount = nil
+        self._startAngle = nil
+        self._sweep = nil
+
+        if self:IsShown() then
+            self:_RebuildArcIfNeeded()
+            if self._lastContext then
+                self:_RenderArc(self._lastContext)
+            else
+                self:Refresh()
+            end
+        end
+    end)
 end
 
 function StyleMixin:_RenderArc(context)

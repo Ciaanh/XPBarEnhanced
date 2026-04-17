@@ -1,11 +1,11 @@
-## Interface: 120001
-## Interface-Retail: 120001
+## Interface: 120005
+## Interface-Retail: 120005
 
 ## Title: XP Bar Enhanced
 ## Notes: Enhanced XP bar with quest XP tracking and comprehensive statistics
 
 ## Author: Ciaanh
-## Version: 1.1.0
+## Version: 1.1.1
 
 ## SavedVariables: XPBarEnhancedDB
 ## IconTexture: 4675649
@@ -30,6 +30,8 @@ locales\enUS.lua
 XPBarEnhanced.lua
 
 core\config\defaults.lua
+
+ui\changelog\Changelog.lua
 
 core\AddOnLifecycle.lua
 core\AddOnCommands.lua

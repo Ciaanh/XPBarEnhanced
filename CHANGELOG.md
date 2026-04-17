@@ -4,6 +4,23 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-04-18
+
+### Added
+
+- **In-Game Update Popup**: Added a one-time "What's New" changelog splash shown after updating to a new addon version
+- **Changelog Slash Command**: Added `/xpbe changelog` to reopen the in-game update notes on demand
+
+### Changed
+
+- **Popup Release Notes**: Added concise per-version summaries to the in-game changelog so it highlights key updates without duplicating the full release notes
+- **Circular Secondary Refresh Path**: Circular secondary bar geometry now rebuilds immediately when relevant circular settings change
+
+### Fixed
+
+- **Circular Reputation Arc Scaling**: Fixed the circular secondary reputation bar not scaling with the circular size when center scaling was enabled
+- **Changelog Viewer Availability**: Fixed `/xpbe changelog` failing after load due to addon namespace state being overwritten during startup
+
 ## [1.1.0] - 2026-04-17
 
 ### Added

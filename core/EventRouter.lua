@@ -5,130 +5,129 @@ local Addon = XPBarEnhanced
 Addon.EventRouter = Addon.EventRouter or {}
 
 local EventRouter = Addon.EventRouter
-local Utils = Addon.Utils
 
 local function DispatchUpdateFaction(factionID)
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
-        xpcall(Addon.ReputationSession.OnFactionUpdate, Utils.ReportError, Addon.ReputationSession)
+        Addon.ReputationSession:OnFactionUpdate()
     end
 end
 
 local function DispatchChatCombatFactionChange()
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
-        xpcall(Addon.ReputationSession.OnFactionUpdate, Utils.ReportError, Addon.ReputationSession)
+        Addon.ReputationSession:OnFactionUpdate()
     end
 end
 
 local function DispatchRenownLevelChanged(...)
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnRenownLevelChanged then
-        xpcall(Addon.ReputationSession.OnRenownLevelChanged, Utils.ReportError, Addon.ReputationSession, ...)
+        Addon.ReputationSession:OnRenownLevelChanged(...)
     end
 end
 
 local function DispatchDelvesAccountDataChanged()
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.EmitUpdate then
-        xpcall(Addon.ReputationSession.EmitUpdate, Utils.ReportError, Addon.ReputationSession)
+        Addon.ReputationSession:EmitUpdate()
     end
 end
 
 local function DispatchReputationVisibilityRefresh()
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.EmitUpdate then
-        xpcall(Addon.ReputationSession.EmitUpdate, Utils.ReportError, Addon.ReputationSession)
+        Addon.ReputationSession:EmitUpdate()
     end
 end
 
 local function DispatchQuestEvent(event)
     if Addon.QuestXP and Addon.QuestXP.HandleRoutedEvent then
-        xpcall(Addon.QuestXP.HandleRoutedEvent, Utils.ReportError, Addon.QuestXP, event)
+        Addon.QuestXP:HandleRoutedEvent(event)
     end
 end
 
 local function DispatchSessionXPUpdate()
     if Addon.Session and Addon.Session.OnXPUpdate then
-        xpcall(Addon.Session.OnXPUpdate, Utils.ReportError, Addon.Session)
+        Addon.Session:OnXPUpdate()
     end
 end
 
 local function DispatchSessionTimePlayed(totalTime, levelTime)
     if Addon.Session and Addon.Session.OnTimePlayed then
-        xpcall(Addon.Session.OnTimePlayed, Utils.ReportError, Addon.Session, totalTime, levelTime)
+        Addon.Session:OnTimePlayed(totalTime, levelTime)
     end
 end
 
 local function DispatchSessionQuestTurnedIn(questID)
     if Addon.Session and Addon.Session.OnQuestTurnedIn then
-        xpcall(Addon.Session.OnQuestTurnedIn, Utils.ReportError, Addon.Session, questID)
+        Addon.Session:OnQuestTurnedIn(questID)
     end
 end
 
 local function DispatchSessionQuestLogUpdate()
     if Addon.Session and Addon.Session.RefreshSessionTimes then
-        xpcall(Addon.Session.RefreshSessionTimes, Utils.ReportError, Addon.Session)
+        Addon.Session:RefreshSessionTimes()
     end
 end
 
 local function DispatchSessionRestedChanged()
     if Addon.Session and Addon.Session.OnRestedChanged then
-        xpcall(Addon.Session.OnRestedChanged, Utils.ReportError, Addon.Session)
+        Addon.Session:OnRestedChanged()
     end
 end
 
 local function DispatchAddonLoaded(name)
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnAddonLoaded then
-        xpcall(handlers.OnAddonLoaded, Utils.ReportError, handlers, name)
+        handlers:OnAddonLoaded(name)
     end
 end
 
 local function DispatchPlayerLogin()
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnPlayerLogin then
-        xpcall(handlers.OnPlayerLogin, Utils.ReportError, handlers)
+        handlers:OnPlayerLogin()
     end
 end
 
 local function DispatchPlayerLogout()
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnPlayerLogout then
-        xpcall(handlers.OnPlayerLogout, Utils.ReportError, handlers)
+        handlers:OnPlayerLogout()
     end
 end
 
 local function DispatchLifecyclePlayerEnteringWorld(isInitialLogin, isReloadingUI)
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnPlayerEnteringWorld then
-        xpcall(handlers.OnPlayerEnteringWorld, Utils.ReportError, handlers, isInitialLogin, isReloadingUI)
+        handlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     end
 end
 
 local function DispatchLifecyclePlayerMaxLevelUpdate()
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnPlayerMaxLevelUpdate then
-        xpcall(handlers.OnPlayerMaxLevelUpdate, Utils.ReportError, handlers)
+        handlers:OnPlayerMaxLevelUpdate()
     end
 end
 
 local function DispatchLifecycleEnableXPGain()
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnEnableXPGain then
-        xpcall(handlers.OnEnableXPGain, Utils.ReportError, handlers)
+        handlers:OnEnableXPGain()
     end
 end
 
 local function DispatchLifecycleDisableXPGain()
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnDisableXPGain then
-        xpcall(handlers.OnDisableXPGain, Utils.ReportError, handlers)
+        handlers:OnDisableXPGain()
     end
 end
 
 local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     if Addon.Session and Addon.Session.OnEnteringWorld then
-        xpcall(Addon.Session.OnEnteringWorld, Utils.ReportError, Addon.Session, isInitialLogin, isReloadingUI)
+        Addon.Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnEnteringWorld then
-        xpcall(Addon.ReputationSession.OnEnteringWorld, Utils.ReportError, Addon.ReputationSession, isInitialLogin, isReloadingUI)
+        Addon.ReputationSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
     DispatchQuestEvent("PLAYER_ENTERING_WORLD")
@@ -140,7 +139,7 @@ local function DispatchPlayerLevelUp(level)
     DispatchQuestEvent("PLAYER_LEVEL_UP")
 
     if Addon.Session and Addon.Session.OnLevelUp then
-        xpcall(Addon.Session.OnLevelUp, Utils.ReportError, Addon.Session, level)
+        Addon.Session:OnLevelUp(level)
     end
 end
 

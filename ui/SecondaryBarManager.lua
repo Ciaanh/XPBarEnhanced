@@ -120,6 +120,13 @@ function Manager:RefreshForPrimaryStyleChange()
     self:SetSecondaryStyle(DeriveSecondaryStyle())
     self:ApplyDefaultReputationBarVisibility()
     self:ReapplyAttachedPositions()
+
+    local frame = self:GetCurrentFrame()
+    if frame and frame.QueueReposition then
+        frame:QueueReposition()
+    elseif frame and frame.Refresh then
+        frame:Refresh()
+    end
 end
 
 -- Stack active secondary bars above the primary XP bar when attached mode is on.
@@ -230,7 +237,7 @@ function Manager:InstallBlizzardBarHooks()
 end
 
 function Manager:SetSecondaryStyle(style)
-    xpcall(self._SetStyle, Utils.ReportError, self, style)
+    self:_SetStyle(style)
     self:ApplyDefaultReputationBarVisibility()
 end
 
