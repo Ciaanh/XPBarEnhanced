@@ -1,6 +1,6 @@
 # XPBarEnhanced — Project Plan
 
-Last updated: 2026-04-15 (post-analysis session)
+Last updated: 2026-04-16 (improvement planning refresh)
 
 ## Addon Summary
 
@@ -17,6 +17,106 @@ The addon is feature-complete for its v1.1.0 scope (shipped 2026-04-12), with se
 - **Quality**: Combat safety, fade lifecycle, context contracts, emission ownership validated
 
 See `docs/history/phases.md` for full implementation history.
+
+---
+
+## Improvement Execution Plan (2026-04-16)
+
+This section converts the roadmap into an execution plan with explicit milestones, dependencies, and acceptance gates.
+
+### Release Targets
+
+- **v1.1.1 (stability + maintainability):** finish architecture cleanup with lowest-risk, highest-leverage refactors.
+- **v1.2.0 (UX release):** ship options panel overhaul and visual discoverability improvements.
+- **v1.2.1 (polish):** tooltip and celebration enhancements after UX changes stabilize.
+
+### Workstreams
+
+1. **Architecture hardening**
+	- Focus: remove remaining duplication, normalize config surface, reduce event-routing friction.
+	- Primary files: `ui/styles/`, `core/config/`, `core/EventRouter.lua`.
+
+2. **Options UX redesign**
+	- Focus: solve single-list overload with grouped navigation and style previews.
+	- Primary files: `ui/options/Options.lua`, `ui/options/OptionMetadata.lua`, `ui/options/OptionsPanel.xml`.
+
+3. **Interaction polish**
+	- Focus: smarter tooltip placement and style-aware celebration feedback.
+	- Primary files: `ui/mixins/TooltipMixin.lua`, `ui/mixins/animation/AnimationManager.lua`, style files under `ui/styles/`.
+
+### Milestone Plan
+
+#### Milestone M1 - Stabilize Core (Target: 3-4 sessions)
+
+Scope:
+- A3 completion: finish shared helper adoption for primary styles where overlap remains.
+- A5 lightweight unification: make `Config.lua` canonical while keeping `ConfigHelper.lua` as compatibility shim.
+- A6 dispatch cleanup: table-drive repetitive EventRouter dispatch paths.
+
+Exit criteria:
+- No behavior changes in bar rendering across all 7 styles.
+- No regressions in options read/write behavior.
+- EventRouter event handling remains functionally equivalent under `/reload` and zone transitions.
+
+Validation checklist:
+- `/reload` with no Lua errors.
+- Manual pass for style switching: none, classic, flat, vertical, circular, minimap_ring, terminal.
+- Manual pass for reputation/companion transitions and fade behavior.
+
+#### Milestone M2 - Rebuild Options UX (Target: 4-6 sessions)
+
+Scope:
+- B1 tab/group architecture with progressive disclosure.
+- B2 style preview panel tied to style selection.
+- Add option taxonomy in metadata so control placement is data-driven.
+
+Exit criteria:
+- All current options remain reachable.
+- Style-conditional controls render only when relevant.
+- Option lookup time reduced (subjective check: frequent settings reachable in one tab without deep scroll).
+
+Validation checklist:
+- Verify all options from current metadata appear exactly once.
+- Verify saved values persist after `/reload`.
+- Verify slash-command driven changes stay synchronized with visible controls.
+
+#### Milestone M3 - Polish and Feedback (Target: 2-3 sessions)
+
+Scope:
+- C4 smart tooltip edge handling.
+- D1 style-aware level-up celebration hooks.
+- Text hierarchy baseline pass for consistency (U2 quick win subset).
+
+Exit criteria:
+- Tooltips remain fully visible at screen edges.
+- Level-up celebration obeys existing enable/disable toggles.
+- No frame-strata/input-blocking regressions.
+
+Validation checklist:
+- Test top-left, top-right, bottom-left, bottom-right placements for all movable bars.
+- Level-up simulation or natural level-up verifies style-specific behavior.
+
+### Sequencing and Dependencies
+
+1. Complete **M1** before structural options work to avoid refactor overlap on shared helpers/config.
+2. Execute **M2** before adding polish so usability baseline is stable.
+3. Execute **M3** after M2 to avoid redoing tooltip/animation hooks during options panel rewiring.
+
+### Risk Register
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Helper extraction changes visual output in one style | High | Keep style-specific render snapshots/manual comparison checklist before merge |
+| Options migration loses or hides controls | High | Add metadata audit script/checklist and one-to-one option mapping review |
+| EventRouter refactor breaks domain dispatch ordering | Medium | Preserve existing event registration order and run routed-event smoke pass |
+| Tooltip repositioning causes anchor jitter | Medium | Clamp once per show-cycle and avoid recursive SetPoint loops |
+
+### Definition of Done (Global)
+
+- Code passes architecture contracts.
+- `/reload` and login flow show no Lua errors.
+- No taint/combat-lockdown regressions introduced.
+- Relevant docs updated in `docs/features/` or `docs/memory/decision-log.md` when behavior/architecture changes.
 
 ---
 
@@ -230,17 +330,18 @@ Verification: Level-up triggers correct style animation; toggling `levelUpCelebr
 
 | Phase | Item | Impact | Effort | Status |
 |-------|------|--------|--------|--------|
-| A1 | Fix global namespace | High | Small | Completed (2026-04-16) |
-| A2 | Context build caching | High | Small | Completed (2026-04-16) |
-| A3 | Style base class extraction | Medium | Medium | Completed (2026-04-16) |
-| A4 | Mixin consolidation | Medium | Medium | Assessed: no-op — PositionMixin and LayoutMixin are correctly separated |
-| A5 | Config/ConfigHelper unification | Low | Small | Assessed: no-op — already cleanly split |
-| B1 | Options panel tabs | Critical UX | Large | Completed (2026-04-16) |
-| B2 | Visual style previews | High UX | Medium | Completed (2026-04-16) |
-| C4 | Smart tooltip positioning | Low | Small | Completed (2026-04-16) |
-| D1 | Level-up celebration, style-specific | Medium | Medium | Completed (2026-04-16) |
+| A1 | Fix global namespace | High | Small | Completed |
+| A2 | Context build caching | High | Small | Completed |
+| A3 | Style helper extraction completion | Medium | Medium | In progress |
+| A4 | Mixin consolidation | Medium | Medium | Optional (deprioritized) |
+| A5 | Config/ConfigHelper unification | Low | Small | Planned |
+| A6 | EventRouter dispatch simplification | Medium | Small | Planned |
+| B1 | Options panel grouping/tabs | Critical UX | Large | Planned |
+| B2 | Visual style previews | High UX | Medium | Planned |
+| C4 | Smart tooltip positioning | Low | Small | Planned |
+| D1 | Level-up celebration, style-specific | Medium | Medium | Planned |
 
-**Recommended start order:** A1 → A2 → B1 → B2 → C4 → A3 → A4 → A5 → D1
+**Recommended start order:** A3 → A5 → A6 → B1 → B2 → C4 → D1
 
 ---
 
