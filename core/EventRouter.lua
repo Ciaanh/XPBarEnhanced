@@ -83,7 +83,7 @@ end
 local function DispatchPlayerLogin()
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnPlayerLogin then
-        xpcall(handlers.OnPlayerLogin, Utils.ReportError, handlers)
+        handlers:OnPlayerLogin()
     end
 end
 
@@ -97,7 +97,7 @@ end
 local function DispatchLifecyclePlayerEnteringWorld(isInitialLogin, isReloadingUI)
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnPlayerEnteringWorld then
-        xpcall(handlers.OnPlayerEnteringWorld, Utils.ReportError, handlers, isInitialLogin, isReloadingUI)
+        handlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     end
 end
 
@@ -140,7 +140,7 @@ local function DispatchPlayerLevelUp(level)
     DispatchQuestEvent("PLAYER_LEVEL_UP")
 
     if Addon.Session and Addon.Session.OnLevelUp then
-        xpcall(Addon.Session.OnLevelUp, Utils.ReportError, Addon.Session, level)
+        Addon.Session:OnLevelUp(level)
     end
 end
 

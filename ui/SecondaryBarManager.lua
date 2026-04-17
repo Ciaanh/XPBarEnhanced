@@ -230,7 +230,7 @@ function Manager:InstallBlizzardBarHooks()
 end
 
 function Manager:SetSecondaryStyle(style)
-    xpcall(self._SetStyle, Utils.ReportError, self, style)
+    self:_SetStyle(style)
     self:ApplyDefaultReputationBarVisibility()
 end
 

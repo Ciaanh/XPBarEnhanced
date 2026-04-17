@@ -81,6 +81,13 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
     C_Timer.After(0, function()
+        if Addon.BarManager and Addon.BarManager.SetStyle then
+            local db = Addon.db or {}
+            local defaultStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
+            Addon.BarManager.currentStyle = nil
+            Addon.BarManager:SetStyle(db.barStyle or defaultStyle)
+        end
+
         if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
             Addon.BarManager:ApplyDefaultXPBarVisibility()
         end

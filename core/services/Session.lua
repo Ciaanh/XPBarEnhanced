@@ -220,13 +220,13 @@ function Session:OnLevelUp(level)
 
     -- Notify dependent systems (consolidated from defunct AddOnLifecycle handlers)
     if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-        xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
+        Addon.QuestXP:InvalidateQuestCache()
     end
     if Addon.BarManager and Addon.BarManager.OnLevelUp then
-        xpcall(Addon.BarManager.OnLevelUp, Utils.ReportError, Addon.BarManager, level)
+        Addon.BarManager:OnLevelUp(level)
     end
     if Addon.Stats and Addon.Stats.OnLevelUp then
-        xpcall(Addon.Stats.OnLevelUp, Utils.ReportError, Addon.Stats, level)
+        Addon.Stats:OnLevelUp()
     end
 
     -- Broadcast update to all bars
