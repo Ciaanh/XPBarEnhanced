@@ -24,7 +24,9 @@ local ATLAS_CONFIG = {
         fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
     },
     restedOverlay = {
-        atlas = "UI-HUD-ExperienceBar-Fill-Rested",
+        -- Keep this on a neutral texture so the configured rested color is not
+        -- multiplied by Blizzard's baked rested tint/shading.
+        atlas = nil,
         fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
     },
     questComplete = {

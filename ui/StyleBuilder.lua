@@ -16,16 +16,16 @@ Addon.StyleBuilder = StyleBuilder
 -- REGISTRY of created style mixins
 -------------------------------------------------------------------
 ---
-XPBarStyles = XPBarStyles or {}
-Addon.Styles = XPBarStyles
+local StyleRegistry = Addon.Styles or {}
+Addon.Styles = StyleRegistry
 
 function XPBarStyleBuilder:RegisterStyle(key, mixin)
 	mixin.__xpbar_key = key
-	XPBarStyles[key] = mixin
+	StyleRegistry[key] = mixin
 end
 
 function XPBarStyleBuilder:GetStyleMixin(key)
-	return XPBarStyles[key]
+	return StyleRegistry[key]
 end
 
 -------------------------------------------------------------------

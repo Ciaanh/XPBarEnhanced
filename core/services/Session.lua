@@ -3,8 +3,9 @@
 
 ---@class SessionData
 ---@field sessionStart number Unix timestamp when session started
----@field sessionXP number Total XP at session start (deprecated, use gainedXP)
+---@field sessionXP number Legacy field preserved for SavedVariables compatibility
 ---@field gainedXP number Total XP gained this session
+---@field sessionAccumTime number Persisted elapsed session seconds used to preserve session continuity across /reload
 ---@field lastXP number Last recorded current XP
 ---@field maxXP number Last recorded max XP for level
 ---@field realTotalTime number Total time played on character (from TIME_PLAYED_MSG)
@@ -28,6 +29,7 @@ local Addon = XPBarEnhanced
 Addon.Session = Addon.Session or {}
 
 local Session = Addon.Session
+local Utils = Addon.Utils
 local timePlayedTicker
 
 -------------------------------------------------------------------
@@ -39,6 +41,7 @@ local function ensureSessionDefaults(session)
     session.sessionStart = session.sessionStart or time()
     session.sessionXP = session.sessionXP or 0
     session.gainedXP = session.gainedXP or 0
+    session.sessionAccumTime = session.sessionAccumTime or 0
     session.lastXP = session.lastXP or UnitXP("player") or 0
     session.maxXP = session.maxXP or UnitXPMax("player") or 0
     session.realTotalTime = session.realTotalTime or 0
@@ -47,6 +50,37 @@ local function ensureSessionDefaults(session)
     session.lastUpdate = session.lastUpdate or time()
     session.startLevel = session.startLevel or (UnitLevel("player") or 1)
     session.levelsGained = session.levelsGained or 0
+    session.gainsHistory = session.gainsHistory or {}
+    session.levelUpTimestamps = session.levelUpTimestamps or {}
+    session.recentGains = session.recentGains or {}
+    session.questXP = session.questXP or 0
+    session.otherXP = session.otherXP or 0
+end
+
+---@param session SessionData
+local function updateSessionAccumTime(session)
+    local elapsed = time() - (session.sessionStart or time())
+    if elapsed < 0 then
+        elapsed = 0
+    end
+    session.sessionAccumTime = elapsed
+end
+
+---@param session SessionData
+local function resetSessionProgress(session)
+    local now = time()
+    session.sessionStart = now
+    session.sessionAccumTime = 0
+    session.sessionXP = 0
+    session.gainedXP = 0
+    session.startLevel = UnitLevel("player") or 1
+    session.levelsGained = 0
+    session.lastUpdate = now
+    session.gainsHistory = {}
+    session.levelUpTimestamps = {}
+    session.recentGains = {}
+    session.questXP = 0
+    session.otherXP = 0
 end
 
 -------------------------------------------------------------------
@@ -68,49 +102,7 @@ end
 
 function Session:Initialize()
     self:GetCurrent()
-    -- Set up event listeners to keep session state updated
-    self:SetupEventFrame()
-end
-
--- Initialize event frame for session-relevant events
-function Session:SetupEventFrame()
-    if self.eventFrame then
-        return
-    end
-
-    local frame = CreateFrame("Frame")
-    frame:RegisterEvent("PLAYER_XP_UPDATE")
-    -- PLAYER_LEVEL_UP is handled exclusively by AddOnLifecycle:OnPlayerLevelUp
-    -- (which calls Session:OnLevelUp). Do NOT register here to avoid double-dispatch.
-    frame:RegisterEvent("TIME_PLAYED_MSG")
-    frame:RegisterEvent("QUEST_TURNED_IN")
-    frame:RegisterEvent("QUEST_LOG_UPDATE")
-    -- Rested state changes are also handled centrally here so bars
-    -- only need to subscribe to EventBus instead of raw WoW events.
-    frame:RegisterEvent("UPDATE_EXHAUSTION")
-    frame:RegisterEvent("PLAYER_UPDATE_RESTING")
-
-    frame:SetScript(
-        "OnEvent",
-        function(_, event, ...)
-            if event == "PLAYER_XP_UPDATE" then
-                Session:OnXPUpdate()
-            elseif event == "TIME_PLAYED_MSG" then
-                local totalTime, levelTime = ...
-                Session:OnTimePlayed(totalTime, levelTime)
-            elseif event == "QUEST_TURNED_IN" then
-                local questID = ...
-                Session:OnQuestTurnedIn(questID)
-            elseif event == "QUEST_LOG_UPDATE" then
-                -- keep lastXP/maxXP/current cache fresh just in case
-                Session:RefreshSessionTimes()
-            elseif event == "UPDATE_EXHAUSTION" or event == "PLAYER_UPDATE_RESTING" then
-                Session:OnRestedChanged()
-            end
-        end
-    )
-
-    self.eventFrame = frame
+    -- External event ownership is centralized in EventRouter.
 end
 
 function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
@@ -120,10 +112,19 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
     if isInitialLogin then
-        session.sessionStart = time()
-        session.gainedXP = 0
-        session.startLevel = UnitLevel("player") or 1
-        session.levelsGained = 0
+        resetSessionProgress(session)
+    elseif isReloadingUI then
+        if Addon.db and Addon.db.resetOnReload then
+            resetSessionProgress(session)
+        else
+            local persistedElapsed = time() - (session.sessionStart or time())
+            if persistedElapsed < 0 then
+                persistedElapsed = 0
+            end
+            local accumTime = math.max(session.sessionAccumTime or 0, persistedElapsed)
+            session.sessionAccumTime = accumTime
+            session.sessionStart = time() - accumTime
+        end
     end
 
     if isInitialLogin or isReloadingUI then
@@ -131,13 +132,15 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
         session.maxXP = UnitXPMax("player")
     end
 
+    updateSessionAccumTime(session)
+
     -- Request time played if time text options are enabled
     if Addon.db and (Addon.db.showLevelTimeText or Addon.db.showSessionTimeText) then
         self:RequestTimePlayed()
     end
 end
 
-function Session:OnXPUpdate()
+function Session:OnXPUpdate(suppressBroadcast)
     local session = self:GetCurrent()
     if not session then
         return
@@ -151,17 +154,48 @@ function Session:OnXPUpdate()
     -- Use centralized XPCalculations module for XP gain computation
     local XPCalc = Addon.XPCalculations
     local gained, didLevelUp = XPCalc.ComputeGain(currentXP, maxXP, lastXP, lastMax)
-
-    -- Update session
     session.gainedXP = (session.gainedXP or 0) + gained
     session.sessionXP = session.gainedXP
     session.lastXP = currentXP
     session.maxXP = maxXP
     session.lastUpdate = time()
+    updateSessionAccumTime(session)
+
+    -- Track gain source and record in history
+    if gained > 0 then
+        local source = self._pendingQuestTurnIn and "quest" or "other"
+        self._pendingQuestTurnIn = nil
+
+        local entry = {
+            timestamp = time(),
+            amount = gained,
+            source = source,
+            level = UnitLevel("player") or 1,
+        }
+
+        table.insert(session.gainsHistory, entry)
+        if #session.gainsHistory > 500 then
+            table.remove(session.gainsHistory, 1)
+        end
+
+        table.insert(session.recentGains, entry)
+        if #session.recentGains > 20 then
+            table.remove(session.recentGains, 1)
+        end
+
+        if source == "quest" then
+            session.questXP = (session.questXP or 0) + gained
+        else
+            session.otherXP = (session.otherXP or 0) + gained
+        end
+    end
 
     -- Session is the single source of XP events; broadcast to all registered bars
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if not suppressBroadcast and Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(
+            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+            XPBarContextBuilder.BuildContext("PLAYER_XP_UPDATE")
+        )
     end
 end
 
@@ -173,6 +207,8 @@ function Session:OnLevelUp(level)
 
     -- Track levels gained this session
     session.levelsGained = (session.levelsGained or 0) + 1
+    session.levelUpTimestamps = session.levelUpTimestamps or {}
+    table.insert(session.levelUpTimestamps, time())
 
     -- Reset level time
     session.realLevelTime = 0
@@ -184,18 +220,21 @@ function Session:OnLevelUp(level)
 
     -- Notify dependent systems (consolidated from defunct AddOnLifecycle handlers)
     if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-        xpcall(Addon.QuestXP.InvalidateQuestCache, CallErrorHandler or print, Addon.QuestXP)
+        xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
     end
     if Addon.BarManager and Addon.BarManager.OnLevelUp then
-        xpcall(Addon.BarManager.OnLevelUp, CallErrorHandler or print, Addon.BarManager, level)
+        xpcall(Addon.BarManager.OnLevelUp, Utils.ReportError, Addon.BarManager, level)
     end
     if Addon.Stats and Addon.Stats.OnLevelUp then
-        xpcall(Addon.Stats.OnLevelUp, CallErrorHandler or print, Addon.Stats, level)
+        xpcall(Addon.Stats.OnLevelUp, Utils.ReportError, Addon.Stats, level)
     end
 
     -- Broadcast update to all bars
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(
+            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+            XPBarContextBuilder.BuildContext("PLAYER_LEVEL_UP")
+        )
     end
 end
 
@@ -216,7 +255,7 @@ function Session:OnTimePlayed(totalTime, levelTime)
     -- Notify Stats module (consolidated from defunct AddOnLifecycle handler)
     local stats = Addon.Stats
     if stats and stats.OnTimePlayed then
-        xpcall(stats.OnTimePlayed, CallErrorHandler or print, stats, totalTime, levelTime)
+        xpcall(stats.OnTimePlayed, Utils.ReportError, stats, totalTime, levelTime)
     end
 end
 
@@ -226,6 +265,9 @@ function Session:OnQuestTurnedIn(questID)
     if not questID then
         return
     end
+
+    -- Flag the next XP gain as quest-sourced (cleared inside OnXPUpdate)
+    self._pendingQuestTurnIn = true
 
     local function RefreshCompletedQuests()
         -- Touch the API to ensure it's updated
@@ -245,7 +287,7 @@ function Session:OnQuestTurnedIn(questID)
         -- Ensure session XP baseline is up-to-date (XP gains from quest may have triggered PLAYER_XP_UPDATE
         -- before the completed flag became available). Also ensure the centralized quest cache is invalidated
         -- so UI and other services can refresh based on the latest quest state.
-        Session:OnXPUpdate()
+        Session:OnXPUpdate(true)
 
         -- Touch session timestamps so UI/data consumers will refresh.
         local session = Session:GetCurrent()
@@ -255,15 +297,13 @@ function Session:OnQuestTurnedIn(questID)
 
         -- Invalidate/rebuild the centralized QuestXP cache to ensure totals reflect the new quest state.
         if Addon.QuestXP and Addon.QuestXP.Rebuild then
-            xpcall(Addon.QuestXP.Rebuild, CallErrorHandler or print, Addon.QuestXP, 0.1)
+            xpcall(Addon.QuestXP.Rebuild, Utils.ReportError, Addon.QuestXP, 0.1)
         elseif Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-            xpcall(Addon.QuestXP.InvalidateQuestCache, CallErrorHandler or print, Addon.QuestXP)
+            xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
         end
 
-        -- Broadcast quest state change to all bars
-        if Addon.EventBus and Addon.EventBus.Emit then
-            Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
-        end
+        -- Emit one coalesced update from the session owner after quest state changes.
+        Session:EmitUpdate("QUEST_LOG_UPDATE")
     end
 
     -- Small delay: the quest history/completed flag may not be instantly available.
@@ -276,8 +316,19 @@ end
 
 function Session:OnRestedChanged()
     -- Rested/exhaustion state changed; notify all bars via EventBus
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
+    self:EmitUpdate("UPDATE_EXHAUSTION")
+end
+
+---Emit a fresh XP broadcast from the session layer.
+--- All modules (BarManager, Config, Options) that need to trigger an XP redraw
+--- MUST call this instead of building a context locally — keeps context ownership in Session.
+---@param reason string Event label used as context.event
+function Session:EmitUpdate(reason)
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(
+            Addon.EventNames.XPBAR_BROADCAST_UPDATE,
+            XPBarContextBuilder.BuildContext(reason or "XPBAR:BROADCAST_UPDATE")
+        )
     end
 end
 
@@ -383,6 +434,20 @@ function Session:GetXPPerHour()
 
     return 0
 end
+
+---Return XP per hour based on a sliding window of recent gains
+---@return number xpPerHour Recent XP/hour rate
+function Session:GetRecentXPPerHour()
+    local session = self:GetCurrent()
+    if not session or not session.recentGains then
+        return 0
+    end
+    local TimeCalc = Addon.TimeCalculations
+    if not TimeCalc or not TimeCalc.RecentXPPerHour then
+        return 0
+    end
+    return TimeCalc.RecentXPPerHour(session.recentGains)
+end
 -------------------------------------------------------------------
 
 ---Return a normalized stats table for the current session
@@ -412,7 +477,12 @@ function Session:GetStats()
         xpPerHour = xpPerHour,
         startTime = session.sessionStart or time(),
         realTotalTime = session.realTotalTime or 0,
-        realLevelTime = session.realLevelTime or 0
+        realLevelTime = session.realLevelTime or 0,
+        recentXPPerHour = self:GetRecentXPPerHour(),
+        questXPGained = session.questXP or 0,
+        otherXP = session.otherXP or 0,
+        gainsCount = #(session.gainsHistory or {}),
+        levelUpTimestamps = session.levelUpTimestamps or {},
     }
 end
 

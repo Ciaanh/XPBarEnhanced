@@ -33,7 +33,34 @@ function Database:Initialize()
 
     -- Set addon database reference
     Addon.db = XPBarEnhancedDB
+
+    if Addon.db.secondaryBarPosition
+        and Addon.db.secondaryBarPosition.relativeTo == "SecondaryStatusTrackingBarContainer"
+        and Addon.db.secondaryBarPosition.point == "CENTER"
+        and Addon.db.secondaryBarPosition.relativePoint == "CENTER"
+        and (Addon.db.secondaryBarPosition.x or 0) == 0
+        and (Addon.db.secondaryBarPosition.y or 0) == 0 then
+        Addon.db.secondaryBarPosition = {
+            point = "BOTTOM",
+            relativeTo = "UIParent",
+            relativePoint = "BOTTOM",
+            x = 0,
+            y = 34,
+        }
+    end
+
+    -- Migrate single secondaryBarPosition to per-style secondaryBarPositions table.
+    -- Runs once; after migration the old key is removed.
+    if Addon.db.secondaryBarPosition then
+        if not Addon.db.secondaryBarPositions then
+            local style = Addon.db.barStyle or "flat"
+            Addon.db.secondaryBarPositions = { [style] = Addon.db.secondaryBarPosition }
+        end
+        Addon.db.secondaryBarPosition = nil
+    end
+
     Addon.db.sessionData = Addon.db.sessionData or {}
+    Addon.db.reputationSessionData = Addon.db.reputationSessionData or {}
 
     -- Set player key
     local playerName = UnitName("player") or "Unknown"
@@ -55,6 +82,13 @@ function Database:GetSessionData()
     local db = self:GetDB()
     db.sessionData = db.sessionData or {}
     return db.sessionData
+end
+
+---Return the reputation session data table stored in the database
+function Database:GetReputationSessionData()
+    local db = self:GetDB()
+    db.reputationSessionData = db.reputationSessionData or {}
+    return db.reputationSessionData
 end
 
 ---Return the cached player/realm key used for per-character storage

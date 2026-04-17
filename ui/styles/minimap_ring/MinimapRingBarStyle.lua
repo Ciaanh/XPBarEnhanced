@@ -3,6 +3,11 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
 end
 
 local Addon = XPBarEnhanced
+local StyleHelpers = Addon.UI.StyleHelpers
+
+local function GetSharedStyleHelpers()
+    return Addon and Addon.UI and Addon.UI.SharedStyleHelpers
+end
 
 local MAX_SEGMENTS = 100
 local DEFAULT_SEGMENTS = 60
@@ -37,6 +42,55 @@ function MinimapRingBarStyleTemplate:OnLoad()
     end
 end
 
+-- MinimapCluster (LOW, toplevel) intercepts mouse events before they reach the ring
+-- bar (BACKGROUND). Override GetBestAnchor so tooltip follows the cursor rather than
+-- trying to anchor to the occluded BACKGROUND frame.
+function MinimapRingBarStyleTemplate:GetBestAnchor()
+    return "ANCHOR_CURSOR"
+end
+
+-- Create thin MEDIUM-strata frames at the four cardinal positions of the ring
+-- circumference. These capture OnEnter/OnLeave events that MinimapCluster blocks
+-- on the BACKGROUND ring frame, and forward them to the ring bar's tooltip system.
+-- IsMouseOver() returns true during these calls because the cursor is still within
+-- the ring bar's 256x256 hit rect.
+function MinimapRingBarStyleTemplate:_SetupRingTooltipHitFrames()
+    if self._ringHitFrames then
+        return
+    end
+
+    local ringBar = self
+
+    local function MakeHitFrame(width, height, anchorPoint)
+        local f = CreateFrame("Frame", nil, UIParent)
+        f:SetFrameStrata("MEDIUM")
+        f:SetSize(width, height)
+        f:SetPoint(anchorPoint, ringBar, anchorPoint)
+        f:EnableMouse(true)
+        f:EnableMouseWheel(true)
+        f:SetScript("OnEnter", function() ringBar:OnEnter() end)
+        f:SetScript("OnLeave", function() ringBar:OnLeave() end)
+        f:SetScript("OnMouseDown", function(_, button) ringBar:OnMouseDown(button) end)
+        f:SetScript("OnMouseUp", function(_, button) ringBar:OnMouseUp(button) end)
+        f:SetScript("OnMouseWheel", function(_, delta)
+            if delta > 0 then
+                Minimap_ZoomIn()
+            else
+                Minimap_ZoomOut()
+            end
+        end)
+        return f
+    end
+
+    -- 4 thin strips at cardinal edges of the 256x256 ring frame
+    self._ringHitFrames = {
+        MakeHitFrame(120, 30, "TOP"),
+        MakeHitFrame(120, 30, "BOTTOM"),
+        MakeHitFrame(30, 120, "LEFT"),
+        MakeHitFrame(30, 120, "RIGHT"),
+    }
+end
+
 function MinimapRingBarStyleTemplate:OnShow()
     if XPBarMixinBase and XPBarMixinBase.OnShow then
         XPBarMixinBase.OnShow(self)
@@ -45,6 +99,12 @@ function MinimapRingBarStyleTemplate:OnShow()
     self:QueueReposition()
     self:UpdateButtonCollection(true)
     self:StartButtonScanTimer()
+    self:_SetupRingTooltipHitFrames()
+    if self._ringHitFrames then
+        for _, f in ipairs(self._ringHitFrames) do
+            f:Show()
+        end
+    end
 end
 
 function MinimapRingBarStyleTemplate:OnHide()
@@ -57,6 +117,12 @@ function MinimapRingBarStyleTemplate:OnHide()
 
     if XPBarMixinBase and XPBarMixinBase.OnHide then
         XPBarMixinBase.OnHide(self)
+    end
+
+    if self._ringHitFrames then
+        for _, f in ipairs(self._ringHitFrames) do
+            f:Hide()
+        end
     end
 end
 
@@ -153,7 +219,7 @@ end
 
 function MinimapRingBarStyleTemplate:GetSegmentHeight()
     if Addon and Addon.db and type(Addon.db.minimapRingSegmentHeight) == "number" then
-        return math.max(4, math.min(24, Addon.db.minimapRingSegmentHeight))
+        return math.max(5, math.min(25, Addon.db.minimapRingSegmentHeight))
     end
     return MINIMAP_RING_STYLE.SEGMENT_HEIGHT_PX
 end
@@ -182,19 +248,11 @@ end
 function MinimapRingBarStyleTemplate:GetRingPadding()
     local padding = Addon and Addon.db and Addon.db.minimapRingPadding or 14
     padding = math.floor(tonumber(padding) or 14)
-    return math.max(4, math.min(32, padding))
+    return math.max(0, math.min(32, padding))
 end
 
 function MinimapRingBarStyleTemplate:ComputeRingRadius()
-    if not Minimap then
-        return 112
-    end
-
-    local minimapEffScale = Minimap:GetEffectiveScale() or 1
-    local ringEffScale = self:GetEffectiveScale() or 1
-    local minimapRadius = (Minimap:GetWidth() / 2) * (minimapEffScale / ringEffScale)
-
-    return minimapRadius + self:GetRingPadding()
+    return StyleHelpers.GetMinimapRingRadius(self)
 end
 
 function MinimapRingBarStyleTemplate:GetBagAnchorOffset()
@@ -223,9 +281,9 @@ end
 function MinimapRingBarStyleTemplate:RepositionSegments()
     local displayCount = self:GetDisplaySegmentCount()
     local clockwise = -1
-    local ringRadius = self:ComputeRingRadius()
     local segmentWidth = self:GetSegmentWidth(displayCount)
     local segmentHeight = self:GetSegmentHeight()
+    local ringRadius = self:ComputeRingRadius() + (segmentHeight / 2)
     local texturePath = self:GetSegmentTexturePath()
     local frameDiameter = 2 * (ringRadius + (segmentHeight / 2) + 2)
     local startAngle = math.pi / 2
@@ -376,28 +434,30 @@ end
 
 function MinimapRingBarStyleTemplate:UpdateSegmentColors(hasRestedXP)
     local Colors = Addon.Colors
-    local colorNormal = Colors:Get(Colors.Key.XpBar)
-    local colorRested = Colors:Get(Colors.Key.Rested)
-    local colorXpBarRested = Colors:Get(Colors.Key.XpBarRested)
-    local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
-    local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
-    local currentXPColor = hasRestedXP and colorXpBarRested or colorNormal
-    local displayCount = self:GetDisplaySegmentCount()
+    local shared = GetSharedStyleHelpers()
+    local currentXPColor = nil
+    if shared and shared.GetXPBarColor then
+        currentXPColor = shared.GetXPBarColor({hasRestedXP = hasRestedXP})
+    end
+    if not currentXPColor or not currentXPColor.r then
+        local key = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
+        currentXPColor = Colors:Get(key)
+    end
+    local colors = {
+        currentXP = currentXPColor,
+        rested = Colors:Get(Colors.Key.Rested),
+        questComplete = Colors:Get(Colors.Key.QuestComplete),
+        questIncomplete = Colors:Get(Colors.Key.QuestIncomplete),
+    }
 
+    local displayCount = self:GetDisplaySegmentCount()
     for index = 1, displayCount do
         local segment = self.segments[index]
-        local segmentType = self.segmentTypes[index]
-
-        if segmentType == SEGMENT_TYPE.CURRENT_XP then
-            segment:SetVertexColor(currentXPColor.r, currentXPColor.g, currentXPColor.b, currentXPColor.a or 1)
-        elseif segmentType == SEGMENT_TYPE.QUEST_COMPLETE then
-            segment:SetVertexColor(colorQuestComplete.r, colorQuestComplete.g, colorQuestComplete.b, colorQuestComplete.a or 1)
-        elseif segmentType == SEGMENT_TYPE.QUEST_INCOMPLETE then
-            segment:SetVertexColor(colorQuestIncomplete.r, colorQuestIncomplete.g, colorQuestIncomplete.b, colorQuestIncomplete.a or 1)
-        elseif segmentType == SEGMENT_TYPE.RESTED then
-            segment:SetVertexColor(colorRested.r, colorRested.g, colorRested.b, colorRested.a or 1)
-        else
-            segment:SetVertexColor(EMPTY_SEGMENT_COLOR.r, EMPTY_SEGMENT_COLOR.g, EMPTY_SEGMENT_COLOR.b, EMPTY_SEGMENT_COLOR.a)
+        if shared and shared.ApplySegmentTypeColor then
+            shared.ApplySegmentTypeColor(segment, self.segmentTypes[index], colors, EMPTY_SEGMENT_COLOR, 1.0)
+        elseif segment then
+            local fallback = colors.currentXP or EMPTY_SEGMENT_COLOR
+            segment:SetVertexColor(fallback.r, fallback.g, fallback.b, fallback.a or 1)
         end
     end
 end
@@ -490,9 +550,11 @@ function MinimapRingBarStyleTemplate:AnimateBarEffect(iterationData, eventContex
 
     local lastIdx = self._lastXPSegmentIndex
     if flashActive and lastIdx and lastIdx > 0 and self._segmentPositions and self._segmentPositions[lastIdx] then
-        local Colors = Addon.Colors
-        local colorKey = eventContext and eventContext.hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
-        local color = Colors:Get(colorKey)
+        local shared = GetSharedStyleHelpers()
+        local color = shared and shared.GetXPBarColor and shared.GetXPBarColor(eventContext)
+        if not color or not color.r then
+            color = Addon.Colors:Get(Addon.Colors.Key.XpBar)
+        end
         local pos = self._segmentPositions[lastIdx]
 
         self.segmentGlow:ClearAllPoints()

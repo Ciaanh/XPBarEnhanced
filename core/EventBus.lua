@@ -1,7 +1,7 @@
 -- XP Bar Enhanced - Event Bus
 -- Central event bus with a simple register/emit/unregister API
 
----@class XPBarContext
+---@class XPBarEventContext
 ---@field event string The event that triggered this context
 ---@field timestamp number Unix timestamp when context was built
 ---@field source? string Source identifier for the event
@@ -20,38 +20,26 @@
 ---@field levelSeconds? number Time played at current level
 ---@field xpGained? number XP gained in this event
 ---@field didLevelUp? boolean Whether player leveled up
----@field Get fun(self: XPBarContext, key: string, default?: any): any Safe getter with default value
+---@field Get fun(self: XPBarEventContext, key: string, default?: any): any Safe getter with default value
 
----@alias EventHandler fun(context: XPBarContext): nil
+---@alias XPBarEventBusHandler fun(context: XPBarEventContext): nil
 
 ---@class EventBusHandle
 ---@field Unregister fun() Unregister this subscription
 
----@class EventBus
----@field listeners table<string, table<string, EventHandler>> Registered event handlers keyed by event name and subscription id
----@field _executingEvents table<string, number> Re-entrancy depth counters per event
----@field _deferredRegistrations table<string, table<string, EventHandler>> Registrations deferred during dispatch
 local Addon = XPBarEnhanced
 Addon.EventBus = Addon.EventBus or {}
 local EventBus = Addon.EventBus
+local Utils = Addon.Utils
 
 EventBus.listeners = EventBus.listeners or {}
 EventBus._executingEvents = EventBus._executingEvents or {}
 EventBus._deferredRegistrations = EventBus._deferredRegistrations or {}
 
--- Route errors through Blizzard's error handler when available, fall back to print
-local function SafeCallErrorHandler(err)
-    if CallErrorHandler then
-        CallErrorHandler(err)
-    else
-        print(tostring(err))
-    end
-end
-
 ---Register a handler for an event
 ---@param eventName string The event name to listen for
----@param idOrHandler string|EventHandler Subscription ID (string) or handler function
----@param handler? EventHandler Handler function (required if idOrHandler is a string)
+---@param idOrHandler string|XPBarEventBusHandler Subscription ID (string) or handler function
+---@param handler? XPBarEventBusHandler Handler function (required if idOrHandler is a string)
 ---@return string id The subscription ID for later unregistration
 function EventBus:Register(eventName, idOrHandler, handler)
     if not eventName then
@@ -82,8 +70,8 @@ end
 
 ---Register a handler and return a handle that can unregister it
 ---@param eventName string The event name to listen for
----@param idOrHandler string|EventHandler Subscription ID or handler function
----@param handler? EventHandler Handler function
+---@param idOrHandler string|XPBarEventBusHandler Subscription ID or handler function
+---@param handler? XPBarEventBusHandler Handler function
 ---@return EventBusHandle handle Object with Unregister() method
 function EventBus:RegisterWithHandle(eventName, idOrHandler, handler)
     local id = self:Register(eventName, idOrHandler, handler)
@@ -96,7 +84,7 @@ end
 
 ---Unregister a handler by id or function for an event
 ---@param eventName string The event name to unregister from
----@param idOrHandler string|EventHandler The subscription ID or handler function to remove
+---@param idOrHandler string|XPBarEventBusHandler The subscription ID or handler function to remove
 function EventBus:Unregister(eventName, idOrHandler)
     if not eventName or not EventBus.listeners[eventName] then
         return
@@ -114,30 +102,24 @@ end
 
 ---Emit an event to all listeners
 ---@param eventName string The event name to emit
----@return XPBarContext|nil context The context object passed to all handlers, or nil if no listeners
-function EventBus:Emit(eventName)
+---@param context table Mandatory pre-built context supplied by the emitting domain service
+---@return XPBarEventContext|table|nil context The context object passed to all handlers, or nil if no listeners
+function EventBus:Emit(eventName, context)
     -- Skip expensive context build when no listeners are registered for this event
     local listenersForEvent = self.listeners and self.listeners[eventName]
     if not listenersForEvent or not next(listenersForEvent) then
         return nil
     end
 
-    -- Build a fresh immutable context
-    local context = nil
-    if XPBarContextBuilder and XPBarContextBuilder.BuildContext then
-        local reason = eventName or "BROADCAST_UPDATE"
-        context = XPBarContextBuilder.BuildContext(reason)
-    end
-
     if context == nil then
-        error("EventBus:Emit requires a valid context")
+        error("EventBus:Emit called without context for event: " .. tostring(eventName))
     end
 
     -- Increment re-entrancy depth so Register() knows to defer new subscriptions
     self._executingEvents[eventName] = (self._executingEvents[eventName] or 0) + 1
 
     for id, handler in pairs(listenersForEvent) do
-        xpcall(handler, SafeCallErrorHandler, context)
+        xpcall(handler, Utils.ReportError, context)
     end
 
     self._executingEvents[eventName] = self._executingEvents[eventName] - 1

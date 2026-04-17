@@ -62,7 +62,7 @@ local function buildQuestCache()
 
     for i = 1, numEntries do
         local info = getQuestInfo(i)
-        if info and not info.isHeader and not info.isHidden and info.questID then
+        if info and not info.isHeader and not info.isHidden and not info.isTask and info.questID then
             local questID = info.questID
             local key = tostring(questID)
 
@@ -98,52 +98,35 @@ function QuestXP:InvalidateQuestCache()
     questCache.totals = nil
     questCache.timestamp = 0
     if Addon.EventBus then
-        Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_INVALIDATED)
+        Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_INVALIDATED, { event = Addon.EventNames.QUESTS_CACHE_INVALIDATED })
     end
 end
 
 -------------------------------------------------------------------
--- EVENT LISTENERS
+-- ROUTED EVENT HANDLERS
 -------------------------------------------------------------------
 
-local function setupCacheListeners()
-    if QuestXP._listenerFrame then
-        return
-    end
-
-    local frame = CreateFrame("Frame")
-    QuestXP._listenerFrame = frame
-
-    local function scheduleRebuild(delay)
-        C_Timer.After(delay, function()
-            buildQuestCache()
-            Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_REBUILT)
-            Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
-        end)
-    end
-
-    frame:SetScript("OnEvent", function(_, event)
-        QuestXP:InvalidateQuestCache()
-
-        if event == "PLAYER_ENTERING_WORLD" then
-            scheduleRebuild(1.0)
-        elseif event == "QUEST_TURNED_IN" then
-            scheduleRebuild(0.1)
-        else
-            scheduleRebuild(0.5)
+local function scheduleRebuild(delay)
+    C_Timer.After(delay, function()
+        buildQuestCache()
+        Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_REBUILT, { event = Addon.EventNames.QUESTS_CACHE_REBUILT })
+        if Addon.Session and Addon.Session.EmitUpdate then
+            Addon.Session:EmitUpdate("QUEST_LOG_UPDATE")
         end
     end)
-
-    frame:RegisterEvent("QUEST_LOG_UPDATE")
-    frame:RegisterEvent("QUEST_DATA_LOAD_RESULT")
-    frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    frame:RegisterEvent("PLAYER_LEVEL_UP")
-    frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-    frame:RegisterEvent("UNIT_QUEST_LOG_CHANGED")
-    frame:RegisterEvent("QUEST_TURNED_IN")
 end
 
-setupCacheListeners()
+function QuestXP:HandleRoutedEvent(event)
+    self:InvalidateQuestCache()
+
+    if event == "PLAYER_ENTERING_WORLD" then
+        scheduleRebuild(1.0)
+    elseif event == "QUEST_TURNED_IN" then
+        scheduleRebuild(0.1)
+    else
+        scheduleRebuild(0.5)
+    end
+end
 
 -------------------------------------------------------------------
 -- PUBLIC API
@@ -178,11 +161,7 @@ end
 ---Force cache rebuild after optional delay
 function QuestXP:Rebuild(delay)
     self:InvalidateQuestCache()
-    C_Timer.After(delay or 0.5, function()
-        buildQuestCache()
-        Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_REBUILT)
-        Addon.EventBus:Emit(Addon.EventNames.XPBAR_BROADCAST_UPDATE)
-    end)
+    scheduleRebuild(delay or 0.5)
 end
 
 ---Get counts of complete and incomplete quests with XP

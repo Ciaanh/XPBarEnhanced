@@ -5,7 +5,7 @@
 ## Notes: Enhanced XP bar with quest XP tracking and comprehensive statistics
 
 ## Author: Ciaanh
-## Version: 1.0.6
+## Version: 1.1.0
 
 ## SavedVariables: XPBarEnhancedDB
 ## IconTexture: 4675649
@@ -40,16 +40,19 @@ core\Colors.lua
 # Calculation helpers (shared by Session, ContextBuilder)
 core\calculations\XPCalculations.lua
 core\calculations\TimeCalculations.lua
+core\calculations\ReputationCalculations.lua
 
 core\services\QuestXP.lua
 core\TextFormatter.lua
 core\EventBus.lua
+core\EventRouter.lua
 
 core\config\Config.lua
 core\config\ConfigHelper.lua
 
 core\services\Database.lua
 core\services\Session.lua
+core\services\ReputationSession.lua
 core\services\ContextBuilder.lua
 
 # UI Features
@@ -57,6 +60,7 @@ ui\MinimapButton.lua
 
 # Base and Mixins (must load before StyleBuilder)
 ui\mixins\BaseMixin.lua
+ui\mixins\SecondaryBarBaseMixin.lua
 ui\mixins\LayoutMixin.lua
 ui\mixins\PaintMixin.lua
 ui\mixins\DisplayMixin.lua
@@ -72,6 +76,11 @@ ui\mixins\animation\AnimationBase.lua
 # Style system (after mixins so globals are defined)
 ui\StyleBuilder.lua
 ui\BarManager.lua
+ui\SecondaryBarManager.lua
+
+# Shared style helpers
+ui\styles\SharedStyleHelpers.lua
+ui\styles\SecondaryBarStyleHelpers.lua
 
 #  Frames
 ui\options\OptionsPanelTemplates.xml
@@ -84,8 +93,14 @@ ui\stats\StatsFrame.xml
 #  Styles
 ui\templates\XPBarBaseTemplate.xml
 ui\styles\flat\FlatBarTemplate.xml
+ui\styles\flat\FlatSecondaryBarTemplate.xml
 ui\styles\classic\ClassicBarTemplate.xml
+ui\styles\classic\ClassicSecondaryBarTemplate.xml
 ui\styles\vertical\VerticalBarTemplate.xml
+ui\styles\vertical\VerticalSecondaryBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
+ui\styles\circular\CircularSecondaryBarTemplate.xml
 ui\styles\minimap_ring\MinimapRingBarTemplate.xml
+ui\styles\minimap_ring\MinimapArcSecondaryBarTemplate.xml
 ui\styles\terminal\TerminalBarTemplate.xml
+ui\styles\terminal\TerminalSecondaryBarTemplate.xml

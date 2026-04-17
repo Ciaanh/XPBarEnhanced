@@ -21,6 +21,24 @@ local optionDetails = {
         },
         commandKeys = {"style", "mode", "barstyle"}
     },
+    showSecondaryBar = {
+        key = "showSecondaryBar",
+        label = Addon.L["OPT_SHOW_SECONDARY_BAR"],
+        description = Addon.L["OPT_SHOW_SECONDARY_BAR_DESC"],
+        commandKeys = {}
+    },
+    hideCompanionOutsideDelve = {
+        key = "hideCompanionOutsideDelve",
+        label = Addon.L["OPT_HIDE_COMPANION_OUTSIDE_DELVE"],
+        description = Addon.L["OPT_HIDE_COMPANION_OUTSIDE_DELVE_DESC"],
+        commandKeys = {}
+    },
+    secondaryBarsAttached = {
+        key = "secondaryBarsAttached",
+        label = Addon.L["OPT_SECONDARY_BARS_ATTACHED"],
+        description = Addon.L["OPT_SECONDARY_BARS_ATTACHED_DESC"],
+        commandKeys = {}
+    },
     barLocked = {
         key = "barLocked",
         label = Addon.L["OPT_BAR_LOCKED"],
@@ -117,6 +135,12 @@ local optionDetails = {
         description = Addon.L["OPT_SESSION_TIME_DESC"],
         commandKeys = {"sessiontime"}
     },
+    resetOnReload = {
+        key = "resetOnReload",
+        label = Addon.L["OPT_RESET_ON_RELOAD"],
+        description = Addon.L["OPT_RESET_ON_RELOAD_DESC"],
+        commandKeys = {"resetonreload", "reloadreset"}
+    },
     showTimeToLevelText = {
         key = "showTimeToLevelText",
         label = Addon.L["OPT_TIME_TO_LEVEL"],
@@ -183,12 +207,18 @@ local optionDetails = {
         description = Addon.L["OPT_CIRCULAR_SCALE_CENTER_TEXT_DESC"],
         commandKeys = {"scalecentertext", "scaletext"}
     },
+    circularSecondaryFullCircle = {
+        key = "circularSecondaryFullCircle",
+        label = Addon.L["OPT_CIRCULAR_SECONDARY_FULL_CIRCLE"],
+        description = Addon.L["OPT_CIRCULAR_SECONDARY_FULL_CIRCLE_DESC"],
+        commandKeys = {"secondaryfullcircle", "circlefull"}
+    },
     minimapRingPadding = {
         key = "minimapRingPadding",
         type = "slider",
         label = Addon.L["OPT_MINIMAP_RING_PADDING"],
         description = Addon.L["OPT_MINIMAP_RING_PADDING_DESC"],
-        min = 4,
+        min = 0,
         max = 32,
         step = 1,
         format = "%.0f",
@@ -227,11 +257,17 @@ local optionDetails = {
         type = "slider",
         label = Addon.L["OPT_MINIMAP_RING_SEGMENT_HEIGHT"],
         description = Addon.L["OPT_MINIMAP_RING_SEGMENT_HEIGHT_DESC"],
-        min = 4,
-        max = 24,
+        min = 5,
+        max = 25,
         step = 1,
         format = "%.0f",
         commandKeys = {"segmentheight", "ringsegmentheight"}
+    },
+    minimapArcStartExpanded = {
+        key = "minimapArcStartExpanded",
+        label = Addon.L["OPT_MINIMAP_ARC_START_EXPANDED"],
+        description = Addon.L["OPT_MINIMAP_ARC_START_EXPANDED_DESC"],
+        commandKeys = {"arcstartexpanded", "minimaparcexpanded"}
     },
     terminalUseCustomColors = {
         key = "terminalUseCustomColors",
@@ -243,6 +279,9 @@ local optionDetails = {
 
 local optionOrder = {
     "barStyle",
+    "showSecondaryBar",
+    "hideCompanionOutsideDelve",
+    "secondaryBarsAttached",
     "barLocked",
     "classicBarDraggable",
     "showMinimapButton",
@@ -259,6 +298,7 @@ local optionOrder = {
     "showXPPerHourText",
     "showLevelTimeText",
     "showSessionTimeText",
+    "resetOnReload",
     "showTimeToLevelText",
     "abbreviateNumbers",
     "enableAnimations",
@@ -268,11 +308,13 @@ local optionOrder = {
     "circularSegments",
     "circularUseTexture",
     "circularScaleCenterText",
+    "circularSecondaryFullCircle",
     "minimapRingPadding",
     "minimapRingSegments",
     "minimapRingCollectButtons",
     "minimapRingSegmentWidth",
     "minimapRingSegmentHeight",
+    "minimapArcStartExpanded",
     "terminalUseCustomColors"
 }
 

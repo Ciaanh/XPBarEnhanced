@@ -69,6 +69,107 @@ end
 -- ControlHelpers is used for centralized option control setup
 local ControlHelpers = Addon.UI.ControlHelpers
 
+-- Style preview appearance data keyed by barStyle value
+local STYLE_PREVIEW = {
+    none        = {r=0.4,  g=0.4,  b=0.4,  fill=0,   label="None"},
+    classic     = {r=0.2,  g=0.5,  b=1.0,  fill=0.72, label="Classic"},
+    flat        = {r=0.2,  g=0.8,  b=0.3,  fill=0.60, label="Flat"},
+    vertical    = {r=0.9,  g=0.7,  b=0.1,  fill=0.55, label="Vertical"},
+    circular    = {r=0.6,  g=0.2,  b=0.9,  fill=0.80, label="Circular"},
+    minimap_ring= {r=0.1,  g=0.8,  b=0.8,  fill=0.45, label="Minimap Ring"},
+    terminal    = {r=0.0,  g=1.0,  b=0.3,  fill=0.65, label="Terminal"},
+}
+
+function XPBarEnhancedOptionsMixin:UpdateStylePreview(styleName)
+    local preview = self.ContentFrame and self.ContentFrame.OptionsContainer and
+                    self.ContentFrame.OptionsContainer.StylePreviewFrame
+    if not preview then return end
+
+    local data = STYLE_PREVIEW[styleName] or STYLE_PREVIEW["flat"]
+    if preview.PreviewBar then
+        preview.PreviewBar:SetStatusBarColor(data.r, data.g, data.b, 1)
+        preview.PreviewBar:SetValue(data.fill * 100)
+    end
+    if preview.PreviewLabel and preview.PreviewLabel.StyleName then
+        preview.PreviewLabel.StyleName:SetText(data.label)
+    end
+end
+
+-- Tab definitions in display order
+local TABS = {
+    {id = "visual",    label = "Visual"},
+    {id = "text",      label = "Text"},
+    {id = "behavior",  label = "Behavior"},
+    {id = "secondary", label = "Secondary Bar"},
+    {id = "colors",    label = "Colors"},
+}
+
+function XPBarEnhancedOptionsMixin:SelectTab(tabId)
+    self._activeTab = tabId
+
+    -- Update tab button states and explicitly fix frame level ordering so the
+    -- selected tab is always drawn on top of its neighbours regardless of XML order.
+    if self.TabContainer then
+        local baseLevel = self.TabContainer:GetFrameLevel()
+        for _, tab in ipairs(TABS) do
+            local btn = self.TabContainer["Tab_" .. tab.id]
+            if btn then
+                if tab.id == tabId then
+                    PanelTemplates_SelectTab(btn)
+                    btn:SetFrameLevel(baseLevel + 3)
+                else
+                    PanelTemplates_DeselectTab(btn)
+                    btn:SetFrameLevel(baseLevel + 1)
+                end
+            end
+        end
+    end
+
+    -- Show/hide container children by their optionTab attribute
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    if not container then return end
+
+    local children = {container:GetChildren()}
+    for _, child in ipairs(children) do
+        local childTab = child and child.optionTab
+        if childTab then
+            -- A row is visible only if: correct tab AND not hidden by style conditions
+            local tabMatch = (childTab == tabId)
+            local styleOk = (child._styleVisible == nil or child._styleVisible == true)
+            child:SetShown(tabMatch and styleOk)
+        end
+    end
+
+    -- Re-run vertical layout so hidden rows collapse
+    if container.Layout then
+        container:Layout()
+    end
+
+    -- Recalculate scroll height
+    self:RefreshScrollLayout()
+end
+
+function XPBarEnhancedOptionsMixin:SetupTabs()
+    if not self.TabContainer then return end
+    local tabId = 1
+    for _, tab in ipairs(TABS) do
+        local btn = self.TabContainer["Tab_" .. tab.id]
+        if btn then
+            btn:SetText(tab.label)
+            btn:SetScript("OnClick", function()
+                self:SelectTab(tab.id)
+            end)
+            PanelTemplates_DeselectTab(btn)
+            btn.id = tabId
+            tabId = tabId + 1
+        end
+    end
+    -- Set numTabs directly; PanelTemplates_SetNumTabs is not used because it calls
+    -- PanelTemplates_AnchorTabs which expects frame["Tab1"]/["Tab2"]/... keys,
+    -- but our tabs are children of TabContainer with string IDs. XML already anchors them.
+    self.numTabs = #TABS
+end
+
 function XPBarEnhancedOptionsMixin:OnLoad()
     Options.frame = self
     self.controls = {}
@@ -88,11 +189,7 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         local contentTop = scrollChild:GetTop() or 0
 
         -- Check reset buttons (they're at the bottom)
-        local bottomElements = {
-            scrollChild.ResetSettingsButton,
-            scrollChild.ResetBarPositionButton,
-            scrollChild.ResetStatsButton
-        }
+        local bottomElements = {}
 
         for _, element in ipairs(bottomElements) do
             if element and element:IsShown() and element:GetBottom() then
@@ -207,15 +304,15 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         end
     end
 
-    if scrollChild.ResetSettingsButton and scrollChild.ResetSettingsButton.SetText then
-        scrollChild.ResetSettingsButton:SetText(ResolveLocale("OPT_RESET_SETTINGS"))
+    if self.ResetSettingsButton and self.ResetSettingsButton.SetText then
+        self.ResetSettingsButton:SetText(ResolveLocale("OPT_RESET_SETTINGS"))
     end
-    if scrollChild.ResetStatsButton and scrollChild.ResetStatsButton.SetText then
-        scrollChild.ResetStatsButton:SetText(ResolveLocale("OPT_RESET_STATS"))
+    if self.ResetStatsButton and self.ResetStatsButton.SetText then
+        self.ResetStatsButton:SetText(ResolveLocale("OPT_RESET_STATS"))
     end
 
-    if scrollChild.ResetSettingsButton then
-        scrollChild.ResetSettingsButton:SetScript(
+    if self.ResetSettingsButton then
+        self.ResetSettingsButton:SetScript(
             "OnClick",
             function()
                 self:OnResetSettingsClicked()
@@ -223,8 +320,8 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         )
     end
 
-    if scrollChild.ResetStatsButton then
-        scrollChild.ResetStatsButton:SetScript(
+    if self.ResetStatsButton then
+        self.ResetStatsButton:SetScript(
             "OnClick",
             function()
                 self:OnResetStatsClicked()
@@ -232,9 +329,9 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         )
     end
 
-    if scrollChild.ResetBarPositionButton then
-        scrollChild.ResetBarPositionButton:SetText(ResolveLocale("OPT_RESET_BAR_POSITION"))
-        scrollChild.ResetBarPositionButton:SetScript(
+    if self.ResetBarPositionButton then
+        self.ResetBarPositionButton:SetText(ResolveLocale("OPT_RESET_BAR_POSITION"))
+        self.ResetBarPositionButton:SetScript(
             "OnClick",
             function()
                 self:OnResetBarPositionClicked()
@@ -275,11 +372,20 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         if container.ColorsHeader and container.ColorsHeader.Title then
             container.ColorsHeader.Title:SetText(ResolveLocale("OPT_HEADER_COLORS"))
         end
+
+        -- Secondary Bars section
+        if container.SecondaryBarsHeader and container.SecondaryBarsHeader.Title then
+            container.SecondaryBarsHeader.Title:SetText(ResolveLocale("OPT_HEADER_SECONDARY_BARS"))
+        end
     end
 
     self:BuildOptionCheckboxes()
     self:BuildColorControls()
+    self:SetupTabs()
+    self:SelectTab("visual")
     self:Refresh()
+    local initialStyle = Config:GetOptionValue("barStyle") or "flat"
+    self:UpdateStylePreview(initialStyle)
     self:RegisterCategory()
 
     local observerId = self:GetName() or ("_bar_" .. tostring(self))
@@ -293,16 +399,48 @@ end
 
 function XPBarEnhancedOptionsMixin:OnPanelShow()
     self:Refresh()
+    -- Resize tab buttons now that the frame is visible and FontStrings have valid widths.
+    -- PanelTemplates_TabResize uses GetStringWidth() which returns 0 at OnLoad time.
+    if self.TabContainer then
+        for _, tab in ipairs(TABS) do
+            local btn = self.TabContainer["Tab_" .. tab.id]
+            if btn then
+                PanelTemplates_TabResize(btn, 0)
+            end
+        end
+    end
     -- Recalculate scroll height when panel is shown
     self:RefreshScrollLayout()
 end
 
 function XPBarEnhancedOptionsMixin:RefreshScrollLayout()
-    -- Force recalculation of scroll content height
+    -- Force recalculation of scroll content height while preserving scroll position.
     if self.ScrollBox and self.ScrollBox:GetDataProvider() then
+        local previousPercent = nil
+        if self.ScrollBox.GetScrollPercentage then
+            previousPercent = self.ScrollBox:GetScrollPercentage()
+        elseif self.ScrollBar and self.ScrollBar.GetValue and self.ScrollBar.GetMinMaxValues then
+            local minValue, maxValue = self.ScrollBar:GetMinMaxValues()
+            local currentValue = self.ScrollBar:GetValue()
+            if minValue and maxValue and currentValue and maxValue > minValue then
+                previousPercent = (currentValue - minValue) / (maxValue - minValue)
+            else
+                previousPercent = 0
+            end
+        end
+
         local dataProvider = CreateDataProvider()
         dataProvider:Insert({id = "content"})
         self.ScrollBox:SetDataProvider(dataProvider)
+
+        if previousPercent ~= nil and self.ScrollBox.SetScrollPercentage then
+            self.ScrollBox:SetScrollPercentage(previousPercent, ScrollBoxConstants.NoScrollInterpolation)
+        elseif previousPercent ~= nil and self.ScrollBar and self.ScrollBar.SetValue and self.ScrollBar.GetMinMaxValues then
+            local minValue, maxValue = self.ScrollBar:GetMinMaxValues()
+            if minValue and maxValue and maxValue > minValue then
+                self.ScrollBar:SetValue(minValue + ((maxValue - minValue) * previousPercent))
+            end
+        end
     end
 end
 
@@ -392,8 +530,9 @@ function XPBarEnhancedOptionsMixin:UpdateContentHeight(bottomAnchor)
     local top = contentFrame:GetTop()
     local bottom = bottomAnchor and bottomAnchor.valueText and bottomAnchor.valueText:GetBottom()
 
-    if not bottom and self.ResetSettingsButton and self.ResetSettingsButton.GetBottom then
-        bottom = self.ResetSettingsButton:GetBottom()
+    local resetBtn = self.ResetSettingsButton
+    if not bottom and resetBtn and resetBtn.GetBottom then
+        bottom = resetBtn:GetBottom()
     end
 
     if top and bottom then
@@ -427,11 +566,6 @@ end
 function XPBarEnhancedOptionsMixin:OnResetSettingsClicked()
     Config:Reset()
     self:Refresh()
-
-    -- Refresh bars immediately to apply new colors and settings
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
-    end
 end
 
 function XPBarEnhancedOptionsMixin:OnResetStatsClicked()
@@ -443,6 +577,13 @@ function XPBarEnhancedOptionsMixin:OnResetBarPositionClicked()
     -- Prefer BarManager wrapper or direct view call for reset position; fallback to old shim
     if Addon.BarManager and Addon.BarManager.ResetBarPosition then
         Addon.BarManager:ResetBarPosition()
+    end
+    -- Clear persisted secondary bar positions so bars return to default anchors
+    if Addon.db then
+        Addon.db.secondaryBarPositions = nil
+    end
+    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ResetBarPositions then
+        Addon.SecondaryBarManager:ResetBarPositions()
     end
 end
 
@@ -654,16 +795,15 @@ function XPBarEnhancedOptionsMixin:Refresh()
                     self.ContentFrame and self.ContentFrame.OptionsContainer and
                     self.ContentFrame.OptionsContainer[rowKey]
 
+                if rowFrame then
+                    rowFrame._styleVisible = not isNoneMode
+                end
                 if isNoneMode then
                     checkbox:Hide()
-                    if rowFrame then
-                        rowFrame:Hide()
-                    end
+                    if rowFrame then rowFrame:Hide() end
                 else
                     checkbox:Show()
-                    if rowFrame then
-                        rowFrame:Show()
-                    end
+                    if rowFrame then rowFrame:Show() end
                 end
             elseif key == "classicBarDraggable" then
                 -- Only show classicBarDraggable when Classic style is selected
@@ -673,22 +813,24 @@ function XPBarEnhancedOptionsMixin:Refresh()
                     self.ContentFrame.OptionsContainer[rowKey]
 
                 local isClassicMode = (barStyle == "classic")
+                if rowFrame then
+                    rowFrame._styleVisible = isClassicMode
+                end
                 if isClassicMode then
                     checkbox:Show()
-                    if rowFrame then
-                        rowFrame:Show()
-                    end
+                    if rowFrame then rowFrame:Show() end
                 else
                     checkbox:Hide()
-                    if rowFrame then
-                        rowFrame:Hide()
-                    end
+                    if rowFrame then rowFrame:Hide() end
                 end
             elseif key == "showMilestoneTicks" then
                 local rowKey = "Row_" .. key
                 local container = self.ContentFrame and self.ContentFrame.OptionsContainer
                 local rowFrame = container and container[rowKey]
                 local isFlatMode = (barStyle == "flat")
+                if rowFrame then
+                    rowFrame._styleVisible = isFlatMode
+                end
                 if isFlatMode then
                     checkbox:Show()
                     if rowFrame then rowFrame:Show() end
@@ -784,26 +926,50 @@ function XPBarEnhancedOptionsMixin:Refresh()
 
     if container then
         -- Circular rows
-        local circularRowKeys = {"circularSize", "circularSegments", "circularUseTexture", "circularScaleCenterText"}
+        local circularRowKeys = {
+            "circularSize",
+            "circularSegments",
+            "circularUseTexture",
+            "circularScaleCenterText",
+            "circularSecondaryFullCircle"
+        }
         for _, key in ipairs(circularRowKeys) do
             local rowFrame = container["Row_" .. key]
-            if rowFrame then rowFrame:SetShown(isCircularMode) end
+            if rowFrame then rowFrame._styleVisible = isCircularMode end
         end
 
-        local minimapRingRowKeys = {"minimapRingPadding", "minimapRingSegments", "minimapRingCollectButtons", "minimapRingSegmentWidth", "minimapRingSegmentHeight"}
+        local minimapRingRowKeys = {
+            "minimapRingPadding",
+            "minimapRingSegments",
+            "minimapRingCollectButtons",
+            "minimapRingSegmentWidth",
+            "minimapRingSegmentHeight",
+            "minimapArcStartExpanded",
+        }
         for _, key in ipairs(minimapRingRowKeys) do
             local rowFrame = container["Row_" .. key]
-            if rowFrame then rowFrame:SetShown(isMinimapRingMode) end
+            if rowFrame then rowFrame._styleVisible = isMinimapRingMode end
         end
 
         -- Terminal rows
         if container.Row_terminalUseCustomColors then
-            container.Row_terminalUseCustomColors:SetShown(isTerminalMode)
+            container.Row_terminalUseCustomColors._styleVisible = isTerminalMode
         end
 
-        -- Reflow and update scroll height
-        container:Layout()
-        self:RefreshScrollLayout()
+        -- Re-apply tab filter (respects both style visibility and tab selection)
+        if self._activeTab then
+            self:SelectTab(self._activeTab)
+        else
+            -- Apply _styleVisible flags directly when no tab is active
+            local children = {container:GetChildren()}
+            for _, child in ipairs(children) do
+                if child._styleVisible ~= nil then
+                    child:SetShown(child._styleVisible)
+                end
+            end
+            container:Layout()
+            self:RefreshScrollLayout()
+        end
     end
 
     -- Refresh radio groups
@@ -895,6 +1061,11 @@ function Options:OnOptionChanged(key)
         if Addon.BarManager and Addon.BarManager.SetStyle then
             Addon.BarManager:SetStyle(value)
         end
+        -- Update style preview
+        local panel = self.frame
+        if panel and panel.UpdateStylePreview then
+            panel:UpdateStylePreview(value)
+        end
     elseif key == "hideBlizzardBar" then
         -- Update Blizzard bar visibility (handled by Config side effects)
         -- No additional action needed here
@@ -966,6 +1137,12 @@ function Options:OnOptionChanged(key)
                 bar:QueueReposition()
             end
         end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
+            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
+            if secondaryBar and secondaryBar.QueueReposition then
+                secondaryBar:QueueReposition()
+            end
+        end
     elseif
         key == "showQuestXP" or key == "showQuestPercent" or key == "questOverlaysEnabled" or
             key == "showCompleteQuestOverlay" or
@@ -975,33 +1152,29 @@ function Options:OnOptionChanged(key)
 
     -- General refresh
     self:Refresh()
-
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
-    end
 end
 
 function Options:OnColorReset()
     self:UpdateColorControls()
     -- Refresh bars to apply new colors
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
 end
 
 function Options:OnColorChanged()
     self:UpdateColorControls()
     -- Refresh bars to apply new colors
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
 end
 
 function Options:OnColorCancel()
     self:UpdateColorControls()
     -- Refresh bars to apply new colors
-    if Addon.EventBus and Addon.EventBus.Emit then
-        Addon.EventBus:Emit(EventNames.XPBAR_BROADCAST_UPDATE)
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
 end
 

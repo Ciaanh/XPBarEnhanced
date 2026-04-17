@@ -14,6 +14,10 @@ end
 
 local Addon = XPBarEnhanced
 
+local function GetSharedStyleHelpers()
+    return Addon and Addon.UI and Addon.UI.SharedStyleHelpers
+end
+
 -------------------------------------------------------------------
 -- CONSTANTS
 -------------------------------------------------------------------
@@ -390,57 +394,33 @@ end
 -- @param hasRestedXP boolean: Whether player has rested XP available
 function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha)
     local Colors = XPBarEnhanced.Colors
-    local colorNormal = Colors:Get(Colors.Key.XpBar)
-    local colorRested = Colors:Get(Colors.Key.Rested)
-    local colorXpBarRested = Colors:Get(Colors.Key.XpBarRested)
-    local colorQuestComplete = Colors:Get(Colors.Key.QuestComplete)
-    local colorQuestIncomplete = Colors:Get(Colors.Key.QuestIncomplete)
+    local shared = GetSharedStyleHelpers()
+    local currentXPColor = nil
+    if shared and shared.GetXPBarColor then
+        currentXPColor = shared.GetXPBarColor({hasRestedXP = hasRestedXP})
+    end
+    if not currentXPColor or not currentXPColor.r then
+        local key = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
+        currentXPColor = Colors:Get(key)
+    end
+    local colors = {
+        currentXP = currentXPColor,
+        rested = Colors:Get(Colors.Key.Rested),
+        questComplete = Colors:Get(Colors.Key.QuestComplete),
+        questIncomplete = Colors:Get(Colors.Key.QuestIncomplete),
+    }
 
-    -- Use provided parameter only; no fallback to persistent cached values
-    hasRestedXP = hasRestedXP == true
     overlayAlpha = overlayAlpha or 1.0
-
-    local currentXPColor = hasRestedXP and colorXpBarRested or colorNormal
-
-    -- Only process visible segments
     local totalSegments = self:GetDisplaySegmentCount()
-
-    -- Cache empty color components as locals to avoid repeated table indexing in the loop
-    local emptyR = EMPTY_SEGMENT_COLOR.r
-    local emptyG = EMPTY_SEGMENT_COLOR.g
-    local emptyB = EMPTY_SEGMENT_COLOR.b
-    local emptyA = EMPTY_SEGMENT_COLOR.a
 
     for i = 1, totalSegments do
         local segment = self.segments[i]
         if segment then
-            local segType = self.segmentTypes[i]
-            if segType == SEGMENT_TYPE.CURRENT_XP then
-                if currentXPColor and currentXPColor.r then
-                    segment:SetVertexColor(currentXPColor.r, currentXPColor.g, currentXPColor.b, (currentXPColor.a or 1) * overlayAlpha)
-                else
-                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
-                end
-            elseif segType == SEGMENT_TYPE.QUEST_COMPLETE then
-                if colorQuestComplete and colorQuestComplete.r then
-                    segment:SetVertexColor(colorQuestComplete.r, colorQuestComplete.g, colorQuestComplete.b, (colorQuestComplete.a or 1) * overlayAlpha)
-                else
-                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
-                end
-            elseif segType == SEGMENT_TYPE.QUEST_INCOMPLETE then
-                if colorQuestIncomplete and colorQuestIncomplete.r then
-                    segment:SetVertexColor(colorQuestIncomplete.r, colorQuestIncomplete.g, colorQuestIncomplete.b, (colorQuestIncomplete.a or 1) * overlayAlpha)
-                else
-                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
-                end
-            elseif segType == SEGMENT_TYPE.RESTED then
-                if colorRested and colorRested.r then
-                    segment:SetVertexColor(colorRested.r, colorRested.g, colorRested.b, colorRested.a)
-                else
-                    segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
-                end
+            if shared and shared.ApplySegmentTypeColor then
+                shared.ApplySegmentTypeColor(segment, self.segmentTypes[i], colors, EMPTY_SEGMENT_COLOR, overlayAlpha)
             else
-                segment:SetVertexColor(emptyR, emptyG, emptyB, emptyA)
+                local fallback = colors.currentXP or EMPTY_SEGMENT_COLOR
+                segment:SetVertexColor(fallback.r, fallback.g, fallback.b, (fallback.a or 1) * overlayAlpha)
             end
             segment:Show()
         end
@@ -656,6 +636,120 @@ end
 function CircularBarStyleTemplate:UpdateBarColors(context, barName)
     -- Colors are now applied in UpdateSegmentColors during SetArcProgress
     -- This is kept for compatibility but does nothing
+end
+
+-------------------------------------------------------------------
+-- CIRCULAR REPUTATION INTEGRATION
+-- Mouse events belong to the XP bar frame; the circular reputation overlay
+-- is mouse-passthrough (enableMouse=false). The XP bar surfaces reputation
+-- data in its own tooltip and handles reputation click actions.
+-------------------------------------------------------------------
+
+local function GetReputationContext()
+    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
+        local ctx = Addon.ReputationSession:GetCurrentContext()
+        if ctx and ctx.isAvailable then
+            return ctx
+        end
+    end
+    return nil
+end
+
+local function IsReputationSecondaryActive()
+    return Addon.SecondaryBarManager
+        and Addon.SecondaryBarManager._currentStyle == "circular"
+        and Addon.SecondaryBarManager:GetCurrentFrame() ~= nil
+end
+
+local function OpenReputationPanel()
+    if ToggleCharacter then
+        ToggleCharacter("ReputationFrame")
+    end
+end
+
+--- Append reputation section to the in-progress GameTooltip.
+--- Called after the XP tooltip has already been opened and populated.
+function CircularBarStyleTemplate:AppendReputationToTooltip()
+    local repCtx = GetReputationContext()
+    if not repCtx then
+        return
+    end
+
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine(repCtx.name or "", 1, 0.82, 0)
+
+    if repCtx.isCompanion and repCtx.currentLevel and repCtx.currentLevel > 0 then
+        GameTooltip:AddLine(string.format("Level: %d", repCtx.currentLevel), 0.7, 0.7, 0.7)
+    elseif repCtx.standingLabel and repCtx.standingLabel ~= "" then
+        GameTooltip:AddLine(repCtx.standingLabel, 0.7, 0.7, 0.7)
+    end
+
+    local StyleHelpers = Addon.UI.StyleHelpers
+    GameTooltip:AddLine(
+        string.format("Rep: %s", StyleHelpers.BuildTooltipProgressText(repCtx)),
+        0.7, 1, 0.7
+    )
+
+    local fmt = Addon.TextFormatter
+    if not repCtx.isMaxed and fmt then
+        local cur = fmt:FormatNumber(repCtx.current or 0, false)
+        local max = fmt:FormatNumber(repCtx.max or 0, false)
+        GameTooltip:AddDoubleLine("Current:", cur .. " / " .. max, 0.7, 0.7, 0.7, 0.7, 0.9, 1)
+    end
+    if repCtx.sessionGained and repCtx.sessionGained > 0 and fmt then
+        GameTooltip:AddDoubleLine("Gained:", "+" .. fmt:FormatNumber(repCtx.sessionGained, false), 0.7, 0.7, 0.7, 0.5, 1, 0.5)
+    end
+    if repCtx.repPerHour and repCtx.repPerHour > 0 and fmt then
+        GameTooltip:AddDoubleLine("Rate:", fmt:FormatNumber(repCtx.repPerHour, false) .. "/hr", 0.7, 0.7, 0.7, 0.5, 0.8, 1)
+    end
+    if repCtx.timeToNextLevel and repCtx.timeToNextLevel > 0 and fmt then
+        GameTooltip:AddDoubleLine("Next:", fmt:FormatTime(repCtx.timeToNextLevel, true), 0.7, 0.7, 0.7, 0.8, 0.8, 0.5)
+    end
+end
+
+--- Override OnEnter: show XP tooltip then append reputation section.
+function CircularBarStyleTemplate:OnEnter()
+    -- Base tooltip (XP data, session, hints)
+    XPBarTooltipMixin.OnEnter(self)
+
+    -- Append reputation section if the circular secondary bar is active
+    if not IsReputationSecondaryActive() then
+        return
+    end
+
+    self:AppendReputationToTooltip()
+    GameTooltip:Show()
+end
+
+--- Override OnRightClick: open Reputation panel when secondary bar is active.
+function CircularBarStyleTemplate:OnRightClick()
+    if IsReputationSecondaryActive() then
+        OpenReputationPanel()
+    end
+end
+
+--- Override GetHintText: add reputation hints when the secondary bar is active.
+function CircularBarStyleTemplate:GetHintText()
+    local L = XPBarEnhanced and XPBarEnhanced.L or {}
+
+    local isDraggable = false
+    if self.GetPositionMode then
+        isDraggable = self:GetPositionMode() == "DRAGGABLE"
+    end
+
+    local hints = {}
+    if isDraggable then
+        table.insert(hints, L["TT_HINT_DRAG"])
+    end
+    table.insert(hints, L["TT_HINT_ALT_OPTIONS"])
+    table.insert(hints, L["TT_HINT_CTRL_STATS"])
+
+    -- Reputation hint: right-click opens the Reputation panel
+    if IsReputationSecondaryActive() then
+        table.insert(hints, "Right-click: open Reputation")
+    end
+
+    return table.concat(hints, "\n")
 end
 
 --- Override OnHide to clean up animations

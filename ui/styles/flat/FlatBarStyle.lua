@@ -12,6 +12,7 @@ end
 
 local Addon = XPBarEnhanced
 local Colors = Addon.Colors
+local SharedStyleHelpers = Addon.UI.SharedStyleHelpers
 
 -------------------------------------------------------------------
 -- CONSTANTS
@@ -75,9 +76,7 @@ function FlatBarStyleTemplate:UpdateMilestoneTicks(currentRatio, context)
 		return
 	end
 
-	local ctx = context or {}
-	local hasRestedXP = ctx.hasRestedXP or (ctx.restedXP and ctx.restedXP > 0)
-	local activeColor = Colors:Get(hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar)
+	local activeColor = SharedStyleHelpers.GetXPBarColor(context)
 
 	for _, t in ipairs(self._milestoneTicks) do
 		if t.ratio <= currentRatio then

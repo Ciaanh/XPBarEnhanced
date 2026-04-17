@@ -589,6 +589,30 @@ function TooltipMixin:OnEnter()
 
 	GameTooltip:Show()
 	TooltipMixin.currentTooltipOwner = self
+
+	-- C4: Smart tooltip edge correction — nudge tooltip back on screen after Show()
+	-- Only adjust if we can read positions (GameTooltip may not have a valid position yet
+	-- on the very first show, so guard with pcall-style nil checks).
+	local ttRight  = GameTooltip:GetRight()
+	local ttBottom = GameTooltip:GetBottom()
+	local ttLeft   = GameTooltip:GetLeft()
+	local ttTop    = GameTooltip:GetTop()
+	local sw       = GetScreenWidth()
+	local sh       = GetScreenHeight()
+	if ttRight and ttBottom and ttLeft and ttTop and sw and sh then
+		local nudgeX, nudgeY = 0, 0
+		if ttRight > sw then nudgeX = -(ttRight - sw) end
+		if ttLeft + nudgeX < 0 then nudgeX = -(ttLeft) end
+		if ttBottom < 0 then nudgeY = -ttBottom end
+		if ttTop + nudgeY > sh then nudgeY = -(ttTop - sh) end
+		if nudgeX ~= 0 or nudgeY ~= 0 then
+			local x, y = GameTooltip:GetLeft(), GameTooltip:GetBottom()
+			if x and y then
+				GameTooltip:ClearAllPoints()
+				GameTooltip:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x + nudgeX, y + nudgeY)
+			end
+		end
+	end
 end
 
 --- OnLeave - Hide tooltip on mouse leave

@@ -13,6 +13,16 @@ Addon.Utils = Addon.Utils or {}
 
 local Utils = Addon.Utils
 
+---Route errors through Blizzard's handler when available, fall back to print.
+---@param err any
+function Utils.ReportError(err)
+    if CallErrorHandler then
+        CallErrorHandler(err)
+    else
+        print(tostring(err))
+    end
+end
+
 ---Deep clone a table recursively
 ---@param value any Value to clone
 ---@return any cloned Cloned value

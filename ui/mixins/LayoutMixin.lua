@@ -303,8 +303,10 @@ function XPBarLayoutMixin:UpdateExhaustionTickLayout(context, tickName)
 	local restedXPClamped = math.min(restedXP, remainingXP)
 	local restedRatio = restedXPClamped / maxXP
 
-	-- Show tick when rested ratio is between 1% and 99%
-	local visible = restedXP > 0 and restedRatio >= 0.01 and restedRatio <= 0.99
+	-- Show tick only when there is rested XP, the overlay is at least 1% wide,
+	-- and rested does NOT cover all remaining XP (which would make the tick redundant).
+	local restedCoversAll = restedXP >= remainingXP
+	local visible = restedXP > 0 and restedRatio >= 0.01 and not restedCoversAll
 	tick:SetShown(visible)
 
 	if visible then

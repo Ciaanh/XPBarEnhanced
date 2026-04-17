@@ -112,13 +112,13 @@ L["OPT_LEVEL_TIME"] = "Show level time"
 L["OPT_LEVEL_TIME_DESC"] = "Display time spent on current level as text beneath the XP bar."
 L["OPT_SESSION_TIME"] = "Show session time"
 L["OPT_SESSION_TIME_DESC"] = "Display time played this session as text beneath the XP bar."
+L["OPT_RESET_ON_RELOAD"] = "Reset session on /reload"
+L["OPT_RESET_ON_RELOAD_DESC"] = "When enabled, UI reload starts a fresh XP session. When disabled, session elapsed time and rates continue across /reload."
 L["OPT_TIME_TO_LEVEL"] = "Show time to next level"
 L["OPT_TIME_TO_LEVEL_DESC"] =
     "Display estimated time remaining to reach next level (based on current XP/hour rate) as text beneath the XP bar."
 L["OPT_ABBREVIATE_NUMBERS"] = "Abbreviate numbers"
 L["OPT_ABBREVIATE_NUMBERS_DESC"] = "Use abbreviated number format (K, M, B) instead of full numbers in all displays."
-L["OPT_HIDE_DEFAULT"] = "Hide default XP bar"
-L["OPT_HIDE_DEFAULT_DESC"] = "Hide Blizzard's default experience bar when the addon loads."
 
 -- Subsection headers
 -- (see "Text Display Section Headers" below for the canonical definitions)
@@ -132,10 +132,7 @@ L["OPT_BAR_STYLE_FLAT"] = "Flat (Custom draggable)"
 L["OPT_BAR_STYLE_VERTICAL"] = "Vertical (Falling XP)"
 L["OPT_BAR_STYLE_CIRCULAR"] = "Circular (Progress ring)"
 L["OPT_BAR_STYLE_MINIMAP_RING"] = "Minimap Ring"
-L["OPT_BAR_STYLE_TEST"] = "Test (CommonProgressBar)"
 L["OPT_BAR_STYLE_TERMINAL"] = "Terminal (ASCII progress bar)"
-L["OPT_HIDE_BLIZZARD_BAR"] = "Hide Blizzard bar in Flat mode"
-L["OPT_HIDE_BLIZZARD_BAR_DESC"] = "When using Flat bar style, also hide the Blizzard XP bar. Uncheck to see both bars."
 L["OPT_BAR_LOCKED"] = "Lock bar position"
 L["OPT_BAR_LOCKED_DESC"] = "Prevent the Flat bar from being moved with Shift+Drag. Applies only to Flat bar style."
 L["OPT_SHOW_MINIMAP_BUTTON"] = "Show minimap button"
@@ -162,7 +159,15 @@ L["OPT_HEADER_TEXT_DISPLAY"] = "Text Display"
 L["OPT_HEADER_ANIMATION"] = "Animation"
 L["OPT_HEADER_COLORS"] = "Colors"
 L["OPT_HEADER_CIRCULAR"] = "Circular Bar"
-L["OPT_HEADER_FLAT_BAR"] = "Flat Bar"
+L["OPT_HEADER_SECONDARY_BARS"] = "Secondary Bars"
+
+-- Secondary bar options
+L["OPT_SHOW_SECONDARY_BAR"] = "Show secondary bar"
+L["OPT_SHOW_SECONDARY_BAR_DESC"] = "Show the tracked reputation bar as a secondary progress bar. When the watched faction is a Delve companion, the bar uses companion-specific display rules."
+L["OPT_HIDE_COMPANION_OUTSIDE_DELVE"] = "Hide companion bar outside Delves"
+L["OPT_HIDE_COMPANION_OUTSIDE_DELVE_DESC"] = "When enabled, the secondary bar is hidden if the watched faction is a Delve companion and you are not inside a Delve."
+L["OPT_SECONDARY_BARS_ATTACHED"] = "Attach to XP bar"
+L["OPT_SECONDARY_BARS_ATTACHED_DESC"] = "When enabled, the secondary bar is locked to the XP bar position. When disabled, it can be positioned independently by dragging."
 
 -- Animation options
 L["OPT_ENABLE_ANIMATIONS"] = "Enable animations"
@@ -185,6 +190,8 @@ L["OPT_CIRCULAR_USE_TEXTURE"] = "Use textured segments"
 L["OPT_CIRCULAR_USE_TEXTURE_DESC"] = "Use a textured appearance for segments instead of solid color. Gives a more detailed look to the circular bar."
 L["OPT_CIRCULAR_SCALE_CENTER_TEXT"] = "Scale center text with ring"
 L["OPT_CIRCULAR_SCALE_CENTER_TEXT_DESC"] = "When enabled, the level, percentage, and time-to-level text in the center of the ring scales proportionally with the ring size. Useful for streamers or anyone who wants larger numbers."
+L["OPT_CIRCULAR_SECONDARY_FULL_CIRCLE"] = "Secondary arc as full circle"
+L["OPT_CIRCULAR_SECONDARY_FULL_CIRCLE_DESC"] = "For circular style secondary bars, render a full 360-degree inner ring instead of the default semi-circular arc."
 
 L["OPT_MINIMAP_RING_PADDING"] = "Minimap ring padding"
 L["OPT_MINIMAP_RING_PADDING_DESC"] = "Extra distance between the minimap edge and the XP ring segments."
@@ -199,6 +206,10 @@ L["OPT_MINIMAP_RING_SEGMENT_WIDTH"] = "Segment width"
 L["OPT_MINIMAP_RING_SEGMENT_WIDTH_DESC"] = "Base width of each ring segment in pixels. The value auto-scales with segment count so spacing stays consistent."
 L["OPT_MINIMAP_RING_SEGMENT_HEIGHT"] = "Segment height"
 L["OPT_MINIMAP_RING_SEGMENT_HEIGHT_DESC"] = "Radial height (thickness) of each ring segment in pixels."
+L["OPT_MINIMAP_ARC_START_EXPANDED"] = "Start minimap arc expanded"
+L["OPT_MINIMAP_ARC_START_EXPANDED_DESC"] = "For minimap ring secondary bars, show the reputation arc by default when it appears."
+L["OPT_MINIMAP_ARC_ICON_SCALE"] = "Minimap arc icon scale"
+L["OPT_MINIMAP_ARC_ICON_SCALE_DESC"] = "Scale of the minimap reputation toggle icon."
 
 -- Terminal bar options
 L["OPT_TERMINAL_USE_CUSTOM_COLORS"] = "Use custom bar colors"
@@ -229,6 +240,12 @@ L["MSG_OPTIONS_UNAVAILABLE"] = "Options panel is unavailable."
 L["MSG_RESET_UNAVAILABLE"] = "Unable to reset settings."
 L["MSG_RESET_STATS_UNAVAILABLE"] = "Unable to reset statistics."
 L["MSG_SETTINGS_RESET"] = "Settings reset to defaults"
+
+-- ============================================================================
+-- REPUTATION
+-- ============================================================================
+L["REP_STANDING_RENOWN"] = "Renown %d"
+L["REP_STANDING_PARAGON"] = "Paragon"
 
 -- ============================================================================
 -- ERRORS
