@@ -120,6 +120,13 @@ function Manager:RefreshForPrimaryStyleChange()
     self:SetSecondaryStyle(DeriveSecondaryStyle())
     self:ApplyDefaultReputationBarVisibility()
     self:ReapplyAttachedPositions()
+
+    local frame = self:GetCurrentFrame()
+    if frame and frame.QueueReposition then
+        frame:QueueReposition()
+    elseif frame and frame.Refresh then
+        frame:Refresh()
+    end
 end
 
 -- Stack active secondary bars above the primary XP bar when attached mode is on.

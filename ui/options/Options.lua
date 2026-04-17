@@ -1107,12 +1107,24 @@ function Options:OnOptionChanged(key)
                 bar:RepositionSegments()
             end
         end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
+            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
+            if secondaryBar and secondaryBar.QueueReposition then
+                secondaryBar:QueueReposition()
+            end
+        end
     elseif key == "circularScaleCenterText" then
         -- Re-layout center text and CenterBG with new scale setting
         if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
             local bar = Addon.BarManager:GetCurrentFrame()
             if bar and bar.RepositionSegments then
                 bar:RepositionSegments()
+            end
+        end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
+            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
+            if secondaryBar and secondaryBar.QueueReposition then
+                secondaryBar:QueueReposition()
             end
         end
     elseif key == "terminalUseCustomColors" then

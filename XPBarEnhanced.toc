@@ -31,6 +31,8 @@ XPBarEnhanced.lua
 
 core\config\defaults.lua
 
+ui\changelog\Changelog.lua
+
 core\AddOnLifecycle.lua
 core\AddOnCommands.lua
 

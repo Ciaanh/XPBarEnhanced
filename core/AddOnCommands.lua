@@ -13,6 +13,7 @@ local function showHelp()
     print("|cff33ff99XP Bar Enhanced|r Commands:")
     print("  /xpbe |cFFFFFFFFoptions|r - Open options panel")
     print("  /xpbe |cFFFFFFFFstats|r - Toggle statistics window")
+    print("  /xpbe |cFFFFFFFFchangelog|r - Show the update changelog")
     print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|terminal>|r - Change bar style")
     print("  /xpbe |cFFFFFFFFreps|r - Export all faction IDs")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
@@ -36,6 +37,14 @@ local function handleOptions()
 	elseif Settings and Settings.OpenToCategory then
 		Settings.OpenToCategory(Addon.OptionsCategory)
 	end
+end
+
+local function handleChangelog()
+    if Addon and Addon.Changelog and Addon.Changelog.Show then
+        Addon.Changelog:Show()
+    else
+        print("|cFFFF0000XP Bar Enhanced:|r Changelog viewer is unavailable")
+    end
 end
 
 local function handleReset()
@@ -107,6 +116,8 @@ local function handleSlashCommand(message)
         showHelp()
     elseif command == "stats" then
         handleStats()
+    elseif command == "changelog" or command == "changes" or command == "news" then
+        handleChangelog()
     elseif command == "options" or command == "config" or command == "settings" then
         handleOptions()
     elseif command == "reset" then

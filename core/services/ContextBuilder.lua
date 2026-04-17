@@ -3,8 +3,8 @@
 
 local Addon = XPBarEnhanced
 if not Addon then
-	XPBarEnhanced = {}
-	Addon = XPBarEnhanced
+	Addon = {}
+	XPBarEnhanced = Addon
 end
 
 ---@class CoreState

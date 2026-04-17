@@ -10,6 +10,7 @@ end
 -- ============================================================================
 L["ADDON_NAME"] = "XP Bar Enhanced"
 L["ADDON_LOADED"] = "Loaded!"
+L["CHANGELOG_TITLE"] = "What's New in XP Bar Enhanced"
 
 -- ============================================================================
 -- TOOLTIPS

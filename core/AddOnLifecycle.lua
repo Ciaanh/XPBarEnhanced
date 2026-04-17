@@ -76,6 +76,13 @@ function eventHandlers:OnPlayerLogout()
 end
 
 function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
+    if not Addon._changelogChecked then
+        Addon._changelogChecked = true
+        if Addon.Changelog and Addon.Changelog.CheckForUpdates then
+            Addon.Changelog:CheckForUpdates()
+        end
+    end
+
     if Addon.Session and Addon.Session.EmitUpdate then
         Addon.Session:EmitUpdate("PLAYER_ENTERING_WORLD")
     end
