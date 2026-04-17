@@ -15,7 +15,6 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 - **Style-Aware Secondary Bars** — Secondary reputation display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar)
 - **Color Customization** — Full control over bar and overlay colors
 - **Minimap Button** — Quick access to options and stats
-- **Edit Mode Support** — Bars become draggable when Edit Mode is active
 - **Animations** — Smooth fill, flash-on-gain, and two-phase level-up animations
 
 ## Bar Styles
