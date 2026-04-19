@@ -49,6 +49,15 @@ local function IsInDelve()
     if C_Garrison and C_Garrison.IsInDelve then
         return C_Garrison.IsInDelve() and true or false
     end
+
+    -- Fallback only when Delve API is unavailable.
+    if IsInInstance then
+        local _, instanceType = IsInInstance()
+        if instanceType == "scenario" then
+            return true
+        end
+    end
+
     return false
 end
 
