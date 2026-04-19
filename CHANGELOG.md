@@ -4,6 +4,20 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-04-19
+
+### Fixed
+
+- **Bar Hidden After Level-Up**: The XP bar was being hidden a second or so after every level-up due to `UIFrameFlash` being called with `showWhenDone=false` in `BaseMixin:OnLevelUpCelebration`. Blizzard's `UIFrameFlash` calls `frame:Hide()` at the end of the animation when this flag is false. Changed to `true` so the frame remains visible after the flash completes.
+- **Blizzard Bar Taint on Combat Start/End**: `BarManager` and `SecondaryBarManager` now guard all `Hide()` calls on `MainStatusTrackingBarContainer` behind `InCombatLockdown()`, deferring to `PLAYER_REGEN_ENABLED` to prevent taint during combat.
+- **TIME_PLAYED_MSG Chat Noise**: A chat-frame filter now suppresses the system time-played message that fired whenever the addon internally requested `RequestTimePlayed`. The filter is active only during the request window and is cleared immediately after the message is caught.
+- **Delve Companion Detection Fallback**: `ReputationSession` now falls back to `IsInInstance()` returning `"scenario"` to detect Delves when `C_Garrison.IsInDelve` is unavailable, ensuring companion decoration mode activates correctly in all cases.
+- **GetQuestCounts Off-by-One**: `QuestXP:GetQuestCounts()` was counting XP amounts instead of quest entries, producing incorrect quest overlay totals. Fixed to count entries.
+- **Redundant DB Assignment on Init**: `AddOnLifecycle` was re-assigning `Addon.db` after `Database:Initialize` had already set it. Removed the redundant write.
+- **ShortNumber Duplication**: `Utils.ShortNumber()` now delegates to `TextFormatter:AbbreviateNumber()` when available, eliminating two divergent number-abbreviation implementations.
+- **Stale Reputation Delta**: `ReputationSession` now re-snapshots the watched faction when `GetFactionSnapshot` returns `nil`, preventing a stale delta from being carried into the next update.
+- **Orphan xpBarColor Alias**: Removed the unused `xpBarColor` alias from `defaults.lua` and the redundant `Addon.db.xpBarColor` sync write in `Config:SetColor`.
+
 ## [1.1.1] - 2026-04-18
 
 ### Added
