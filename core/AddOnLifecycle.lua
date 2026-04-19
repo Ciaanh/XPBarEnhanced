@@ -20,9 +20,6 @@ function eventHandlers:OnAddonLoaded(name)
     Addon.Database:Initialize()
     Addon.Config:Initialize()
 
-    -- Set database reference
-    Addon.db = XPBarEnhancedDB or {}
-
     -- Get XP gain disabled state
     Addon.state.xpGainDisabled = Addon.Database:IsXPGainDisabled()
 

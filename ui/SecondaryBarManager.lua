@@ -6,6 +6,23 @@ Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 local Manager = Addon.SecondaryBarManager
 local Utils = Addon.Utils
 
+-- Safely hide a Blizzard container, deferring to after combat if in lockdown.
+local function SafeHideContainer(container)
+    if not container then return end
+    if InCombatLockdown() then
+        local f = CreateFrame("Frame")
+        f:RegisterEvent("PLAYER_REGEN_ENABLED")
+        f:SetScript("OnEvent", function(self)
+            self:UnregisterAllEvents()
+            if container:IsShown() then
+                container:Hide()
+            end
+        end)
+        return
+    end
+    container:Hide()
+end
+
 -- Maps each primary bar style key to its secondary bar template name.
 -- Add entries here as new secondary styles are implemented.
 local TEMPLATE_MAP = {
@@ -179,13 +196,11 @@ function Manager:ApplyDefaultReputationBarVisibility()
     local hasCustomReputationStyle = IsCustomStyle(self._currentStyle)
 
     if hasCustomReputationStyle then
-        if _G.SecondaryStatusTrackingBarContainer then
-            _G.SecondaryStatusTrackingBarContainer:Hide()
-        end
+        SafeHideContainer(_G.SecondaryStatusTrackingBarContainer)
         -- At max level Blizzard promotes the reputation bar to the main container.
         -- Suppress it there too so only our secondary bar is visible.
-        if ShouldSuppressMainContainer() and _G.MainStatusTrackingBarContainer then
-            _G.MainStatusTrackingBarContainer:Hide()
+        if ShouldSuppressMainContainer() then
+            SafeHideContainer(_G.MainStatusTrackingBarContainer)
         end
     else
         if _G.SecondaryStatusTrackingBarContainer then
@@ -203,14 +218,14 @@ function Manager:InstallBlizzardBarHooks()
     if secondaryContainer and secondaryContainer.Show then
         hooksecurefunc(secondaryContainer, "Show", function()
             if IsCustomStyle(self._currentStyle) then
-                secondaryContainer:Hide()
+                SafeHideContainer(secondaryContainer)
             end
         end)
     end
     if secondaryContainer and secondaryContainer.SetShown then
         hooksecurefunc(secondaryContainer, "SetShown", function(_, shown)
             if shown and IsCustomStyle(self._currentStyle) then
-                secondaryContainer:Hide()
+                SafeHideContainer(secondaryContainer)
             end
         end)
     end
@@ -221,14 +236,14 @@ function Manager:InstallBlizzardBarHooks()
     if mainContainer and mainContainer.Show then
         hooksecurefunc(mainContainer, "Show", function()
             if ShouldSuppressMainContainer() then
-                mainContainer:Hide()
+                SafeHideContainer(mainContainer)
             end
         end)
     end
     if mainContainer and mainContainer.SetShown then
         hooksecurefunc(mainContainer, "SetShown", function(_, shown)
             if shown and ShouldSuppressMainContainer() then
-                mainContainer:Hide()
+                SafeHideContainer(mainContainer)
             end
         end)
     end

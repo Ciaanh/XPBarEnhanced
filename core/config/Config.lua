@@ -168,10 +168,6 @@ function Config:SetColor(key, hex, silent)
     colorTable.a = a
     Addon.db.colors[key] = colorTable
 
-    if key == "xpBar" then
-        Addon.db.xpBarColor = colorTable
-    end
-
     -- Emit a dedicated color update event so views can update only their color previews
     if Addon.EventBus and Addon.EventBus.Emit then
         Addon.EventBus:Emit(EventNames.COLORS_UPDATED, { event = EventNames.COLORS_UPDATED })

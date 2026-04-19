@@ -49,6 +49,15 @@ local function IsInDelve()
     if C_Garrison and C_Garrison.IsInDelve then
         return C_Garrison.IsInDelve() and true or false
     end
+
+    -- Fallback only when Delve API is unavailable.
+    if IsInInstance then
+        local _, instanceType = IsInInstance()
+        if instanceType == "scenario" then
+            return true
+        end
+    end
+
     return false
 end
 
@@ -240,7 +249,12 @@ function RepSession:OnFactionUpdate()
     local factionID   = watchedData.factionID
     local factionType = DetectFactionType(factionID)
     local snapshot    = GetFactionSnapshot(factionID, factionType)
-    if not snapshot then return end
+    if not snapshot then
+        -- Data temporarily unavailable (loading screen, phasing, etc.) —
+        -- re-baseline so we don't attribute a stale delta when data returns.
+        self:_SnapshotWatchedFaction()
+        return
+    end
 
     -- If player switched watched faction, re-baseline without recording a gain.
     if factionID ~= session.watchedFactionID then

@@ -8,6 +8,14 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.1.2",
+        notes = {
+            "Fixed the XP bar being hidden after every level-up (UIFrameFlash showWhenDone bug).",
+            "Fixed Blizzard bar taint on combat start/end; Hide() calls are now deferred out of lockdown.",
+            "Suppressed TIME_PLAYED_MSG chat noise from internal time-played requests.",
+        },
+    },
+    {
         version = "1.1.1",
         notes = {
             "Added this in-game 'What's New' popup, shown once when you update to a new version.",

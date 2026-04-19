@@ -450,7 +450,9 @@ end
 --- Individual styles may override this for style-specific effects.
 function BaseMixin:OnLevelUpCelebration()
 	if UIFrameFlash then
-		UIFrameFlash(self, 0.15, 0.15, 0.6, false, 0.1, 0)
+		-- showWhenDone=true: keep the frame visible after the flash completes.
+		-- (false would call frame:Hide() at end of animation, hiding the bar.)
+		UIFrameFlash(self, 0.15, 0.15, 0.6, true, 0.1, 0)
 	end
 end
 

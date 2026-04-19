@@ -83,18 +83,34 @@ function BarManager:AdjustContextForMaxLevel(context)
     return nil
 end
 
+-- Safely hide a Blizzard container, deferring to after combat if in lockdown.
+local function SafeHideContainer(container)
+    if not container then return end
+    if InCombatLockdown() then
+        -- Defer until combat ends to avoid taint.
+        local f = CreateFrame("Frame")
+        f:RegisterEvent("PLAYER_REGEN_ENABLED")
+        f:SetScript("OnEvent", function(self)
+            self:UnregisterAllEvents()
+            if container:IsShown() then
+                container:Hide()
+            end
+        end)
+        return
+    end
+    container:Hide()
+end
+
 function BarManager:ApplyDefaultXPBarVisibility()
     -- Hide only the Blizzard XP bar container when a custom XP style is active.
     -- Secondary/reputation tracking is managed independently by SecondaryBarManager.
     if self:IsCustomStyle(self.currentStyle) then
-        if _G.MainStatusTrackingBarContainer then
-            _G.MainStatusTrackingBarContainer:Hide()
-        end
+        SafeHideContainer(_G.MainStatusTrackingBarContainer)
     else
         -- Otherwise, restore Blizzard XP bar visibility.
         if _G.MainStatusTrackingBarContainer then
             if ShouldSecondarySuppressMainContainer() then
-                _G.MainStatusTrackingBarContainer:Hide()
+                SafeHideContainer(_G.MainStatusTrackingBarContainer)
             else
                 _G.MainStatusTrackingBarContainer:Show()
             end
@@ -113,14 +129,14 @@ function BarManager:InstallBlizzardBarHooks()
         if container and container.Show then
             hooksecurefunc(container, "Show", function()
                 if self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer() then
-                    container:Hide()
+                    SafeHideContainer(container)
                 end
             end)
         end
         if container and container.SetShown then
             hooksecurefunc(container, "SetShown", function(_, shown)
                 if shown and (self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer()) then
-                    container:Hide()
+                    SafeHideContainer(container)
                 end
             end)
         end

@@ -166,11 +166,16 @@ end
 
 ---Get counts of complete and incomplete quests with XP
 function QuestXP:GetQuestCounts()
-    self:GetQuestXP()
-    if questCache.totals then
-        return questCache.totals[2] or 0, questCache.totals[3] or 0
+    self:GetQuestXP() -- ensure cache is populated
+    local completeCount, incompleteCount = 0, 0
+    for _, entry in pairs(questCache.perQuest) do
+        if entry.complete then
+            completeCount = completeCount + 1
+        else
+            incompleteCount = incompleteCount + 1
+        end
     end
-    return 0, 0
+    return completeCount, incompleteCount
 end
 
 return QuestXP

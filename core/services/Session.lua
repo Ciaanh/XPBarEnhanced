@@ -283,10 +283,14 @@ function Session:OnTimePlayed(totalTime, levelTime)
     session.realTotalTime = totalTime or session.realTotalTime or 0
     session.realLevelTime = levelTime or session.realLevelTime or 0
     session.lastTimePlayedRequest = time()
-    Addon.state.requestingTimePlayed = false
 
-    -- Clear the ticker
+    -- Clear the ticker but keep requestingTimePlayed true briefly so the
+    -- chat filter can suppress the system message that arrives in the same frame.
     self:ClearTimePlayedRequest()
+    Addon.state.requestingTimePlayed = true
+    C_Timer.After(0, function()
+        Addon.state.requestingTimePlayed = false
+    end)
 
     -- Notify Stats module (consolidated from defunct AddOnLifecycle handler)
     local stats = Addon.Stats
@@ -381,6 +385,16 @@ end
 -------------------------------------------------------------------
 -- TIME PLAYED MANAGEMENT
 -------------------------------------------------------------------
+
+-- Suppress the "Total time played" / "Time played this level" system messages
+-- when *we* are the ones requesting the data. Installed once.
+local function TimePlayedChatFilter(_, _, msg, ...)
+    if Addon.state.requestingTimePlayed then
+        return true -- block the message
+    end
+    return false
+end
+ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", TimePlayedChatFilter)
 
 function Session:ClearTimePlayedRequest()
     if timePlayedTicker then

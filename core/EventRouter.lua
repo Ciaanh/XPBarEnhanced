@@ -6,6 +6,12 @@ Addon.EventRouter = Addon.EventRouter or {}
 
 local EventRouter = Addon.EventRouter
 
+local function EmitReputationUpdate()
+    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.EmitUpdate then
+        Addon.ReputationSession:EmitUpdate()
+    end
+end
+
 local function DispatchUpdateFaction(factionID)
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
         Addon.ReputationSession:OnFactionUpdate()
@@ -25,15 +31,11 @@ local function DispatchRenownLevelChanged(...)
 end
 
 local function DispatchDelvesAccountDataChanged()
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.EmitUpdate then
-        Addon.ReputationSession:EmitUpdate()
-    end
+    EmitReputationUpdate()
 end
 
 local function DispatchReputationVisibilityRefresh()
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.EmitUpdate then
-        Addon.ReputationSession:EmitUpdate()
-    end
+    EmitReputationUpdate()
 end
 
 local function DispatchQuestEvent(event)
