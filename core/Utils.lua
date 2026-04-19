@@ -71,9 +71,15 @@ function Utils.MergeDefaults(target, source)
 end
 
 ---Return a human-friendly short representation of a number (e.g. 1.2K, 3.4M)
+---Delegates to TextFormatter:AbbreviateNumber when available for consistent output.
 ---@param value number The number to format
 ---@return string formatted Short format string
 function Utils.ShortNumber(value)
+    if Addon.TextFormatter and Addon.TextFormatter.AbbreviateNumber then
+        return Addon.TextFormatter:AbbreviateNumber(value)
+    end
+
+    -- Inline fallback for early load before TextFormatter is available
     if not value or value <= 0 then
         return "0"
     end

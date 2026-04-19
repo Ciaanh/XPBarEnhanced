@@ -249,7 +249,12 @@ function RepSession:OnFactionUpdate()
     local factionID   = watchedData.factionID
     local factionType = DetectFactionType(factionID)
     local snapshot    = GetFactionSnapshot(factionID, factionType)
-    if not snapshot then return end
+    if not snapshot then
+        -- Data temporarily unavailable (loading screen, phasing, etc.) —
+        -- re-baseline so we don't attribute a stale delta when data returns.
+        self:_SnapshotWatchedFaction()
+        return
+    end
 
     -- If player switched watched faction, re-baseline without recording a gain.
     if factionID ~= session.watchedFactionID then

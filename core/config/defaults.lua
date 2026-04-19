@@ -88,7 +88,5 @@ local defaults = {
     }
 }
 
-defaults.xpBarColor = defaults.colors.xpBar
-
 Addon.defaults = defaults
 return defaults
