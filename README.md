@@ -2,7 +2,7 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail only** · Interface 120005 · Version 1.1.1
+**Retail only** · Interface 120005 · Version 1.1.2
 
 ## Features
 
@@ -23,8 +23,8 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 |-------|-------------|
 | **None** | Blizzard's default XP bar only |
 | **Classic** | Blizzard-style bar with atlas textures and quest overlays |
-| **Flat** | Full-width draggable bar with milestone ticks |
-| **Vertical** | Vertical bar with falling XP animation |
+| **Flat** | Wide draggable bar with milestone ticks |
+| **Vertical** | Vertical bar with animated XP fill |
 | **Circular** | Progress ring with configurable size, segments, and scalable center text |
 | **Minimap Ring** | XP ring anchored around the minimap with optional button collection |
 | **Terminal** | ASCII-style retro bar with phosphor-green progress display |
@@ -42,6 +42,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | `/xpbe` | Show command help |
 | `/xpbe options` | Open the options panel |
 | `/xpbe stats` | Toggle the statistics window |
+| `/xpbe changelog` | Show the update changelog |
 | `/xpbe style <none\|classic\|flat\|vertical\|circular\|minimap_ring\|terminal>` | Set the active bar style |
 | `/xpbe reps` | Export all faction IDs |
 | `/xpbe reset` | Reset all settings |
