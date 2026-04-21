@@ -163,12 +163,10 @@ function AnimationBase:GetAnimationConfig()
 
 	-- Fall back to global database
 	local Addon = XPBarEnhanced
-	local db = Addon and Addon.Database and Addon.Database:GetDB()
-
-	if db then
+	if Addon and Addon.Config and Addon.Config.GetOptionValue then
 		return {
-			enableAnimations = db.enableAnimations ~= false,
-			flashOnGain = db.flashOnGain ~= false
+			enableAnimations = Addon.Config:GetOptionValue("enableAnimations") ~= false,
+			flashOnGain = Addon.Config:GetOptionValue("flashOnGain") ~= false
 		}
 	end
 

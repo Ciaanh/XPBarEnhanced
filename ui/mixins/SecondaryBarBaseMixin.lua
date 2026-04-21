@@ -4,6 +4,28 @@
 local Addon = XPBarEnhanced
 local Utils = Addon.Utils
 
+local function GetOptionValue(key, fallback)
+    if Addon.Config and Addon.Config.GetOptionValue then
+        local value = Addon.Config:GetOptionValue(key)
+        if value ~= nil then
+            return value
+        end
+    end
+    return fallback
+end
+
+local function GetSettingsTable(key, createIfMissing)
+    if Addon.Config and Addon.Config.GetSettingsTable then
+        return Addon.Config:GetSettingsTable(key, createIfMissing)
+    end
+
+    Addon.db = Addon.db or {}
+    if Addon.db[key] == nil and createIfMissing then
+        Addon.db[key] = {}
+    end
+    return Addon.db[key]
+end
+
 ---@class XPBarSecondaryBaseMixin
 XPBarSecondaryBaseMixin = {}
 Addon.UI.Mixins.SecondaryBase = XPBarSecondaryBaseMixin
@@ -35,10 +57,9 @@ function SecondaryBaseMixin:ApplyInitialPosition()
 
     local key = self.GetPositionConfigKey and self:GetPositionConfigKey()
     local styleKey = self.GetPositionStyleKey and self:GetPositionStyleKey()
-    local db = Addon and Addon.db
     local pos
-    if key and db then
-        local store = db[key]
+    if key then
+        local store = GetSettingsTable(key)
         if styleKey and store then
             pos = store[styleKey]
         elseif store then
@@ -193,8 +214,8 @@ end
 -------------------------------------------------------------------
 
 function SecondaryBaseMixin:FadeToAlpha(targetAlpha)
-    local fadeSpeed = targetAlpha == 1 and (Addon.db and Addon.db.secondaryFadeInSpeed or (Addon.defaults and Addon.defaults.secondaryFadeInSpeed or 0.3))
-                      or (Addon.db and Addon.db.secondaryFadeOutSpeed or (Addon.defaults and Addon.defaults.secondaryFadeOutSpeed or 0.5))
+    local fadeSpeed = targetAlpha == 1 and GetOptionValue("secondaryFadeInSpeed", (Addon.defaults and Addon.defaults.secondaryFadeInSpeed or 0.3))
+                      or GetOptionValue("secondaryFadeOutSpeed", (Addon.defaults and Addon.defaults.secondaryFadeOutSpeed or 0.5))
     
     if not self:IsShown() then
         self:SetAlpha(targetAlpha)
@@ -276,16 +297,17 @@ end
 -- Returns the primary bar style key used to namespace per-style saved positions.
 -- Override in a style mixin to return a different key.
 function SecondaryBaseMixin:GetPositionStyleKey()
-    local db = Addon and Addon.db
-    return db and db.barStyle
+    return GetOptionValue("barStyle")
 end
 
 function SecondaryBaseMixin:SavePosition()
     local configKey = self.GetPositionConfigKey and self:GetPositionConfigKey()
     local styleKey = self.GetPositionStyleKey and self:GetPositionStyleKey()
-    if not configKey or not Addon.db then
+    if not configKey then
         return
     end
+
+    local positions = GetSettingsTable(configKey, true)
 
     -- Normalize to UIParent BOTTOMLEFT pixel coordinates so the saved value
     -- survives reload. Frame object references from GetPoint() can't be
@@ -305,24 +327,26 @@ function SecondaryBaseMixin:SavePosition()
     }
 
     if styleKey then
-        Addon.db[configKey] = Addon.db[configKey] or {}
-        Addon.db[configKey][styleKey] = posData
+        positions[styleKey] = posData
     else
-        Addon.db[configKey] = posData
+        local storage = Addon.Config and Addon.Config.GetSettingsStorage and Addon.Config:GetSettingsStorage() or Addon.db
+        storage[configKey] = posData
     end
 end
 
 function SecondaryBaseMixin:ResetPosition()
     local configKey = self.GetPositionConfigKey and self:GetPositionConfigKey()
     local styleKey = self.GetPositionStyleKey and self:GetPositionStyleKey()
-    if not configKey or not Addon.db then
+    if not configKey then
         return
     end
 
-    if styleKey and Addon.db[configKey] then
-        Addon.db[configKey][styleKey] = nil
+    local positions = GetSettingsTable(configKey)
+    if styleKey and positions then
+        positions[styleKey] = nil
     else
-        Addon.db[configKey] = nil
+        local storage = Addon.Config and Addon.Config.GetSettingsStorage and Addon.Config:GetSettingsStorage() or Addon.db
+        storage[configKey] = nil
     end
     self:ApplyInitialPosition()
 end

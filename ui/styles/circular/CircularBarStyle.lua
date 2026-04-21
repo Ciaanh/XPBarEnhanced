@@ -13,6 +13,7 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
 end
 
 local Addon = XPBarEnhanced
+local Config = Addon.Config
 
 local function GetSharedStyleHelpers()
     return Addon and Addon.UI and Addon.UI.SharedStyleHelpers
@@ -94,11 +95,9 @@ end
 -- @return number: Scale factor for ring size (0.75 to 2.0)
 function CircularBarStyleTemplate:GetCircularScale()
     local size = "medium"
-    if Addon and Addon.db then
-        local saved = Addon.db.circularSize
-        if type(saved) == "string" and CIRCULAR_SIZE_SCALES[saved] then
-            size = saved
-        end
+    local saved = Config and Config.GetOptionValue and Config:GetOptionValue("circularSize")
+    if type(saved) == "string" and CIRCULAR_SIZE_SCALES[saved] then
+        size = saved
     end
     return CIRCULAR_SIZE_SCALES[size] or 1.0
 end
@@ -107,15 +106,13 @@ end
 -- @return number: Number of segments to display (clamped to 20-100)
 function CircularBarStyleTemplate:GetDisplaySegmentCount()
     local count = DEFAULT_SEGMENTS
-    if Addon and Addon.db then
-        local saved = Addon.db.circularSegments
-        if type(saved) == "number" then
-            count = saved
-        else
-            -- Migrate any boolean/invalid saved values to default
-            if saved ~= nil then
-                Addon.db.circularSegments = DEFAULT_SEGMENTS
-            end
+    local saved = Config and Config.GetOptionValue and Config:GetOptionValue("circularSegments")
+    if type(saved) == "number" then
+        count = saved
+    else
+        -- Migrate any boolean/invalid saved values to default on the active storage target.
+        if saved ~= nil and Config and Config.SetOptionKey then
+            Config:SetOptionKey("circularSegments", DEFAULT_SEGMENTS, true)
         end
     end
     -- Clamp to valid range
@@ -140,8 +137,11 @@ end
 --- Get whether to use textured or solid segments (from saved settings)
 -- @return boolean: true for textured, false for solid color
 function CircularBarStyleTemplate:GetUseTexture()
-    if Addon and Addon.db and Addon.db.circularUseTexture ~= nil then
-        return Addon.db.circularUseTexture
+    if Config and Config.GetOptionValue then
+        local useTexture = Config:GetOptionValue("circularUseTexture")
+        if useTexture ~= nil then
+            return useTexture
+        end
     end
     return true -- Default to textured
 end
@@ -254,7 +254,7 @@ end
 function CircularBarStyleTemplate:FixStaticElements()
     if self.CenterBG then
         self.CenterBG:ClearAllPoints()
-        if Addon.db and Addon.db.circularScaleCenterText then
+        if Config and Config.GetOptionValue and Config:GetOptionValue("circularScaleCenterText") then
             self.CenterBG:SetAllPoints(self)
         else
             self.CenterBG:SetSize(BASE_FRAME_SIZE, BASE_FRAME_SIZE)
@@ -547,7 +547,7 @@ end
 --- Scale center text elements proportionally with the ring size.
 --- Called from RepositionSegments when layout changes.
 function CircularBarStyleTemplate:UpdateCenterTextScale()
-    local shouldScale = Addon.db and Addon.db.circularScaleCenterText
+    local shouldScale = Config and Config.GetOptionValue and Config:GetOptionValue("circularScaleCenterText")
     local scale = shouldScale and self:GetCircularScale() or 1.0
 
     local elements = {

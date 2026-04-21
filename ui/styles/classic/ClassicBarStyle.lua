@@ -89,7 +89,7 @@ end
 
 local function GetClassicBarConfig()
     local Addon = XPBarEnhanced
-    local isDraggable = Addon.db and Addon.db.classicBarDraggable
+    local isDraggable = Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("classicBarDraggable")
     if isDraggable == nil then
         isDraggable = true -- Default to draggable
     end

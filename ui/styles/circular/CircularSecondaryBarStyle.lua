@@ -2,6 +2,7 @@
 -- Displays tracked reputation as an inner arc for the circular primary style.
 
 local Addon = XPBarEnhanced
+local Config = Addon.Config
 local FALLBACK_SHARED_STYLE_HELPERS = {
     GetSecondaryPositionConfigKey = function()
         return "secondaryBarPositions"
@@ -86,7 +87,7 @@ local function Clamp(value, minValue, maxValue)
 end
 
 local function GetCircularScale()
-    local size = Addon and Addon.db and Addon.db.circularSize or "medium"
+    local size = Config and Config.GetOptionValue and Config:GetOptionValue("circularSize") or "medium"
     if type(size) ~= "string" or not CIRCULAR_SIZE_SCALES[size] then
         size = "medium"
     end
@@ -94,7 +95,7 @@ local function GetCircularScale()
 end
 
 local function ShouldScaleInnerArc()
-    return Addon and Addon.db and Addon.db.circularScaleCenterText == true
+    return Config and Config.GetOptionValue and Config:GetOptionValue("circularScaleCenterText") == true
 end
 
 function StyleMixin:GetPositionConfigKey()
@@ -155,7 +156,7 @@ function StyleMixin:_CreateSegments()
 end
 
 function StyleMixin:_GetArcConfig()
-    local fullCircle = Addon.db and Addon.db.circularSecondaryFullCircle == true
+    local fullCircle = Config and Config.GetOptionValue and Config:GetOptionValue("circularSecondaryFullCircle") == true
     if fullCircle then
         return FULL_CIRCLE_SEGMENTS, math.pi / 2, (2 * math.pi)
     end

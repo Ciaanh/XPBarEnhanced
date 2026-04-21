@@ -248,7 +248,9 @@ end
 function Collection:OnBagDragUpdate()
     if not self.owner then return end
     local angle = GetCursorAngle()
-    if Addon.db then
+    if Addon.Config and Addon.Config.SetOptionKey then
+        Addon.Config:SetOptionKey("minimapRingBagAngle", angle, true)
+    elseif Addon.db then
         Addon.db.minimapRingBagAngle = angle
     end
     self:UpdateAnchor()

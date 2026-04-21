@@ -3,6 +3,16 @@
 
 local Addon = XPBarEnhanced
 
+local function GetOptionValue(key, fallback)
+	if Addon.Config and Addon.Config.GetOptionValue then
+		local value = Addon.Config:GetOptionValue(key)
+		if value ~= nil then
+			return value
+		end
+	end
+	return fallback
+end
+
 -------------------------------------------------------------------
 -- GLOBAL INTERACTION MIXIN
 -------------------------------------------------------------------
@@ -31,7 +41,7 @@ function InteractionMixin:OnMouseDown(button)
 	if button == "LeftButton" and IsShiftKeyDown() then
 		if self.GetPositionMode then
 			local positionMode = self:GetPositionMode()
-			local locked = Addon.db and Addon.db.barLocked or false
+			local locked = GetOptionValue("barLocked", false)
 			local isMovable = self:IsMovable()
 			
 			if positionMode == "DRAGGABLE" and isMovable and not locked then

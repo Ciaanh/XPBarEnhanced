@@ -15,6 +15,12 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFstats|r - Toggle statistics window")
     print("  /xpbe |cFFFFFFFFchangelog|r - Show the update changelog")
     print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|terminal>|r - Change bar style")
+    print("  /xpbe |cFFFFFFFFprofile|r - Show current profile and available profiles")
+    print("  /xpbe |cFFFFFFFFprofile global|r - Use global shared settings")
+    print("  /xpbe |cFFFFFFFFprofile use <name>|r - Switch to a named profile")
+    print("  /xpbe |cFFFFFFFFprofile new <name>|r - Create and select a new profile")
+    print("  /xpbe |cFFFFFFFFprofile rename <new name>|r - Rename the active profile")
+    print("  /xpbe |cFFFFFFFFprofile delete [name]|r - Delete a profile")
     print("  /xpbe |cFFFFFFFFreps|r - Export all faction IDs")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
@@ -83,7 +89,12 @@ end
 local function handleStyle(style)
     style = string.lower(style or "")
     if style == "" then
-        local currentStyle = Addon.db.barStyle or "classic"
+        local currentStyle = "classic"
+        if Addon.Config and Addon.Config.GetOptionValue then
+            currentStyle = Addon.Config:GetOptionValue("barStyle") or "classic"
+        elseif Addon.db then
+            currentStyle = Addon.db.barStyle or "classic"
+        end
         print("|cFF00FF00XP Bar Enhanced:|r Current bar style: " .. currentStyle)
         print("Usage: /xpbe style <none|classic|flat|vertical|circular|minimap_ring|terminal>")
         return
@@ -108,6 +119,123 @@ local function handleReps()
     end
 end
 
+local function handleProfile(arg)
+    local config = Addon.Config
+    if not config then
+        print("|cFFFF0000XP Bar Enhanced:|r Profile support is unavailable")
+        return
+    end
+
+    local action, rest = string.match(arg or "", "^(%S*)%s*(.-)$")
+    action = string.lower(action or "")
+    rest = rest or ""
+
+    if action == "" then
+        local active = config:GetActiveProfileName()
+        local names = config:GetProfileNames()
+        print("|cFF00FF00XP Bar Enhanced:|r Active settings source: " .. (active or "Global"))
+        if #names > 0 then
+            print("|cFF00FF00XP Bar Enhanced:|r Profiles: " .. table.concat(names, ", "))
+        else
+            print("|cFF00FF00XP Bar Enhanced:|r No saved profiles")
+        end
+        return
+    end
+
+    if action == "global" or action == "clear" then
+        local success, err = config:SelectProfile(nil)
+        if success then
+            print("|cFF00FF00XP Bar Enhanced:|r Using global shared settings")
+        else
+            print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+        end
+        return
+    end
+
+    if action == "use" or action == "select" then
+        if rest == "" then
+            print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe profile use <name>")
+            return
+        end
+        -- Sanitize input to prevent control characters
+        local sanitized = rest:gsub("[%c]", "")  -- Remove control characters
+        if sanitized == "" then
+            print("|cFFFF0000XP Bar Enhanced:|r Profile name cannot be empty or contain only control characters")
+            return
+        end
+        local success, err = config:SelectProfile(sanitized)
+        if success then
+            print("|cFF00FF00XP Bar Enhanced:|r Active profile: " .. sanitized)
+        else
+            print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+        end
+        return
+    end
+
+    if action == "new" or action == "create" then
+        if rest == "" then
+            print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe profile new <name>")
+            return
+        end
+        -- Sanitize input to prevent control characters
+        local sanitized = rest:gsub("[%c]", "")  -- Remove control characters
+        if sanitized == "" then
+            print("|cFFFF0000XP Bar Enhanced:|r Profile name cannot be empty or contain only control characters")
+            return
+        end
+        local success, err = config:CreateProfile(sanitized, true)
+        if success then
+            print("|cFF00FF00XP Bar Enhanced:|r Created profile: " .. sanitized)
+        else
+            print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+        end
+        return
+    end
+
+    if action == "rename" then
+        local active = config:GetActiveProfileName()
+        if not active then
+            print("|cFFFF0000XP Bar Enhanced:|r Global settings cannot be renamed")
+            return
+        end
+        if rest == "" then
+            print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe profile rename <new name>")
+            return
+        end
+        -- Sanitize input to prevent control characters
+        local sanitized = rest:gsub("[%c]", "")  -- Remove control characters
+        if sanitized == "" then
+            print("|cFFFF0000XP Bar Enhanced:|r Profile name cannot be empty or contain only control characters")
+            return
+        end
+        local success, err = config:RenameProfile(active, sanitized)
+        if success then
+            print("|cFF00FF00XP Bar Enhanced:|r Renamed profile to: " .. sanitized)
+        else
+            print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+        end
+        return
+    end
+
+    if action == "delete" or action == "remove" then
+        local targetName = rest ~= "" and rest or config:GetActiveProfileName()
+        if not targetName then
+            print("|cFFFF0000XP Bar Enhanced:|r No active profile to delete")
+            return
+        end
+        local success, err = config:DeleteProfile(targetName)
+        if success then
+            print("|cFF00FF00XP Bar Enhanced:|r Deleted profile: " .. targetName)
+        else
+            print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+        end
+        return
+    end
+
+    print("|cFFFF0000XP Bar Enhanced:|r Unknown profile command")
+    print("Usage: /xpbe profile [global|use <name>|new <name>|rename <new name>|delete [name]]")
+end
+
 local function handleSlashCommand(message)
     local command, arg = string.match(message or "", "^(%S*)%s*(.-)$")
     command = string.lower(command or "")
@@ -128,6 +256,8 @@ local function handleSlashCommand(message)
         handleResetColors()
     elseif command == "style" or command == "barstyle" or command == "mode" then
         handleStyle(arg)
+    elseif command == "profile" or command == "profiles" then
+        handleProfile(arg)
     elseif command == "reps" then
         handleReps()
     else

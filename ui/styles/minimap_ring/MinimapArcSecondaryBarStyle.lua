@@ -2,6 +2,7 @@
 -- Displays a minimap-linked icon that toggles a centered reputation arc.
 
 local Addon = XPBarEnhanced
+local Config = Addon.Config
 local FALLBACK_SHARED_STYLE_HELPERS = {
     GetSecondaryPositionConfigKey = function()
         return "secondaryBarPositions"
@@ -123,13 +124,13 @@ local function GetCursorAngle()
 end
 
 local function GetArcSweepRadians()
-    local angleDegrees = Addon and Addon.db and Addon.db.minimapArcDisplayAngle or 135
+    local angleDegrees = Config and Config.GetOptionValue and Config:GetOptionValue("minimapArcDisplayAngle") or 135
     angleDegrees = Clamp(tonumber(angleDegrees) or 135, 30, 360)
     return math.rad(angleDegrees)
 end
 
 local function GetIconAngleDegrees()
-    return Addon and Addon.db and Addon.db.minimapArcIconAngle or 315
+    return Config and Config.GetOptionValue and Config:GetOptionValue("minimapArcIconAngle") or 315
 end
 
 local function NormalizeAngle(rad)
@@ -282,7 +283,7 @@ function StyleMixin:_UpdateMinimapAnchor()
 end
 
 function StyleMixin:_ApplyInitialExpandedState()
-    local initialExpanded = Addon.db and Addon.db.minimapArcStartExpanded == true
+    local initialExpanded = Config and Config.GetOptionValue and Config:GetOptionValue("minimapArcStartExpanded") == true
     self._lastConfiguredStartExpanded = initialExpanded
     self._arcExpanded = initialExpanded
     self:_ApplyArcVisibility(false)
@@ -393,7 +394,7 @@ function StyleMixin:Render(context)
 
     self:_UpdateMinimapAnchor()
 
-    local configuredStartExpanded = Addon.db and Addon.db.minimapArcStartExpanded == true
+    local configuredStartExpanded = Config and Config.GetOptionValue and Config:GetOptionValue("minimapArcStartExpanded") == true
     if self._arcExpanded == nil or configuredStartExpanded ~= self._lastConfiguredStartExpanded then
         self._lastConfiguredStartExpanded = configuredStartExpanded
         self._arcExpanded = configuredStartExpanded
@@ -494,7 +495,9 @@ function StyleMixin:OnDragStart()
     self._arcIconAngle = nil
     self:SetScript("OnUpdate", function()
         local angle = GetCursorAngle()
-        if Addon.db then
+        if Config and Config.SetOptionKey then
+            Config:SetOptionKey("minimapArcIconAngle", angle, true)
+        elseif Addon.db then
             Addon.db.minimapArcIconAngle = angle
         end
         self:_UpdateMinimapAnchor()

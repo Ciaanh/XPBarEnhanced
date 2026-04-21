@@ -8,6 +8,52 @@ local Config = Addon.Config
 local L = Addon.L or {}
 local EventNames = Addon.EventNames
 
+local function getActiveProfileTable()
+    if Addon.ProfileManager and Addon.ProfileManager.GetActiveProfile then
+        return Addon.ProfileManager:GetActiveProfile()
+    end
+    return nil
+end
+
+local function getWriteTargetTable()
+    local profile = getActiveProfileTable()
+    if profile then
+        return profile
+    end
+
+    Addon.db = Addon.db or {}
+    return Addon.db
+end
+
+function Config:GetSettingsStorage()
+    return getWriteTargetTable()
+end
+
+function Config:GetSettingsTable(key, createIfMissing)
+    if not key then
+        return nil
+    end
+
+    local activeProfile = getActiveProfileTable()
+    local value = activeProfile and activeProfile[key]
+    
+    -- If found in active profile, return it
+    if value ~= nil then
+        return value
+    end
+
+    -- If not creating, fall back to global for read-only access
+    if not createIfMissing then
+        return Addon.db and Addon.db[key]
+    end
+
+    -- If creating, create ONLY in the write target (profile or global)
+    -- Do NOT fall back to global for write operations
+    local target = getWriteTargetTable()
+    target[key] = target[key] or {}
+    return target[key]
+end
+
 -------------------------------------------------------------------
 -- Defaults are extracted to `core/config/defaults.lua` and assigned to `Addon.defaults`.
 -------------------------------------------------------------------
@@ -53,7 +99,11 @@ end
 
 ---Get the effective option value (falls back to defaults)
 function Config:GetOptionValue(key)
-    local value = Addon.db and Addon.db[key]
+    local activeProfile = getActiveProfileTable()
+    local value = activeProfile and activeProfile[key]
+    if value == nil then
+        value = Addon.db and Addon.db[key]
+    end
     if value == nil then
         value = Addon.defaults and Addon.defaults[key]
     end
@@ -67,13 +117,17 @@ function Config:SetOptionKey(key, value, silent)
     local newValue
     if detail and (detail.type == "dropdown" or detail.type == "slider") then
         newValue = value
+    elseif type(value) == "number" then
+        -- Preserve numeric values (e.g., minimap angles, segment counts)
+        newValue = value
     else
         newValue = value and true or false
     end
 
-    local oldValue = Addon.db[key]
+    local oldValue = self:GetOptionValue(key)
     if oldValue == newValue then return end
-    Addon.db[key] = newValue
+    local target = getWriteTargetTable()
+    target[key] = newValue
 
     self:ApplyOptionSideEffects(key)
 end
@@ -131,6 +185,11 @@ function Config:GetColor(key)
         return nil
     end
 
+    local activeProfile = getActiveProfileTable()
+    if activeProfile and activeProfile.colors and activeProfile.colors[key] then
+        return activeProfile.colors[key]
+    end
+
     if Addon.db and Addon.db.colors and Addon.db.colors[key] then
         return Addon.db.colors[key]
     end
@@ -159,14 +218,14 @@ function Config:SetColor(key, hex, silent)
     if not r then
         return false, Addon.L and Addon.L["ERR_INVALID_COLOR"]
     end
-    Addon.db = Addon.db or {}
-    Addon.db.colors = Addon.db.colors or {}
-    local colorTable = Addon.db.colors[key] or {}
+    local target = getWriteTargetTable()
+    target.colors = target.colors or {}
+    local colorTable = target.colors[key] or {}
     colorTable.r = r
     colorTable.g = g
     colorTable.b = b
     colorTable.a = a
-    Addon.db.colors[key] = colorTable
+    target.colors[key] = colorTable
 
     -- Emit a dedicated color update event so views can update only their color previews
     if Addon.EventBus and Addon.EventBus.Emit then
@@ -211,6 +270,168 @@ function Config:GetColorOptionList()
 end
 
 -------------------------------------------------------------------
+-- PROFILE API
+-------------------------------------------------------------------
+
+function Config:GetActiveProfileName()
+    if Addon.ProfileManager and Addon.ProfileManager.GetActiveProfileKey then
+        return Addon.ProfileManager:GetActiveProfileKey()
+    end
+    return nil
+end
+
+function Config:GetProfileNames()
+    if Addon.ProfileManager and Addon.ProfileManager.GetProfileNames then
+        return Addon.ProfileManager:GetProfileNames()
+    end
+    return {}
+end
+
+function Config:NotifyProfileChanged()
+    -- Combat lockdown protection: defer UI changes if in combat
+    if InCombatLockdown() then
+        if not self._deferredProfileChange then
+            self._deferredProfileChange = true
+            local deferredConfig = self
+            C_Timer.After(0.1, function()
+                -- Register for combat end event
+                local frame = CreateFrame("Frame")
+                frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+                frame:SetScript("OnEvent", function()
+                    frame:UnregisterAllEvents()
+                    deferredConfig._deferredProfileChange = nil
+                    deferredConfig:NotifyProfileChanged()
+                end)
+            end)
+        end
+        return
+    end
+
+    local currentStyle = self:GetOptionValue("barStyle") or ((Addon.defaults and Addon.defaults.barStyle) or "classic")
+
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        Addon.BarManager.currentStyle = nil
+        Addon.BarManager:SetStyle(currentStyle)
+
+        local bar = Addon.BarManager.GetCurrentFrame and Addon.BarManager:GetCurrentFrame() or nil
+        if bar and bar.UpdatePositionMode and currentStyle == "classic" then
+            local newMode = self:GetOptionValue("classicBarDraggable") and "DRAGGABLE" or "STATIC"
+            bar:UpdatePositionMode(newMode)
+        end
+        if bar and bar.RestorePosition then
+            bar:RestorePosition()
+        elseif bar and bar.ApplyInitialPosition then
+            bar:ApplyInitialPosition()
+        end
+        if bar and bar.RepositionSegments then
+            bar:RepositionSegments()
+        end
+    end
+
+    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+        Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+    end
+
+    if Addon.MinimapButton and Addon.MinimapButton.SetEnabled then
+        Addon.MinimapButton:SetEnabled(self:GetOptionValue("showMinimapButton") and true or false)
+    end
+
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
+    end
+
+    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+        Addon.ReputationSession:EmitUpdate()
+    end
+
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
+    end
+
+    if Addon.Stats and Addon.Stats.Update then
+        Addon.Stats:Update()
+    end
+end
+
+function Config:SelectProfile(profileName)
+    if not (Addon.ProfileManager and Addon.ProfileManager.SetAssignedProfileKey) then
+        return false, "Profile manager unavailable"
+    end
+
+    -- Prevent race conditions: block multiple concurrent profile changes
+    if self._profileChangingInProgress then
+        return false, "Profile change in progress"
+    end
+
+    local oldProfile = self:GetActiveProfileName()
+    local success, err = Addon.ProfileManager:SetAssignedProfileKey(profileName, false)
+    if not success then
+        return false, err
+    end
+
+    if oldProfile ~= self:GetActiveProfileName() then
+        self._profileChangingInProgress = true
+        self:NotifyProfileChanged()
+        self._profileChangingInProgress = false
+    end
+
+    return true
+end
+
+function Config:CreateProfile(name, switchToProfile)
+    if not (Addon.ProfileManager and Addon.ProfileManager.CreateProfile) then
+        return false, "Profile manager unavailable"
+    end
+
+    local success, err = Addon.ProfileManager:CreateProfile(name)
+    if not success then
+        return false, err
+    end
+
+    if switchToProfile == nil or switchToProfile == true then
+        return self:SelectProfile(name)
+    end
+
+    return true
+end
+
+function Config:RenameProfile(oldName, newName)
+    if not (Addon.ProfileManager and Addon.ProfileManager.RenameProfile) then
+        return false, "Profile manager unavailable"
+    end
+
+    local activeProfile = self:GetActiveProfileName()
+    local success, err = Addon.ProfileManager:RenameProfile(oldName, newName)
+    if not success then
+        return false, err
+    end
+
+    if activeProfile == oldName then
+        self:NotifyProfileChanged()
+    end
+
+    return true
+end
+
+function Config:DeleteProfile(name)
+    if not (Addon.ProfileManager and Addon.ProfileManager.DeleteProfile) then
+        return false, "Profile manager unavailable"
+    end
+
+    local activeProfile = self:GetActiveProfileName()
+    local success, err = Addon.ProfileManager:DeleteProfile(name)
+    if not success then
+        return false, err
+    end
+
+    if activeProfile == name then
+        self:NotifyProfileChanged()
+    end
+
+    return true
+end
+
+-------------------------------------------------------------------
 -- SIDE EFFECTS
 -------------------------------------------------------------------
 
@@ -218,7 +439,7 @@ function Config:ApplyOptionSideEffects(key)
     -- Apply primary bar style switch BEFORE emitting CONFIG_UPDATED so that
     -- secondary bars can attach to the new frame in the same event cycle.
     if key == "barStyle" then
-        local newStyle = Addon.db.barStyle
+        local newStyle = self:GetOptionValue("barStyle")
         if Addon.BarManager and Addon.BarManager.SetStyle then
             Addon.BarManager:SetStyle(newStyle)
         end
@@ -249,7 +470,7 @@ function Config:ApplyOptionSideEffects(key)
         local session = Addon.db.sessionData
         if
             session and (session.lastTimePlayedRequest or 0) == 0 and
-                (Addon.db.showLevelTimeText or Addon.db.showSessionTimeText)
+                (self:GetOptionValue("showLevelTimeText") or self:GetOptionValue("showSessionTimeText"))
          then
             if Addon.Session and Addon.Session.RequestTimePlayed then
                 Addon.Session:RequestTimePlayed()
@@ -285,11 +506,11 @@ function Config:ApplyOptionSideEffects(key)
 
     -- Classic bar draggable mode changed
     if key == "classicBarDraggable" then
-        local currentStyle = Addon.db and Addon.db.barStyle
+        local currentStyle = self:GetOptionValue("barStyle")
         if currentStyle == "classic" and Addon.BarManager and Addon.BarManager.GetCurrentFrame then
             local bar = Addon.BarManager:GetCurrentFrame()
             if bar and bar.UpdatePositionMode then
-                local newMode = Addon.db.classicBarDraggable and "DRAGGABLE" or "STATIC"
+                local newMode = self:GetOptionValue("classicBarDraggable") and "DRAGGABLE" or "STATIC"
                 bar:UpdatePositionMode(newMode)
             end
         end

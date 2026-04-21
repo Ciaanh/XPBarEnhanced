@@ -7,6 +7,16 @@ Addon.UI.SharedStyleHelpers = Addon.UI.SharedStyleHelpers or {}
 
 local Shared = Addon.UI.SharedStyleHelpers
 
+local function GetOptionValue(key, fallback)
+    if Addon.Config and Addon.Config.GetOptionValue then
+        local value = Addon.Config:GetOptionValue(key)
+        if value ~= nil then
+            return value
+        end
+    end
+    return fallback
+end
+
 -- Standard availability/visibility transition for secondary bars.
 -- Returns true when the style should continue with paint operations.
 function Shared.BeginSecondaryRender(frame, context)
@@ -174,7 +184,7 @@ end
 
 function Shared.AddSecondaryTooltipMoveHint(context)
     local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
-    local isAttachedToPrimary = Addon.db and Addon.db.secondaryBarsAttached and primaryFrame ~= nil
+    local isAttachedToPrimary = GetOptionValue("secondaryBarsAttached", true) and primaryFrame ~= nil
     if not isAttachedToPrimary then
         GameTooltip:AddLine("Shift+Drag to move", 0.4, 0.4, 0.4)
     end
@@ -191,11 +201,11 @@ function Shared.BeginSecondaryShiftDrag(frame)
         return false
     end
 
-    if not Addon.db or Addon.db.barLocked then
+    if GetOptionValue("barLocked", false) then
         return false
     end
 
-    if Addon.db.secondaryBarsAttached then
+    if GetOptionValue("secondaryBarsAttached", true) then
         local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
         if primaryFrame then
             return false
@@ -218,7 +228,7 @@ function Shared.EndSecondaryDrag(frame)
 
     frame.__isDragging = nil
 
-    if Addon.db and Addon.db.secondaryBarsAttached then
+    if GetOptionValue("secondaryBarsAttached", true) then
         local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
         if primaryFrame then
             frame:StopMovingOrSizing()
@@ -280,8 +290,7 @@ function Shared.HandleStandardSecondaryMouseUp(frame, button, onRightClick)
 end
 
 function Shared.BuildConfiguredStyleOffsetFallback(defaultPoint, defaultX, defaultY, yOffset)
-    local db = Addon and Addon.db
-    local configuredStyle = db and db.barStyle
+    local configuredStyle = GetOptionValue("barStyle")
     if configuredStyle and configuredStyle ~= "none" then
         local barDefPos = Addon.defaults
             and Addon.defaults.barPositions
@@ -307,8 +316,7 @@ function Shared.BuildConfiguredStyleOffsetFallback(defaultPoint, defaultX, defau
 end
 
 function Shared.BuildConfiguredStyleCenterFallback(defaultX, defaultY, xOffset, yOffset)
-    local db = Addon and Addon.db
-    local configuredStyle = db and db.barStyle
+    local configuredStyle = GetOptionValue("barStyle")
     if configuredStyle and configuredStyle ~= "none" then
         local barDefPos = Addon.defaults
             and Addon.defaults.barPositions

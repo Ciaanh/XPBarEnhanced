@@ -53,6 +53,7 @@ core\config\Config.lua
 core\config\ConfigHelper.lua
 
 core\services\Database.lua
+core\services\ProfileManager.lua
 core\services\Session.lua
 core\services\ReputationSession.lua
 core\services\ContextBuilder.lua

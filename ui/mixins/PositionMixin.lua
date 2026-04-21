@@ -3,6 +3,18 @@
 
 local Addon = XPBarEnhanced
 
+local function GetSettingsTable(key, createIfMissing)
+	if Addon.Config and Addon.Config.GetSettingsTable then
+		return Addon.Config:GetSettingsTable(key, createIfMissing)
+	end
+
+	Addon.db = Addon.db or {}
+	if Addon.db[key] == nil and createIfMissing then
+		Addon.db[key] = {}
+	end
+	return Addon.db[key]
+end
+
 -------------------------------------------------------------------
 -- GLOBAL POSITION MIXIN
 -------------------------------------------------------------------
@@ -94,9 +106,7 @@ end
 
 --- Save current position to SavedVariables
 function PositionMixin:SavePosition()
-	if not Addon.db.barPositions then
-		Addon.db.barPositions = {}
-	end
+	local positions = GetSettingsTable("barPositions", true)
 
 	-- Get first anchor point
 	local point, relativeTo, relativePoint, x, y = self:GetPoint(1)
@@ -105,7 +115,7 @@ function PositionMixin:SavePosition()
 	end
 
 	-- Save position
-	Addon.db.barPositions[self.__position_key] = {
+	positions[self.__position_key] = {
 		point = point,
 		relativeTo = "UIParent", -- Always save relative to UIParent for consistency
 		relativePoint = relativePoint,
@@ -117,13 +127,14 @@ end
 --- Restore saved position from SavedVariables
 function PositionMixin:RestorePosition()
 	-- Check if saved position exists
-	if not Addon.db or not Addon.db.barPositions then
+	local positions = GetSettingsTable("barPositions")
+	if not positions then
 		-- No saved positions, use default
 		self:SetDefaultDraggablePosition()
 		return
 	end
 
-	local savedPos = Addon.db.barPositions[self.__position_key]
+	local savedPos = positions[self.__position_key]
 	if not savedPos or not savedPos.point then
 		-- No saved position for this key, use default
 		self:SetDefaultDraggablePosition()
@@ -164,8 +175,9 @@ end
 
 --- Clear saved position
 function PositionMixin:ClearSavedPosition()
-	if Addon.db and Addon.db.barPositions then
-		Addon.db.barPositions[self.__position_key] = nil
+	local positions = GetSettingsTable("barPositions")
+	if positions then
+		positions[self.__position_key] = nil
 	end
 end
 
@@ -215,10 +227,8 @@ function PositionMixin:UpdatePositionMode(newMode)
 		-- Save current STATIC position as initial draggable position
 		local point, relativeTo, relativePoint, x, y = self:GetPoint(1)
 		if point then
-			if not Addon.db.barPositions then
-				Addon.db.barPositions = {}
-			end
-			Addon.db.barPositions[self.__position_key] = {
+			local positions = GetSettingsTable("barPositions", true)
+			positions[self.__position_key] = {
 				point = point,
 				relativeTo = "UIParent",
 				relativePoint = relativePoint or point,

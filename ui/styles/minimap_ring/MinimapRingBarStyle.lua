@@ -3,6 +3,7 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
 end
 
 local Addon = XPBarEnhanced
+local Config = Addon.Config
 local StyleHelpers = Addon.UI.StyleHelpers
 
 local function GetSharedStyleHelpers()
@@ -201,8 +202,9 @@ end
 
 function MinimapRingBarStyleTemplate:GetDisplaySegmentCount()
     local count = DEFAULT_SEGMENTS
-    if Addon and Addon.db and type(Addon.db.minimapRingSegments) == "number" then
-        count = Addon.db.minimapRingSegments
+    local saved = Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingSegments")
+    if type(saved) == "number" then
+        count = saved
     end
 
     count = math.floor(tonumber(count) or DEFAULT_SEGMENTS)
@@ -211,21 +213,23 @@ end
 
 function MinimapRingBarStyleTemplate:GetSegmentWidth(displayCount)
     local base = 5
-    if Addon and Addon.db and type(Addon.db.minimapRingSegmentWidth) == "number" then
-        base = math.max(2, math.min(10, Addon.db.minimapRingSegmentWidth))
+    local saved = Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingSegmentWidth")
+    if type(saved) == "number" then
+        base = math.max(2, math.min(10, saved))
     end
     return base * (REFERENCE_SEGMENT_COUNT / displayCount)
 end
 
 function MinimapRingBarStyleTemplate:GetSegmentHeight()
-    if Addon and Addon.db and type(Addon.db.minimapRingSegmentHeight) == "number" then
-        return math.max(5, math.min(25, Addon.db.minimapRingSegmentHeight))
+    local saved = Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingSegmentHeight")
+    if type(saved) == "number" then
+        return math.max(5, math.min(25, saved))
     end
     return MINIMAP_RING_STYLE.SEGMENT_HEIGHT_PX
 end
 
 function MinimapRingBarStyleTemplate:GetSegmentTexturePath()
-    if Addon and Addon.db and Addon.db.circularUseTexture == false then
+    if Config and Config.GetOptionValue and Config:GetOptionValue("circularUseTexture") == false then
         return MINIMAP_RING_STYLE.SEGMENT_TEXTURE_PATH_SOLID
     end
 
@@ -246,7 +250,7 @@ function MinimapRingBarStyleTemplate:CreateRingSegments()
 end
 
 function MinimapRingBarStyleTemplate:GetRingPadding()
-    local padding = Addon and Addon.db and Addon.db.minimapRingPadding or 14
+    local padding = Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingPadding") or 14
     padding = math.floor(tonumber(padding) or 14)
     return math.max(0, math.min(32, padding))
 end
@@ -256,7 +260,7 @@ function MinimapRingBarStyleTemplate:ComputeRingRadius()
 end
 
 function MinimapRingBarStyleTemplate:GetBagAnchorOffset()
-    local angleDegrees = Addon and Addon.db and Addon.db.minimapRingBagAngle or 315
+    local angleDegrees = Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingBagAngle") or 315
     local angleRadians = math.rad(angleDegrees)
     local distance = self:ComputeRingRadius() + 18
     return math.cos(angleRadians) * distance, math.sin(angleRadians) * distance

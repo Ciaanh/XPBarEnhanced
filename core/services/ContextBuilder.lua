@@ -24,6 +24,7 @@ end
 ---@return table staticConfig Fresh configuration with current settings
 local function BuildDBConfig()
 	local db = Addon and Addon.db
+	local config = Addon and Addon.Config
 
 	if not db then
 		return {}
@@ -31,9 +32,17 @@ local function BuildDBConfig()
 
 	local cfg = {}
 
+	local function getOptionValue(key)
+		if config and config.GetOptionValue then
+			return config:GetOptionValue(key)
+		end
+		return db[key]
+	end
+
 	local function setIfPresent(key)
-		if db[key] ~= nil then
-			cfg[key] = db[key]
+		local value = getOptionValue(key)
+		if value ~= nil then
+			cfg[key] = value
 		end
 	end
 
@@ -54,8 +63,9 @@ local function BuildDBConfig()
 	setIfPresent("showQuestPercent")
 
 	-- Configuration values
-	if db.percentDecimals ~= nil then
-		cfg.percentDecimals = db.percentDecimals
+	local percentDecimals = getOptionValue("percentDecimals")
+	if percentDecimals ~= nil then
+		cfg.percentDecimals = percentDecimals
 	end
 	setIfPresent("abbreviateNumbers")
 	setIfPresent("flashOnGain")

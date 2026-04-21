@@ -9,6 +9,16 @@ local StyleBuilder = XPBarStyleBuilder
 local EventNames = Addon.EventNames
 local Utils = Addon.Utils
 
+local function GetOptionValue(key, fallback)
+    if Addon.Config and Addon.Config.GetOptionValue then
+        local value = Addon.Config:GetOptionValue(key)
+        if value ~= nil then
+            return value
+        end
+    end
+    return fallback
+end
+
 local function ShouldSecondarySuppressMainContainer()
     local manager = Addon.SecondaryBarManager
     if manager and manager.ShouldSuppressMainContainer then
@@ -32,9 +42,8 @@ function BarManager:IsCustomStyle(style)
 end
 
 function BarManager:Initialize()
-    local db = Addon.db or {}
     local defaultStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
-    local style = db.barStyle or defaultStyle
+    local style = GetOptionValue("barStyle", defaultStyle)
 
     -- Install hooks before SetStyle so they are in place when bars are hidden
     self:InstallBlizzardBarHooks()
@@ -262,9 +271,8 @@ function BarManager:OnEnteringWorld()
 end
 
 function BarManager:TriggerStyleCelebration()
-    local db = Addon.db or {}
     -- Only trigger when animations are enabled
-    if db.enableAnimations == false then return end
+    if GetOptionValue("enableAnimations", true) == false then return end
 
     local frame = self:GetCurrentFrame()
     if frame and frame.OnLevelUpCelebration then
@@ -276,8 +284,7 @@ function BarManager:OnLevelUp(newLevel)
     -- Re-evaluate style in case player hit max level.
     -- Use the level passed from PLAYER_LEVEL_UP event for accuracy.
     local level = newLevel or (UnitLevel("player") or 0)
-    local db = Addon.db or {}
-    local userStyle = db.barStyle or "classic"
+    local userStyle = GetOptionValue("barStyle", "classic")
 
     -- Fire style-specific celebration hook before switching style
     self:TriggerStyleCelebration()
