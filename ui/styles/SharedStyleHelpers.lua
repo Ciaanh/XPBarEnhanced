@@ -2,20 +2,11 @@
 -- Cross-style helpers used by both primary and secondary style implementations.
 
 local Addon = XPBarEnhanced
+local Utils = Addon.Utils
 Addon.UI = Addon.UI or {}
 Addon.UI.SharedStyleHelpers = Addon.UI.SharedStyleHelpers or {}
 
 local Shared = Addon.UI.SharedStyleHelpers
-
-local function GetOptionValue(key, fallback)
-    if Addon.Config and Addon.Config.GetOptionValue then
-        local value = Addon.Config:GetOptionValue(key)
-        if value ~= nil then
-            return value
-        end
-    end
-    return fallback
-end
 
 -- Standard availability/visibility transition for secondary bars.
 -- Returns true when the style should continue with paint operations.
@@ -184,7 +175,7 @@ end
 
 function Shared.AddSecondaryTooltipMoveHint(context)
     local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
-    local isAttachedToPrimary = GetOptionValue("secondaryBarsAttached", true) and primaryFrame ~= nil
+    local isAttachedToPrimary = (Utils and Utils.GetOptionValue or function() return true end)("secondaryBarsAttached", true) and primaryFrame ~= nil
     if not isAttachedToPrimary then
         GameTooltip:AddLine("Shift+Drag to move", 0.4, 0.4, 0.4)
     end
@@ -201,11 +192,11 @@ function Shared.BeginSecondaryShiftDrag(frame)
         return false
     end
 
-    if GetOptionValue("barLocked", false) then
+    if (Utils and Utils.GetOptionValue or function() return false end)("barLocked", false) then
         return false
     end
 
-    if GetOptionValue("secondaryBarsAttached", true) then
+    if (Utils and Utils.GetOptionValue or function() return true end)("secondaryBarsAttached", true) then
         local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
         if primaryFrame then
             return false
@@ -228,7 +219,7 @@ function Shared.EndSecondaryDrag(frame)
 
     frame.__isDragging = nil
 
-    if GetOptionValue("secondaryBarsAttached", true) then
+    if (Utils and Utils.GetOptionValue or function() return true end)("secondaryBarsAttached", true) then
         local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
         if primaryFrame then
             frame:StopMovingOrSizing()
@@ -290,7 +281,7 @@ function Shared.HandleStandardSecondaryMouseUp(frame, button, onRightClick)
 end
 
 function Shared.BuildConfiguredStyleOffsetFallback(defaultPoint, defaultX, defaultY, yOffset)
-    local configuredStyle = GetOptionValue("barStyle")
+    local configuredStyle = (Utils and Utils.GetOptionValue or function() end)("barStyle")
     if configuredStyle and configuredStyle ~= "none" then
         local barDefPos = Addon.defaults
             and Addon.defaults.barPositions
@@ -316,7 +307,7 @@ function Shared.BuildConfiguredStyleOffsetFallback(defaultPoint, defaultX, defau
 end
 
 function Shared.BuildConfiguredStyleCenterFallback(defaultX, defaultY, xOffset, yOffset)
-    local configuredStyle = GetOptionValue("barStyle")
+    local configuredStyle = (Utils and Utils.GetOptionValue or function() end)("barStyle")
     if configuredStyle and configuredStyle ~= "none" then
         local barDefPos = Addon.defaults
             and Addon.defaults.barPositions

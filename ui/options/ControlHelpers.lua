@@ -237,6 +237,7 @@ function ControlHelpers.SetupSlider(selfFrame, sliderFrame, key, detail)
 end
 
 -- Two-column dropdown setup (WowStyle1DropdownTemplate)
+-- Uses radio buttons to show current selection with visual indicator
 function ControlHelpers.SetupProperDropdown(selfFrame, row, key, detail)
     if not row or not row.Dropdown or not detail then
         return
@@ -262,34 +263,39 @@ function ControlHelpers.SetupProperDropdown(selfFrame, row, key, detail)
         end
     end
 
-    if not dropdown.initialized then
-        if initialText and dropdown.SetDefaultText then
-            dropdown:SetDefaultText(initialText)
-        end
-
-        dropdown:SetupMenu(
-            function(dropdown, rootDescription)
-                if not detail.options then
-                    return
-                end
-                for _, option in ipairs(detail.options) do
-                    rootDescription:CreateButton(option.label, function()
-                        Config:SetOptionKey(key, option.value, true)
-                        local controller = Addon.Options
-                        if controller and controller.OnOptionChanged then
-                            controller:OnOptionChanged(key)
-                        end
-                    end)
-                end
-            end
-        )
-
-        dropdown.initialized = true
-    else
-        if initialText and dropdown.SetDefaultText then
-            dropdown:SetDefaultText(initialText)
-        end
+    -- Always rebuild menu on refresh to show correct selection
+    if initialText and dropdown.SetDefaultText then
+        dropdown:SetDefaultText(initialText)
     end
+
+    dropdown:SetupMenu(
+        function(dropdown, rootDescription)
+            if not detail.options then
+                return
+            end
+            
+            for _, option in ipairs(detail.options) do
+                -- Use CreateRadio to show radio button with selection indicator
+                -- isSelected is a function that returns true if this option is current
+                local isSelectedFunc = function()
+                    local current = Config:GetOptionValue(key)
+                    return current == option.value
+                end
+                
+                -- Callback when option is selected
+                local onSelectFunc = function()
+                    Config:SetOptionKey(key, option.value, true)
+                    local controller = Addon.Options
+                    if controller and controller.OnOptionChanged then
+                        controller:OnOptionChanged(key)
+                    end
+                end
+                
+                -- Create radio button option (shows filled/unfilled radio based on selection)
+                rootDescription:CreateRadio(option.label, isSelectedFunc, onSelectFunc)
+            end
+        end
+    )
 
     selfFrame.dropdowns = selfFrame.dropdowns or {}
     selfFrame.dropdowns[key] = dropdown

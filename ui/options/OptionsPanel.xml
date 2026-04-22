@@ -2,7 +2,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\..\Blizzard_SharedXML\UI.xsd">
 
-	<Script file="Options.lua"/>
+    <Script file="Options.lua"/>
 
     <Frame name="XPBarEnhancedOptionsPanel" hidden="true" mixin="XPBarEnhancedOptionsMixin">
         <Size x="700" y="640"/>
@@ -682,12 +682,13 @@
                     <Anchor point="LEFT" relativeKey="$parent.ResetSettingsButton" relativePoint="RIGHT" x="10" y="0"/>
                 </Anchors>
             </Button>
-            <Button parentKey="ResetStatsButton" inherits="UIPanelButtonTemplate">
-                <Size x="150" y="22"/>
+
+            <Frame parentKey="ProfileSelectorRow" inherits="ProfileSelectorFooterTemplate">
                 <Anchors>
-                    <Anchor point="LEFT" relativeKey="$parent.ResetBarPositionButton" relativePoint="RIGHT" x="10" y="0"/>
+                    <Anchor point="LEFT" relativeKey="$parent.ResetBarPositionButton" relativePoint="RIGHT" x="25" y="0"/>
                 </Anchors>
-            </Button>
+            </Frame>
+
         </Frames>
         <Scripts>
             <OnLoad method="OnLoad"/>

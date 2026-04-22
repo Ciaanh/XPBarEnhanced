@@ -2,16 +2,7 @@
 -- Behavior mixin for mouse handling and click interactions (non-tooltip)
 
 local Addon = XPBarEnhanced
-
-local function GetOptionValue(key, fallback)
-	if Addon.Config and Addon.Config.GetOptionValue then
-		local value = Addon.Config:GetOptionValue(key)
-		if value ~= nil then
-			return value
-		end
-	end
-	return fallback
-end
+local Utils = Addon.Utils
 
 -------------------------------------------------------------------
 -- GLOBAL INTERACTION MIXIN
@@ -41,7 +32,7 @@ function InteractionMixin:OnMouseDown(button)
 	if button == "LeftButton" and IsShiftKeyDown() then
 		if self.GetPositionMode then
 			local positionMode = self:GetPositionMode()
-			local locked = GetOptionValue("barLocked", false)
+			local locked = Utils and Utils.GetOptionValue("barLocked", false) or false
 			local isMovable = self:IsMovable()
 			
 			if positionMode == "DRAGGABLE" and isMovable and not locked then
@@ -105,7 +96,11 @@ function InteractionMixin:OnAltClick(button)
 	if Addon and Addon.Options and Addon.Options.Open then
 		Addon.Options:Open()
 	elseif Settings and Settings.OpenToCategory then
-		Settings.OpenToCategory(Addon.OptionsCategory)
+		local category = (Addon and Addon.Options and Addon.Options.category) or Addon.OptionsCategory
+		local id = category and ((category.GetID and category:GetID()) or category.ID or category)
+		if id then
+			Settings.OpenToCategory(id)
+		end
 	end
 end
 

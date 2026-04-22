@@ -41,7 +41,11 @@ local function handleOptions()
     if Addon and Addon.Options and Addon.Options.Open then
 		Addon.Options:Open()
 	elseif Settings and Settings.OpenToCategory then
-		Settings.OpenToCategory(Addon.OptionsCategory)
+        local category = (Addon and Addon.Options and Addon.Options.category) or Addon.OptionsCategory
+        local id = category and ((category.GetID and category:GetID()) or category.ID or category)
+        if id then
+            Settings.OpenToCategory(id)
+        end
 	end
 end
 

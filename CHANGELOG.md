@@ -4,6 +4,14 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-04-22
+
+### Added
+
+- **Profile System**: New profile workflow in the options panel, including profile selection, creation, rename, and delete.
+- **Blizzard-Style Profile Menu**: Profiles dropdown with radio selection plus inline row actions and an in-menu New Profile action.
+- **Profile-Aware Settings Access**: Added centralized profile-aware option lookups via `Utils.GetOptionValue` and migrated key callers to the shared helper.
+
 ## [1.1.2] - 2026-04-19
 
 ### Fixed
