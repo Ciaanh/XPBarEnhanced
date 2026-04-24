@@ -202,6 +202,9 @@ local ROUTER_DISPATCH = {
         DispatchReputationVisibilityRefresh()
         DispatchQuestEvent("ZONE_CHANGED_NEW_AREA")
     end,
+    GROUP_ROSTER_UPDATE = function()
+        DispatchReputationVisibilityRefresh()
+    end,
     UNIT_QUEST_LOG_CHANGED = function()
         DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")
     end,
