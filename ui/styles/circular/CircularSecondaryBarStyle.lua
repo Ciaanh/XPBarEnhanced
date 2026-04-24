@@ -135,8 +135,80 @@ function StyleMixin:GetInitialContext()
     return SharedStyleHelpers.GetSecondaryInitialContext()
 end
 
+function StyleMixin:SetDetachedInteractionEnabled(enabled)
+    self._detachedInteractionEnabled = enabled and true or false
+    if self.EnableMouse then
+        self:EnableMouse(self._detachedInteractionEnabled)
+    end
+end
+
 function StyleMixin:OnSecondaryLoad()
     self:_CreateSegments()
+    self:ConfigureDragSupport()
+    self:SetDetachedInteractionEnabled(false)
+end
+
+function StyleMixin:OnEnter()
+    if not self._detachedInteractionEnabled then
+        return
+    end
+
+    local context = self._lastContext
+    if not context or not context.isAvailable then
+        return
+    end
+
+    if SharedStyleHelpers.ShowSecondaryTooltip then
+        SharedStyleHelpers.ShowSecondaryTooltip(self, context, "ANCHOR_TOP")
+    elseif GameTooltip then
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(context.name or "", 1, 1, 1)
+    end
+
+    if GameTooltip then
+        GameTooltip:AddLine("Right-click: open Reputation", 0.4, 0.4, 0.4)
+        GameTooltip:Show()
+    end
+end
+
+function StyleMixin:OnLeave()
+    if GameTooltip then
+        GameTooltip:Hide()
+    end
+end
+
+function StyleMixin:OnMouseUp(button)
+    if not self._detachedInteractionEnabled then
+        return
+    end
+
+    if button == "RightButton" then
+        if SharedStyleHelpers.OpenReputationPanel then
+            SharedStyleHelpers.OpenReputationPanel()
+        elseif ToggleCharacter then
+            ToggleCharacter("ReputationFrame")
+        end
+    end
+end
+
+function StyleMixin:OnDragStart()
+    if not self._detachedInteractionEnabled then
+        return
+    end
+
+    if SharedStyleHelpers.BeginSecondaryShiftDrag then
+        SharedStyleHelpers.BeginSecondaryShiftDrag(self)
+    end
+end
+
+function StyleMixin:OnDragStop()
+    if not self._detachedInteractionEnabled then
+        return
+    end
+
+    if SharedStyleHelpers.EndSecondaryDrag then
+        SharedStyleHelpers.EndSecondaryDrag(self)
+    end
 end
 
 function StyleMixin:_CreateSegments()

@@ -656,9 +656,20 @@ local function GetReputationContext()
 end
 
 local function IsReputationSecondaryActive()
-    return Addon.SecondaryBarManager
-        and Addon.SecondaryBarManager._currentStyle == "circular"
-        and Addon.SecondaryBarManager:GetCurrentFrame() ~= nil
+    if not Addon.SecondaryBarManager or Addon.SecondaryBarManager._currentStyle ~= "circular" then
+        return false
+    end
+
+    local secondaryFrame = Addon.SecondaryBarManager:GetCurrentFrame()
+    if not secondaryFrame then
+        return false
+    end
+
+    if secondaryFrame.IsDetachedInteractionEnabled and secondaryFrame:IsDetachedInteractionEnabled() then
+        return false
+    end
+
+    return true
 end
 
 local function OpenReputationPanel()

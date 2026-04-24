@@ -52,6 +52,14 @@ function SecondaryBaseMixin:OnLoad()
     self:ApplyInitialPosition()
 end
 
+function SecondaryBaseMixin:SetDetachedInteractionEnabled(enabled)
+    self._detachedInteractionEnabled = enabled and true or false
+end
+
+function SecondaryBaseMixin:IsDetachedInteractionEnabled()
+    return self._detachedInteractionEnabled == true
+end
+
 function SecondaryBaseMixin:ApplyInitialPosition()
     self:ClearAllPoints()
 

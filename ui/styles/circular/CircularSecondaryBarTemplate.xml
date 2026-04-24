@@ -5,12 +5,17 @@
 
     <Script file="CircularSecondaryBarStyle.lua"/>
 
-    <Frame name="CircularReputationBarTemplate" virtual="true" mixin="XPBarCircularReputationMixin" frameStrata="MEDIUM" fixedFrameStrata="true" enableMouse="false">
+    <Frame name="CircularReputationBarTemplate" virtual="true" mixin="XPBarCircularReputationMixin" frameStrata="MEDIUM" fixedFrameStrata="true" enableMouse="true">
         <Size x="256" y="256"/>
         <Scripts>
             <OnLoad method="OnLoad"/>
             <OnShow method="OnShow"/>
             <OnHide method="OnHide"/>
+            <OnEnter method="OnEnter"/>
+            <OnLeave method="OnLeave"/>
+            <OnMouseUp method="OnMouseUp"/>
+            <OnDragStart method="OnDragStart"/>
+            <OnDragStop method="OnDragStop"/>
         </Scripts>
     </Frame>
 

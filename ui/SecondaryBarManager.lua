@@ -74,6 +74,12 @@ local function IsCustomStyle(style)
     return style and TEMPLATE_MAP[style] ~= nil
 end
 
+local function SetDetachedInteractionState(frame, detached)
+    if frame and frame.SetDetachedInteractionEnabled then
+        frame:SetDetachedInteractionEnabled(detached)
+    end
+end
+
 -- Returns true when our secondary bar is active at max level and Blizzard
 -- would otherwise promote the reputation bar into the main status bar container.
 local function ShouldSuppressMainContainer()
@@ -184,12 +190,17 @@ function Manager:ReapplyAttachedPositions()
         canAttachToPrimary = frame:ShouldAttachToPrimary() ~= false
     end
 
-    local forceAttachedStyle = (self._currentStyle == "circular")
-    local isAttachedAndPrimaryVisible = (forceAttachedStyle or GetOptionValue("secondaryBarsAttached", true)) and primaryFrame ~= nil and canAttachToPrimary
+    local isAttachedAndPrimaryVisible = GetOptionValue("secondaryBarsAttached", true) and primaryFrame ~= nil and canAttachToPrimary
+
+    SetDetachedInteractionState(frame, not isAttachedAndPrimaryVisible)
 
     if not isAttachedAndPrimaryVisible then
         if frame.ApplyInitialPosition then
             frame:ApplyInitialPosition()
+        end
+        -- Enable dragging when the bar is detached (e.g., at max level when primary bar is hidden)
+        if frame.ConfigureDragSupport then
+            frame:ConfigureDragSupport()
         end
         return
     end
