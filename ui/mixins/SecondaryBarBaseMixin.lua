@@ -95,6 +95,10 @@ function SecondaryBaseMixin:OnShow()
 end
 
 function SecondaryBaseMixin:OnHide()
+    if self.OnSecondaryHide then
+        self:OnSecondaryHide()
+    end
+
     self:StopTextTicker()
     self:Unsubscribe()
     if self._fadeAnim and self._fadeAnim:IsPlaying() then

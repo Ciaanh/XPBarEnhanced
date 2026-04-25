@@ -112,8 +112,7 @@ function MinimapRingBarStyleTemplate:OnHide()
     self:StopButtonScanTimer()
 
     if Addon.MinimapRingButtonCollection and Addon.MinimapRingButtonCollection.owner == self then
-        Addon.MinimapRingButtonCollection:Disable()
-        Addon.MinimapRingButtonCollection.owner = nil
+        Addon.MinimapRingButtonCollection:ReleaseOwner(self)
     end
 
     if XPBarMixinBase and XPBarMixinBase.OnHide then
@@ -131,22 +130,20 @@ end
 -- their minimap button after our OnShow (delayed load, late ADDON_LOADED) are
 -- still picked up without requiring a manual /reload.
 function MinimapRingBarStyleTemplate:StartButtonScanTimer()
-    self:StopButtonScanTimer()
-    self._buttonScanTicker = C_Timer.NewTicker(3, function()
-        if not self or not self:IsShown() then
-            self:StopButtonScanTimer()
-            return
-        end
-        if Addon.db and Addon.db.minimapRingCollectButtons then
-            self:UpdateButtonCollection(true)
-        end
+    local collector = Addon.MinimapRingButtonCollection
+    if not collector then
+        return
+    end
+
+    collector:StartOwnerScanTimer(self, function()
+        return Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingCollectButtons")
     end)
 end
 
 function MinimapRingBarStyleTemplate:StopButtonScanTimer()
-    if self._buttonScanTicker then
-        self._buttonScanTicker:Cancel()
-        self._buttonScanTicker = nil
+    local collector = Addon.MinimapRingButtonCollection
+    if collector then
+        collector:StopOwnerScanTimer(self)
     end
 end
 
@@ -277,8 +274,9 @@ function MinimapRingBarStyleTemplate:QueueReposition()
         if self and self:IsShown() then
             self:ApplyStaticPosition()
             self:RepositionSegments()
-            self:UpdateButtonCollection(true)
         end
+        -- Always sync collection state even when hidden (handles disable while bar is gone).
+        self:UpdateButtonCollection(true)
     end)
 end
 
@@ -532,15 +530,14 @@ function MinimapRingBarStyleTemplate:UpdateButtonCollection(forceRefresh)
         return
     end
 
-    if Addon.db and Addon.db.minimapRingCollectButtons then
+    if Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingCollectButtons") then
         local needsRefresh = forceRefresh or collector.owner ~= self
         collector:SetOwner(self)
         if needsRefresh then
             collector:Refresh()
         end
     elseif collector.owner == self then
-        collector:Disable()
-        collector.owner = nil
+        collector:ReleaseOwner(self)
     end
 end
 
