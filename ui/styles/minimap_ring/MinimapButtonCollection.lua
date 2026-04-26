@@ -119,6 +119,20 @@ local function EnsureState(self)
     self.order = self.order or {}
 end
 
+-- Return (creating if needed) a scissored cell frame for slot `index`.
+-- Each cell uses SetClipsChildren so the button's ring overlay textures
+-- (e.g. MiniMap-TrackingBorder, ~53x53) cannot bleed over neighbouring slots.
+local function GetOrCreateCell(collection, index)
+    collection._cells = collection._cells or {}
+    local cell = collection._cells[index]
+    if not cell then
+        cell = CreateFrame("Frame", nil, collection.panel)
+        cell:SetClipsChildren(true)
+        collection._cells[index] = cell
+    end
+    return cell
+end
+
 --- Compute the angle (degrees, 0-360) from Minimap centre to the cursor,
 --- using the same maths as MinimapButton.lua.
 local function GetCursorAngle()
@@ -223,6 +237,43 @@ function Collection:SetOwner(owner)
     self:UpdateAnchor()
 end
 
+function Collection:ReleaseOwner(owner)
+    if self.owner == owner then
+        self:Disable()
+        self.owner = nil
+    end
+end
+
+function Collection:StartOwnerScanTimer(owner, shouldCollect)
+    self:StopOwnerScanTimer(owner)
+    if not owner then
+        return
+    end
+
+    owner._buttonScanTicker = C_Timer.NewTicker(3, function()
+        if not owner or not owner.IsShown or not owner:IsShown() then
+            self:StopOwnerScanTimer(owner)
+            return
+        end
+
+        local collectEnabled = true
+        if shouldCollect then
+            collectEnabled = shouldCollect() == true
+        end
+
+        if collectEnabled and owner.UpdateButtonCollection then
+            owner:UpdateButtonCollection(true)
+        end
+    end)
+end
+
+function Collection:StopOwnerScanTimer(owner)
+    if owner and owner._buttonScanTicker then
+        owner._buttonScanTicker:Cancel()
+        owner._buttonScanTicker = nil
+    end
+end
+
 function Collection:UpdateAnchor()
     if not self.owner or not self.bagButton or not self.panel then
         return
@@ -248,7 +299,9 @@ end
 function Collection:OnBagDragUpdate()
     if not self.owner then return end
     local angle = GetCursorAngle()
-    if Addon.db then
+    if Addon.Config and Addon.Config.SetOptionKey then
+        Addon.Config:SetOptionKey("minimapRingBagAngle", angle, true)
+    elseif Addon.db then
         Addon.db.minimapRingBagAngle = angle
     end
     self:UpdateAnchor()
@@ -272,8 +325,10 @@ function Collection:PrepareButton(button, state)
     state.originalHide = button.Hide
     state.originalClearAllPoints = button.ClearAllPoints
     state.originalSetPoint = button.SetPoint
+    state.originalSetAlpha = button.SetAlpha
     state.originalWidth = button:GetWidth() or DEFAULT_BUTTON_SIZE
     state.originalHeight = button:GetHeight() or DEFAULT_BUTTON_SIZE
+    state.originalAlpha = button:GetAlpha() or 1
     state.wasVisible = button:IsVisible()
 
     button.oshow = state.originalShow
@@ -303,6 +358,17 @@ function Collection:PrepareButton(button, state)
         if not state.managed then
             return state.originalSetPoint(frame, ...)
         end
+    end
+
+    -- While managed, suppress external alpha changes so addon OnUpdate handlers
+    -- cannot dim the button inside the collection panel.
+    button.SetAlpha = function(frame, value)
+        if not state.managed then
+            state.originalAlpha = value or 1
+            return state.originalSetAlpha(frame, value)
+        end
+        -- Track the intended alpha so we can restore it on release.
+        state.originalAlpha = value or 1
     end
 
     state.prepared = true
@@ -352,6 +418,7 @@ function Collection:RestoreButton(button)
     button.Hide = state.originalHide
     button.ClearAllPoints = state.originalClearAllPoints
     button.SetPoint = state.originalSetPoint
+    button.SetAlpha = state.originalSetAlpha
     button.oshow = nil
     button.ohide = nil
     button.oclearallpoints = nil
@@ -366,6 +433,7 @@ function Collection:RestoreButton(button)
     button:ClearAllPoints()
     button:SetPoint(state.point[1], state.point[2], state.point[3], state.point[4], state.point[5])
     button:SetSize(state.originalWidth, state.originalHeight)
+    button:SetAlpha(state.originalAlpha or 1)
 
     if state.wasVisible ~= false then
         button:Show()
@@ -414,6 +482,13 @@ function Collection:SetExpanded(expanded)
                 state.originalHide(button)
             end
         end
+        -- Hide any lingering cell frames (panel hide makes them invisible
+        -- but explicit hide keeps state consistent for next expand).
+        if self._cells then
+            for _, cell in ipairs(self._cells) do
+                cell:Hide()
+            end
+        end
     end
 end
 
@@ -455,13 +530,28 @@ function Collection:UpdateLayout()
             local x = PANEL_PAD + col * (BUTTON_SIZE + PANEL_SPACING)
             local y = -(PANEL_PAD + row * (BUTTON_SIZE + PANEL_SPACING))
 
-            -- Reparent to the panel so the button renders above the panel
-            -- background (fixes the strata coverage issue).
-            button:SetParent(self.panel)
+            -- Reparent into a scissored cell so the button's ring overlay
+            -- texture (MiniMap-TrackingBorder, ~53x53) is clipped to the
+            -- slot bounds and cannot bleed over neighbouring icons.
+            local cell = GetOrCreateCell(self, index)
+            cell:SetSize(BUTTON_SIZE, BUTTON_SIZE)
+            cell:ClearAllPoints()
+            cell:SetPoint("TOPLEFT", self.panel, "TOPLEFT", x, y)
+            cell:Show()
+
+            button:SetParent(cell)
             state.originalClearAllPoints(button)
-            state.originalSetPoint(button, "TOPLEFT", self.panel, "TOPLEFT", x, y)
+            state.originalSetPoint(button, "CENTER", cell, "CENTER", 0, 0)
             button:SetSize(BUTTON_SIZE, BUTTON_SIZE)
+            button:SetAlpha(1)
             state.originalShow(button)
+        end
+
+        -- Hide cell frames left over from a previous layout that had more buttons.
+        if self._cells then
+            for i = buttonCount + 1, #self._cells do
+                if self._cells[i] then self._cells[i]:Hide() end
+            end
         end
     end
 end

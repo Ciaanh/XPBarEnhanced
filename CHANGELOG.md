@@ -4,6 +4,21 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-04-22
+
+### Added
+
+- **Profile System**: New profile workflow in the options panel, including profile selection, creation, rename, and delete.
+- **Blizzard-Style Profile Menu**: Profiles dropdown with radio selection plus inline row actions and an in-menu New Profile action.
+- **Profile-Aware Settings Access**: Added centralized profile-aware option lookups via `Utils.GetOptionValue` and migrated key callers to the shared helper.
+
+### Fixed
+
+- **Reputation Bar at Max Level**: Secondary reputation bar now renders correctly when the player is at max level and the primary XP bar is hidden.
+- **Companion Detection in Delves**: Companion presence is now detected via party roster name match (`UnitName` on `partyN` slots) instead of the unreliable `C_DelvesUI.GetFactionForCompanion` path, which returned `nil` in all tested cases.
+- **Companion Bar Refresh on Roster Change**: `GROUP_ROSTER_UPDATE` now triggers a reputation visibility refresh so the companion bar appears and disappears correctly as Brann joins or leaves the delve group.
+- **Minimap Ring Button Collection**: Fixed button collection ownership and shared scan timer to prevent duplicate registrations and nil-reference errors.
+
 ## [1.1.2] - 2026-04-19
 
 ### Fixed

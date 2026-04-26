@@ -6,6 +6,16 @@ Addon.UI = Addon.UI or {}
 Addon.UI.StyleHelpers = Addon.UI.StyleHelpers or {}
 local StyleHelpers = Addon.UI.StyleHelpers
 
+local function GetOptionValue(key, fallback)
+    if Addon.Config and Addon.Config.GetOptionValue then
+        local value = Addon.Config:GetOptionValue(key)
+        if value ~= nil then
+            return value
+        end
+    end
+    return fallback
+end
+
 local FACTION_COLORS = {
     standard = {r = 0.70, g = 0.30, b = 0.85},
     friendship = {r = 0.20, g = 0.85, b = 0.30},
@@ -47,7 +57,7 @@ function StyleHelpers.BuildTooltipProgressText(context)
 end
 
 function StyleHelpers.GetMinimapRingSegmentHeight()
-    local rawHeight = Addon and Addon.db and Addon.db.minimapRingSegmentHeight or 25
+    local rawHeight = GetOptionValue("minimapRingSegmentHeight", 25)
     return math.max(5, math.min(25, math.floor(tonumber(rawHeight) or 25)))
 end
 
@@ -60,7 +70,7 @@ function StyleHelpers.GetMinimapRingRadius(frame)
     local frameEffScale = frame and frame.GetEffectiveScale and frame:GetEffectiveScale() or 1
     local minimapRadius = ((Minimap:GetWidth() / 2) - 2) * (minimapEffScale / frameEffScale)
 
-    local padding = Addon and Addon.db and Addon.db.minimapRingPadding or 14
+    local padding = GetOptionValue("minimapRingPadding", 14)
     padding = math.max(0, math.min(32, math.floor(tonumber(padding) or 14)))
     return minimapRadius + padding
 end

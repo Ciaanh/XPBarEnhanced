@@ -6,6 +6,28 @@ Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 local Manager = Addon.SecondaryBarManager
 local Utils = Addon.Utils
 
+local function GetOptionValue(key, fallback)
+    if Addon.Config and Addon.Config.GetOptionValue then
+        local value = Addon.Config:GetOptionValue(key)
+        if value ~= nil then
+            return value
+        end
+    end
+    return fallback
+end
+
+local function GetSettingsTable(key, createIfMissing)
+    if Addon.Config and Addon.Config.GetSettingsTable then
+        return Addon.Config:GetSettingsTable(key, createIfMissing)
+    end
+
+    Addon.db = Addon.db or {}
+    if Addon.db[key] == nil and createIfMissing then
+        Addon.db[key] = {}
+    end
+    return Addon.db[key]
+end
+
 -- Safely hide a Blizzard container, deferring to after combat if in lockdown.
 local function SafeHideContainer(container)
     if not container then return end
@@ -35,14 +57,13 @@ local TEMPLATE_MAP = {
 }
 
 local function DeriveSecondaryStyle()
-    local db = Addon.db or {}
-    if not db.showSecondaryBar then
+    if not GetOptionValue("showSecondaryBar", false) then
         return "none"
     end
     -- The secondary bar style is determined solely by the selected primary bar
     -- style. Use db.barStyle (user preference) rather than the runtime style so
     -- the secondary bar remains visible at max level even when the primary hides.
-    local primaryStyle = db.barStyle or "none"
+    local primaryStyle = GetOptionValue("barStyle", "none")
     if TEMPLATE_MAP[primaryStyle] then
         return primaryStyle
     end
@@ -51,6 +72,12 @@ end
 
 local function IsCustomStyle(style)
     return style and TEMPLATE_MAP[style] ~= nil
+end
+
+local function SetDetachedInteractionState(frame, detached)
+    if frame and frame.SetDetachedInteractionEnabled then
+        frame:SetDetachedInteractionEnabled(detached)
+    end
 end
 
 -- Returns true when our secondary bar is active at max level and Blizzard
@@ -150,7 +177,6 @@ end
 -- When attached mode is off, or when at max level (primary bar hidden), restores
 -- each bar to its saved/fallback position.
 function Manager:ReapplyAttachedPositions()
-    local db = Addon.db or {}
     local frame = self:GetCurrentFrame()
     if not frame then
         return
@@ -164,12 +190,17 @@ function Manager:ReapplyAttachedPositions()
         canAttachToPrimary = frame:ShouldAttachToPrimary() ~= false
     end
 
-    local forceAttachedStyle = (self._currentStyle == "circular")
-    local isAttachedAndPrimaryVisible = (forceAttachedStyle or db.secondaryBarsAttached) and primaryFrame ~= nil and canAttachToPrimary
+    local isAttachedAndPrimaryVisible = GetOptionValue("secondaryBarsAttached", true) and primaryFrame ~= nil and canAttachToPrimary
+
+    SetDetachedInteractionState(frame, not isAttachedAndPrimaryVisible)
 
     if not isAttachedAndPrimaryVisible then
         if frame.ApplyInitialPosition then
             frame:ApplyInitialPosition()
+        end
+        -- Enable dragging when the bar is detached (e.g., at max level when primary bar is hidden)
+        if frame.ConfigureDragSupport then
+            frame:ConfigureDragSupport()
         end
         return
     end
@@ -257,12 +288,12 @@ function Manager:SetSecondaryStyle(style)
 end
 
 function Manager:ResetBarPositions()
-    local db = Addon.db or {}
     local configKey = "secondaryBarPositions"
-    local style = db.barStyle
+    local style = GetOptionValue("barStyle")
+    local positions = GetSettingsTable(configKey)
 
-    if db[configKey] and style then
-        db[configKey][style] = nil
+    if positions and style then
+        positions[style] = nil
     end
 
     local frame = self:GetCurrentFrame()

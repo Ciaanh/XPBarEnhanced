@@ -96,6 +96,31 @@
         </Frames>
     </Frame>
 
+    <!-- Footer profile selector row
+         Dedicated template so footer-specific sizing and label styling do not affect normal dropdown consumers.
+    -->
+    <Frame name="ProfileSelectorFooterTemplate" virtual="true">
+        <Size x="300" y="35"/>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString parentKey="Label" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Anchors>
+                        <Anchor point="LEFT" x="8"/>
+                        <Anchor point="RIGHT" x="-230"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <DropdownButton parentKey="Dropdown" inherits="WowStyle1DropdownTemplate">
+                <Size x="214" y="28"/>
+                <Anchors>
+                    <Anchor point="RIGHT" x="-8"/>
+                </Anchors>
+            </DropdownButton>
+        </Frames>
+    </Frame>
+
     <!-- Slider config row (label + slider with steppers)
          Uses MinimalSliderWithSteppersTemplate (Blizzard built-in)
     -->

@@ -5,7 +5,7 @@
 ## Notes: Enhanced XP bar with quest XP tracking and comprehensive statistics
 
 ## Author: Ciaanh
-## Version: 1.1.2
+## Version: 1.1.3
 
 ## SavedVariables: XPBarEnhancedDB
 ## IconTexture: 4675649
@@ -53,6 +53,7 @@ core\config\Config.lua
 core\config\ConfigHelper.lua
 
 core\services\Database.lua
+core\services\ProfileManager.lua
 core\services\Session.lua
 core\services\ReputationSession.lua
 core\services\ContextBuilder.lua

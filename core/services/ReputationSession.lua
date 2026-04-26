@@ -61,6 +61,35 @@ local function IsInDelve()
     return false
 end
 
+
+
+local function IsCompanionNPCInParty(companionName)
+    local numMembers = (GetNumGroupMembers and GetNumGroupMembers()) or 0
+    if numMembers <= 0 then
+        return false
+    end
+
+    for i = 1, 4 do
+        local unit = "party" .. i
+        if UnitExists and UnitExists(unit) then
+            if companionName and UnitName then
+                local unitName = UnitName(unit)
+                if unitName == companionName then
+                    return true
+                end
+            else
+                local isPlayer = UnitIsPlayer and UnitIsPlayer(unit)
+                if not isPlayer then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+
 -------------------------------------------------------------------
 -- INTERNAL HELPERS
 -------------------------------------------------------------------
@@ -137,18 +166,20 @@ local function BuildReputationContext(repSession)
     local panel = rawget(_G, "XPBarEnhancedOptionsPanel")
     local isPreviewMode = (Addon.db and Addon.db.barLocked == false) or (panel and panel.IsVisible and panel:IsVisible())
     local hideCompanionOutsideDelve = Addon.db and Addon.db.hideCompanionOutsideDelve
+    local isCompanionInParty = info.isCompanion and info.isInDelve and IsCompanionNPCInParty(info.name) or false
 
     local isCompanionAvailable
     if hideCompanionOutsideDelve then
-        isCompanionAvailable = not info.isCompanion or (info.isInDelve and not info.isMaxed)
+        isCompanionAvailable = not info.isCompanion or (info.isInDelve and isCompanionInParty and not info.isMaxed)
     else
-        isCompanionAvailable = not info.isCompanion or isPreviewMode or (info.isInDelve and not info.isMaxed)
+        isCompanionAvailable = not info.isCompanion or isPreviewMode or (info.isInDelve and isCompanionInParty and not info.isMaxed)
     end
 
     if not isCompanionAvailable then
         return {
             isAvailable = false,
             isCompanion = true,
+            isCompanionInParty = isCompanionInParty,
             name = info.name or "",
         }
     end
@@ -159,6 +190,7 @@ local function BuildReputationContext(repSession)
         standingLabel      = info.standingLabel or "",
         factionType        = info.factionType or "standard",
         isCompanion        = info.isCompanion or false,
+        isCompanionInParty = isCompanionInParty,
         isInDelve          = info.isInDelve or false,
         currentLevel       = info.currentLevel or 0,
         maxLevel           = info.maxLevel or 0,

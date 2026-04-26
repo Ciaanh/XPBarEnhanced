@@ -2,6 +2,7 @@
 -- Displays a minimap-linked icon that toggles a centered reputation arc.
 
 local Addon = XPBarEnhanced
+local Config = Addon.Config
 local FALLBACK_SHARED_STYLE_HELPERS = {
     GetSecondaryPositionConfigKey = function()
         return "secondaryBarPositions"
@@ -123,13 +124,13 @@ local function GetCursorAngle()
 end
 
 local function GetArcSweepRadians()
-    local angleDegrees = Addon and Addon.db and Addon.db.minimapArcDisplayAngle or 135
+    local angleDegrees = Config and Config.GetOptionValue and Config:GetOptionValue("minimapArcDisplayAngle") or 135
     angleDegrees = Clamp(tonumber(angleDegrees) or 135, 30, 360)
     return math.rad(angleDegrees)
 end
 
 local function GetIconAngleDegrees()
-    return Addon and Addon.db and Addon.db.minimapArcIconAngle or 315
+    return Config and Config.GetOptionValue and Config:GetOptionValue("minimapArcIconAngle") or 315
 end
 
 local function NormalizeAngle(rad)
@@ -228,6 +229,87 @@ function StyleMixin:OnSecondaryShow()
     if self.IconTexture and self.IconTexture.SetAlpha then
         self.IconTexture:SetAlpha(1)
     end
+
+    -- Take over button collection when the primary ring bar is not shown (e.g. at max level).
+    self:UpdateButtonCollection(true)
+    self:StartButtonScanTimer()
+end
+
+function StyleMixin:OnSecondaryHide()
+    self:StopButtonScanTimer()
+    self:_ReleaseButtonCollection()
+end
+
+-- Returns true only when the primary ring frame is absent or hidden.
+-- The primary ring manages the collection itself while it is active; the
+-- secondary arc takes over only when the primary is gone (max level, etc.).
+local function PrimaryRingIsActive()
+    local barFrames = Addon.BarManager and Addon.BarManager.barFrames
+    local primary = barFrames and barFrames["minimap_ring"]
+    return primary and primary:IsShown()
+end
+
+function StyleMixin:UpdateButtonCollection(forceRefresh)
+    local collector = Addon.MinimapRingButtonCollection
+    if not collector then
+        return
+    end
+
+    -- Yield to the primary ring when it is active.
+    if PrimaryRingIsActive() then
+        return
+    end
+
+    if Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingCollectButtons") then
+        local needsRefresh = forceRefresh or collector.owner ~= self
+        collector:SetOwner(self)
+        if needsRefresh then
+            collector:Refresh()
+        end
+    elseif collector.owner == self then
+        self:_ReleaseButtonCollection()
+    end
+end
+
+-- Offset of the bag button relative to this frame's CENTER so that it lands
+-- at the user-configured minimapRingBagAngle on the ring perimeter.
+-- self is anchored at _GetButtonOffset() from Minimap CENTER, so the bag
+-- offset (also from Minimap CENTER) is expressed relative to self by subtracting.
+function StyleMixin:GetBagAnchorOffset()
+    local bagAngleDegrees = Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingBagAngle") or 315
+    local bagAngle = math.rad(bagAngleDegrees)
+    local ringRadius = StyleHelpers.GetMinimapRingRadius(self)
+    local bagDist = ringRadius + 18
+    local bagX = math.cos(bagAngle) * bagDist
+    local bagY = math.sin(bagAngle) * bagDist
+
+    local iconX, iconY = self:_GetButtonOffset()
+    return bagX - iconX, bagY - iconY
+end
+
+function StyleMixin:_ReleaseButtonCollection()
+    local collector = Addon.MinimapRingButtonCollection
+    if collector then
+        collector:ReleaseOwner(self)
+    end
+end
+
+function StyleMixin:StartButtonScanTimer()
+    local collector = Addon.MinimapRingButtonCollection
+    if not collector then
+        return
+    end
+
+    collector:StartOwnerScanTimer(self, function()
+        return Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingCollectButtons")
+    end)
+end
+
+function StyleMixin:StopButtonScanTimer()
+    local collector = Addon.MinimapRingButtonCollection
+    if collector then
+        collector:StopOwnerScanTimer(self)
+    end
 end
 
 function StyleMixin:_CreateArcSegments()
@@ -282,7 +364,7 @@ function StyleMixin:_UpdateMinimapAnchor()
 end
 
 function StyleMixin:_ApplyInitialExpandedState()
-    local initialExpanded = Addon.db and Addon.db.minimapArcStartExpanded == true
+    local initialExpanded = Config and Config.GetOptionValue and Config:GetOptionValue("minimapArcStartExpanded") == true
     self._lastConfiguredStartExpanded = initialExpanded
     self._arcExpanded = initialExpanded
     self:_ApplyArcVisibility(false)
@@ -392,8 +474,9 @@ function StyleMixin:Render(context)
     end
 
     self:_UpdateMinimapAnchor()
+    self:UpdateButtonCollection(false)
 
-    local configuredStartExpanded = Addon.db and Addon.db.minimapArcStartExpanded == true
+    local configuredStartExpanded = Config and Config.GetOptionValue and Config:GetOptionValue("minimapArcStartExpanded") == true
     if self._arcExpanded == nil or configuredStartExpanded ~= self._lastConfiguredStartExpanded then
         self._lastConfiguredStartExpanded = configuredStartExpanded
         self._arcExpanded = configuredStartExpanded
@@ -494,7 +577,9 @@ function StyleMixin:OnDragStart()
     self._arcIconAngle = nil
     self:SetScript("OnUpdate", function()
         local angle = GetCursorAngle()
-        if Addon.db then
+        if Config and Config.SetOptionKey then
+            Config:SetOptionKey("minimapArcIconAngle", angle, true)
+        elseif Addon.db then
             Addon.db.minimapArcIconAngle = angle
         end
         self:_UpdateMinimapAnchor()
@@ -524,6 +609,8 @@ function StyleMixin:QueueReposition()
             self:_RenderArc(self._lastContext)
         end
     end
+    -- Sync collection state so toggling the setting takes effect immediately.
+    self:UpdateButtonCollection(true)
 end
 
 XPBarMinimapArcReputationMixin = CreateFromMixins(XPBarSecondaryBaseMixin, StyleMixin)

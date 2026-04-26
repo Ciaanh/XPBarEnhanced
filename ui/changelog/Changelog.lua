@@ -8,6 +8,14 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.1.3",
+        notes = {
+            "New Profile System with profile selection, creation, rename, and delete.",
+            "Blizzard-style Profiles dropdown with radio selection, inline row actions, and an in-menu New Profile action.",
+            "Profile-aware option lookups through a centralized shared helper.",
+        },
+    },
+    {
         version = "1.1.2",
         notes = {
             "Fixed the XP bar being hidden after every level-up (UIFrameFlash showWhenDone bug).",
@@ -79,19 +87,20 @@ local function GetCurrentVersion()
     return version or "0.0.0"
 end
 
-local function CollectEntriesSince(sinceVersion)
+local function CollectEntriesThrough(boundaryVersion)
     local entries = {}
     for _, entry in ipairs(Changelog.entries or {}) do
-        if sinceVersion and entry.version == sinceVersion then
+        entries[#entries + 1] = entry
+        -- Include the boundary version entry, then stop.
+        if boundaryVersion and entry.version == boundaryVersion then
             break
         end
-        entries[#entries + 1] = entry
     end
     return entries
 end
 
-function Changelog:Show(sinceVersion)
-    local entries = CollectEntriesSince(sinceVersion)
+function Changelog:Show(boundaryVersion)
+    local entries = CollectEntriesThrough(boundaryVersion)
     if #entries == 0 then
         return
     end

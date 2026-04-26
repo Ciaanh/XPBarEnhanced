@@ -80,6 +80,8 @@ local defaults = {
     },
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,
+    profiles = {},
+    characterProfileKeys = {},
     -- Known Delve companion factions (by faction ID).
     -- Maps faction ID -> display name for locale-independent companion detection.
     delveCompanions = {

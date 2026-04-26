@@ -110,3 +110,68 @@ function Utils.FormatTime(seconds)
     local TimeCalc = Addon.TimeCalculations
     return TimeCalc.FormatHMS(seconds)
 end
+
+---Get a configuration option value with profile-aware fallback
+---Delegates to Config:GetOptionValue when available, returns fallback otherwise
+---@param key string Configuration key name
+---@param fallback any Optional fallback value if key not found
+---@return any value Configuration value or fallback
+function Utils.GetOptionValue(key, fallback)
+    if Addon.Config and Addon.Config.GetOptionValue then
+        local value = Addon.Config:GetOptionValue(key)
+        if value ~= nil then
+            return value
+        end
+    end
+    return fallback
+end
+
+---Get a settings table for position/collection data with profile awareness
+---Delegates to Config:GetSettingsTable when available, falls back to Addon.db
+---@param key string Settings table key (e.g. "barPositions", "secondaryBarPositions")
+---@param createIfMissing boolean If true, creates empty table if missing
+---@return table|nil settingsTable The requested settings table or nil
+function Utils.GetSettingsTable(key, createIfMissing)
+    if Addon.Config and Addon.Config.GetSettingsTable then
+        return Addon.Config:GetSettingsTable(key, createIfMissing)
+    end
+
+    Addon.db = Addon.db or {}
+    if Addon.db[key] == nil and createIfMissing then
+        Addon.db[key] = {}
+    end
+    return Addon.db[key]
+end
+
+---Safely hide a Blizzard container, deferring to after combat if necessary
+---Prevents taint violations by deferring hide operations during combat lockdown
+---@param container Frame The Blizzard frame to hide
+function Utils.SafeHideContainer(container)
+    if not container then return end
+    if InCombatLockdown() then
+        local f = CreateFrame("Frame")
+        f:RegisterEvent("PLAYER_REGEN_ENABLED")
+        f:SetScript("OnEvent", function()
+            if container then
+                container:Hide()
+            end
+            f:UnregisterAllEvents()
+            f = nil
+        end)
+    else
+        container:Hide()
+    end
+end
+
+---Convert RGB components to WoW hex color escape sequence
+---Used for terminal color rendering and other styled text output
+---@param r number Red component (0-1)
+---@param g number Green component (0-1)
+---@param b number Blue component (0-1)
+---@return string escape Hex color escape sequence (e.g. "|cFFRRGGBB")
+function Utils.Hex(r, g, b)
+    r = math.floor((r or 0) * 255)
+    g = math.floor((g or 0) * 255)
+    b = math.floor((b or 0) * 255)
+    return string.format("|cFF%02X%02X%02X", r, g, b)
+end

@@ -15,9 +15,11 @@ function eventHandlers:OnAddonLoaded(name)
     -- Fail fast: core modules must be present; missing files indicate a load-order bug
     assert(Addon.Database, "XPBarEnhanced: Database module not loaded (check .toc order)")
     assert(Addon.Config,   "XPBarEnhanced: Config module not loaded (check .toc order)")
+    assert(Addon.ProfileManager, "XPBarEnhanced: ProfileManager module not loaded (check .toc order)")
 
     -- Initialize core systems
     Addon.Database:Initialize()
+    Addon.ProfileManager:Initialize()
     Addon.Config:Initialize()
 
     -- Get XP gain disabled state
@@ -86,10 +88,16 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
 
     C_Timer.After(0, function()
         if Addon.BarManager and Addon.BarManager.SetStyle then
-            local db = Addon.db or {}
             local defaultStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
+            local configuredStyle = defaultStyle
+            if Addon.Config and Addon.Config.GetOptionValue then
+                configuredStyle = Addon.Config:GetOptionValue("barStyle") or defaultStyle
+            else
+                local db = Addon.db or {}
+                configuredStyle = db.barStyle or defaultStyle
+            end
             Addon.BarManager.currentStyle = nil
-            Addon.BarManager:SetStyle(db.barStyle or defaultStyle)
+            Addon.BarManager:SetStyle(configuredStyle)
         end
 
         if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
@@ -103,9 +111,15 @@ end
 
 function eventHandlers:OnPlayerMaxLevelUpdate()
     if Addon.BarManager and Addon.BarManager.SetStyle then
-        local db = Addon.db or {}
+        local configuredStyle = "classic"
+        if Addon.Config and Addon.Config.GetOptionValue then
+            configuredStyle = Addon.Config:GetOptionValue("barStyle") or "classic"
+        else
+            local db = Addon.db or {}
+            configuredStyle = db.barStyle or "classic"
+        end
         Addon.BarManager.currentStyle = nil
-        Addon.BarManager:SetStyle(db.barStyle or "classic")
+        Addon.BarManager:SetStyle(configuredStyle)
     end
 end
 
@@ -117,9 +131,15 @@ function eventHandlers:OnEnableXPGain()
     end
 
     if Addon.BarManager and Addon.BarManager.SetStyle then
-        local db = Addon.db or {}
+        local configuredStyle = "classic"
+        if Addon.Config and Addon.Config.GetOptionValue then
+            configuredStyle = Addon.Config:GetOptionValue("barStyle") or "classic"
+        else
+            local db = Addon.db or {}
+            configuredStyle = db.barStyle or "classic"
+        end
         Addon.BarManager.currentStyle = nil
-        Addon.BarManager:SetStyle(db.barStyle or "classic")
+        Addon.BarManager:SetStyle(configuredStyle)
     end
 end
 

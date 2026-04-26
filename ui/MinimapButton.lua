@@ -16,6 +16,16 @@ local BUTTON_NAME = "XPBarEnhancedMinimapButton"
 local ICON_TEXTURE = tonumber(C_AddOns.GetAddOnMetadata("XPBarEnhanced", "IconTexture")) or 4675649
 local BUTTON_RADIUS = 5 -- Extra radius beyond minimap edge (like LibDBIcon)
 
+local function GetOptionValue(key, fallback)
+    if Addon.Config and Addon.Config.GetOptionValue then
+        local value = Addon.Config:GetOptionValue(key)
+        if value ~= nil then
+            return value
+        end
+    end
+    return fallback
+end
+
 -------------------------------------------------------------------
 -- INTERNAL STATE
 -------------------------------------------------------------------
@@ -310,12 +320,7 @@ end
 --- Initialize the minimap button (call after DB is ready)
 function MinimapButton:Initialize()
     -- Check if minimap button should be shown
-    local db = Addon.db
-    local showButton = true
-
-    if db and db.showMinimapButton ~= nil then
-        showButton = db.showMinimapButton
-    end
+    local showButton = GetOptionValue("showMinimapButton", true)
 
     if showButton then
         self:Create()
@@ -326,7 +331,9 @@ end
 --- Set button visibility preference
 ---@param show boolean Whether to show the button
 function MinimapButton:SetEnabled(show)
-    if Addon.db then
+    if Addon.Config and Addon.Config.SetOptionKey then
+        Addon.Config:SetOptionKey("showMinimapButton", show, true)
+    elseif Addon.db then
         Addon.db.showMinimapButton = show
     end
 

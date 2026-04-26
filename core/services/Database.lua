@@ -34,6 +34,10 @@ function Database:Initialize()
     -- Set addon database reference
     Addon.db = XPBarEnhancedDB
 
+    -- Optional profile system storage.
+    Addon.db.profiles = Addon.db.profiles or {}
+    Addon.db.characterProfileKeys = Addon.db.characterProfileKeys or {}
+
     if Addon.db.secondaryBarPosition
         and Addon.db.secondaryBarPosition.relativeTo == "SecondaryStatusTrackingBarContainer"
         and Addon.db.secondaryBarPosition.point == "CENTER"
@@ -66,6 +70,12 @@ function Database:Initialize()
     local playerName = UnitName("player") or "Unknown"
     local realmName = GetRealmName() or "Unknown"
     Addon.playerKey = string.format("%s-%s", playerName, realmName)
+
+    -- Backward-compatible migration from older activeProfile experiments.
+    if Addon.db.activeProfile ~= nil then
+        Addon.db.characterProfileKeys[Addon.playerKey] = Addon.db.activeProfile
+        Addon.db.activeProfile = nil
+    end
 end
 
 -------------------------------------------------------------------

@@ -14,6 +14,8 @@ Addon.EventNames = {
     XPBAR_BROADCAST_UPDATE = "XPBAR:BROADCAST_UPDATE",
     CONFIG_UPDATED = "CONFIG:UPDATED",
     COLORS_UPDATED = "COLORS:UPDATED",
+    PROFILE_CHANGED = "PROFILE:CHANGED",
+    PROFILES_UPDATED = "PROFILES:UPDATED",
     QUESTS_CACHE_INVALIDATED = "QUESTS:CACHE_INVALIDATED",
     QUESTS_CACHE_REBUILT = "QUESTS:CACHE_REBUILT",
     XPBAR_ANIMATION_CONTEXT = "XPBAR:ANIMATION_CONTEXT",
@@ -25,6 +27,7 @@ Addon.OptionsCategory = "XP Bar Enhanced"
 -- Core modules
 Addon.Config = Addon.Config or {}
 Addon.Database = Addon.Database or {}
+Addon.ProfileManager = Addon.ProfileManager or {}
 Addon.Session = Addon.Session or {}
 Addon.Utils = Addon.Utils or {}
 Addon.ReputationCalculations = Addon.ReputationCalculations or {}

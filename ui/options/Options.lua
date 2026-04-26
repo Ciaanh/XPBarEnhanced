@@ -22,8 +22,16 @@ local InterfaceOptions_AddCategory = rawget(_G, "InterfaceOptions_AddCategory")
 local InterfaceOptionsFrame_OpenToCategory = rawget(_G, "InterfaceOptionsFrame_OpenToCategory")
 local ColorPickerFrame = rawget(_G, "ColorPickerFrame")
 local OpacitySliderFrame = rawget(_G, "OpacitySliderFrame")
+local StaticPopup_Show = rawget(_G, "StaticPopup_Show")
+local StaticPopupDialogs = rawget(_G, "StaticPopupDialogs")
+local CreateFrame = rawget(_G, "CreateFrame")
+local MenuTemplates = rawget(_G, "MenuTemplates")
+local MenuVariants = rawget(_G, "MenuVariants")
 
 local PANEL_NAME = "XP Bar Enhanced"
+local PROFILE_CREATE_POPUP = "XPBE_CREATE_PROFILE"
+local PROFILE_RENAME_POPUP = "XPBE_RENAME_PROFILE"
+local PROFILE_DELETE_POPUP = "XPBE_DELETE_PROFILE"
 
 local XPBarEnhancedOptionsMixin = {}
 
@@ -64,6 +72,111 @@ local function CollectChildrenByConfigKey(container)
     end
 
     return framesByKey
+end
+
+local function GetProfileDisplayName(profileName)
+    return profileName or ResolveLocale("OPT_PROFILE_GLOBAL")
+end
+
+local function GetPopupEditBox(popup)
+    if not popup then
+        return nil
+    end
+
+    return popup.editBox or _G[popup:GetName() .. "EditBox"]
+end
+
+local function EnsureProfilePopups()
+    if not StaticPopupDialogs then
+        return
+    end
+
+    if not StaticPopupDialogs[PROFILE_CREATE_POPUP] then
+        StaticPopupDialogs[PROFILE_CREATE_POPUP] = {
+            text = ResolveLocale("OPT_PROFILE_CREATE_DIALOG"),
+            button1 = ACCEPT,
+            button2 = CANCEL,
+            hasEditBox = 1,
+            maxLetters = 32,
+            timeout = 0,
+            whileDead = 1,
+            hideOnEscape = 1,
+            preferredIndex = 3,
+            OnShow = function(popup, data)
+                local editBox = GetPopupEditBox(popup)
+                if editBox then
+                    editBox:SetText((data and data.initialText) or "")
+                    editBox:HighlightText()
+                    editBox:SetFocus()
+                end
+            end,
+            EditBoxOnEnterPressed = function(editBox)
+                local popup = editBox:GetParent()
+                if popup and popup.button1 and popup.button1:IsEnabled() then
+                    popup.button1:Click()
+                end
+            end,
+            OnAccept = function(popup)
+                local editBox = GetPopupEditBox(popup)
+                local value = editBox and editBox:GetText() or nil
+                if Addon.Options and Addon.Options.AcceptCreateProfileDialog then
+                    Addon.Options:AcceptCreateProfileDialog(value)
+                end
+            end,
+        }
+    end
+
+    if not StaticPopupDialogs[PROFILE_RENAME_POPUP] then
+        StaticPopupDialogs[PROFILE_RENAME_POPUP] = {
+            text = ResolveLocale("OPT_PROFILE_RENAME_DIALOG"),
+            button1 = ACCEPT,
+            button2 = CANCEL,
+            hasEditBox = 1,
+            maxLetters = 32,
+            timeout = 0,
+            whileDead = 1,
+            hideOnEscape = 1,
+            preferredIndex = 3,
+            OnShow = function(popup, data)
+                local editBox = GetPopupEditBox(popup)
+                if editBox then
+                    editBox:SetText((data and data.initialText) or "")
+                    editBox:HighlightText()
+                    editBox:SetFocus()
+                end
+            end,
+            EditBoxOnEnterPressed = function(editBox)
+                local popup = editBox:GetParent()
+                if popup and popup.button1 and popup.button1:IsEnabled() then
+                    popup.button1:Click()
+                end
+            end,
+            OnAccept = function(popup, data)
+                local editBox = GetPopupEditBox(popup)
+                local value = editBox and editBox:GetText() or nil
+                if Addon.Options and Addon.Options.AcceptRenameProfileDialog then
+                    Addon.Options:AcceptRenameProfileDialog(data and data.oldName, value)
+                end
+            end,
+        }
+    end
+
+    if not StaticPopupDialogs[PROFILE_DELETE_POPUP] then
+        StaticPopupDialogs[PROFILE_DELETE_POPUP] = {
+            text = "%s",
+            button1 = DELETE,
+            button2 = CANCEL,
+            timeout = 0,
+            whileDead = 1,
+            hideOnEscape = 1,
+            preferredIndex = 3,
+            OnAccept = function(_popup, data)
+                if Addon.Options and Addon.Options.AcceptDeleteProfileDialog then
+                    Addon.Options:AcceptDeleteProfileDialog(data and data.profileName)
+                end
+            end,
+        }
+    end
 end
 
 -- ControlHelpers is used for centralized option control setup
@@ -168,6 +281,137 @@ function XPBarEnhancedOptionsMixin:SetupTabs()
     -- PanelTemplates_AnchorTabs which expects frame["Tab1"]/["Tab2"]/... keys,
     -- but our tabs are children of TabContainer with string IDs. XML already anchors them.
     self.numTabs = #TABS
+end
+
+function XPBarEnhancedOptionsMixin:BuildProfileDropdownMenu(rootDescription)
+    -- Global Settings (nil profile) as a radio entry
+    local globalIsSelected = function() return Config:GetActiveProfileName() == nil end
+    local globalOnSelect = function()
+        if Addon.Config and Addon.Config.SelectProfile then
+            Addon.Config:SelectProfile(nil)
+        end
+    end
+    rootDescription:CreateRadio(GetProfileDisplayName(nil), globalIsSelected, globalOnSelect)
+
+    -- Named profiles — each gets inline gear (rename) + cancel (delete) on hover
+    local names = Config:GetProfileNames() or {}
+    for _, profileName in ipairs(names) do
+        local name = profileName  -- capture for closures
+
+        local isSelected = function() return Config:GetActiveProfileName() == name end
+        local onSelect = function()
+            if Addon.Config and Addon.Config.SelectProfile then
+                Addon.Config:SelectProfile(name)
+            end
+        end
+
+        local radio = rootDescription:CreateRadio(name, isSelected, onSelect)
+
+        if MenuTemplates and MenuVariants then
+            radio:AddInitializer(function(button, description, menu)
+                local gearButton = MenuTemplates.AttachAutoHideGearButton(button)
+                MenuTemplates.SetUtilityButtonTooltipText(gearButton, ResolveLocale("OPT_PROFILE_RENAME"))
+                MenuTemplates.SetUtilityButtonAnchor(gearButton, MenuVariants.GearButtonAnchor, button)
+                MenuTemplates.SetUtilityButtonClickHandler(gearButton, function()
+                    self:ShowRenameProfilePrompt(name)
+                    menu:Close()
+                end)
+
+                local cancelButton = MenuTemplates.AttachAutoHideCancelButton(button)
+                MenuTemplates.SetUtilityButtonTooltipText(cancelButton, ResolveLocale("OPT_PROFILE_DELETE"))
+                MenuTemplates.SetUtilityButtonAnchor(cancelButton, MenuVariants.CancelButtonAnchor, gearButton)
+                MenuTemplates.SetUtilityButtonClickHandler(cancelButton, function()
+                    self:ShowDeleteProfilePrompt(name)
+                    menu:Close()
+                end)
+            end)
+        end
+    end
+
+    -- Divider then bottom-row actions
+    rootDescription:CreateDivider()
+    rootDescription:CreateButton(ResolveLocale("OPT_PROFILE_NEW"), function()
+        self:ShowCreateProfilePrompt()
+    end)
+end
+
+function XPBarEnhancedOptionsMixin:EnsureProfileControls()
+    if self._profileControlsBuilt then
+        return
+    end
+
+    if not self then
+        return
+    end
+
+    EnsureProfilePopups()
+
+    local selectorRow = self.ProfileSelectorRow
+    if not selectorRow then
+        return
+    end
+
+    if selectorRow.Label and selectorRow.Label.SetText then
+        selectorRow.Label:Show()
+        selectorRow.Label:SetText(ResolveLocale("OPT_PROFILE_SELECTOR"))
+    end
+
+    if selectorRow.Dropdown then
+        selectorRow.Dropdown:SetupMenu(function(_dropdown, rootDescription)
+            self:BuildProfileDropdownMenu(rootDescription)
+        end)
+    end
+
+    self.profileControls = {
+        selectorRow = selectorRow,
+        dropdown = selectorRow.Dropdown,
+    }
+    self._profileControlsBuilt = true
+end
+
+function XPBarEnhancedOptionsMixin:RefreshProfileControls()
+    local controls = self.profileControls
+    if not controls then
+        return
+    end
+
+    local activeProfile = Config:GetActiveProfileName()
+    if controls.dropdown and controls.dropdown.SetDefaultText then
+        controls.dropdown:SetDefaultText(GetProfileDisplayName(activeProfile))
+    end
+end
+
+function XPBarEnhancedOptionsMixin:ShowCreateProfilePrompt()
+    if StaticPopup_Show then
+        StaticPopup_Show(PROFILE_CREATE_POPUP, nil, nil, { initialText = "" })
+    end
+end
+
+function XPBarEnhancedOptionsMixin:ShowRenameProfilePrompt(profileName)
+    local name = profileName or Config:GetActiveProfileName()
+    if not name then
+        return
+    end
+
+    if StaticPopup_Show then
+        StaticPopup_Show(PROFILE_RENAME_POPUP, nil, nil, { oldName = name, initialText = name })
+    end
+end
+
+function XPBarEnhancedOptionsMixin:ShowDeleteProfilePrompt(profileName)
+    local name = profileName or Config:GetActiveProfileName()
+    if not name then
+        return
+    end
+
+    if StaticPopup_Show then
+        StaticPopup_Show(
+            PROFILE_DELETE_POPUP,
+            string.format(ResolveLocale("OPT_PROFILE_DELETE_DIALOG"), name),
+            nil,
+            { profileName = name }
+        )
+    end
 end
 
 function XPBarEnhancedOptionsMixin:OnLoad()
@@ -307,24 +551,12 @@ function XPBarEnhancedOptionsMixin:OnLoad()
     if self.ResetSettingsButton and self.ResetSettingsButton.SetText then
         self.ResetSettingsButton:SetText(ResolveLocale("OPT_RESET_SETTINGS"))
     end
-    if self.ResetStatsButton and self.ResetStatsButton.SetText then
-        self.ResetStatsButton:SetText(ResolveLocale("OPT_RESET_STATS"))
-    end
 
     if self.ResetSettingsButton then
         self.ResetSettingsButton:SetScript(
             "OnClick",
             function()
                 self:OnResetSettingsClicked()
-            end
-        )
-    end
-
-    if self.ResetStatsButton then
-        self.ResetStatsButton:SetScript(
-            "OnClick",
-            function()
-                self:OnResetStatsClicked()
             end
         )
     end
@@ -379,6 +611,8 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         end
     end
 
+    self:EnsureProfileControls()
+
     self:BuildOptionCheckboxes()
     self:BuildColorControls()
     self:SetupTabs()
@@ -395,6 +629,16 @@ function XPBarEnhancedOptionsMixin:OnLoad()
         end
     end
     Addon.EventBus:Register(EventNames.COLORS_UPDATED, observerId, colorHandler)
+    Addon.EventBus:Register(EventNames.PROFILE_CHANGED, observerId .. "_profile_changed", function()
+        if self and self.Refresh then
+            self:Refresh()
+        end
+    end)
+    Addon.EventBus:Register(EventNames.PROFILES_UPDATED, observerId .. "_profiles_updated", function()
+        if self and self.Refresh then
+            self:Refresh()
+        end
+    end)
 end
 
 function XPBarEnhancedOptionsMixin:OnPanelShow()
@@ -552,24 +796,20 @@ function XPBarEnhancedOptionsMixin:RegisterCategory()
 
     if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then
         local settingsCategory = Settings.RegisterCanvasLayoutCategory(self, PANEL_NAME)
-        settingsCategory.ID = settingsCategory.ID or PANEL_NAME
         Settings.RegisterAddOnCategory(settingsCategory)
         self._registeredCategory = settingsCategory
         Options.category = settingsCategory
+        Addon.OptionsCategory = settingsCategory
     elseif InterfaceOptions_AddCategory then
         InterfaceOptions_AddCategory(self)
         self._registeredCategory = self
         Options.category = self
+        Addon.OptionsCategory = self
     end
 end
 
 function XPBarEnhancedOptionsMixin:OnResetSettingsClicked()
     Config:Reset()
-    self:Refresh()
-end
-
-function XPBarEnhancedOptionsMixin:OnResetStatsClicked()
-    Config:ResetStats()
     self:Refresh()
 end
 
@@ -579,7 +819,13 @@ function XPBarEnhancedOptionsMixin:OnResetBarPositionClicked()
         Addon.BarManager:ResetBarPosition()
     end
     -- Clear persisted secondary bar positions so bars return to default anchors
-    if Addon.db then
+    -- Use profile-aware API instead of direct Addon.db access
+    if Addon.Config and Addon.Config.GetSettingsStorage then
+        local storage = Addon.Config:GetSettingsStorage()
+        if storage then
+            storage.secondaryBarPositions = nil
+        end
+    elseif Addon.db then
         Addon.db.secondaryBarPositions = nil
     end
     if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ResetBarPositions then
@@ -986,7 +1232,38 @@ function XPBarEnhancedOptionsMixin:Refresh()
         end
     end
 
+    self:RefreshProfileControls()
     self:UpdateColorControls()
+end
+
+function Options:AcceptCreateProfileDialog(name)
+    local success, err = Config:CreateProfile(name, true)
+    if success then
+        print(string.format("|cFF00FF00XP Bar Enhanced:|r " .. ResolveLocale("MSG_PROFILE_CREATED"), tostring(name)))
+        self:Refresh()
+    else
+        print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+    end
+end
+
+function Options:AcceptRenameProfileDialog(oldName, newName)
+    local success, err = Config:RenameProfile(oldName, newName)
+    if success then
+        print(string.format("|cFF00FF00XP Bar Enhanced:|r " .. ResolveLocale("MSG_PROFILE_RENAMED"), tostring(newName)))
+        self:Refresh()
+    else
+        print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+    end
+end
+
+function Options:AcceptDeleteProfileDialog(name)
+    local success, err = Config:DeleteProfile(name)
+    if success then
+        print(string.format("|cFF00FF00XP Bar Enhanced:|r " .. ResolveLocale("MSG_PROFILE_DELETED"), tostring(name)))
+        self:Refresh()
+    else
+        print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+    end
 end
 
 function Options:Initialize(controller)
@@ -1057,7 +1334,7 @@ end
 function Options:OnOptionChanged(key)
     -- Handle specific option changes
     if key == "barStyle" then
-        local value = Addon.db and Addon.db.barStyle or "classic"
+        local value = (Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("barStyle")) or "classic"
         if Addon.BarManager and Addon.BarManager.SetStyle then
             Addon.BarManager:SetStyle(value)
         end
