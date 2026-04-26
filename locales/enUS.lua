@@ -126,7 +126,7 @@ L["OPT_ABBREVIATE_NUMBERS_DESC"] = "Use abbreviated number format (K, M, B) inst
 
 -- Options
 L["OPT_BAR_STYLE"] = "Bar Style"
-L["OPT_BAR_STYLE_DESC"] = "Choose which XP bar to display: None (Blizzard only), Classic (Blizzard-style), Flat (Draggable), Vertical (Falling animation), Circular (Progress ring), Minimap Ring, or Terminal (ASCII progress bar)."
+L["OPT_BAR_STYLE_DESC"] = "Choose which XP bar to display: None (Blizzard only), Classic (Blizzard-style), Flat (Draggable), Vertical, Circular (Progress ring), Minimap Ring, or Terminal (ASCII progress bar)."
 L["OPT_BAR_STYLE_NONE"] = "None (Blizzard only)"
 L["OPT_BAR_STYLE_CLASSIC"] = "Classic (Blizzard-style)"
 L["OPT_BAR_STYLE_FLAT"] = "Flat (Custom draggable)"
