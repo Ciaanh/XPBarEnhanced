@@ -4,6 +4,24 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-05-12
+
+### Added
+
+- **Flat Bar Size Presets**: New `flatSize` option (Small / Default / Large / Huge) scales the Flat bar and its secondary reputation bar proportionally without shrinking text readability.
+- **Vertical Bar Size Presets**: New `verticalSize` option (Small / Default / Large / Huge) scales the Vertical bar and its secondary reputation bar proportionally.
+- **Flat Under-Bar Text Scaling**: Flat style now scales below-bar text with `flatSize` so typography remains proportional at every bar size.
+
+### Fixed
+
+- **Overlay Height Mismatch**: Quest-complete, quest-incomplete, and rested overlays now inherit their height from the live StatusBar rather than defaulting to a hardcoded value, so overlays fill the full bar height on scaled Flat and Vertical bars.
+- **Overlay Width on Scaled Bars**: `ValidateBarWidth` now reads the live `StatusBar:GetWidth()` first, ensuring overlay pixel math is based on the current runtime size rather than the style's initial config width.
+- **Milestone Ticks on Scaled Flat Bar**: Milestone tick positions and heights are recalculated after every `ResizeToScale` call so ticks remain correctly spaced on Large and Huge flat bars.
+- **Milestone Ticks Setting Toggle**: Toggling `showMilestoneTicks` in the options panel now immediately triggers `UpdateMilestoneTicks` without requiring a full bar reload.
+- **Secondary Tooltip on Unavailable Bar**: `ShowSecondaryTooltip` now early-returns when `context.isAvailable == false`, preventing a tooltip from appearing on a hidden secondary bar.
+- **Terminal Secondary Bar Tooltip Guard**: `OnEnter` on the terminal secondary bar now skips tooltip display when the context marks the bar as unavailable.
+- **Terminal Custom Color Resolution**: Terminal palette rendering now resolves `terminalUseCustomColors` via config accessors, keeping custom color behavior consistent with active profile settings.
+
 ## [1.1.3] - 2026-04-22
 
 ### Added

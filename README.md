@@ -2,7 +2,7 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail only** · Interface 120005 · Version 1.1.3
+**Retail only** · Interface 120005 · Version 1.1.4
 
 ## Features
 
@@ -12,6 +12,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 - **Session Breakdown & Rate Smoothing** — Session stats include quest XP vs other XP totals, with a rolling recent XP/hour rate for faster responsiveness
 - **Statistics Window** — Detailed breakdown of your leveling progress
 - **Profile System** — Create, rename, delete, and switch between named settings profiles; Blizzard-style dropdown with inline actions and a global shared profile option
+- **Bar Size Presets** — Scale the Flat and Vertical bars to Small, Default, Large, or Huge without distorting text or overlays
 - **Reputation & Companion Tracking** — A secondary bar tracks your watched faction; shows companion-specific flavor (level, session gains) when tracking a Delve companion such as Brann
 - **Style-Aware Secondary Bars** — Secondary reputation display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar)
 - **Color Customization** — Full control over bar and overlay colors

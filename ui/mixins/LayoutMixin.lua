@@ -118,10 +118,18 @@ end
 function XPBarLayoutMixin:ValidateBarWidth(frame)
 	local barWidth = 565 -- default
 
-	if frame.__xpbar_config and frame.__xpbar_config.style and frame.__xpbar_config.style.width then
+	-- Prefer live widget width so scaled styles (e.g., flat/terminal/vertical)
+	-- compute overlays from the current runtime size, but fall back to style
+	-- config width if layout has not produced a valid live width yet.
+	local liveWidth = nil
+	if frame.StatusBar and frame.StatusBar.GetWidth then
+		liveWidth = frame.StatusBar:GetWidth()
+	end
+
+	if liveWidth and liveWidth > 0 then
+		barWidth = liveWidth
+	elseif frame.__xpbar_config and frame.__xpbar_config.style and frame.__xpbar_config.style.width then
 		barWidth = frame.__xpbar_config.style.width
-	elseif frame.StatusBar and frame.StatusBar.GetWidth then
-		barWidth = frame.StatusBar:GetWidth() or barWidth
 	end
 
 	return barWidth
@@ -182,6 +190,10 @@ function XPBarLayoutMixin:UpdateRestedBarLayout(context, overlayName)
 		-- : No offset needed, always starts from BOTTOMLEFT (0,0)
 		-- Width = currentXP + questOffset + restedXP
 		overlay:SetWidth(widthPixels)
+		local referenceBar = self.StatusBar or self
+		if referenceBar and referenceBar.GetHeight and overlay.SetHeight then
+			overlay:SetHeight(referenceBar:GetHeight() or 0)
+		end
 	end
 end
 
@@ -216,6 +228,10 @@ function XPBarLayoutMixin:UpdateQuestCompleteBarLayout(context, overlayName)
 			overlay:ClearAllPoints()
 			overlay:SetPoint("BOTTOMLEFT", offsetPixels, 0)
 			overlay:SetWidth(math.max(1, widthPixels))
+			local referenceBar = self.StatusBar or self
+			if referenceBar and referenceBar.GetHeight and overlay.SetHeight then
+				overlay:SetHeight(referenceBar:GetHeight() or 0)
+			end
 			visible = true
 		end
 	end
@@ -269,6 +285,10 @@ function XPBarLayoutMixin:UpdateQuestIncompleteBarLayout(context, overlayName)
 			overlay:ClearAllPoints()
 			overlay:SetPoint("BOTTOMLEFT", offsetPixels, 0)
 			overlay:SetWidth(math.max(1, widthPixels))
+			local referenceBar = self.StatusBar or self
+			if referenceBar and referenceBar.GetHeight and overlay.SetHeight then
+				overlay:SetHeight(referenceBar:GetHeight() or 0)
+			end
 			visible = true
 		end
 	end

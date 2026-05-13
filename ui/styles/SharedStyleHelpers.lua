@@ -8,6 +8,13 @@ Addon.UI.SharedStyleHelpers = Addon.UI.SharedStyleHelpers or {}
 
 local Shared = Addon.UI.SharedStyleHelpers
 
+local BAR_SIZE_SCALES = {
+    small   = 0.7,
+    default = 1.0,
+    large   = 1.5,
+    huge    = 2.0,
+}
+
 -- Standard availability/visibility transition for secondary bars.
 -- Returns true when the style should continue with paint operations.
 function Shared.BeginSecondaryRender(frame, context)
@@ -61,6 +68,19 @@ function Shared.GetXPBarColor(context)
     local hasRestedXP = context and (context.hasRestedXP or ((context.restedXP or 0) > 0))
     local colorKey = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
     return Colors:Get(colorKey)
+end
+
+function Shared.GetBarScale(configKey)
+    if not configKey or not Addon.Config or not Addon.Config.GetOptionValue then
+        return BAR_SIZE_SCALES.default
+    end
+
+    local sizeKey = Addon.Config:GetOptionValue(configKey)
+    if type(sizeKey) ~= "string" then
+        return BAR_SIZE_SCALES.default
+    end
+
+    return BAR_SIZE_SCALES[sizeKey] or BAR_SIZE_SCALES.default
 end
 
 function Shared.ApplySegmentTypeColor(segment, segmentType, colors, emptyColor, overlayAlpha)
@@ -121,6 +141,10 @@ end
 
 function Shared.ShowSecondaryTooltip(frame, context, anchor)
     if not GameTooltip or not frame or not context then
+        return
+    end
+
+    if context.isAvailable == false then
         return
     end
 

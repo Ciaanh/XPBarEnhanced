@@ -184,6 +184,32 @@ local optionDetails = {
         },
         commandKeys = {"size", "circlesize", "circularsize"}
     },
+    flatSize = {
+        key = "flatSize",
+        type = "dropdown",
+        label = Addon.L["OPT_FLAT_SIZE"],
+        description = Addon.L["OPT_FLAT_SIZE_DESC"],
+        options = {
+            {value = "small",   label = Addon.L["OPT_BAR_SIZE_SMALL"]},
+            {value = "default", label = Addon.L["OPT_BAR_SIZE_DEFAULT"]},
+            {value = "large",   label = Addon.L["OPT_BAR_SIZE_LARGE"]},
+            {value = "huge",    label = Addon.L["OPT_BAR_SIZE_HUGE"]}
+        },
+        commandKeys = {"flatsize"}
+    },
+    verticalSize = {
+        key = "verticalSize",
+        type = "dropdown",
+        label = Addon.L["OPT_VERTICAL_SIZE"],
+        description = Addon.L["OPT_VERTICAL_SIZE_DESC"],
+        options = {
+            {value = "small",   label = Addon.L["OPT_BAR_SIZE_SMALL"]},
+            {value = "default", label = Addon.L["OPT_BAR_SIZE_DEFAULT"]},
+            {value = "large",   label = Addon.L["OPT_BAR_SIZE_LARGE"]},
+            {value = "huge",    label = Addon.L["OPT_BAR_SIZE_HUGE"]}
+        },
+        commandKeys = {"verticalsize"}
+    },
     circularSegments = {
         key = "circularSegments",
         type = "slider",
@@ -304,6 +330,8 @@ local optionOrder = {
     "enableAnimations",
     "flashOnGain",
     "twoPhaseOnLevelUp",
+    "flatSize",
+    "verticalSize",
     "circularSize",
     "circularSegments",
     "circularUseTexture",

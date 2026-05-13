@@ -35,6 +35,8 @@ local CH_EMPTY = "\226\150\145"  -- U+2591  ░  LIGHT SHADE  (not earned)
 local DELTA_FADE_DURATION = 1.8  -- seconds for "+XP" popup to fade out
 
 local TERMINAL_FONT = "Interface\\AddOns\\XPBarEnhanced\\fonts\\DejaVuSansMono.ttf"
+local BASE_WIDTH = 650
+local BASE_HEIGHT = 42
 
 -------------------------------------------------------------------
 -- TERMINAL COLOUR PALETTE  (WoW |cFF escape code strings)
@@ -63,7 +65,7 @@ local function ResolveHexColor(color, fallbackHex)
     return Hex(color.r or 0, color.g or 0, color.b or 0)
 end
 
-local function ResolveTerminalPalette(db)
+local function ResolveTerminalPalette()
     local palette = {
         earned = C_EARNED,
         quest = C_QUEST,
@@ -72,7 +74,9 @@ local function ResolveTerminalPalette(db)
         empty = C_EMPTY,
     }
 
-    if not (db and db.terminalUseCustomColors == true) then
+    local useCustom = Addon.Config and Addon.Config.GetOptionValue
+        and Addon.Config:GetOptionValue("terminalUseCustomColors")
+    if not useCustom then
         return palette
     end
 
@@ -99,12 +103,13 @@ end
 ---   █ green  = earned         ▓ amber = complete quest (solid: ready to collect)
 ---   ▒ orange = incomplete quest (medium: needs work first)
 ---   ▓ teal   = rested         ░ dim = not yet earned
-local function BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, restedEnd)
+local function BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, restedEnd, barChars)
+    barChars = barChars or BAR_CHARS
     local parts     = {}
     local lastColor = nil
 
     local db = Addon.db or {}
-    local palette = ResolveTerminalPalette(db)
+    local palette = ResolveTerminalPalette()
 
     local useEarned = palette.earned
     local useQuest = palette.quest
@@ -112,7 +117,7 @@ local function BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, res
     local useRested = palette.rested
     local useEmpty = palette.empty
 
-    for i = 1, BAR_CHARS do
+    for i = 1, barChars do
         local ch, col
         if     i <= filled             then ch, col = CH_DARK,  useEarned
         elseif i <= questCompleteEnd   then ch, col = CH_MED,  useQuest
@@ -201,6 +206,18 @@ end
 
 local TerminalBarStyleTemplate = {}
 
+function TerminalBarStyleTemplate:ResizeToScale()
+    local width = BASE_WIDTH
+    local height = BASE_HEIGHT
+
+    self:SetSize(width, height)
+
+    -- Keep hidden compatibility StatusBar dimensions aligned with frame scale.
+    if self.StatusBar and self.StatusBar.SetSize then
+        self.StatusBar:SetSize(width, height)
+    end
+end
+
 -- Reusable table for UpdateGainedBar → RenderBar to avoid per-frame allocation
 local _renderCtx = {}
 
@@ -236,23 +253,27 @@ function TerminalBarStyleTemplate:RenderBar(context)
 
     local db = Addon.db or {}
 
+    local pct   = string.format("%.1f%%", ratio * 100)
+    local level = context.level or (UnitLevel and UnitLevel("player")) or "?"
+    local barChars = BAR_CHARS
+
     -- Segment boundaries — stacked left-to-right, each proportional to its XP amount
-    local filled = math.floor(ratio * BAR_CHARS + 0.5)
+    local filled = math.floor(ratio * barChars + 0.5)
 
     -- Complete quest XP (solid amber █ — ready to collect right now)
     local questCompleteEnd = filled
     if db.showCompleteQuestOverlay ~= false and context.completeQuestXP and context.completeQuestXP > 0
        and context.xpMax and context.xpMax > 0 then
-        local chars = math.floor(context.completeQuestXP / context.xpMax * BAR_CHARS + 0.5)
-        questCompleteEnd = math.min(BAR_CHARS, filled + chars)
+        local chars = math.floor(context.completeQuestXP / context.xpMax * barChars + 0.5)
+        questCompleteEnd = math.min(barChars, filled + chars)
     end
 
     -- Incomplete quest XP (medium amber ▒ — needs completing first)
     local questIncompleteEnd = questCompleteEnd
     if db.showIncompleteQuestOverlay == true and context.incompleteQuestXP and context.incompleteQuestXP > 0
        and context.xpMax and context.xpMax > 0 then
-        local chars = math.floor(context.incompleteQuestXP / context.xpMax * BAR_CHARS + 0.5)
-        questIncompleteEnd = math.min(BAR_CHARS, questCompleteEnd + chars)
+        local chars = math.floor(context.incompleteQuestXP / context.xpMax * barChars + 0.5)
+        questIncompleteEnd = math.min(barChars, questCompleteEnd + chars)
     end
 
     -- Rested XP (dark teal ▓ — after quest segments)
@@ -260,14 +281,12 @@ function TerminalBarStyleTemplate:RenderBar(context)
     local hasRestedXP  = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
     if db.showRestedOverlay ~= false and hasRestedXP
        and context.restedXP and context.xpMax and context.xpMax > 0 then
-        local chars = math.floor(context.restedXP / context.xpMax * BAR_CHARS + 0.5)
-        restedEnd = math.min(BAR_CHARS, questIncompleteEnd + chars)
+        local chars = math.floor(context.restedXP / context.xpMax * barChars + 0.5)
+        restedEnd = math.min(barChars, questIncompleteEnd + chars)
     end
 
     -- Build bar line: [coloured blocks] (left) + XX.X%  Lv.N (right, separate element)
-    local inner = BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, restedEnd)
-    local pct   = string.format("%.1f%%", ratio * 100)
-    local level = context.level or (UnitLevel and UnitLevel("player")) or "?"
+    local inner = BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, restedEnd, barChars)
     local display = C_LABEL .. "[|r" .. inner .. C_LABEL .. "]|r"
     local label   = C_LABEL .. pct .. "  Lv." .. tostring(level) .. "|r"
 
@@ -347,7 +366,7 @@ local function BuildTerminalTooltipText(context)
     local db  = Addon.db or {}
     local sep = C_STATS .. string.rep(CH_SEP, 42) .. "|r"
     local lines = {}
-    local palette = ResolveTerminalPalette(db)
+    local palette = ResolveTerminalPalette()
 
     local colorEarned = palette.earned
     local colorQuest = palette.quest
@@ -525,6 +544,8 @@ function TerminalBarStyleTemplate:BuildVisuals()
         XPBarPaintMixin.BuildVisuals(self)
     end
 
+    self:ResizeToScale()
+
     if self.OverlayFrameTextContainer then
         self._terminalBarText   = self.OverlayFrameTextContainer.TerminalBarText
         self._terminalLabelText = self.OverlayFrameTextContainer.TerminalLabelText
@@ -546,6 +567,7 @@ function TerminalBarStyleTemplate:BuildVisuals()
             self._terminalStatsText:SetFont(TERMINAL_FONT, 11, "MONOCHROME")
             self._terminalStatsText:SetTextColor(1, 1, 1, 1)
         end
+
     end
 
     self._lastDisplay   = nil
@@ -555,6 +577,7 @@ function TerminalBarStyleTemplate:BuildVisuals()
     if self.StatusBar then
         self.StatusBar:SetAlpha(0)
     end
+
 end
 
 -- Suppress paint-mixin overlay and text methods (terminal manages its own display)

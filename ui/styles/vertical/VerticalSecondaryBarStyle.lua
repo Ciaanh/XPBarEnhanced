@@ -115,6 +115,9 @@ local StyleHelpers = setmetatable({}, {
 XPBarVerticalReputationMixin = {}
 local StyleMixin = {}
 
+local BASE_WIDTH = 20
+local BASE_HEIGHT = 300
+
 local function GetBarColor(context)
     return StyleHelpers.GetFactionColor(context)
 end
@@ -140,6 +143,19 @@ end
 
 function StyleMixin:GetInitialContext()
     return SharedStyleHelpers.GetSecondaryInitialContext()
+end
+
+function StyleMixin:ResizeToScale()
+    local scale = (SharedStyleHelpers.GetBarScale and SharedStyleHelpers.GetBarScale("verticalSize")) or 1.0
+    local width = BASE_WIDTH * scale
+    local height = BASE_HEIGHT * scale
+
+    self:SetSize(width, height)
+
+    -- Keep the reputation fill bar dimensions in lockstep with the frame.
+    if self.Bar and self.Bar.SetSize then
+        self.Bar:SetSize(width, height)
+    end
 end
 
 
@@ -184,6 +200,7 @@ function StyleMixin:OnDragStop()
 end
 
 function StyleMixin:OnSecondaryLoad()
+    self:ResizeToScale()
     self:ConfigureDragSupport()
 end
 
