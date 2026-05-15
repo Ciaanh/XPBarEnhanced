@@ -146,6 +146,24 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_flatSize" inherits="ConfigDropdownTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="flatSize" type="string"/>
+                                            <KeyValue key="layoutIndex" value="7" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_verticalSize" inherits="ConfigDropdownTemplate" hidden="true">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="verticalSize" type="string"/>
+                                            <KeyValue key="layoutIndex" value="7.1" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Circular Bar ==================== -->
 
                                     <Frame parentKey="Row_circularSize" inherits="ConfigDropdownTemplate">

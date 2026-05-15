@@ -8,6 +8,16 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.1.4",
+        notes = {
+            "Added size presets (Small/Default/Large/Huge) for the Flat and Vertical bars.",
+            "Flat style now scales below-bar text with bar size presets.",
+            "Fixed quest and rested overlay height and width on scaled bars.",
+            "Fixed milestone tick positions and toggle response on scaled Flat bars.",
+            "Fixed terminal custom color resolution to respect active profile settings.",
+        },
+    },
+    {
         version = "1.1.3",
         notes = {
             "New Profile System with profile selection, creation, rename, and delete.",

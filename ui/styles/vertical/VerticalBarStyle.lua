@@ -18,6 +18,9 @@ local function GetSharedStyleHelpers()
     return Addon and Addon.UI and Addon.UI.SharedStyleHelpers
 end
 
+local BASE_WIDTH = 60
+local BASE_HEIGHT = 300
+
 -------------------------------------------------------------------
 -- STYLE TEMPLATE
 -------------------------------------------------------------------
@@ -34,6 +37,23 @@ function VerticalBarStyleTemplate:OnLoad()
 
     if XPBarMixinBase and XPBarMixinBase.OnLoad then
         XPBarMixinBase.OnLoad(self)
+    end
+
+    self:ResizeToScale()
+end
+
+function VerticalBarStyleTemplate:ResizeToScale()
+    local shared = GetSharedStyleHelpers()
+    local scale = (shared and shared.GetBarScale and shared.GetBarScale("verticalSize")) or 1.0
+    local width = BASE_WIDTH * scale
+    local height = BASE_HEIGHT * scale
+
+    self:SetSize(width, height)
+
+    -- Keep the inner StatusBar synced to frame scale so fill width/height
+    -- matches the resized background and text container.
+    if self.StatusBar and self.StatusBar.SetSize then
+        self.StatusBar:SetSize(width, height)
     end
 end
 

@@ -1168,9 +1168,18 @@ function XPBarEnhancedOptionsMixin:Refresh()
     -- VerticalLayoutMixin skips hidden children automatically — no anchor
     -- manipulation needed.
     local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    local isFlatMode = (barStyle == "flat")
+    local isVerticalMode = (barStyle == "vertical")
     local isTerminalMode = (barStyle == "terminal")
 
     if container then
+        if container.Row_flatSize then
+            container.Row_flatSize._styleVisible = isFlatMode
+        end
+        if container.Row_verticalSize then
+            container.Row_verticalSize._styleVisible = isVerticalMode
+        end
+
         -- Circular rows
         local circularRowKeys = {
             "circularSize",
@@ -1376,6 +1385,19 @@ function Options:OnOptionChanged(key)
                 bar:RepositionSegments()
             end
         end
+    elseif key == "flatSize" or key == "verticalSize" then
+        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
+            local bar = Addon.BarManager:GetCurrentFrame()
+            if bar and bar.ResizeToScale then
+                bar:ResizeToScale()
+            end
+        end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
+            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
+            if secondaryBar and secondaryBar.ResizeToScale then
+                secondaryBar:ResizeToScale()
+            end
+        end
     elseif key == "circularSize" then
         -- Resize ring and reposition segments
         if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
@@ -1437,6 +1459,21 @@ function Options:OnOptionChanged(key)
             key == "showCompleteQuestOverlay" or
             key == "showIncompleteQuestOverlay"
      then
+    elseif key == "showMilestoneTicks" then
+        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
+            local bar = Addon.BarManager:GetCurrentFrame()
+            if bar and bar.UpdateMilestoneTicks then
+                local context = nil
+                if XPBarContextBuilder and XPBarContextBuilder.BuildContext then
+                    context = XPBarContextBuilder.BuildContext("CONFIG_UPDATED")
+                end
+                local ratio = 0
+                if context and context.xpMax and context.xpMax > 0 then
+                    ratio = (context.currentXP or 0) / context.xpMax
+                end
+                bar:UpdateMilestoneTicks(ratio, context)
+            end
+        end
     end
 
     -- General refresh

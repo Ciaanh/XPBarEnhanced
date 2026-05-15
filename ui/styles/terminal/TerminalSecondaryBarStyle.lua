@@ -103,6 +103,8 @@ local StyleMixin = {}
 local TERMINAL_FONT = "Interface\\AddOns\\XPBarEnhanced\\fonts\\DejaVuSansMono.ttf"
 local BAR_CHARS = 20
 local TPAD = 10
+local BASE_WIDTH = 650
+local BASE_HEIGHT = 22
 
 -- Unicode block fill characters (UTF-8 byte sequences matching TerminalBarStyle)
 local CH_FULL  = "\226\150\136"  -- U+2588 █  FULL BLOCK  (filled)
@@ -346,6 +348,18 @@ function StyleMixin:GetInitialContext()
     return SharedStyleHelpers.GetSecondaryInitialContext()
 end
 
+function StyleMixin:ResizeToScale()
+    local width = BASE_WIDTH
+    local height = BASE_HEIGHT
+
+    self:SetSize(width, height)
+
+    -- Keep the text line width synced to the scaled frame width.
+    if self.RepLine and self.RepLine.SetWidth then
+        self.RepLine:SetWidth(math.max(1, width - 16))
+    end
+end
+
 function StyleMixin:Render(context)
     if not SharedStyleHelpers.BeginSecondaryRender(self, context) then
         return
@@ -361,7 +375,7 @@ end
 -------------------------------------------------------------------
 
 function StyleMixin:OnEnter()
-    if not self._lastContext then
+    if not self._lastContext or self._lastContext.isAvailable == false then
         return
     end
     local context = self._lastContext
@@ -389,8 +403,8 @@ function StyleMixin:OnDragStop()
 end
 
 function StyleMixin:OnSecondaryLoad()
+    self:ResizeToScale()
     self:ConfigureDragSupport()
-    -- Override XML inherited font with the same monospace face used by the primary terminal bar.
     if self.RepLine then
         self.RepLine:SetFont(TERMINAL_FONT, 12, "MONOCHROME")
         self.RepLine:SetTextColor(1, 1, 1, 1)

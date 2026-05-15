@@ -119,6 +119,9 @@ local StyleHelpers = setmetatable({}, {
 XPBarFlatReputationMixin = {}
 local StyleMixin = {}
 
+local BASE_WIDTH = 565
+local BASE_HEIGHT = 18
+
 local function GetBarColor(context)
     return StyleHelpers.GetFactionColor(context)
 end
@@ -145,6 +148,22 @@ end
 
 function StyleMixin:GetTextTickerContext()
     return self._lastContext or self:GetInitialContext()
+end
+
+function StyleMixin:ResizeToScale()
+    local scale = (SharedStyleHelpers.GetBarScale and SharedStyleHelpers.GetBarScale("flatSize")) or 1.0
+    local width = BASE_WIDTH * scale
+    local height = BASE_HEIGHT * scale
+
+    self:SetSize(width, height)
+
+    -- Keep child geometry synchronized with frame scale.
+    if self.Bar and self.Bar.SetSize then
+        self.Bar:SetSize(width, height)
+    end
+    if self.LabelContainer and self.LabelContainer.Label and self.LabelContainer.Label.SetSize then
+        self.LabelContainer.Label:SetSize(width, height)
+    end
 end
 
 function StyleMixin:Render(context)
@@ -197,6 +216,7 @@ function StyleMixin:OnDragStop()
 end
 
 function StyleMixin:OnSecondaryLoad()
+    self:ResizeToScale()
     self:ConfigureDragSupport()
 end
 
