@@ -597,6 +597,10 @@ function StyleMixin:OnDragStop()
 
     self._isDraggingAngle = nil
     self:SetScript("OnUpdate", nil)
+
+    if Config and Config.ApplyPendingOptionChanges then
+        Config:ApplyPendingOptionChanges()
+    end
 end
 
 function StyleMixin:QueueReposition()

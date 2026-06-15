@@ -241,6 +241,11 @@ end
 -- End: embedded position + drag behavior
 
 function StatsFrameMixin:OnLoad()
+    if self._xpbeInitialized then
+        return
+    end
+    self._xpbeInitialized = true
+
     local statsFrame = self
     Stats:SetFrame(statsFrame)
 
@@ -317,7 +322,7 @@ end
 
 function Stats:Initialize()
     local existing = _G["XPBarEnhancedStatsFrame"]
-    if existing and existing.OnLoad then
+    if existing and existing.OnLoad and not existing._xpbeInitialized then
         existing:OnLoad()
     end
     if existing then
@@ -449,7 +454,7 @@ function Stats:UpdateLevelStats(statsFrame)
     end
 
     -- Update current level and XP values using safe setters
-    SetTextSafe(content.levelValue, tostring(level))
+    SetTextSafe(content.CurrentLevelValue, tostring(level))
     SetTextSafe(content.CurrentXPValue, Utils.ShortNumber(currentXP))
     SetTextSafe(content.MaxXPValue, Utils.ShortNumber(maxXP))
     SetTextSafe(content.ProgressValue, string_format("%.1f%%", percent))

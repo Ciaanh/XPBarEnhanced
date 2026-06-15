@@ -35,6 +35,17 @@ local Utils = Addon.Utils
 EventBus.listeners = EventBus.listeners or {}
 EventBus._executingEvents = EventBus._executingEvents or {}
 EventBus._deferredRegistrations = EventBus._deferredRegistrations or {}
+EventBus._debugEnabled = EventBus._debugEnabled or false
+EventBus._debugCounters = EventBus._debugCounters or {}
+
+local function trackEmit(eventBus, eventName)
+    if not eventBus._debugEnabled then
+        return
+    end
+
+    local counters = eventBus._debugCounters
+    counters[eventName] = (counters[eventName] or 0) + 1
+end
 
 ---Register a handler for an event
 ---@param eventName string The event name to listen for
@@ -105,6 +116,8 @@ end
 ---@param context table Mandatory pre-built context supplied by the emitting domain service
 ---@return XPBarEventContext|table|nil context The context object passed to all handlers, or nil if no listeners
 function EventBus:Emit(eventName, context)
+    trackEmit(self, eventName)
+
     -- Skip expensive context build when no listeners are registered for this event
     local listenersForEvent = self.listeners and self.listeners[eventName]
     if not listenersForEvent or not next(listenersForEvent) then
@@ -146,6 +159,43 @@ function EventBus:Emit(eventName, context)
     end
 
     return context
+end
+
+function EventBus:SetDebugCountersEnabled(enabled)
+    self._debugEnabled = enabled and true or false
+end
+
+function EventBus:IsDebugCountersEnabled()
+    return self._debugEnabled == true
+end
+
+function EventBus:ResetDebugCounters()
+    self._debugCounters = {}
+end
+
+function EventBus:GetDebugCounters(limit)
+    local result = {}
+    for eventName, count in pairs(self._debugCounters or {}) do
+        result[#result + 1] = { event = eventName, count = count }
+    end
+
+    table.sort(result, function(a, b)
+        if a.count == b.count then
+            return tostring(a.event) < tostring(b.event)
+        end
+        return a.count > b.count
+    end)
+
+    local maxEntries = tonumber(limit) or #result
+    if maxEntries < #result then
+        local trimmed = {}
+        for i = 1, maxEntries do
+            trimmed[#trimmed + 1] = result[i]
+        end
+        return trimmed
+    end
+
+    return result
 end
 
 return EventBus

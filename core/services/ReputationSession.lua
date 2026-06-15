@@ -74,7 +74,15 @@ local function IsCompanionNPCInParty(companionName)
         if UnitExists and UnitExists(unit) then
             if companionName and UnitName then
                 local unitName = UnitName(unit)
-                if unitName == companionName then
+                local isSecret = (issecretvalue and issecretvalue(unitName)) and true or false
+
+                if not isSecret and unitName == companionName then
+                    return true
+                end
+
+                -- In restricted states UnitName may be secret and cannot be compared.
+                -- Fall back to non-player detection to avoid secret-value branching.
+                if isSecret and UnitIsPlayer and not UnitIsPlayer(unit) then
                     return true
                 end
             else

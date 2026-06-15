@@ -333,6 +333,9 @@ end
 function MinimapButton:SetEnabled(show)
     if Addon.Config and Addon.Config.SetOptionKey then
         Addon.Config:SetOptionKey("showMinimapButton", show, true)
+        if Addon.Config.ApplyPendingOptionChanges then
+            Addon.Config:ApplyPendingOptionChanges()
+        end
     elseif Addon.db then
         Addon.db.showMinimapButton = show
     end

@@ -22,7 +22,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 ## Bar Styles
 
 | Style | Description |
-|-------|-------------|
+| --- | --- |
 | **None** | Blizzard's default XP bar only |
 | **Classic** | Blizzard-style bar with atlas textures and quest overlays |
 | **Flat** | Wide draggable bar with milestone ticks |
@@ -40,7 +40,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 ## Slash Commands
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/xpbe` | Show command help |
 | `/xpbe options` | Open the options panel |
 | `/xpbe stats` | Toggle the statistics window |
@@ -53,6 +53,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | `/xpbe profile rename <name>` | Rename the active profile |
 | `/xpbe profile delete [name]` | Delete a profile |
 | `/xpbe reps` | Export all faction IDs |
+| `/xpbe debugevents [on\|off\|show\|reset]` | Toggle and inspect EventBus emit counters |
 | `/xpbe reset` | Reset all settings |
 | `/xpbe resetstats` | Reset session statistics |
 | `/xpbe resetcolors` | Reset colors to defaults |
@@ -78,6 +79,11 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 
 - World of Warcraft Retail
 - No external dependencies
+
+## Development Notes
+
+- Event ownership guidance: see docs/event-ownership.md
+- Manual release validation: see docs/qa-checklist.md
 
 ## Credits
 
