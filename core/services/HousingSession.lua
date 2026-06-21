@@ -3,9 +3,14 @@
 
 local Addon = XPBarEnhanced
 Addon.HousingSession = Addon.HousingSession or {}
+local L = Addon.L or {}
 
 ---@class HousingSession
 local HousingSession = Addon.HousingSession
+
+local HOUSING_NAME = L["HOUSING_NAME"] or "Housing Favor"
+local HOUSING_MAX_LEVEL_LABEL = L["HOUSING_MAX_LEVEL_LABEL"] or "Max House Level"
+local HOUSING_LEVEL_FMT = L["HOUSING_LEVEL_FMT"] or "Level %d"
 
 local function IsSecret(value)
     return (issecretvalue and issecretvalue(value)) and true or false
@@ -35,7 +40,7 @@ local function BuildUnavailableContext()
     return {
         source = "housing",
         isAvailable = false,
-        name = "Housing Favor",
+        name = HOUSING_NAME,
         factionType = "housing",
         event = Addon.EventNames and Addon.EventNames.HOUSING_BROADCAST_UPDATE or "HOUSING:BROADCAST_UPDATE",
     }
@@ -47,11 +52,13 @@ local function BuildHousingContext(self)
         return BuildUnavailableContext()
     end
 
-    if not C_Housing or not C_Housing.GetTrackedHouseGuid then
+    if not C_Housing then
         return BuildUnavailableContext()
     end
 
-    local trackedGuid = C_Housing.GetTrackedHouseGuid()
+    -- GetTrackedHouseGuid returns nil when the player has not checked
+    -- "Show as Experience Bar" on any house. Hide the bar in that case.
+    local trackedGuid = C_Housing.GetTrackedHouseGuid and C_Housing.GetTrackedHouseGuid()
     if not trackedGuid then
         return BuildUnavailableContext()
     end
@@ -78,6 +85,9 @@ local function BuildHousingContext(self)
 
     local maxHouseLevel = (C_Housing.GetMaxHouseLevel and tonumber(C_Housing.GetMaxHouseLevel())) or 0
     local isMaxed = maxHouseLevel > 0 and level >= maxHouseLevel
+    local levelProgress = math.max(0, favor - minFavor)
+    local levelGoal = math.max(1, maxFavor - minFavor)
+    local levelRemaining = math.max(0, maxFavor - favor)
     local percent = isMaxed and 100 or math.floor((Clamp((favor - minFavor) / math.max(1, maxFavor - minFavor), 0, 1) * 100) + 0.5)
 
     local repPerHour = 0
@@ -95,8 +105,8 @@ local function BuildHousingContext(self)
     return {
         source = "housing",
         isAvailable = true,
-        name = "Housing Favor",
-        standingLabel = isMaxed and "Max House Level" or string.format("House Level %d", level),
+        name = HOUSING_NAME,
+        standingLabel = isMaxed and HOUSING_MAX_LEVEL_LABEL or string.format(HOUSING_LEVEL_FMT, level),
         factionType = "housing",
         isCompanion = false,
         currentLevel = level,
@@ -107,6 +117,9 @@ local function BuildHousingContext(self)
         ratio = Clamp((favor - minFavor) / math.max(1, maxFavor - minFavor), 0, 1),
         percent = percent,
         isMaxed = isMaxed,
+        progressCurrent = levelProgress,
+        progressGoal = levelGoal,
+        progressRemaining = levelRemaining,
         sessionGained = session.sessionGained or 0,
         repPerHour = repPerHour,
         timeToNextLevel = timeToNextLevel,
@@ -127,17 +140,46 @@ function HousingSession:Initialize()
 end
 
 function HousingSession:RequestCurrentTrackedHouseFavor()
-    if not C_Housing or not C_Housing.GetTrackedHouseGuid or not C_Housing.GetCurrentHouseLevelFavor then
+    if not C_Housing or not C_Housing.GetCurrentHouseLevelFavor then
         return
     end
 
-    local trackedGuid = C_Housing.GetTrackedHouseGuid()
-    if trackedGuid then
-        C_Housing.GetCurrentHouseLevelFavor(trackedGuid)
+    -- Use GetTrackedHouseGuid (the "Show as Experience Bar" house) as the
+    -- primary source. Fall back to session.houseGUID from PLAYER_HOUSE_LIST_UPDATED.
+    local houseGUID = C_Housing.GetTrackedHouseGuid and C_Housing.GetTrackedHouseGuid()
+    if not houseGUID then
+        local session = self._session
+        houseGUID = session and session.houseGUID
+    end
+    if houseGUID then
+        pcall(C_Housing.GetCurrentHouseLevelFavor, houseGUID)
     end
 end
 
 function HousingSession:OnEnteringWorld()
+    -- Trigger house list loading; PLAYER_HOUSE_LIST_UPDATED fires as the response
+    -- and gives us the real houseGUID needed for GetCurrentHouseLevelFavor.
+    if C_Timer and C_Timer.After and C_Housing and C_Housing.GetPlayerOwnedHouses then
+        C_Timer.After(2, function()
+            pcall(C_Housing.GetPlayerOwnedHouses)
+        end)
+    end
+    self:RequestCurrentTrackedHouseFavor()
+    self:EmitUpdate()
+end
+
+function HousingSession:OnPlayerHouseListUpdated(list)
+    if not self._session then return end
+    if not list or type(list) ~= "table" or #list == 0 then return end
+
+    local session = self._session
+    -- Pick the first valid house entry (most players have exactly one).
+    -- The houseGUID here is what GetCurrentHouseLevelFavor actually expects.
+    local chosen = list[1]
+    if chosen and chosen.houseGUID then
+        session.houseGUID = chosen.houseGUID
+    end
+
     self:RequestCurrentTrackedHouseFavor()
     self:EmitUpdate()
 end
@@ -156,15 +198,44 @@ function HousingSession:OnTrackedHouseChanged()
     self:EmitUpdate()
 end
 
-function HousingSession:OnHouseLevelFavorUpdated(houseLevelFavor)
-    if not self._session or type(houseLevelFavor) ~= "table" then
+local function NormalizeHouseFavorPayload(a1, a2, a3)
+    if type(a1) == "table" then
+        return a1
+    end
+
+    local payloadGuid = nil
+    local level = nil
+    local favor = nil
+
+    if a1 ~= nil and tonumber(a1) == nil then
+        payloadGuid = a1
+        level = tonumber(a2)
+        favor = tonumber(a3)
+    else
+        level = tonumber(a1)
+        favor = tonumber(a2)
+        payloadGuid = a3
+    end
+
+    if not level or not favor then
+        return nil
+    end
+
+    return {
+        houseGUID = payloadGuid,
+        houseLevel = level,
+        houseFavor = favor,
+    }
+end
+
+function HousingSession:OnHouseLevelFavorUpdated(a1, a2, a3)
+    if not self._session then
         return
     end
 
-    local trackedGuid = C_Housing and C_Housing.GetTrackedHouseGuid and C_Housing.GetTrackedHouseGuid() or nil
-    local payloadGuid = houseLevelFavor.houseGUID
-
-    if trackedGuid and payloadGuid and not SafeIsSameGuid(payloadGuid, trackedGuid) then
+    local houseLevelFavor = NormalizeHouseFavorPayload(a1, a2, a3)
+    if not houseLevelFavor then
+        self:RequestCurrentTrackedHouseFavor()
         return
     end
 
@@ -182,7 +253,6 @@ function HousingSession:OnHouseLevelFavorUpdated(houseLevelFavor)
         end
     end
 
-    session.lastHouseGuid = payloadGuid or trackedGuid
     session.lastHouseFavor = favor
     session.lastHouseLevel = level
     session.lastUpdate = time()

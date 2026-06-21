@@ -4,6 +4,12 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.6] - 2026-06-21
+
+### Fixed
+
+- **Housing XP Bar Refresh**: Secondary bar no longer displays stale data after gaining housing favor. Fixed a bug in `SecondaryBarBaseMixin.MarkDirty` where the force-refresh sentinel was cleared before `GetLatestContext` could see it, causing the bar to re-render with the previous context instead of fetching fresh data from `HousingSession`.
+
 ## [1.1.5] - 2026-06-21
 
 ### Added

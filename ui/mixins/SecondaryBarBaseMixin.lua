@@ -250,6 +250,17 @@ function SecondaryBaseMixin:MarkDirty(context, forceRefresh)
         end
 
         if pending == false then
+            -- forceRefresh: fetch fresh context from the source rather than
+            -- relying on stale _lastContext. _pendingContext was cleared above
+            -- so GetLatestContext cannot see the sentinel; call GetInitialContext
+            -- directly to pull current data from HousingSession/ReputationSession.
+            if self_ref.GetInitialContext then
+                local freshCtx = self_ref:GetInitialContext()
+                if freshCtx then
+                    xpcall(self_ref.Render, Utils.ReportError, self_ref, freshCtx)
+                    return
+                end
+            end
             xpcall(self_ref.Refresh, Utils.ReportError, self_ref)
         elseif pending then
             xpcall(self_ref.Render, Utils.ReportError, self_ref, pending)

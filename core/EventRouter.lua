@@ -5,6 +5,14 @@ local Addon = XPBarEnhanced
 Addon.EventRouter = Addon.EventRouter or {}
 
 local EventRouter = Addon.EventRouter
+local Utils = Addon.Utils
+
+local function RegisterEventSafely(frame, eventName)
+    local ok, err = pcall(frame.RegisterEvent, frame, eventName)
+    if not ok and Utils and Utils.ReportError then
+        Utils.ReportError(string.format("XPBarEnhanced: skipping unavailable event '%s' (%s)", tostring(eventName), tostring(err)))
+    end
+end
 
 local function EmitReputationUpdate()
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.EmitUpdate then
@@ -15,6 +23,14 @@ end
 local function EmitHousingUpdate()
     if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.EmitUpdate then
         Addon.HousingSession:EmitUpdate()
+    end
+end
+
+local function RequestHousingFavorRefresh()
+    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.RequestCurrentTrackedHouseFavor then
+        Addon.HousingSession:RequestCurrentTrackedHouseFavor()
+    else
+        EmitHousingUpdate()
     end
 end
 
@@ -52,12 +68,24 @@ local function DispatchTrackedHouseChanged()
     end
 end
 
-local function DispatchHouseLevelFavorUpdated(houseLevelFavor)
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnHouseLevelFavorUpdated then
-        Addon.HousingSession:OnHouseLevelFavorUpdated(houseLevelFavor)
+local function DispatchPlayerHouseListUpdated(list)
+    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnPlayerHouseListUpdated then
+        Addon.HousingSession:OnPlayerHouseListUpdated(list)
     else
         EmitHousingUpdate()
     end
+end
+
+local function DispatchHouseLevelFavorUpdated(...)
+    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnHouseLevelFavorUpdated then
+        Addon.HousingSession:OnHouseLevelFavorUpdated(...)
+    else
+        EmitHousingUpdate()
+    end
+end
+
+local function DispatchHouseLevelChanged()
+    RequestHousingFavorRefresh()
 end
 
 local function DispatchQuestEvent(event)
@@ -235,8 +263,27 @@ local ROUTER_DISPATCH = {
     TRACKED_HOUSE_CHANGED = function()
         DispatchTrackedHouseChanged()
     end,
-    HOUSE_LEVEL_FAVOR_UPDATED = function(houseLevelFavor)
-        DispatchHouseLevelFavorUpdated(houseLevelFavor)
+    PLAYER_HOUSE_LIST_UPDATED = function(a1)
+        DispatchPlayerHouseListUpdated(a1)
+    end,
+    HOUSE_LEVEL_FAVOR_UPDATED = function(...)
+        DispatchHouseLevelFavorUpdated(...)
+    end,
+    HOUSE_LEVEL_CHANGED = function()
+        DispatchHouseLevelChanged()
+    end,
+    -- Housing activity events: fire when the player completes a task (e.g. adds
+    -- decor). HOUSE_LEVEL_FAVOR_UPDATED is request-response only, so we must
+    -- poll for new favor after each activity. Registered via RegisterEventSafely
+    -- (pcall) in case any variant is unavailable in some build.
+    INITIATIVE_TASK_COMPLETED = function()
+        RequestHousingFavorRefresh()
+    end,
+    INITIATIVE_COMPLETED = function()
+        RequestHousingFavorRefresh()
+    end,
+    NEIGHBORHOOD_INITIATIVE_UPDATED = function()
+        RequestHousingFavorRefresh()
     end,
     UNIT_QUEST_LOG_CHANGED = function()
         DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")
@@ -283,7 +330,7 @@ function EventRouter:Initialize()
     end)
 
     for eventName in pairs(ROUTER_DISPATCH) do
-        frame:RegisterEvent(eventName)
+        RegisterEventSafely(frame, eventName)
     end
 end
 

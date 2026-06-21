@@ -174,6 +174,7 @@ end
 
 local function BuildTerminalRepTooltipText(context)
     local formatter = Addon.TextFormatter
+    local styleHelpers = Addon.UI and Addon.UI.StyleHelpers
     local lines = {}
     local sep = C_STATS .. string.rep(CH_SEP, 42) .. "|r"
 
@@ -191,10 +192,18 @@ local function BuildTerminalRepTooltipText(context)
     if context.isMaxed then
         lines[#lines + 1] = C_STATS .. "progress:|r " .. C_VALUE .. "MAX|r"
     else
+        local displayCurrent = context.current or 0
+        local displayMax = context.max or 1
+        local displayRemaining = math.max(0, displayMax - displayCurrent)
+
+        if styleHelpers and styleHelpers.GetDisplayProgressValues then
+            displayCurrent, displayMax, displayRemaining = styleHelpers.GetDisplayProgressValues(context)
+        end
+
         lines[#lines + 1] = C_STATS .. "progress:|r " .. C_VALUE .. tostring(context.percent or 0) .. "%|r"
         if formatter and formatter.FormatNumber then
-            local current = formatter:FormatNumber(context.current or 0, false)
-            local maxValue = formatter:FormatNumber(context.max or 0, false)
+            local current = formatter:FormatNumber(displayCurrent, false)
+            local maxValue = formatter:FormatNumber(displayMax, false)
             lines[#lines + 1] = C_STATS .. "current: |r" .. C_VALUE .. current .. " / " .. maxValue .. "|r"
         end
     end

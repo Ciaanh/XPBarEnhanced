@@ -283,6 +283,9 @@ L["MSG_SETTINGS_RESET"] = "Settings reset to defaults"
 -- ============================================================================
 L["REP_STANDING_RENOWN"] = "Renown %d"
 L["REP_STANDING_PARAGON"] = "Paragon"
+L["HOUSING_NAME"] = "Housing Favor"
+L["HOUSING_MAX_LEVEL_LABEL"] = "Max House Level"
+L["HOUSING_LEVEL_FMT"] = "Level %d"
 
 -- ============================================================================
 -- ERRORS

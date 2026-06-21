@@ -44,6 +44,31 @@ local function Clamp(value, minValue, maxValue)
     return value
 end
 
+local function GetDisplayProgressValues(context)
+    if not context then
+        return 0, 1, 0
+    end
+
+    local current = context.current or 0
+    local maxValue = context.max or 1
+    local remaining = math.max(0, maxValue - current)
+
+    if context.factionType == "housing" then
+        current = context.progressCurrent or current
+        maxValue = context.progressGoal or maxValue
+        remaining = context.progressRemaining
+        if remaining == nil then
+            remaining = math.max(0, maxValue - current)
+        end
+    end
+
+    return current, math.max(1, maxValue), math.max(0, remaining)
+end
+
+function StyleHelpers.GetDisplayProgressValues(context)
+    return GetDisplayProgressValues(context)
+end
+
 function StyleHelpers.GetFactionColor(context)
     local colorType = "standard"
     if context and context.isCompanion then
@@ -70,12 +95,14 @@ function StyleHelpers.BuildTooltipProgressText(context)
         return "MAX"
     end
 
+    local current, maxValue = GetDisplayProgressValues(context)
+
     local formatter = Addon.TextFormatter
     if formatter and formatter.FormatPercent then
-        return formatter:FormatPercent(context and context.current, context and context.max)
+        return formatter:FormatPercent(current, maxValue)
     end
 
-    return string.format("%d / %d (%d%%)", context and context.current or 0, context and context.max or 1, context and context.percent or 0)
+    return string.format("%d / %d (%d%%)", current, maxValue, context and context.percent or 0)
 end
 
 function StyleHelpers.GetMinimapRingSegmentHeight()

@@ -165,18 +165,26 @@ function Shared.ShowSecondaryTooltip(frame, context, anchor)
         GameTooltip:AddLine("Progress: MAX", 0.7, 1, 0.7)
     else
         local progressText = nil
+        local displayCurrent = context.current or 0
+        local displayMax = context.max or 1
+        local displayRemaining = math.max(0, displayMax - displayCurrent)
+
+        if StyleHelpers and StyleHelpers.GetDisplayProgressValues then
+            displayCurrent, displayMax, displayRemaining = StyleHelpers.GetDisplayProgressValues(context)
+        end
+
         if StyleHelpers and StyleHelpers.BuildTooltipProgressText then
             progressText = StyleHelpers.BuildTooltipProgressText(context)
         elseif TextFormatter and TextFormatter.FormatPercent then
-            progressText = TextFormatter:FormatPercent(context.current, context.max)
+            progressText = TextFormatter:FormatPercent(displayCurrent, displayMax)
         end
         if progressText then
             GameTooltip:AddLine(string.format("Progress: %s", progressText), 0.7, 1, 0.7)
         end
 
         if TextFormatter and TextFormatter.FormatNumber then
-            local currentText = TextFormatter:FormatNumber(context.current or 0, false)
-            local maxText = TextFormatter:FormatNumber(context.max or 0, false)
+            local currentText = TextFormatter:FormatNumber(displayCurrent, false)
+            local maxText = TextFormatter:FormatNumber(displayMax, false)
             GameTooltip:AddDoubleLine("Current:", currentText .. " / " .. maxText, 0.7, 0.7, 0.7, 0.7, 0.9, 1)
         end
     end
@@ -270,6 +278,25 @@ function Shared.BuildSecondaryLabel(context)
 
     if context and context.isMaxed then
         return label .. " (MAX)"
+    end
+
+    if context and context.factionType == "housing" then
+        local formatter = Addon.TextFormatter
+        local StyleHelpers = Addon.UI and Addon.UI.StyleHelpers
+        local displayCurrent = context.current or 0
+        local displayMax = context.max or 1
+
+        if StyleHelpers and StyleHelpers.GetDisplayProgressValues then
+            displayCurrent, displayMax = StyleHelpers.GetDisplayProgressValues(context)
+        end
+
+        if formatter and formatter.FormatNumber then
+            return label .. string.format(
+                " (%s / %s)",
+                formatter:FormatNumber(displayCurrent, false),
+                formatter:FormatNumber(displayMax, false)
+            )
+        end
     end
 
     return label .. string.format(" (%d%%)", (context and context.percent) or 0)

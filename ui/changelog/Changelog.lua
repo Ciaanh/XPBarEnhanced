@@ -8,6 +8,12 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.1.6",
+        notes = {
+            "Fixed housing favor secondary bar not refreshing after gaining housing XP.",
+        },
+    },
+    {
         version = "1.1.5",
         notes = {
             "Added secondary source selection with Reputation and Housing Favor modes.",
