@@ -6,6 +6,7 @@ local Addon = XPBarEnhanced
 local defaults = {
     barStyle = "classic",
     showSecondaryBar = false,
+    secondaryBarSource = "reputation",
     hideCompanionOutsideDelve = false,
     secondaryBarsAttached = true,
     barLocked = false,
@@ -66,7 +67,9 @@ local defaults = {
         xpBarRested = {r = 0.0, g = 0.44, b = 1.0, a = 1},
         rested = {r = 0.07, g = 0.58, b = 0.95, a = 0.5},
         questComplete = {r = 1.0, g = 0.65, b = 0.0, a = 0.85},
-        questIncomplete = {r = 0.5, g = 1.0, b = 0.2, a = 0.85}
+        questIncomplete = {r = 0.5, g = 1.0, b = 0.2, a = 0.85},
+        secondaryReputation = {r = 0.70, g = 0.30, b = 0.85, a = 1},
+        secondaryHousing = {r = 0.85, g = 0.55, b = 0.20, a = 1}
     },
     barPosition = {
         point = "CENTER",

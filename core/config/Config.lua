@@ -129,7 +129,14 @@ function Config:SetOptionKey(key, value, silent)
     local target = getWriteTargetTable()
     target[key] = newValue
 
+    if silent then
+        self._pendingOptionKeys = self._pendingOptionKeys or {}
+        self._pendingOptionKeys[key] = true
+        return true
+    end
+
     self:ApplyOptionSideEffects(key)
+    return true
 end
 
 -------------------------------------------------------------------
@@ -228,7 +235,7 @@ function Config:SetColor(key, hex, silent)
     target.colors[key] = colorTable
 
     -- Emit a dedicated color update event so views can update only their color previews
-    if Addon.EventBus and Addon.EventBus.Emit then
+    if not silent and Addon.EventBus and Addon.EventBus.Emit then
         Addon.EventBus:Emit(EventNames.COLORS_UPDATED, { event = EventNames.COLORS_UPDATED })
     end
 
@@ -247,7 +254,7 @@ function Config:ResetColor(key, silent)
         return false, normalized
     end
 
-    if Addon.EventBus and Addon.EventBus.Emit then
+    if not silent and Addon.EventBus and Addon.EventBus.Emit then
         Addon.EventBus:Emit(EventNames.COLORS_UPDATED, { event = EventNames.COLORS_UPDATED })
     end
 
@@ -435,7 +442,7 @@ end
 -- SIDE EFFECTS
 -------------------------------------------------------------------
 
-function Config:ApplyOptionSideEffects(key)
+function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
     -- Apply primary bar style switch BEFORE emitting CONFIG_UPDATED so that
     -- secondary bars can attach to the new frame in the same event cycle.
     if key == "barStyle" then
@@ -446,7 +453,7 @@ function Config:ApplyOptionSideEffects(key)
     end
 
     -- Emit a config-level event for fine-grained subscribers; also leave broadcast for compatibility
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+    if not suppressConfigEvent and Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
     end
     -- XP bars subscribe to CONFIG_UPDATED directly; avoid duplicate domain broadcasts.
@@ -456,12 +463,27 @@ function Config:ApplyOptionSideEffects(key)
         if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
             Addon.ReputationSession:EmitUpdate()
         end
+        if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+            Addon.HousingSession:EmitUpdate()
+        end
+    end
+
+    if key == "secondaryBarSource" then
+        if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+            Addon.ReputationSession:EmitUpdate()
+        end
+        if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+            Addon.HousingSession:EmitUpdate()
+        end
     end
 
     if key == "circularSecondaryFullCircle" or key == "minimapArcStartExpanded"
        or key == "minimapArcDisplayAngle" or key == "minimapArcIconAngle" then
         if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
             Addon.ReputationSession:EmitUpdate()
+        end
+        if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+            Addon.HousingSession:EmitUpdate()
         end
     end
 
@@ -514,6 +536,23 @@ function Config:ApplyOptionSideEffects(key)
                 bar:UpdatePositionMode(newMode)
             end
         end
+    end
+end
+
+function Config:ApplyPendingOptionChanges()
+    local pendingKeys = self._pendingOptionKeys
+    if not pendingKeys then
+        return
+    end
+
+    self._pendingOptionKeys = nil
+
+    for key in pairs(pendingKeys) do
+        self:ApplyOptionSideEffects(key, true)
+    end
+
+    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
     end
 end
 

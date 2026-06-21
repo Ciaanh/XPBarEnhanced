@@ -112,7 +112,7 @@ function CircularBarStyleTemplate:GetDisplaySegmentCount()
     else
         -- Migrate any boolean/invalid saved values to default on the active storage target.
         if saved ~= nil and Config and Config.SetOptionKey then
-            Config:SetOptionKey("circularSegments", DEFAULT_SEGMENTS, true)
+            Config:SetOptionKey("circularSegments", DEFAULT_SEGMENTS)
         end
     end
     -- Clamp to valid range

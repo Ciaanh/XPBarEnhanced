@@ -185,6 +185,10 @@ L["ERR_PROFILE_GLOBAL_DELETE"] = "Global settings cannot be deleted."
 -- Secondary bar options
 L["OPT_SHOW_SECONDARY_BAR"] = "Show secondary bar"
 L["OPT_SHOW_SECONDARY_BAR_DESC"] = "Show the tracked reputation bar as a secondary progress bar. When the watched faction is a Delve companion, the bar uses companion-specific display rules."
+L["OPT_SECONDARY_BAR_SOURCE"] = "Secondary source"
+L["OPT_SECONDARY_BAR_SOURCE_DESC"] = "Choose which progression source drives the secondary bar."
+L["OPT_SECONDARY_BAR_SOURCE_REPUTATION"] = "Reputation"
+L["OPT_SECONDARY_BAR_SOURCE_HOUSING"] = "Housing Favor"
 L["OPT_HIDE_COMPANION_OUTSIDE_DELVE"] = "Hide companion bar outside Delves"
 L["OPT_HIDE_COMPANION_OUTSIDE_DELVE_DESC"] = "When enabled, the secondary bar is hidden if the watched faction is a Delve companion and you are not inside a Delve."
 L["OPT_SECONDARY_BARS_ATTACHED"] = "Attach to XP bar"
@@ -255,6 +259,10 @@ L["COLOR_QUEST_INCOMPLETE"] = "Incomplete Quest Overlay"
 L["COLOR_QUEST_INCOMPLETE_DESC"] = "Color of XP from quests still in progress."
 L["COLOR_RESTED"] = "Rested XP Overlay"
 L["COLOR_RESTED_DESC"] = "Color of the rested XP segment of the bar."
+L["COLOR_SECONDARY_REPUTATION"] = "Secondary Bar: Reputation"
+L["COLOR_SECONDARY_REPUTATION_DESC"] = "Color of the secondary bar when Reputation is selected as the source."
+L["COLOR_SECONDARY_HOUSING"] = "Secondary Bar: Housing Favor"
+L["COLOR_SECONDARY_HOUSING_DESC"] = "Color of the secondary bar when Housing Favor is selected as the source."
 
 -- ============================================================================
 -- MESSAGES

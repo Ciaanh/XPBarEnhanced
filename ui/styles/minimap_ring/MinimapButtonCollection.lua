@@ -313,6 +313,10 @@ function Collection:OnBagDragStop()
         self.bagButton:UnlockHighlight()
     end
     self.isDragging = false
+
+    if Addon.Config and Addon.Config.ApplyPendingOptionChanges then
+        Addon.Config:ApplyPendingOptionChanges()
+    end
 end
 
 function Collection:PrepareButton(button, state)

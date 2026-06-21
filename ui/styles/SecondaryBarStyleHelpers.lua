@@ -16,12 +16,22 @@ local function GetOptionValue(key, fallback)
     return fallback
 end
 
-local FACTION_COLORS = {
-    standard = {r = 0.70, g = 0.30, b = 0.85},
-    friendship = {r = 0.20, g = 0.85, b = 0.30},
-    major = {r = 0.20, g = 0.60, b = 1.00},
-    paragon = {r = 0.95, g = 0.75, b = 0.10},
-    companion = {r = 0.20, g = 0.80, b = 0.80},
+local FALLBACK_FACTION_COLORS = {
+    standard = {r = 0.70, g = 0.30, b = 0.85, a = 1},
+    friendship = {r = 0.20, g = 0.85, b = 0.30, a = 1},
+    major = {r = 0.20, g = 0.60, b = 1.00, a = 1},
+    paragon = {r = 0.95, g = 0.75, b = 0.10, a = 1},
+    companion = {r = 0.20, g = 0.80, b = 0.80, a = 1},
+    housing = {r = 0.85, g = 0.55, b = 0.20, a = 1},
+}
+
+local COLOR_KEY_BY_TYPE = {
+    standard = "SecondaryReputation",
+    friendship = "SecondaryReputation",
+    major = "SecondaryReputation",
+    paragon = "SecondaryReputation",
+    companion = "SecondaryReputation",
+    housing = "SecondaryHousing",
 }
 
 local function Clamp(value, minValue, maxValue)
@@ -35,12 +45,24 @@ local function Clamp(value, minValue, maxValue)
 end
 
 function StyleHelpers.GetFactionColor(context)
+    local colorType = "standard"
     if context and context.isCompanion then
-        return FACTION_COLORS.companion
+        colorType = "companion"
+    elseif context and context.factionType then
+        colorType = context.factionType
     end
 
-    local factionType = context and context.factionType or "standard"
-    return FACTION_COLORS[factionType] or FACTION_COLORS.standard
+    local Colors = Addon.Colors
+    local keyName = COLOR_KEY_BY_TYPE[colorType] or COLOR_KEY_BY_TYPE.standard
+    local colorKey = Colors and Colors.Key and Colors.Key[keyName]
+    if colorKey and Colors.Get then
+        local color = Colors:Get(colorKey)
+        if color then
+            return color
+        end
+    end
+
+    return FALLBACK_FACTION_COLORS[colorType] or FALLBACK_FACTION_COLORS.standard
 end
 
 function StyleHelpers.BuildTooltipProgressText(context)

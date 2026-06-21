@@ -27,6 +27,17 @@ local optionDetails = {
         description = Addon.L["OPT_SHOW_SECONDARY_BAR_DESC"],
         commandKeys = {}
     },
+    secondaryBarSource = {
+        key = "secondaryBarSource",
+        type = "dropdown",
+        label = Addon.L["OPT_SECONDARY_BAR_SOURCE"],
+        description = Addon.L["OPT_SECONDARY_BAR_SOURCE_DESC"],
+        options = {
+            {value = "reputation", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_REPUTATION"]},
+            {value = "housing", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_HOUSING"]},
+        },
+        commandKeys = {"secondarysource", "secondarybarsource"}
+    },
     hideCompanionOutsideDelve = {
         key = "hideCompanionOutsideDelve",
         label = Addon.L["OPT_HIDE_COMPANION_OUTSIDE_DELVE"],
@@ -306,6 +317,7 @@ local optionDetails = {
 local optionOrder = {
     "barStyle",
     "showSecondaryBar",
+    "secondaryBarSource",
     "hideCompanionOutsideDelve",
     "secondaryBarsAttached",
     "barLocked",
@@ -351,7 +363,9 @@ local colorOptionsList = {
     { key = "xpBarRested", command = "xpBarRested", aliases = {"barrested","restedbar"}, label = Addon.L["COLOR_XP_BAR_RESTED"], description = Addon.L["COLOR_XP_BAR_RESTED_DESC"], preview = "statusbar" },
     { key = "questComplete", command = "questcomplete", aliases = {"complete"}, label = Addon.L["COLOR_QUEST_COMPLETE"], description = Addon.L["COLOR_QUEST_COMPLETE_DESC"], preview = "texture" },
     { key = "questIncomplete", command = "questincomplete", aliases = {"incomplete"}, label = Addon.L["COLOR_QUEST_INCOMPLETE"], description = Addon.L["COLOR_QUEST_INCOMPLETE_DESC"], preview = "texture" },
-    { key = "rested", command = "rested", aliases = {"rest"}, label = Addon.L["COLOR_RESTED"], description = Addon.L["COLOR_RESTED_DESC"], preview = "texture" }
+    { key = "rested", command = "rested", aliases = {"rest"}, label = Addon.L["COLOR_RESTED"], description = Addon.L["COLOR_RESTED_DESC"], preview = "texture" },
+    { key = "secondaryReputation", command = "secondaryreputation", aliases = {"repbar","reputationbar"}, label = Addon.L["COLOR_SECONDARY_REPUTATION"], description = Addon.L["COLOR_SECONDARY_REPUTATION_DESC"], preview = "statusbar" },
+    { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" }
 }
 
 -- Build lookup maps

@@ -149,6 +149,21 @@ function SecondaryBaseMixin:Subscribe()
     end
 
     local self_ref = self
+    if type(eventName) == "table" then
+        self._busHandles = self._busHandles or {}
+        for _, name in ipairs(eventName) do
+            local handle = Addon.EventBus:RegisterWithHandle(name, function()
+                if self_ref then
+                    self_ref:MarkDirty(nil, true)
+                end
+            end)
+            if handle then
+                table.insert(self._busHandles, handle)
+            end
+        end
+        return
+    end
+
     self._busHandle = Addon.EventBus:RegisterWithHandle(eventName, function(ctx)
         if self_ref then
             self_ref:MarkDirty(ctx)
@@ -157,6 +172,15 @@ function SecondaryBaseMixin:Subscribe()
 end
 
 function SecondaryBaseMixin:Unsubscribe()
+    if self._busHandles then
+        for _, handle in ipairs(self._busHandles) do
+            if handle and handle.Unregister then
+                handle:Unregister()
+            end
+        end
+        self._busHandles = nil
+    end
+
     if self._busHandle then
         self._busHandle:Unregister()
         self._busHandle = nil
@@ -175,6 +199,14 @@ function SecondaryBaseMixin:Refresh()
 end
 
 function SecondaryBaseMixin:GetLatestContext()
+    if self._pendingContext == false then
+        if self.GetInitialContext then
+            return self:GetInitialContext()
+        end
+
+        return nil
+    end
+
     local context = self._pendingContext or self._lastContext
     if context then
         return context
@@ -187,8 +219,12 @@ function SecondaryBaseMixin:GetLatestContext()
     return nil
 end
 
-function SecondaryBaseMixin:MarkDirty(context)
-    self._pendingContext = context
+function SecondaryBaseMixin:MarkDirty(context, forceRefresh)
+    if forceRefresh and context == nil then
+        self._pendingContext = false
+    else
+        self._pendingContext = context
+    end
 
     if self._dirty then
         return
@@ -213,7 +249,9 @@ function SecondaryBaseMixin:MarkDirty(context)
             return
         end
 
-        if pending then
+        if pending == false then
+            xpcall(self_ref.Refresh, Utils.ReportError, self_ref)
+        elseif pending then
             xpcall(self_ref.Render, Utils.ReportError, self_ref, pending)
         else
             xpcall(self_ref.Refresh, Utils.ReportError, self_ref)

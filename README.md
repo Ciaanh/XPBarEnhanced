@@ -2,7 +2,7 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail only** · Interface 120005 · Version 1.1.4
+**Retail only** · Interface 120005 · Version 1.1.5
 
 ## Features
 
@@ -13,8 +13,9 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 - **Statistics Window** — Detailed breakdown of your leveling progress
 - **Profile System** — Create, rename, delete, and switch between named settings profiles; Blizzard-style dropdown with inline actions and a global shared profile option
 - **Bar Size Presets** — Scale the Flat and Vertical bars to Small, Default, Large, or Huge without distorting text or overlays
-- **Reputation & Companion Tracking** — A secondary bar tracks your watched faction; shows companion-specific flavor (level, session gains) when tracking a Delve companion such as Brann
-- **Style-Aware Secondary Bars** — Secondary reputation display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar)
+- **Reputation, Companion, and Housing Tracking** — The secondary bar can track watched faction progress (including Delve companion flavor) or Housing Favor progress for the tracked house
+- **Secondary Source Selector** — Choose `Reputation` or `Housing Favor` as the secondary bar source
+- **Style-Aware Secondary Bars** — Secondary progress display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar)
 - **Color Customization** — Full control over bar and overlay colors
 - **Minimap Button** — Quick access to options and stats
 - **Animations** — Smooth fill, flash-on-gain, and two-phase level-up animations
@@ -22,7 +23,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 ## Bar Styles
 
 | Style | Description |
-|-------|-------------|
+| --- | --- |
 | **None** | Blizzard's default XP bar only |
 | **Classic** | Blizzard-style bar with atlas textures and quest overlays |
 | **Flat** | Wide draggable bar with milestone ticks |
@@ -40,7 +41,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 ## Slash Commands
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/xpbe` | Show command help |
 | `/xpbe options` | Open the options panel |
 | `/xpbe stats` | Toggle the statistics window |
@@ -53,6 +54,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | `/xpbe profile rename <name>` | Rename the active profile |
 | `/xpbe profile delete [name]` | Delete a profile |
 | `/xpbe reps` | Export all faction IDs |
+| `/xpbe debugevents [on\|off\|show\|reset]` | Toggle and inspect EventBus emit counters |
 | `/xpbe reset` | Reset all settings |
 | `/xpbe resetstats` | Reset session statistics |
 | `/xpbe resetcolors` | Reset colors to defaults |
@@ -68,7 +70,7 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 - **Colors** — Customize XP bar, rested XP, quest XP overlays
 - **Display** — Toggle text rows, quest overlays, animations, and minimap button
 - **Profiles** — Manage named settings profiles; switch per character or use a shared global profile
-- **Reputation / Companion Bar** — Enable the secondary tracked-faction bar; optionally attach it above the XP bar or position it freely; hide the companion bar when outside a Delve
+- **Secondary Progress Bar** — Enable the secondary bar and choose source mode (`Reputation` or `Housing Favor`); optionally attach it above the XP bar or position it freely; hide the Delve companion bar when outside a Delve
 - **Session Behavior** — Optional reset of session tracking on `/reload`
 - **Circular Bar** — Ring size (Small/Medium/Large/Huge), segment count, texture style, optional center text scaling, and optional full-circle secondary arc
 - **Minimap Ring** — Ring padding, segment count, segment dimensions, optional minimap button collection, and optional "start minimap arc expanded" behavior for the reputation arc
@@ -78,6 +80,11 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 
 - World of Warcraft Retail
 - No external dependencies
+
+## Development Notes
+
+- Event ownership guidance: see docs/event-ownership.md
+- Manual release validation: see docs/qa-checklist.md
 
 ## Credits
 

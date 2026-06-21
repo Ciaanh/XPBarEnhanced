@@ -28,7 +28,9 @@ Colors.Key = {
     XpBarRested = "xpBarRested",
     Rested = "rested",
     QuestComplete = "questComplete",
-    QuestIncomplete = "questIncomplete"
+    QuestIncomplete = "questIncomplete",
+    SecondaryReputation = "secondaryReputation",
+    SecondaryHousing = "secondaryHousing"
 }
 
 -------------------------------------------------------------------
@@ -70,6 +72,9 @@ function Colors:Set(colorKey, color)
             math.floor(normalized.a * 255 + 0.5)
         )
         Addon.Config:SetColor(colorKey, hex, true)
+        if Addon.Config.ApplyPendingOptionChanges then
+            Addon.Config:ApplyPendingOptionChanges()
+        end
         return
     end
 
@@ -100,6 +105,9 @@ end
 function Colors:Reset(colorKey)
     if Addon.Config and Addon.Config.ResetColor then
         Addon.Config:ResetColor(colorKey, true)
+        if Addon.Config.ApplyPendingOptionChanges then
+            Addon.Config:ApplyPendingOptionChanges()
+        end
         return
     end
 

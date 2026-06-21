@@ -24,6 +24,9 @@ end
 local function CheckboxOnClick(selfFrame, checkbox, key)
     PlayCheckboxSound(checkbox:GetChecked())
     Config:SetOptionKey(key, checkbox:GetChecked(), true)
+    if Config.ApplyPendingOptionChanges then
+        Config:ApplyPendingOptionChanges()
+    end
     -- Get fresh reference to Options module (avoids stale upvalue issue)
     local controller = Addon.Options
     if controller and controller.OnOptionChanged then
@@ -42,6 +45,9 @@ local function SliderOnValueChanged(selfFrame, slider, key, value)
         return
     end
     Config:SetOptionKey(key, value, true)
+    if Config.ApplyPendingOptionChanges then
+        Config:ApplyPendingOptionChanges()
+    end
     -- Get fresh reference to Options module (avoids stale upvalue issue)
     local controller = Addon.Options
     if controller and controller.OnOptionChanged then
@@ -285,6 +291,9 @@ function ControlHelpers.SetupProperDropdown(selfFrame, row, key, detail)
                 -- Callback when option is selected
                 local onSelectFunc = function()
                     Config:SetOptionKey(key, option.value, true)
+                    if Config.ApplyPendingOptionChanges then
+                        Config:ApplyPendingOptionChanges()
+                    end
                     local controller = Addon.Options
                     if controller and controller.OnOptionChanged then
                         controller:OnOptionChanged(key)
@@ -374,6 +383,9 @@ function ControlHelpers.SetupDropdown(selfFrame, dropdown, key, detail)
         local nextValue = btn.options[nextIndex].value
         local nextLabel = btn.options[nextIndex].label
         Config:SetOptionKey(key, nextValue, true)
+        if Config.ApplyPendingOptionChanges then
+            Config:ApplyPendingOptionChanges()
+        end
         btn:SetText(nextLabel)
         local controller = Addon.Options
         if controller and controller.OnOptionChanged then
@@ -414,6 +426,9 @@ function ControlHelpers.SetupRadioGroup(selfFrame, radioGroup, key, detail)
             end
             btn:SetChecked(true)
             Config:SetOptionKey(key, btn.value, true)
+            if Config.ApplyPendingOptionChanges then
+                Config:ApplyPendingOptionChanges()
+            end
             local controller = Addon.Options
             if controller and controller.OnOptionChanged then
                 controller:OnOptionChanged(key)
@@ -536,6 +551,9 @@ function ControlHelpers.SetupColorRow(selfFrame, row, info)
         swatch:SetScript("OnClick", function()
             if IsShiftKeyDown and IsShiftKeyDown() then
                 Config:ResetColor(info.key, true)
+                    if Config.ApplyPendingOptionChanges then
+                        Config:ApplyPendingOptionChanges()
+                    end
                 local controller = Addon.Options
                 if controller and controller.OnColorReset then
                     controller:OnColorReset(info.key)

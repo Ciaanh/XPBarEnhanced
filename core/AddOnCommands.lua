@@ -22,6 +22,7 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFprofile rename <new name>|r - Rename the active profile")
     print("  /xpbe |cFFFFFFFFprofile delete [name]|r - Delete a profile")
     print("  /xpbe |cFFFFFFFFreps|r - Export all faction IDs")
+    print("  /xpbe |cFFFFFFFFdebugevents [on|off|show|reset]|r - Toggle/show/reset EventBus counters")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -121,6 +122,68 @@ local function handleReps()
     else
         print("|cFFFF0000XP Bar Enhanced:|r Reputation module not available")
     end
+end
+
+local function handleDebugEvents(arg)
+    local eventBus = Addon.EventBus
+    if not eventBus then
+        print("|cFFFF0000XP Bar Enhanced:|r EventBus unavailable")
+        return
+    end
+
+    local mode = string.lower((arg or ""):match("^%s*(%S*)") or "")
+    if mode == "" then
+        mode = "show"
+    end
+
+    if mode == "on" then
+        if eventBus.SetDebugCountersEnabled then
+            eventBus:SetDebugCountersEnabled(true)
+        end
+        print("|cFF00FF00XP Bar Enhanced:|r Event counters enabled")
+        return
+    end
+
+    if mode == "off" then
+        if eventBus.SetDebugCountersEnabled then
+            eventBus:SetDebugCountersEnabled(false)
+        end
+        print("|cFF00FF00XP Bar Enhanced:|r Event counters disabled")
+        return
+    end
+
+    if mode == "reset" then
+        if eventBus.ResetDebugCounters then
+            eventBus:ResetDebugCounters()
+        end
+        print("|cFF00FF00XP Bar Enhanced:|r Event counters reset")
+        return
+    end
+
+    if mode == "show" then
+        local enabled = eventBus.IsDebugCountersEnabled and eventBus:IsDebugCountersEnabled()
+        local status = enabled and "enabled" or "disabled"
+        print("|cFF00FF00XP Bar Enhanced:|r Event counters are " .. status)
+
+        if not eventBus.GetDebugCounters then
+            return
+        end
+
+        local rows = eventBus:GetDebugCounters(12)
+        if not rows or #rows == 0 then
+            print("|cFF00FF00XP Bar Enhanced:|r No EventBus emits recorded")
+            return
+        end
+
+        print("|cFF00FF00XP Bar Enhanced:|r Top EventBus emits:")
+        for i = 1, #rows do
+            local row = rows[i]
+            print(string.format("  %s x%d", tostring(row.event), tonumber(row.count) or 0))
+        end
+        return
+    end
+
+    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe debugevents [on|off|show|reset]")
 end
 
 local function handleProfile(arg)
@@ -264,6 +327,8 @@ local function handleSlashCommand(message)
         handleProfile(arg)
     elseif command == "reps" then
         handleReps()
+    elseif command == "debugevents" then
+        handleDebugEvents(arg)
     else
         printUnknown(command)
     end

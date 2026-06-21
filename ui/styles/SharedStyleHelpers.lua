@@ -276,6 +276,27 @@ function Shared.BuildSecondaryLabel(context)
 end
 
 function Shared.OpenReputationPanel()
+    if Shared.GetActiveSecondarySource and Shared.GetActiveSecondarySource() == "housing" then
+        if HousingFramesUtil and HousingFramesUtil.ToggleHousingDashboard then
+            HousingFramesUtil.ToggleHousingDashboard()
+            return
+        end
+
+        if C_AddOns and C_AddOns.LoadAddOn then
+            C_AddOns.LoadAddOn("Blizzard_HousingEventHandler")
+            if HousingFramesUtil and HousingFramesUtil.ToggleHousingDashboard then
+                HousingFramesUtil.ToggleHousingDashboard()
+                return
+            end
+
+            C_AddOns.LoadAddOn("Blizzard_HousingDashboard")
+            if HousingDashboardFrame and ToggleFrame then
+                ToggleFrame(HousingDashboardFrame)
+                return
+            end
+        end
+    end
+
     if ToggleCharacter then
         ToggleCharacter("ReputationFrame")
     end
@@ -360,15 +381,59 @@ function Shared.GetSecondaryPositionConfigKey()
     return "secondaryBarPositions"
 end
 
-function Shared.GetSecondaryBroadcastEventName()
-    return Addon.EventNames.REPUTATION_BROADCAST_UPDATE
+local function ResolveConfiguredSecondarySource()
+    local source = nil
+    if Addon.Config and Addon.Config.GetOptionValue then
+        source = Addon.Config:GetOptionValue("secondaryBarSource")
+    end
+    if source == nil and Addon.db then
+        source = Addon.db.secondaryBarSource
+    end
+    if source == "housing" or source == "reputation" then
+        return source
+    end
+    return "reputation"
 end
 
-function Shared.GetSecondaryInitialContext()
+local function GetHousingContext()
+    if Addon.HousingSession and Addon.HousingSession.GetCurrentContext then
+        return Addon.HousingSession:GetCurrentContext()
+    end
+    return nil
+end
+
+local function GetReputationContext()
     if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
         return Addon.ReputationSession:GetCurrentContext()
     end
     return nil
+end
+
+function Shared.GetActiveSecondarySource()
+    return ResolveConfiguredSecondarySource()
+end
+
+function Shared.GetSecondaryBroadcastEventName()
+    if not Addon.EventNames then
+        return {
+            "REPUTATION:BROADCAST_UPDATE",
+            "HOUSING:BROADCAST_UPDATE",
+        }
+    end
+
+    return {
+        Addon.EventNames.REPUTATION_BROADCAST_UPDATE or "REPUTATION:BROADCAST_UPDATE",
+        Addon.EventNames.HOUSING_BROADCAST_UPDATE or "HOUSING:BROADCAST_UPDATE",
+    }
+end
+
+function Shared.GetSecondaryInitialContext()
+    local source = Shared.GetActiveSecondarySource()
+    if source == "housing" then
+        return GetHousingContext()
+    end
+
+    return GetReputationContext()
 end
 
 return Shared

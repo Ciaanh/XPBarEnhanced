@@ -4,6 +4,21 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Secondary Source Selection**: Added `secondaryBarSource` option with `reputation` and `housing` modes.
+- **Housing Session Service**: Added `HousingSession` to track and broadcast tracked-house favor progress for secondary bars.
+- **Housing Event Routing**: Routed `TRACKED_HOUSE_CHANGED` and `HOUSE_LEVEL_FAVOR_UPDATED` through `EventRouter`.
+
+### Changed
+
+- **Secondary Source Resolution**: Shared secondary style helpers now resolve context from either reputation or housing based on config and availability.
+- **Secondary Event Subscription**: Secondary bar base mixin now supports multi-event subscriptions so the live secondary bar refreshes immediately when the selected source changes.
+
+### Fixed
+
+- **Secondary Refresh Consistency**: Secondary bar source and style-sensitive option changes now trigger both reputation and housing update emissions to avoid stale displays.
+
 ## [1.1.4] - 2026-05-12
 
 ### Added
