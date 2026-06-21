@@ -4,6 +4,8 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-06-21
+
 ### Added
 
 - **Secondary Source Selection**: Added `secondaryBarSource` option with `reputation` and `housing` modes.

@@ -551,9 +551,9 @@ function ControlHelpers.SetupColorRow(selfFrame, row, info)
         swatch:SetScript("OnClick", function()
             if IsShiftKeyDown and IsShiftKeyDown() then
                 Config:ResetColor(info.key, true)
-                    if Config.ApplyPendingOptionChanges then
-                        Config:ApplyPendingOptionChanges()
-                    end
+                if Config.ApplyPendingOptionChanges then
+                    Config:ApplyPendingOptionChanges()
+                end
                 local controller = Addon.Options
                 if controller and controller.OnColorReset then
                     controller:OnColorReset(info.key)
