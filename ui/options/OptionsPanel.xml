@@ -630,6 +630,28 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="ColorRow_secondaryReputation" inherits="ConfigColorPickerTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="secondaryReputation" type="string"/>
+                                            <KeyValue key="optionTab" value="colors" type="string"/>
+                                            <KeyValue key="previewType" value="statusbar" type="string"/>
+                                            <KeyValue key="layoutIndex" value="50.1" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="ColorRow_secondaryHousing" inherits="ConfigColorPickerTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="secondaryHousing" type="string"/>
+                                            <KeyValue key="optionTab" value="colors" type="string"/>
+                                            <KeyValue key="previewType" value="statusbar" type="string"/>
+                                            <KeyValue key="layoutIndex" value="50.2" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Secondary Bars ==================== -->
 
                                     <Frame parentKey="SecondaryBarsHeader" inherits="ConfigSectionHeader">
@@ -646,6 +668,16 @@
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showSecondaryBar" type="string"/>
                                             <KeyValue key="layoutIndex" value="52" type="number"/>
+                                            <KeyValue key="optionTab" value="secondary" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_secondaryBarSource" inherits="ConfigDropdownTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="secondaryBarSource" type="string"/>
+                                            <KeyValue key="layoutIndex" value="52.5" type="number"/>
                                             <KeyValue key="optionTab" value="secondary" type="string"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>

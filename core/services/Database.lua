@@ -65,6 +65,7 @@ function Database:Initialize()
 
     Addon.db.sessionData = Addon.db.sessionData or {}
     Addon.db.reputationSessionData = Addon.db.reputationSessionData or {}
+    Addon.db.housingSessionData = Addon.db.housingSessionData or {}
 
     -- Set player key
     local playerName = UnitName("player") or "Unknown"
@@ -99,6 +100,13 @@ function Database:GetReputationSessionData()
     local db = self:GetDB()
     db.reputationSessionData = db.reputationSessionData or {}
     return db.reputationSessionData
+end
+
+---Return the housing session data table stored in the database
+function Database:GetHousingSessionData()
+    local db = self:GetDB()
+    db.housingSessionData = db.housingSessionData or {}
+    return db.housingSessionData
 end
 
 ---Return the cached player/realm key used for per-character storage

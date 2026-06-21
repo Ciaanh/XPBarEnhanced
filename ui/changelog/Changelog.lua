@@ -8,6 +8,14 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.1.5",
+        notes = {
+            "Added secondary source selection with Reputation and Housing Favor modes.",
+            "Added tracked house favor support as a secondary progress source.",
+            "Improved secondary bar refresh flow so source changes update the live bar immediately.",
+        },
+    },
+    {
         version = "1.1.4",
         notes = {
             "Added size presets (Small/Default/Large/Huge) for the Flat and Vertical bars.",

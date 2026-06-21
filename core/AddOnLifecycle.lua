@@ -40,6 +40,11 @@ function eventHandlers:OnPlayerLogin()
         Addon.ReputationSession:Initialize()
     end
 
+    -- Initialize Housing session
+    if Addon.HousingSession and Addon.HousingSession.Initialize then
+        Addon.HousingSession:Initialize()
+    end
+
     -- Initialize features
     local stats = Addon.Stats
     if stats and stats.Initialize then

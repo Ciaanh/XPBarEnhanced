@@ -947,6 +947,9 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
 
         -- Save the new color
         Config:SetColor(colorKey, hex, true)
+        if Config.ApplyPendingOptionChanges then
+            Config:ApplyPendingOptionChanges()
+        end
 
         -- Update UI
         local controller = Options
@@ -961,6 +964,9 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     local function cancelColor(restore)
         -- Restore to the original color
         Config:SetColor(colorKey, previousHex, true)
+        if Config.ApplyPendingOptionChanges then
+            Config:ApplyPendingOptionChanges()
+        end
 
         -- Update UI
         local controller = Options
@@ -1486,6 +1492,12 @@ function Options:OnColorReset()
     if Addon.Session and Addon.Session.EmitUpdate then
         Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
+    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+        Addon.ReputationSession:EmitUpdate()
+    end
+    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+        Addon.HousingSession:EmitUpdate()
+    end
 end
 
 function Options:OnColorChanged(colorKey, hex)
@@ -1494,6 +1506,12 @@ function Options:OnColorChanged(colorKey, hex)
     if Addon.Session and Addon.Session.EmitUpdate then
         Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
+    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+        Addon.ReputationSession:EmitUpdate()
+    end
+    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+        Addon.HousingSession:EmitUpdate()
+    end
 end
 
 function Options:OnColorCancel(colorKey, previousHex)
@@ -1501,6 +1519,12 @@ function Options:OnColorCancel(colorKey, previousHex)
     -- Refresh bars to apply new colors
     if Addon.Session and Addon.Session.EmitUpdate then
         Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
+    end
+    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+        Addon.ReputationSession:EmitUpdate()
+    end
+    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+        Addon.HousingSession:EmitUpdate()
     end
 end
 

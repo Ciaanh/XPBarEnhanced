@@ -463,12 +463,27 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
         if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
             Addon.ReputationSession:EmitUpdate()
         end
+        if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+            Addon.HousingSession:EmitUpdate()
+        end
+    end
+
+    if key == "secondaryBarSource" then
+        if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+            Addon.ReputationSession:EmitUpdate()
+        end
+        if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+            Addon.HousingSession:EmitUpdate()
+        end
     end
 
     if key == "circularSecondaryFullCircle" or key == "minimapArcStartExpanded"
        or key == "minimapArcDisplayAngle" or key == "minimapArcIconAngle" then
         if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
             Addon.ReputationSession:EmitUpdate()
+        end
+        if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+            Addon.HousingSession:EmitUpdate()
         end
     end
 

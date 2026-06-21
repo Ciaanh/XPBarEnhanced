@@ -12,6 +12,12 @@ local function EmitReputationUpdate()
     end
 end
 
+local function EmitHousingUpdate()
+    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.EmitUpdate then
+        Addon.HousingSession:EmitUpdate()
+    end
+end
+
 local function DispatchUpdateFaction(factionID)
     if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
         Addon.ReputationSession:OnFactionUpdate()
@@ -36,6 +42,22 @@ end
 
 local function DispatchReputationVisibilityRefresh()
     EmitReputationUpdate()
+end
+
+local function DispatchTrackedHouseChanged()
+    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnTrackedHouseChanged then
+        Addon.HousingSession:OnTrackedHouseChanged()
+    else
+        EmitHousingUpdate()
+    end
+end
+
+local function DispatchHouseLevelFavorUpdated(houseLevelFavor)
+    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnHouseLevelFavorUpdated then
+        Addon.HousingSession:OnHouseLevelFavorUpdated(houseLevelFavor)
+    else
+        EmitHousingUpdate()
+    end
 end
 
 local function DispatchQuestEvent(event)
@@ -132,6 +154,10 @@ local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
         Addon.ReputationSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
+    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnEnteringWorld then
+        Addon.HousingSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    end
+
     DispatchQuestEvent("PLAYER_ENTERING_WORLD")
 
     DispatchLifecyclePlayerEnteringWorld(isInitialLogin, isReloadingUI)
@@ -200,10 +226,17 @@ local ROUTER_DISPATCH = {
     end,
     ZONE_CHANGED_NEW_AREA = function()
         DispatchReputationVisibilityRefresh()
+        EmitHousingUpdate()
         DispatchQuestEvent("ZONE_CHANGED_NEW_AREA")
     end,
     GROUP_ROSTER_UPDATE = function()
         DispatchReputationVisibilityRefresh()
+    end,
+    TRACKED_HOUSE_CHANGED = function()
+        DispatchTrackedHouseChanged()
+    end,
+    HOUSE_LEVEL_FAVOR_UPDATED = function(houseLevelFavor)
+        DispatchHouseLevelFavorUpdated(houseLevelFavor)
     end,
     UNIT_QUEST_LOG_CHANGED = function()
         DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")

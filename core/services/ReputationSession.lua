@@ -194,6 +194,7 @@ local function BuildReputationContext(repSession)
 
     return {
         isAvailable        = true,
+        source             = "reputation",
         name               = info.name or "",
         standingLabel      = info.standingLabel or "",
         factionType        = info.factionType or "standard",

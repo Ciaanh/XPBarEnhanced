@@ -20,6 +20,7 @@ Addon.EventNames = {
     QUESTS_CACHE_REBUILT = "QUESTS:CACHE_REBUILT",
     XPBAR_ANIMATION_CONTEXT = "XPBAR:ANIMATION_CONTEXT",
     REPUTATION_BROADCAST_UPDATE = "REPUTATION:BROADCAST_UPDATE",
+    HOUSING_BROADCAST_UPDATE = "HOUSING:BROADCAST_UPDATE",
 }
 
 Addon.OptionsCategory = "XP Bar Enhanced"
@@ -32,6 +33,7 @@ Addon.Session = Addon.Session or {}
 Addon.Utils = Addon.Utils or {}
 Addon.ReputationCalculations = Addon.ReputationCalculations or {}
 Addon.ReputationSession = Addon.ReputationSession or {}
+Addon.HousingSession = Addon.HousingSession or {}
 Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 
 -- State
