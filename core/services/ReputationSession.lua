@@ -305,6 +305,11 @@ function RepSession:OnFactionUpdate()
         -- Data temporarily unavailable (loading screen, phasing, etc.) —
         -- re-baseline so we don't attribute a stale delta when data returns.
         self:_SnapshotWatchedFaction()
+        -- Still refresh the bar: a renown level change routes here and the
+        -- display must update even when the snapshot is momentarily missing.
+        if Addon.EventBus and Addon.EventNames then
+            Addon.EventBus:Emit(Addon.EventNames.REPUTATION_BROADCAST_UPDATE, self:_BuildContext())
+        end
         return
     end
 

@@ -495,7 +495,9 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
 
     -- Request time played if time text options enabled
     if key == "showLevelTimeText" or key == "showSessionTimeText" then
-        local session = Addon.db.sessionData
+        -- Session data is per-character; read through Database so the
+        -- request-once guard sees the real lastTimePlayedRequest.
+        local session = Addon.Database and Addon.Database.GetSessionData and Addon.Database:GetSessionData()
         if
             session and (session.lastTimePlayedRequest or 0) == 0 and
                 (self:GetOptionValue("showLevelTimeText") or self:GetOptionValue("showSessionTimeText"))

@@ -266,7 +266,12 @@ function HousingSession:OnHouseLevelFavorUpdated(a1, a2, a3)
 
     local houseLevelFavor = NormalizeHouseFavorPayload(a1, a2, a3)
     if not houseLevelFavor then
-        self:RequestCurrentTrackedHouseFavor()
+        -- Re-request only for a genuinely empty/malformed payload. If the args
+        -- were secret (SafeNumber -> nil), re-requesting would trigger the same
+        -- secret payload again, an unbounded request/event loop.
+        if not (IsSecret(a1) or IsSecret(a2) or IsSecret(a3)) then
+            self:RequestCurrentTrackedHouseFavor()
+        end
         return
     end
 
@@ -277,6 +282,24 @@ function HousingSession:OnHouseLevelFavorUpdated(a1, a2, a3)
     end
 
     local session = self._session
+
+    -- Only credit favor from the tracked house. A payload GUID that plainly
+    -- differs from the tracked/known house belongs to another owned house;
+    -- crediting its cumulative favor against our baseline would inflate the
+    -- session and corrupt lastHouseFavor. (SafeIsSameGuid treats secret GUIDs
+    -- as matching since they cannot be compared.)
+    local payloadGuid = houseLevelFavor.houseGUID
+    if payloadGuid ~= nil then
+        local trackedGuid = C_Housing and C_Housing.GetTrackedHouseGuid and C_Housing.GetTrackedHouseGuid()
+        local referenceGuid = trackedGuid
+        if not IsSecret(referenceGuid) and not referenceGuid then
+            referenceGuid = session.houseGUID
+        end
+        if referenceGuid ~= nil and not SafeIsSameGuid(payloadGuid, referenceGuid) then
+            return
+        end
+    end
+
     -- Favor is a cumulative value across house levels, so the delta stays
     -- meaningful even when the house leveled up since the last update.
     if session.lastHouseFavor ~= nil then

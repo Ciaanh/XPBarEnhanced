@@ -113,20 +113,34 @@ end
 
 ---Reset all colors to defaults
 function Colors:ResetAll()
-    -- Clear overrides in both the global table and the active profile so the
-    -- reset is visible regardless of which layer currently wins
-    if Addon.db then
+    -- Clear only the active write target (the profile when one is active,
+    -- otherwise the global table). Wiping both layers would destroy the
+    -- user's global customizations while they are only editing a profile.
+    local target = Addon.Config and Addon.Config.GetSettingsStorage and Addon.Config:GetSettingsStorage()
+    if target then
+        target.colors = nil
+    elseif Addon.db then
         Addon.db.colors = nil
     end
-    if Addon.Config and Addon.Config.GetSettingsStorage then
-        local target = Addon.Config:GetSettingsStorage()
-        if target and target ~= Addon.db then
-            target.colors = nil
-        end
-    end
 
+    Colors:NotifyColorsChanged()
+end
+
+---Broadcast a color change so both the options swatches and the live bars
+---repaint. COLORS_UPDATED drives the options previews; the domain EmitUpdate
+---calls drive the actual bars (which do not subscribe to COLORS_UPDATED).
+function Colors:NotifyColorsChanged()
     if Addon.EventBus and Addon.EventBus.Emit and Addon.EventNames then
         Addon.EventBus:Emit(Addon.EventNames.COLORS_UPDATED, { event = Addon.EventNames.COLORS_UPDATED })
+    end
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
+    end
+    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+        Addon.ReputationSession:EmitUpdate()
+    end
+    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+        Addon.HousingSession:EmitUpdate()
     end
 end
 

@@ -254,19 +254,34 @@ function Session:OnLevelUp(level)
         return
     end
 
-    -- If PLAYER_LEVEL_UP fires before PLAYER_XP_UPDATE, the stored baseline
-    -- still refers to the pre-level state. Run the normal gain path first so
-    -- the wrap-around XP of the old level is credited (with quest attribution)
-    -- before re-baselining. When PLAYER_XP_UPDATE arrived first the baseline
-    -- level is already current and nothing extra is credited (no double-count).
-    -- UnitLevel can still report the old level during PLAYER_LEVEL_UP, so
-    -- trust whichever source is highest.
+    -- UnitLevel can still report the old level during PLAYER_LEVEL_UP, so trust
+    -- whichever source is highest.
     local currentLevel = math.max(UnitLevel("player") or 0, tonumber(level) or 0)
     if currentLevel == 0 then
         currentLevel = 1
     end
-    if (session.lastLevel or currentLevel) < currentLevel then
-        self:OnXPUpdate(true)
+
+    -- Credit the remainder of the previous level only when the stored baseline
+    -- still holds pre-level data. `lastXP > current XP` is an unambiguous sign
+    -- we crossed a boundary the XP-update path has not yet rebaselined; when
+    -- PLAYER_XP_UPDATE already handled the crossing it left lastXP == current
+    -- XP, so this is skipped and no XP is double-counted.
+    local unitXP = UnitXP("player") or 0
+    local unitMax = UnitXPMax("player") or 0
+    if session.lastXP and session.maxXP and session.lastXP > unitXP then
+        local remainder = session.maxXP - session.lastXP
+        if remainder > 0 then
+            local source = self:_ConsumePendingQuestTurnInForXPGain() and "quest" or "other"
+            session.gainedXP = (session.gainedXP or 0) + remainder
+            session.sessionXP = session.gainedXP
+            if source == "quest" then
+                session.questXP = (session.questXP or 0) + remainder
+            end
+        end
+        -- Rebaseline to the start of the new level so the next PLAYER_XP_UPDATE
+        -- credits new-level progress as an ordinary same-level gain.
+        session.lastXP = 0
+        session.maxXP = unitMax
     end
 
     -- Track levels gained this session
@@ -278,8 +293,6 @@ function Session:OnLevelUp(level)
     session.realLevelTime = 0
 
     -- Update current level state
-    session.lastXP = UnitXP("player")
-    session.maxXP = UnitXPMax("player")
     session.lastLevel = currentLevel
     session.lastUpdate = time()
 
@@ -418,14 +431,20 @@ end
 -- Suppress the "Total time played" / "Time played this level" system messages
 -- when *we* are the ones requesting the data. Installed once.
 
--- Convert a Blizzard format string (e.g. TIME_PLAYED_TOTAL) into a Lua match pattern
+-- Convert a Blizzard format string (e.g. TIME_PLAYED_TOTAL) into a Lua match
+-- pattern. Handles both plain (%s/%d) and positional (%1$s/%2$d) specifiers,
+-- which several non-enUS locales use.
 local function FormatToPattern(fmt)
     if type(fmt) ~= "string" then
         return nil
     end
-    local pattern = fmt:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
-    pattern = pattern:gsub("%%%%s", ".+"):gsub("%%%%d", "%%d+")
-    return "^" .. pattern .. "$"
+    -- Swap format specifiers for sentinels before escaping magic characters,
+    -- then replace the sentinels with their patterns.
+    local STR, NUM = "\1", "\2"
+    local s = fmt:gsub("%%%d*%$?s", STR):gsub("%%%d*%$?d", NUM)
+    s = s:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
+    s = s:gsub(STR, ".+"):gsub(NUM, "%%d+")
+    return "^" .. s .. "$"
 end
 
 local timePlayedPatterns

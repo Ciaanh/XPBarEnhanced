@@ -409,12 +409,15 @@ end
 -- Event Handlers
 --------------------------------------------------------------------------------
 
-function Stats:OnXPUpdate() self:Update() end
-function Stats:OnLevelUp() self:Update() end
-function Stats:OnXPChanged() self:UpdateLevelStats(self.frame) end
-function Stats:OnSessionUpdated() self:UpdateSessionStats(self.frame) end
-function Stats:OnQuestXPUpdated() self:UpdateLevelStats(self.frame) end
-function Stats:OnTimePlayed(totalTime, levelTime) self:Update() end
+-- Event handlers gate on visibility: hidden windows skip the recompute
+-- (OnShow runs a full Update), and this avoids double work when a direct
+-- caller and the EventBus broadcast both fire.
+function Stats:OnXPUpdate() if isStatsWindowVisible() then self:Update() end end
+function Stats:OnLevelUp() if isStatsWindowVisible() then self:Update() end end
+function Stats:OnXPChanged() if isStatsWindowVisible() then self:UpdateLevelStats(self.frame) end end
+function Stats:OnSessionUpdated() if isStatsWindowVisible() then self:UpdateSessionStats(self.frame) end end
+function Stats:OnQuestXPUpdated() if isStatsWindowVisible() then self:UpdateLevelStats(self.frame) end end
+function Stats:OnTimePlayed(totalTime, levelTime) if isStatsWindowVisible() then self:Update() end end
 
 --------------------------------------------------------------------------------
 -- Update Methods
