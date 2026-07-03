@@ -8,7 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```powershell
 ./make-release.ps1
 ```
-Reads version from `XPBarEnhanced.toc`, stages addon files into an `XPBarEnhanced/` directory, and produces `.build/XPBarEnhanced-v<version>.zip`. There are no automated tests or lint steps — validation is manual, in-game.
+Reads version from `XPBarEnhanced.toc`, stages addon files into an `XPBarEnhanced/` directory, and produces `.build/XPBarEnhanced-v<version>.zip`. There are no automated tests or lint steps — validation is manual, in-game. If a Lua 5.1 toolchain is available, run `luac -p <file>` on every touched Lua file before considering a change done (WoW runs Lua 5.1).
+
+Feature/style proposals and their impact studies live in `ROADMAP.md`.
 
 **Version changes must stay consistent across all four locations:**
 1. `XPBarEnhanced.toc` (`## Version:`)
@@ -36,10 +38,14 @@ No new globals. Shared state lives under `Addon.*` (e.g., `Addon.Session`, `Addo
 ```
 WoW Events
     → core/EventRouter.lua      (central WoW event registration — only place to register WoW events)
-    → Domain handlers           (Session, ReputationSession, QuestXP)
-    → core/EventBus.lua         (internal pub/sub — XPBAR_BROADCAST_UPDATE, REPUTATION_BROADCAST_UPDATE, CONFIG_UPDATED)
+    → Domain handlers           (Session, ReputationSession, HousingSession, QuestXP)
+    → core/EventBus.lua         (internal pub/sub — XPBAR_BROADCAST_UPDATE, REPUTATION_BROADCAST_UPDATE,
+                                 HOUSING_BROADCAST_UPDATE, QUESTS_CACHE_INVALIDATED/REBUILT,
+                                 CONFIG_UPDATED, COLORS_UPDATED, PROFILE_CHANGED/PROFILES_UPDATED)
     → UI subscribers            (BarManager, options panel, stats window)
 ```
+
+Bars repaint from the domain broadcasts (`XPBAR/REPUTATION/HOUSING_BROADCAST_UPDATE`) and `CONFIG_UPDATED`. `COLORS_UPDATED` only drives the options-panel color swatches — to repaint bars after a color change, also emit the domain updates (see `Colors:NotifyColorsChanged`).
 
 `EventBus` dispatches over a snapshot, so handlers may safely register/unregister during dispatch. UI components subscribe with:
 ```lua
@@ -63,27 +69,33 @@ The `XPBarEnhanced.toc` defines strict runtime load order — respect it when ad
 
 ### Configuration System
 
-Three-layer wiring — all four must be present for a new setting to work:
+Four-layer wiring — all four must be present for a new setting to work:
 1. `core/config/defaults.lua` — default value
-2. Config accessor/helper in `core/Config.lua`
+2. Config accessor/helper in `core/config/Config.lua`
 3. Options UI control (options panel)
 4. Runtime consumer code
 
-Changes broadcast via `CONFIG_UPDATED` on EventBus. Per-character data stored in `XPBarEnhancedDB` under player realm key.
+**Always read options through `Config:GetOptionValue(key)`** (resolves active profile → global → defaults) — never raw `Addon.db.<key>` reads, which silently ignore profile overrides.
+
+Changes broadcast via `CONFIG_UPDATED` on EventBus. Batching: `Config:SetOptionKey(key, value, true)` defers side effects into `_pendingOptionKeys`; a following `Config:ApplyPendingOptionChanges()` applies them and emits exactly one `CONFIG_UPDATED`.
+
+Storage in `XPBarEnhancedDB`: options are global with optional named profiles layered on top (`ProfileManager`); session data is per character, keyed by `Database:GetPlayerKey()` (`"Name-Realm"`) — always access it through `Database:GetSessionData()` / `GetReputationSessionData()` / `GetHousingSessionData()`, never the raw `db.sessionData` table.
 
 ### Style System
 
 Seven bar styles: `flat`, `classic`, `vertical`, `circular`, `minimap_ring`, `terminal`, `none`.
 
-`StyleBuilder` composes mixins (LayoutMixin, PaintMixin, DisplayMixin, TextMixin, InteractionMixin, TooltipMixin, PositionMixin, AnimationManager) into registered style objects. `BarManager` switches styles via `SetStyle(styleName)` — creates/destroys frames. Secondary bars mirror this via `SecondaryBarManager`.
+`StyleBuilder` composes mixins (LayoutMixin, PaintMixin, DisplayMixin, TextMixin, InteractionMixin, TooltipMixin, PositionMixin, AnimationManager) into registered style objects. `BarManager` switches styles via `SetStyle(styleName)` — frames are cached per style and hidden/reused, never destroyed (WoW frames cannot be garbage-collected). `OnShow`/`OnHide` in `BaseMixin` own the EventBus subscription lifecycle. Secondary bars mirror this via `SecondaryBarManager`.
 
 Each style declares **capabilities** (`statusBar`, `overlays`, `textOnBar`, `barColors`, etc.) so consumers know what features are available. Style render paths must degrade gracefully when optional helpers are unavailable — no hard errors from style code.
 
 ### Session Tracking
 
 - `Session` — XP gained, time played, levels, quest XP breakdown (with 0.5s cache TTL)
-- `ReputationSession` — watched faction/companion data
-- Both persist in `XPBarEnhancedDB`; reset behavior controlled by `resetOnReload` config
+- `ReputationSession` — watched faction/companion data (wrap-aware gains across renown levels and paragon cycles)
+- `HousingSession` — tracked-house favor progress (favor is cumulative across house levels; only credit deltas from the tracked house's GUID)
+- All persist per character in `XPBarEnhancedDB` (via the `Database` getters). Reset semantics: initial login always starts a fresh session; `/reload` resets only when the `resetOnReload` option is enabled.
+- Level-boundary accounting is subtle: `PLAYER_LEVEL_UP` and `PLAYER_XP_UPDATE` can arrive in either order and `UnitLevel`/`UnitXP` can lag the event. `Session:OnLevelUp` credits the old-level remainder only when `session.lastXP > UnitXP("player")` (unambiguous stale baseline) — preserve this guard when touching XP accounting, or gains get dropped or double-counted.
 
 ## Coding Rules
 
@@ -91,7 +103,7 @@ Each style declares **capabilities** (`statusBar`, `overlays`, `textOnBar`, `bar
 - **Use EventBus for UI refresh paths**, not direct cross-module calls.
 - **Prefer targeted fixes over broad rewrites.** Match existing patterns unless explicitly asked to change behavior.
 - **No polling with `OnUpdate`** unless truly required — throttle aggressively.
-- **Taint and combat-lockdown safety are design-time constraints**, not post-fix bugs.
+- **Taint and combat-lockdown safety are design-time constraints**, not post-fix bugs. To hide a Blizzard container during combat, use `Utils.SafeHideContainer(container, predicate)` — it defers to `PLAYER_REGEN_ENABLED` on one shared frame (frames are never GC'd, so never allocate one per call) and re-checks the predicate at combat end so a stale request cannot hide a bar that should be visible again.
 - **Simplest solution wins.** No extra timers, retries, indirection, or abstraction layers without demonstrated need.
 - **Verify APIs before using them.** Do not assume legacy behavior from pre-12.x.
 
