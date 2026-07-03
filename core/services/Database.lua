@@ -88,25 +88,41 @@ function Database:GetDB()
     return Addon.db or {}
 end
 
+---Return the per-character subtable of a session store, migrating any legacy
+---flat (account-wide) data to the current character once. Session stores are
+---keyed by player-realm so alts do not inherit each other's played time.
+local function getPerCharacterTable(db, storeKey)
+    db[storeKey] = db[storeKey] or {}
+    local store = db[storeKey]
+    local playerKey = Database:GetPlayerKey()
+
+    -- Legacy layout: session fields stored directly on the store table.
+    if store.sessionStart ~= nil or store.lastUpdate ~= nil then
+        local legacy = {}
+        for k, v in pairs(store) do
+            legacy[k] = v
+            store[k] = nil
+        end
+        store[playerKey] = legacy
+    end
+
+    store[playerKey] = store[playerKey] or {}
+    return store[playerKey]
+end
+
 ---Return the session data table stored in the database
 function Database:GetSessionData()
-    local db = self:GetDB()
-    db.sessionData = db.sessionData or {}
-    return db.sessionData
+    return getPerCharacterTable(self:GetDB(), "sessionData")
 end
 
 ---Return the reputation session data table stored in the database
 function Database:GetReputationSessionData()
-    local db = self:GetDB()
-    db.reputationSessionData = db.reputationSessionData or {}
-    return db.reputationSessionData
+    return getPerCharacterTable(self:GetDB(), "reputationSessionData")
 end
 
 ---Return the housing session data table stored in the database
 function Database:GetHousingSessionData()
-    local db = self:GetDB()
-    db.housingSessionData = db.housingSessionData or {}
-    return db.housingSessionData
+    return getPerCharacterTable(self:GetDB(), "housingSessionData")
 end
 
 ---Return the cached player/realm key used for per-character storage

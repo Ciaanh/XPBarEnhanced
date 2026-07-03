@@ -71,10 +71,8 @@ function Colors:Set(colorKey, color)
             math.floor(normalized.b * 255 + 0.5),
             math.floor(normalized.a * 255 + 0.5)
         )
-        Addon.Config:SetColor(colorKey, hex, true)
-        if Addon.Config.ApplyPendingOptionChanges then
-            Addon.Config:ApplyPendingOptionChanges()
-        end
+        -- Non-silent so SetColor emits COLORS_UPDATED exactly once
+        Addon.Config:SetColor(colorKey, hex)
         return
     end
 
@@ -104,10 +102,8 @@ end
 ---@param colorKey string The color key to reset
 function Colors:Reset(colorKey)
     if Addon.Config and Addon.Config.ResetColor then
-        Addon.Config:ResetColor(colorKey, true)
-        if Addon.Config.ApplyPendingOptionChanges then
-            Addon.Config:ApplyPendingOptionChanges()
-        end
+        -- Non-silent so ResetColor emits COLORS_UPDATED exactly once
+        Addon.Config:ResetColor(colorKey)
         return
     end
 
@@ -117,12 +113,21 @@ end
 
 ---Reset all colors to defaults
 function Colors:ResetAll()
-    if not Addon.db then
-        return
+    -- Clear overrides in both the global table and the active profile so the
+    -- reset is visible regardless of which layer currently wins
+    if Addon.db then
+        Addon.db.colors = nil
+    end
+    if Addon.Config and Addon.Config.GetSettingsStorage then
+        local target = Addon.Config:GetSettingsStorage()
+        if target and target ~= Addon.db then
+            target.colors = nil
+        end
     end
 
-    -- Clear colors table, will fallback to defaults
-    Addon.db.colors = nil
+    if Addon.EventBus and Addon.EventBus.Emit and Addon.EventNames then
+        Addon.EventBus:Emit(Addon.EventNames.COLORS_UPDATED, { event = Addon.EventNames.COLORS_UPDATED })
+    end
 end
 
 return Colors

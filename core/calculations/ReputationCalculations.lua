@@ -20,6 +20,27 @@ function RepCalc.ComputeGain(currentRep, lastRep)
     return math.max(0, currentRep - lastRep)
 end
 
+--- Compute reputation gained since last snapshot for value scales that wrap
+--- (renown levels, paragon cycles). When the current value drops below the
+--- previous snapshot, the remainder of the previous cycle is credited.
+--- Multi-level wraps only credit the final partial cycle because the
+--- intermediate thresholds are no longer available.
+---@param currentRep number Current reputation standing value
+---@param lastRep number Previous reputation standing value
+---@param lastMax number|nil Upper bound (cap) of the previous snapshot's scale
+---@return number gain Non-negative reputation gained
+function RepCalc.ComputeWrappedGain(currentRep, lastRep, lastMax)
+    if currentRep < lastRep then
+        if lastMax and lastMax > lastRep then
+            return (lastMax - lastRep) + currentRep
+        end
+        -- Cap unknown or inconsistent with the baseline — the wrapped cycle
+        -- cannot be sized, so fall back to not recording a gain.
+        return 0
+    end
+    return currentRep - lastRep
+end
+
 -------------------------------------------------------------------
 -- REMAINING
 -------------------------------------------------------------------
@@ -164,6 +185,9 @@ function RepCalc.NormalizeRepData(factionType, rawData)
 
     elseif factionType == "paragon" then
         local threshold = rawData.threshold or 1
+        if threshold <= 0 then
+            threshold = 1
+        end
         current = (rawData.currentValue or 0) % threshold
         min = 0
         max = threshold

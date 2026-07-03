@@ -313,12 +313,12 @@ function CircularBarStyleTemplate:AnimateBarEffect(iterationData, eventContext)
     local flashActive = flashData and flashData.active and flashData.currentAlpha > 0
     if flashActive then
         -- Show glow with animated alpha
-        self.GainFlash:SetAlpha(flashData.currentAlpha)
-        self.GainFlash:Show()
+        gainFlash:SetAlpha(flashData.currentAlpha)
+        gainFlash:Show()
     else
         -- Force hide and reset alpha when flash is inactive or nil
-        self.GainFlash:SetAlpha(0)
-        self.GainFlash:Hide()
+        gainFlash:SetAlpha(0)
+        gainFlash:Hide()
     end
 end
 

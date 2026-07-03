@@ -316,6 +316,14 @@ function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 				anim.flashStartTime = now
 				-- Total flash duration = fade in + hold + fade out (1.0 second total)
 				anim.flashDuration = AnimationUtils.GetFlashTotalDuration()
+				-- Anchor the ratio math to the just-applied instant value:
+				-- OnUpdate recomputes the fill every frame while flashing, and
+				-- uninitialized/stale timing state would drive the bar back to
+				-- a previous ratio for the whole flash.
+				anim.startTime = now
+				anim.duration = anim.flashDuration
+				anim.startRatio = targetRatio
+				anim.targetRatio = targetRatio
 				-- Store event context for flash
 				anim.eventContext = xpContext
 				-- Register so OnUpdate drives the flash

@@ -92,22 +92,16 @@ function BarManager:AdjustContextForMaxLevel(context)
     return nil
 end
 
+-- True while the Blizzard main container must stay hidden. Re-checked when a
+-- combat-deferred hide fires, so switching to style "none" mid-combat cannot
+-- leave the player without any XP bar.
+local function ShouldHideMainContainer()
+    return BarManager:IsCustomStyle(BarManager.currentStyle) or ShouldSecondarySuppressMainContainer()
+end
+
 -- Safely hide a Blizzard container, deferring to after combat if in lockdown.
 local function SafeHideContainer(container)
-    if not container then return end
-    if InCombatLockdown() then
-        -- Defer until combat ends to avoid taint.
-        local f = CreateFrame("Frame")
-        f:RegisterEvent("PLAYER_REGEN_ENABLED")
-        f:SetScript("OnEvent", function(self)
-            self:UnregisterAllEvents()
-            if container:IsShown() then
-                container:Hide()
-            end
-        end)
-        return
-    end
-    container:Hide()
+    Utils.SafeHideContainer(container, ShouldHideMainContainer)
 end
 
 function BarManager:ApplyDefaultXPBarVisibility()

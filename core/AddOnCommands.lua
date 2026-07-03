@@ -75,17 +75,9 @@ local function handleResetStats()
 end
 
 local function handleResetColors()
-    if Addon.defaults and Addon.defaults.colors then
-        Addon.db.colors = {}
-        for colorKey, colorValue in pairs(Addon.defaults.colors) do
-            Addon.db.colors[colorKey] = {
-                r = colorValue.r,
-                g = colorValue.g,
-                b = colorValue.b,
-                a = colorValue.a
-            }
-        end
-        print("|cFF00FF00XP Bar Enhanced:|r Colors reset to defaults. Please /reload")
+    if Addon.Colors and Addon.Colors.ResetAll then
+        Addon.Colors:ResetAll()
+        print("|cFF00FF00XP Bar Enhanced:|r Colors reset to defaults")
     else
         print("|cFFFF0000XP Bar Enhanced:|r Could not find default colors")
     end

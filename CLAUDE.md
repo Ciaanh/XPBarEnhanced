@@ -18,7 +18,7 @@ Reads version from `XPBarEnhanced.toc`, stages addon files into an `XPBarEnhance
 
 ## Target Platform
 
-WoW Retail only — interface `120005` (Patch 12.0.5). All API usage must comply with Patch 12.0.0 constraints (see "WoW API Constraints" below).
+WoW Retail only — interface `120007` (Patch 12.0.7). All API usage must comply with Patch 12.0.0 constraints (see "WoW API Constraints" below).
 
 ## Architecture Overview
 
@@ -41,10 +41,10 @@ WoW Events
     → UI subscribers            (BarManager, options panel, stats window)
 ```
 
-`EventBus` prevents re-entrancy during dispatch. UI components subscribe with:
+`EventBus` dispatches over a snapshot, so handlers may safely register/unregister during dispatch. UI components subscribe with:
 ```lua
 local handle = EventBus:RegisterWithHandle(eventName, handler)
--- handle() to unregister
+-- handle.Unregister() to unregister
 ```
 
 ### Load Order (TOC is authoritative)

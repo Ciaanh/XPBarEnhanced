@@ -30,7 +30,7 @@ function TextFormatter:FormatNumber(num, abbreviate)
     if abbreviate then
         return self:AbbreviateNumber(num)
     elseif BreakUpLargeNumbers then
-        return BreakUpLargeNumbers(num)
+        return BreakUpLargeNumbers(math.floor(num + 0.5))
     else
         return tostring(math.floor(num))
     end
@@ -137,10 +137,20 @@ function TextFormatter:GetQuestSummaryText(completeXP, incompleteXP, totalXP, ma
         decimals = opts.decimals or 0
     end
 
-    local db = Addon.db or {}
-    local questOverlaysEnabled = db.showQuestXP ~= false
-    local showComplete = db.showCompleteQuestOverlay ~= false
-    local showIncomplete = db.showIncompleteQuestOverlay == true
+    -- Resolve through Config so active profile overrides apply (Config loads
+    -- after this file, hence the lazy lookup)
+    local Config = Addon.Config
+    local questOverlaysEnabled, showComplete, showIncomplete
+    if Config and Config.GetOptionValue then
+        questOverlaysEnabled = Config:GetOptionValue("showQuestXP") ~= false
+        showComplete = Config:GetOptionValue("showCompleteQuestOverlay") ~= false
+        showIncomplete = Config:GetOptionValue("showIncompleteQuestOverlay") == true
+    else
+        local db = Addon.db or {}
+        questOverlaysEnabled = db.showQuestXP ~= false
+        showComplete = db.showCompleteQuestOverlay ~= false
+        showIncomplete = db.showIncompleteQuestOverlay == true
+    end
 
     if not maxXP or maxXP <= 0 then
         return ""

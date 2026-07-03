@@ -16,14 +16,24 @@ local XPCalc = Addon.XPCalculations
 ---@param currentMax number Current level's max XP
 ---@param lastXP number Previous XP snapshot
 ---@param lastMax number Previous level's max XP
+---@param lastLevel number|nil Previous player level snapshot (optional)
+---@param currentLevel number|nil Current player level (optional)
 ---@return number xpGained Amount of XP gained
 ---@return boolean didLevelUp Whether a level-up occurred
-function XPCalc.ComputeGain(currentXP, currentMax, lastXP, lastMax)
+function XPCalc.ComputeGain(currentXP, currentMax, lastXP, lastMax, lastLevel, currentLevel)
     local xpGained = 0
     local didLevelUp = false
 
-    -- Detect level-up: xpMax changed (new level has different XP requirement)
-    if lastMax and currentMax and lastMax ~= currentMax then
+    if lastLevel and currentLevel and currentLevel > lastLevel then
+        -- Level-up detected from level snapshots (works even when consecutive
+        -- levels share the same xpMax). Intermediate levels' xpMax is unknowable
+        -- after the fact; per-level PLAYER_LEVEL_UP accounting in Session is the
+        -- primary correctness path for multi-level jumps.
+        didLevelUp = true
+        xpGained = (lastMax - lastXP) + currentXP
+    elseif lastMax and currentMax and lastMax ~= currentMax then
+        -- Fallback level-up detection when level snapshots are not supplied:
+        -- xpMax changed (new level has different XP requirement)
         didLevelUp = true
         -- Level-up occurred: XP gained = (old max - old current) + new current
         xpGained = (lastMax - lastXP) + currentXP

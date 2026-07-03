@@ -143,24 +143,42 @@ function Utils.GetSettingsTable(key, createIfMissing)
     return Addon.db[key]
 end
 
----Safely hide a Blizzard container, deferring to after combat if necessary
----Prevents taint violations by deferring hide operations during combat lockdown
+---Safely hide a Blizzard container, deferring to after combat if necessary.
+---Prevents taint violations by deferring hide operations during combat lockdown.
+---A single shared frame services all pending deferrals (frames can never be
+---destroyed, so allocating one per call would leak). When provided,
+---shouldStillHide is re-evaluated at combat end so a stale request cannot
+---hide a container that should be visible again.
 ---@param container Frame The Blizzard frame to hide
-function Utils.SafeHideContainer(container)
+---@param shouldStillHide? fun(): boolean Optional predicate re-checked at combat end
+function Utils.SafeHideContainer(container, shouldStillHide)
     if not container then return end
-    if InCombatLockdown() then
-        local f = CreateFrame("Frame")
-        f:RegisterEvent("PLAYER_REGEN_ENABLED")
-        f:SetScript("OnEvent", function()
-            if container then
-                container:Hide()
-            end
-            f:UnregisterAllEvents()
-            f = nil
-        end)
-    else
+
+    if not InCombatLockdown() then
         container:Hide()
+        return
     end
+
+    Utils._pendingContainerHides = Utils._pendingContainerHides or {}
+    Utils._pendingContainerHides[container] = shouldStillHide or true
+
+    local f = Utils._containerHideFrame
+    if not f then
+        f = CreateFrame("Frame")
+        Utils._containerHideFrame = f
+        f:SetScript("OnEvent", function()
+            f:UnregisterAllEvents()
+            local queue = Utils._pendingContainerHides
+            Utils._pendingContainerHides = nil
+            if not queue then return end
+            for target, predicate in pairs(queue) do
+                if (predicate == true or predicate()) and target:IsShown() then
+                    target:Hide()
+                end
+            end
+        end)
+    end
+    f:RegisterEvent("PLAYER_REGEN_ENABLED")
 end
 
 ---Convert RGB components to WoW hex color escape sequence

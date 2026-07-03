@@ -12,6 +12,10 @@ local RepSession = Addon.ReputationSession
 local MAX_HISTORY = 200
 
 local function NormalizeFactionName(name)
+    -- Secret strings cannot be inspected with string operations.
+    if issecretvalue and issecretvalue(name) then
+        return ""
+    end
     local value = tostring(name or "")
     value = value:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
     value = value:match("^%s*(.-)%s*$") or ""
@@ -67,6 +71,12 @@ local function IsCompanionNPCInParty(companionName)
     local numMembers = (GetNumGroupMembers and GetNumGroupMembers()) or 0
     if numMembers <= 0 then
         return false
+    end
+
+    -- A secret companion name cannot be compared either; treat it like the
+    -- no-name case and rely on non-player detection below.
+    if companionName and issecretvalue and issecretvalue(companionName) then
+        companionName = nil
     end
 
     for i = 1, 4 do
@@ -172,8 +182,9 @@ local function BuildReputationContext(repSession)
 
     local stats = repSession:GetStats()
     local panel = rawget(_G, "XPBarEnhancedOptionsPanel")
-    local isPreviewMode = (Addon.db and Addon.db.barLocked == false) or (panel and panel.IsVisible and panel:IsVisible())
-    local hideCompanionOutsideDelve = Addon.db and Addon.db.hideCompanionOutsideDelve
+    local Config = Addon.Config
+    local isPreviewMode = (Config and Config:GetOptionValue("barLocked") == false) or (panel and panel.IsVisible and panel:IsVisible())
+    local hideCompanionOutsideDelve = Config and Config:GetOptionValue("hideCompanionOutsideDelve")
     local isCompanionInParty = info.isCompanion and info.isInDelve and IsCompanionNPCInParty(info.name) or false
 
     local isCompanionAvailable
@@ -306,7 +317,19 @@ function RepSession:OnFactionUpdate()
         return
     end
 
-    local gain = Addon.ReputationCalculations.ComputeGain(snapshot.current, session.lastStanding)
+    local RepCalc = Addon.ReputationCalculations
+    local gain
+    if factionType ~= session.watchedFactionType then
+        -- Reputation scale changed (e.g. renown cap rolling into paragon) —
+        -- baselines are not comparable, so re-baseline without recording a gain.
+        gain = 0
+    elseif factionType == "major" or factionType == "paragon" then
+        -- Renown levels and paragon cycles wrap current back towards 0;
+        -- credit the remainder of the previous cycle when that happens.
+        gain = RepCalc.ComputeWrappedGain(snapshot.current, session.lastStanding, session.lastMax)
+    else
+        gain = RepCalc.ComputeGain(snapshot.current, session.lastStanding)
+    end
 
     if gain > 0 then
         if not session.factionTotals[factionID] then
@@ -325,10 +348,11 @@ function RepSession:OnFactionUpdate()
         end
     end
 
-    session.lastStanding = snapshot.current
-    session.lastMin      = snapshot.min
-    session.lastMax      = snapshot.max
-    session.lastUpdate   = time()
+    session.lastStanding       = snapshot.current
+    session.lastMin            = snapshot.min
+    session.lastMax            = snapshot.max
+    session.watchedFactionType = factionType
+    session.lastUpdate         = time()
 
     if Addon.EventBus and Addon.EventNames then
         Addon.EventBus:Emit(Addon.EventNames.REPUTATION_BROADCAST_UPDATE, self:_BuildContext())
@@ -339,10 +363,9 @@ function RepSession:OnRenownLevelChanged(factionID, newRenownLevel, oldRenownLev
     if not self._session then return end
     local session = self._session
     if factionID == session.watchedFactionID then
-        self:_SnapshotWatchedFaction()
-        if Addon.EventBus and Addon.EventNames then
-            Addon.EventBus:Emit(Addon.EventNames.REPUTATION_BROADCAST_UPDATE, self:_BuildContext())
-        end
+        -- Route through the gain-aware update so rep earned across the renown
+        -- level-up is credited (wrap-aware) instead of re-baselined away.
+        self:OnFactionUpdate()
     end
 end
 
@@ -377,7 +400,7 @@ end
 
 function RepSession:GetRepPerHour()
     local session = self._session
-    if not session.watchedFactionID then return 0 end
+    if not session or not session.watchedFactionID then return 0 end
 
     local totals = session.factionTotals and session.factionTotals[session.watchedFactionID]
     if not totals or totals.gained <= 0 then return 0 end
@@ -390,7 +413,8 @@ function RepSession:GetRepPerHour()
 end
 
 function RepSession:GetTimeToNextStanding()
-    local session   = self._session
+    local session = self._session
+    if not session then return nil end
     local remaining = Addon.ReputationCalculations.ComputeRemaining(session.lastStanding, session.lastMax)
     local repPerHour = self:GetRepPerHour()
     if repPerHour <= 0 then return nil end
@@ -403,7 +427,7 @@ end
 
 function RepSession:GetWatchedFactionInfo()
     local session = self._session
-    if not session.watchedFactionID then return nil end
+    if not session or not session.watchedFactionID then return nil end
 
     local snapshot = GetFactionSnapshot(session.watchedFactionID, session.watchedFactionType)
     if not snapshot then return nil end
@@ -429,6 +453,16 @@ end
 
 function RepSession:GetStats()
     local session = self._session
+    if not session then
+        return {
+            duration           = 0,
+            factionName        = nil,
+            factionType        = nil,
+            repGained          = 0,
+            repPerHour         = 0,
+            timeToNextStanding = nil,
+        }
+    end
     local totals  = session.factionTotals
         and session.watchedFactionID
         and session.factionTotals[session.watchedFactionID]

@@ -47,11 +47,15 @@ function BaseMixin:FullUpdate(context)
 		context = XPBarContextBuilder.BuildContext("FULL_UPDATE")
 	end
 
-	-- Use unified render pattern
-	self:TriggerBarRefresh(context)
+	-- The guard must clear even when a render path throws, otherwise every
+	-- later FullUpdate silently no-ops until /reload
+	xpcall(function()
+		-- Use unified render pattern
+		self:TriggerBarRefresh(context)
 
-	-- Update text visibility in case options changed
-	self:UpdateTextVisibility(context)
+		-- Update text visibility in case options changed
+		self:UpdateTextVisibility(context)
+	end, Utils.ReportError)
 
 	self._isUpdating = nil
 end

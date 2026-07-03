@@ -8,6 +8,7 @@
 ---@field sessionAccumTime number Persisted elapsed session seconds used to preserve session continuity across /reload
 ---@field lastXP number Last recorded current XP
 ---@field maxXP number Last recorded max XP for level
+---@field lastLevel number Last recorded player level (baseline for XP gain computation)
 ---@field realTotalTime number Total time played on character (from TIME_PLAYED_MSG)
 ---@field realLevelTime number Time played at current level (from TIME_PLAYED_MSG)
 ---@field lastTimePlayedRequest number Timestamp of last TIME_PLAYED_MSG
@@ -79,6 +80,7 @@ local function ensureSessionDefaults(session)
     session.sessionAccumTime = session.sessionAccumTime or 0
     session.lastXP = session.lastXP or UnitXP("player") or 0
     session.maxXP = session.maxXP or UnitXPMax("player") or 0
+    session.lastLevel = session.lastLevel or UnitLevel("player") or 1
     session.realTotalTime = session.realTotalTime or 0
     session.realLevelTime = session.realLevelTime or 0
     session.lastTimePlayedRequest = session.lastTimePlayedRequest or 0
@@ -149,8 +151,12 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
 
     if isInitialLogin then
         resetSessionProgress(session)
+        -- lastTimePlayedRequest persists across logout; reset it so wall-clock
+        -- deltas derived from it only count the current play session, not
+        -- offline time (a fresh TIME_PLAYED_MSG is requested below).
+        session.lastTimePlayedRequest = time()
     elseif isReloadingUI then
-        if Addon.db and Addon.db.resetOnReload then
+        if Addon.Config and Addon.Config:GetOptionValue("resetOnReload") then
             resetSessionProgress(session)
         else
             local persistedElapsed = time() - (session.sessionStart or time())
@@ -166,13 +172,17 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     if isInitialLogin or isReloadingUI then
         session.lastXP = UnitXP("player")
         session.maxXP = UnitXPMax("player")
+        session.lastLevel = UnitLevel("player") or 1
         self._pendingQuestTurnIns = {}
     end
 
     updateSessionAccumTime(session)
 
-    -- Request time played if time text options are enabled
-    if Addon.db and (Addon.db.showLevelTimeText or Addon.db.showSessionTimeText) then
+    -- Always refresh played time at login (keeps level-time math anchored to
+    -- fresh data); otherwise only request it when time text options need it
+    local Config = Addon.Config
+    if isInitialLogin
+        or (Config and (Config:GetOptionValue("showLevelTimeText") or Config:GetOptionValue("showSessionTimeText"))) then
         self:RequestTimePlayed()
     end
 end
@@ -185,16 +195,19 @@ function Session:OnXPUpdate(suppressBroadcast)
 
     local currentXP = UnitXP("player") or 0
     local maxXP = UnitXPMax("player") or 0
+    local currentLevel = UnitLevel("player") or 1
     local lastXP = session.lastXP or currentXP
     local lastMax = session.maxXP or maxXP
+    local lastLevel = session.lastLevel or currentLevel
 
     -- Use centralized XPCalculations module for XP gain computation
     local XPCalc = Addon.XPCalculations
-    local gained, didLevelUp = XPCalc.ComputeGain(currentXP, maxXP, lastXP, lastMax)
+    local gained, didLevelUp = XPCalc.ComputeGain(currentXP, maxXP, lastXP, lastMax, lastLevel, currentLevel)
     session.gainedXP = (session.gainedXP or 0) + gained
     session.sessionXP = session.gainedXP
     session.lastXP = currentXP
     session.maxXP = maxXP
+    session.lastLevel = currentLevel
     session.lastUpdate = time()
     updateSessionAccumTime(session)
 
@@ -241,6 +254,21 @@ function Session:OnLevelUp(level)
         return
     end
 
+    -- If PLAYER_LEVEL_UP fires before PLAYER_XP_UPDATE, the stored baseline
+    -- still refers to the pre-level state. Run the normal gain path first so
+    -- the wrap-around XP of the old level is credited (with quest attribution)
+    -- before re-baselining. When PLAYER_XP_UPDATE arrived first the baseline
+    -- level is already current and nothing extra is credited (no double-count).
+    -- UnitLevel can still report the old level during PLAYER_LEVEL_UP, so
+    -- trust whichever source is highest.
+    local currentLevel = math.max(UnitLevel("player") or 0, tonumber(level) or 0)
+    if currentLevel == 0 then
+        currentLevel = 1
+    end
+    if (session.lastLevel or currentLevel) < currentLevel then
+        self:OnXPUpdate(true)
+    end
+
     -- Track levels gained this session
     session.levelsGained = (session.levelsGained or 0) + 1
     session.levelUpTimestamps = session.levelUpTimestamps or {}
@@ -252,6 +280,7 @@ function Session:OnLevelUp(level)
     -- Update current level state
     session.lastXP = UnitXP("player")
     session.maxXP = UnitXPMax("player")
+    session.lastLevel = currentLevel
     session.lastUpdate = time()
 
     -- Notify dependent systems (consolidated from defunct AddOnLifecycle handlers)
@@ -388,9 +417,39 @@ end
 
 -- Suppress the "Total time played" / "Time played this level" system messages
 -- when *we* are the ones requesting the data. Installed once.
+
+-- Convert a Blizzard format string (e.g. TIME_PLAYED_TOTAL) into a Lua match pattern
+local function FormatToPattern(fmt)
+    if type(fmt) ~= "string" then
+        return nil
+    end
+    local pattern = fmt:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
+    pattern = pattern:gsub("%%%%s", ".+"):gsub("%%%%d", "%%d+")
+    return "^" .. pattern .. "$"
+end
+
+local timePlayedPatterns
+local function GetTimePlayedPatterns()
+    if not timePlayedPatterns then
+        timePlayedPatterns = {}
+        timePlayedPatterns[#timePlayedPatterns + 1] = FormatToPattern(TIME_PLAYED_TOTAL)
+        timePlayedPatterns[#timePlayedPatterns + 1] = FormatToPattern(TIME_PLAYED_LEVEL)
+    end
+    return timePlayedPatterns
+end
+
 local function TimePlayedChatFilter(_, _, msg, ...)
-    if Addon.state.requestingTimePlayed then
-        return true -- block the message
+    if not Addon.state.requestingTimePlayed then
+        return false
+    end
+    if type(msg) ~= "string" or (issecretvalue and issecretvalue(msg)) then
+        return false
+    end
+    -- Only block the actual played-time lines, never other system messages
+    for _, pattern in ipairs(GetTimePlayedPatterns()) do
+        if msg:find(pattern) then
+            return true -- block the message
+        end
     end
     return false
 end
@@ -404,6 +463,8 @@ function Session:ClearTimePlayedRequest()
     Addon.state.requestingTimePlayed = false
 end
 
+local timePlayedRequestToken = 0
+
 function Session:RequestTimePlayed()
     if Addon.state.requestingTimePlayed then
         return
@@ -411,18 +472,27 @@ function Session:RequestTimePlayed()
 
     self:ClearTimePlayedRequest()
     Addon.state.requestingTimePlayed = true
+    timePlayedRequestToken = timePlayedRequestToken + 1
+    local token = timePlayedRequestToken
+
+    local function fireRequest()
+        RequestTimePlayed()
+        -- Safety timeout: if TIME_PLAYED_MSG never arrives, stop suppressing
+        -- system messages so a lost response can't filter chat forever.
+        if C_Timer and C_Timer.After then
+            C_Timer.After(5, function()
+                if token == timePlayedRequestToken and Addon.state.requestingTimePlayed then
+                    Session:ClearTimePlayedRequest()
+                end
+            end)
+        end
+    end
 
     -- Use timer to avoid instant spam
     if C_Timer and C_Timer.NewTimer then
-        timePlayedTicker =
-            C_Timer.NewTimer(
-            0.5,
-            function()
-                RequestTimePlayed()
-            end
-        )
+        timePlayedTicker = C_Timer.NewTimer(0.5, fireRequest)
     else
-        RequestTimePlayed()
+        fireRequest()
     end
 end
 

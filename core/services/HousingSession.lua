@@ -17,13 +17,21 @@ local function IsSecret(value)
 end
 
 local function SafeIsSameGuid(a, b)
-    if a == nil or b == nil then
-        return false
-    end
     if IsSecret(a) or IsSecret(b) then
         return true
     end
+    if a == nil or b == nil then
+        return false
+    end
     return a == b
+end
+
+-- tonumber/comparisons are not allowed on secret values; treat them as absent.
+local function SafeNumber(value)
+    if IsSecret(value) then
+        return nil
+    end
+    return tonumber(value)
 end
 
 local function Clamp(value, minValue, maxValue)
@@ -59,7 +67,8 @@ local function BuildHousingContext(self)
     -- GetTrackedHouseGuid returns nil when the player has not checked
     -- "Show as Experience Bar" on any house. Hide the bar in that case.
     local trackedGuid = C_Housing.GetTrackedHouseGuid and C_Housing.GetTrackedHouseGuid()
-    if not trackedGuid then
+    -- A secret GUID still means a house is tracked; only bail on a plain nil.
+    if not IsSecret(trackedGuid) and not trackedGuid then
         return BuildUnavailableContext()
     end
 
@@ -147,16 +156,33 @@ function HousingSession:RequestCurrentTrackedHouseFavor()
     -- Use GetTrackedHouseGuid (the "Show as Experience Bar" house) as the
     -- primary source. Fall back to session.houseGUID from PLAYER_HOUSE_LIST_UPDATED.
     local houseGUID = C_Housing.GetTrackedHouseGuid and C_Housing.GetTrackedHouseGuid()
-    if not houseGUID then
+    if not IsSecret(houseGUID) and not houseGUID then
         local session = self._session
         houseGUID = session and session.houseGUID
     end
-    if houseGUID then
+    -- Secret GUIDs can be passed to the API even though they cannot be inspected.
+    if IsSecret(houseGUID) or houseGUID then
         pcall(C_Housing.GetCurrentHouseLevelFavor, houseGUID)
     end
 end
 
-function HousingSession:OnEnteringWorld()
+local function resetHousingSessionProgress(session)
+    session.sessionStart = time()
+    session.sessionGained = 0
+end
+
+function HousingSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    local session = self._session
+    if session then
+        -- Same reset semantics as the XP session: fresh login always starts a
+        -- new session; /reload only resets when resetOnReload is enabled.
+        if isInitialLogin then
+            resetHousingSessionProgress(session)
+        elseif isReloadingUI and Addon.Config and Addon.Config:GetOptionValue("resetOnReload") then
+            resetHousingSessionProgress(session)
+        end
+    end
+
     -- Trigger house list loading; PLAYER_HOUSE_LIST_UPDATED fires as the response
     -- and gives us the real houseGUID needed for GetCurrentHouseLevelFavor.
     if C_Timer and C_Timer.After and C_Housing and C_Housing.GetPlayerOwnedHouses then
@@ -207,13 +233,18 @@ local function NormalizeHouseFavorPayload(a1, a2, a3)
     local level = nil
     local favor = nil
 
-    if a1 ~= nil and tonumber(a1) == nil then
+    if IsSecret(a1) then
+        -- A secret first arg can only be the GUID; it must not reach tonumber.
         payloadGuid = a1
-        level = tonumber(a2)
-        favor = tonumber(a3)
+        level = SafeNumber(a2)
+        favor = SafeNumber(a3)
+    elseif a1 ~= nil and SafeNumber(a1) == nil then
+        payloadGuid = a1
+        level = SafeNumber(a2)
+        favor = SafeNumber(a3)
     else
-        level = tonumber(a1)
-        favor = tonumber(a2)
+        level = SafeNumber(a1)
+        favor = SafeNumber(a2)
         payloadGuid = a3
     end
 
@@ -239,14 +270,16 @@ function HousingSession:OnHouseLevelFavorUpdated(a1, a2, a3)
         return
     end
 
-    local favor = tonumber(houseLevelFavor.houseFavor)
-    local level = tonumber(houseLevelFavor.houseLevel)
+    local favor = SafeNumber(houseLevelFavor.houseFavor)
+    local level = SafeNumber(houseLevelFavor.houseLevel)
     if not favor or not level then
         return
     end
 
     local session = self._session
-    if session.lastHouseFavor ~= nil and (session.lastHouseLevel == level) then
+    -- Favor is a cumulative value across house levels, so the delta stays
+    -- meaningful even when the house leveled up since the last update.
+    if session.lastHouseFavor ~= nil then
         local gain = favor - (tonumber(session.lastHouseFavor) or favor)
         if gain > 0 then
             session.sessionGained = (session.sessionGained or 0) + gain

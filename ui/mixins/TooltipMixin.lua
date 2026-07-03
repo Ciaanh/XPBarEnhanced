@@ -116,7 +116,10 @@ function TooltipMixin:HideTooltip() -- public helper
 	if TooltipMixin.currentTooltipOwner == self then
 		TooltipMixin.currentTooltipOwner = nil
 	end
-	GameTooltip:Hide()
+	-- Only hide the tooltip we own; another frame may have claimed it since
+	if GameTooltip:GetOwner() == self then
+		GameTooltip:Hide()
+	end
 end
 
 -------------------------------------------------------------------
@@ -390,8 +393,8 @@ function TooltipMixin:AddSessionSection(content, context, cfg)
 	local xpPerHour = context.xpPerHour
 	if (not xpPerHour) and sessionStart and sessionXP then
 		if XPBarContextBuilder and type(XPBarContextBuilder.CalculateXPPerHour) == "function" then
-			-- Call directly; rely on existence checks rather than pcall
-			local val = XPBarContextBuilder:CalculateXPPerHour(sessionStart, sessionXP, 0, context.currentXP or 0)
+			-- Dot-call: CalculateXPPerHour takes positional args, not self
+			local val = XPBarContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, 0, context.currentXP or 0)
 			if tonumber(val) then
 				xpPerHour = tonumber(val)
 			end
@@ -545,8 +548,8 @@ function TooltipMixin:OnEnter()
 		return
 	end
 
-	-- Build the context using centralized builder
-	local context = XPBarContextBuilder:BuildContext("TOOLTIP")
+	-- Build the context using centralized builder (dot-call: not a method)
+	local context = XPBarContextBuilder.BuildContext("TOOLTIP")
 
 	-- If there's an explicit per-bar toggle to disable tooltip content, return
 	if tooltipConfig.enabled == false then
@@ -621,7 +624,10 @@ function TooltipMixin:OnLeave()
 	if TooltipMixin.currentTooltipOwner == self then
 		TooltipMixin.currentTooltipOwner = nil
 	end
-	GameTooltip:Hide()
+	-- Only hide the tooltip we own; another frame may have claimed it since
+	if GameTooltip:GetOwner() == self then
+		GameTooltip:Hide()
+	end
 end
 
 -------------------------------------------------------------------
@@ -631,8 +637,8 @@ end
 --- Get tooltip content (can be overridden by styles or config)
 ---@return table|nil content Tooltip content structure
 function TooltipMixin:GetTooltipContent()
-	-- Try to obtain a centralized context first (call directly if available)
-	local context = XPBarContextBuilder:BuildContext("TOOLTIP")
+	-- Try to obtain a centralized context first (dot-call: not a method)
+	local context = XPBarContextBuilder.BuildContext("TOOLTIP")
 	if context and type(context) == "table" then
 		return BuildTooltipContent(self, context, self.__xpbar_config and self.__xpbar_config.tooltip)
 	end

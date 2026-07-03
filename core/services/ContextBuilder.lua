@@ -564,7 +564,15 @@ function XPBarContextBuilder.BuildTextRefreshContext(event)
 		return cached.context
 	end
 
+	-- Resolve options through Config so active profile overrides apply
 	local db = Addon and Addon.db or {}
+	local config = Addon and Addon.Config
+	local function getOptionValue(key)
+		if config and config.GetOptionValue then
+			return config:GetOptionValue(key)
+		end
+		return db[key]
+	end
 	local currentXP = UnitXP("player") or 0
 	local xpMax = UnitXPMax("player") or 1
 
@@ -587,11 +595,11 @@ function XPBarContextBuilder.BuildTextRefreshContext(event)
 		xpMax = xpMax,
 		xpPerHour = xpPerHour,
 		timeToLevel = timeToLevel,
-		showXPPerHourText = db.showXPPerHourText,
-		showTimeToLevelText = db.showTimeToLevelText,
-		showSessionTimeText = db.showSessionTimeText,
-		showLevelTimeText = db.showLevelTimeText,
-		abbreviateNumbers = db.abbreviateNumbers,
+		showXPPerHourText = getOptionValue("showXPPerHourText"),
+		showTimeToLevelText = getOptionValue("showTimeToLevelText"),
+		showSessionTimeText = getOptionValue("showSessionTimeText"),
+		showLevelTimeText = getOptionValue("showLevelTimeText"),
+		abbreviateNumbers = getOptionValue("abbreviateNumbers"),
 	}
 
 	local context = ContextBuilder.MakeImmutable(eventContext)

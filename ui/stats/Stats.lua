@@ -37,6 +37,22 @@ local Utils = Addon and Addon.Utils or {}
 Utils.ShortNumber = Utils.ShortNumber or function(v) return tostring(v) end
 Utils.FormatDuration = Utils.FormatDuration or function(v) return tostring(v) end
 
+-- Upvalue for the stats window frame (must not leak into _G)
+local frame
+
+---Format a number honoring the abbreviateNumbers option
+local function FormatNumber(value)
+    local abbreviate = true
+    if Addon.Config and Addon.Config.GetOptionValue then
+        abbreviate = Addon.Config:GetOptionValue("abbreviateNumbers") ~= false
+    end
+    local formatter = Addon.TextFormatter
+    if formatter and formatter.FormatNumber then
+        return formatter:FormatNumber(value, abbreviate)
+    end
+    return Utils.ShortNumber(value)
+end
+
 local function SetTextSafe(el, value)
     if el and el.SetText then
         el:SetText(value)
@@ -109,8 +125,10 @@ function StatsFrameMixin:ApplyStoredPosition()
     local stored = self:GetOrCreatePositionStore() or {}
     local defaults = self:GetPositionDefaults() or {}
 
-    -- Backwards compatibility: left/top
-    if stored.left ~= nil and stored.top ~= nil then
+    -- Backwards compatibility: raw left/top pixels, only when no anchor data
+    -- was saved (anchor data survives UI-scale/resolution changes, raw pixels
+    -- do not).
+    if stored.point == nil and stored.left ~= nil and stored.top ~= nil then
         self:ClearAllPoints()
         self:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", stored.left, stored.top)
         return
@@ -146,24 +164,19 @@ function StatsFrameMixin:SaveStoredPosition()
     local defaults = self:GetPositionDefaults() or {}
     local toSave = {}
 
-    if left ~= nil and top ~= nil then
-        toSave.left = left
-        toSave.top = top
-    end
     if point then
         toSave.point = point
         toSave.relativeTo = relativeTo and relativeTo:GetName() or "UIParent"
         toSave.relativePoint = relativePoint
         toSave.x = x
         toSave.y = y
+    else
+        -- No anchor available; fall back to raw pixels
+        toSave.left = left
+        toSave.top = top
     end
 
     -- Clear storage when matching defaults
-    if toSave.left ~= nil and toSave.left == defaults.left and toSave.top == defaults.top then
-        if self._positionStoreSetter then self._positionStoreSetter(nil) end
-        self.__posStore = nil
-        return
-    end
     if toSave.point and defaults.point and toSave.point == defaults.point and toSave.x == defaults.x and toSave.y == defaults.y then
         if self._positionStoreSetter then self._positionStoreSetter(nil) end
         self.__posStore = nil
@@ -293,10 +306,6 @@ function StatsFrameMixin:OnHide()
     -- Could add event unsubscribing here if needed
 end
 
-function StatsFrameMixin:OnUpdate(elapsed)
-    -- Reserved for potential future use (animations, etc.)
-end
-
 --------------------------------------------------------------------------------
 -- Core Stats Module
 --------------------------------------------------------------------------------
@@ -329,55 +338,48 @@ function Stats:Initialize()
         self:SetFrame(existing)
         self:Update()
     end
-    -- Register events regardless, keeping in sync with game
+    -- Subscribe to EventBus broadcasts, keeping in sync with game
     self:RegisterEventHandlers()
 end
 
+---True when the stats window exists and is visible; hidden windows skip
+---refreshes entirely (OnShow runs a full update when it reopens).
+local function isStatsWindowVisible()
+    local statsFrame = Stats.frame
+    return statsFrame and statsFrame.IsShown and statsFrame:IsShown() or false
+end
+
 function Stats:RegisterEventHandlers()
-    if self.eventFrame then return end
+    if self._eventHandles then return end
 
-    local f
-    if CreateFrame then
-        f = CreateFrame("Frame")
-    else
-        -- Test/stub environment: create safe stub
-        f = {}
-        f.RegisterEvent = function(_) end
-        f.UnregisterAllEvents = function(_) end
-        f.SetScript = function(_, _, _) end
-    end
+    local bus = Addon.EventBus
+    local names = Addon.EventNames
+    if not (bus and bus.RegisterWithHandle and names) then return end
 
-    -- Register events we care about
-    if f.RegisterEvent then
-        local events = { "PLAYER_XP_UPDATE", "PLAYER_LEVEL_UP", "TIME_PLAYED_MSG", "QUEST_LOG_UPDATE", "UNIT_QUEST_LOG_CHANGED" }
-        for _, ev in ipairs(events) do
-            f:RegisterEvent(ev)
+    local function onBroadcast()
+        if isStatsWindowVisible() then
+            Stats:Update()
         end
     end
 
-    -- OnEvent handler dispatches to Stats methods
-    if f.SetScript then
-        f:SetScript("OnEvent", function(_, event, ...)
-            if event == "PLAYER_XP_UPDATE" then
-                self:OnXPUpdate(...)
-            elseif event == "PLAYER_LEVEL_UP" then
-                self:OnLevelUp(...)
-            elseif event == "TIME_PLAYED_MSG" then
-                self:OnTimePlayed(...)
-            elseif event == "QUEST_LOG_UPDATE" or event == "UNIT_QUEST_LOG_CHANGED" then
-                self:OnQuestXPUpdated(...)
-            end
-        end)
-    end
-
-    self.eventFrame = f
+    -- XPBAR_BROADCAST_UPDATE fires on XP updates, level ups and TIME_PLAYED_MSG
+    -- (routed through core/EventRouter → Session); the quest cache events fire
+    -- on quest log changes. No direct WoW event registration here.
+    self._eventHandles = {
+        bus:RegisterWithHandle(names.XPBAR_BROADCAST_UPDATE, "stats-window", onBroadcast),
+        bus:RegisterWithHandle(names.QUESTS_CACHE_INVALIDATED, "stats-window", onBroadcast),
+        bus:RegisterWithHandle(names.QUESTS_CACHE_REBUILT, "stats-window", onBroadcast),
+    }
 end
 
 function Stats:ShutdownEventHandlers()
-    if not self.eventFrame then return end
-    if self.eventFrame.UnregisterAllEvents then self.eventFrame:UnregisterAllEvents() end
-    if self.eventFrame.SetScript then self.eventFrame:SetScript("OnEvent", nil) end
-    self.eventFrame = nil
+    if not self._eventHandles then return end
+    for _, handle in ipairs(self._eventHandles) do
+        if handle and handle.Unregister then
+            handle.Unregister()
+        end
+    end
+    self._eventHandles = nil
 end
 
 function Stats:Toggle()
@@ -455,14 +457,14 @@ function Stats:UpdateLevelStats(statsFrame)
 
     -- Update current level and XP values using safe setters
     SetTextSafe(content.CurrentLevelValue, tostring(level))
-    SetTextSafe(content.CurrentXPValue, Utils.ShortNumber(currentXP))
-    SetTextSafe(content.MaxXPValue, Utils.ShortNumber(maxXP))
+    SetTextSafe(content.CurrentXPValue, FormatNumber(currentXP))
+    SetTextSafe(content.MaxXPValue, FormatNumber(maxXP))
     SetTextSafe(content.ProgressValue, string_format("%.1f%%", percent))
-    SetTextSafe(content.RemainingXPValue, Utils.ShortNumber(remainingXP))
+    SetTextSafe(content.RemainingXPValue, FormatNumber(remainingXP))
 
     if content.RestedXPValue then
         if restedXP > 0 then
-            SetTextSafe(content.RestedXPValue, Utils.ShortNumber(restedXP))
+            SetTextSafe(content.RestedXPValue, FormatNumber(restedXP))
         else
             SetTextSafe(content.RestedXPValue, L["TT_NONE"])
         end
@@ -474,7 +476,7 @@ function Stats:UpdateLevelStats(statsFrame)
 
         if totalQuestXP and totalQuestXP > 0 then
             local questPercent = (totalQuestXP / math_max(maxXP, 1)) * 100
-            SetTextSafe(content.QuestXPValue, string_format("%s (%.1f%%)", Utils.ShortNumber(totalQuestXP), questPercent))
+            SetTextSafe(content.QuestXPValue, string_format("%s (%.1f%%)", FormatNumber(totalQuestXP), questPercent))
         else
             SetTextSafe(content.QuestXPValue, L["TT_NONE"])
         end
@@ -526,18 +528,18 @@ function Stats:UpdateSessionStats(statsFrame)
     -- Update session duration & start
     SetTextSafe(content.SessionDurationValue, Utils.FormatDuration(sessionElapsed))
     SetTextSafe(content.SessionStartValue, date("%H:%M", session.sessionStart or time()))
-    SetTextSafe(content.SessionXPValue, Utils.ShortNumber(sessionXP))
+    SetTextSafe(content.SessionXPValue, FormatNumber(sessionXP))
     SetTextSafe(content.LevelsGainedValue, tostring(levelsGained))
 
     if content.XPPerHourValue then
         if xpPerHour > 0 then
-            SetTextSafe(content.XPPerHourValue, Utils.ShortNumber(xpPerHour))
+            SetTextSafe(content.XPPerHourValue, FormatNumber(xpPerHour))
         else
             SetTextSafe(content.XPPerHourValue, L["TT_CALCULATING"])
         end
     end
 
-    SetTextSafe(content.TotalSessionXPValue, Utils.ShortNumber(sessionXP))
+    SetTextSafe(content.TotalSessionXPValue, FormatNumber(sessionXP))
 end
 
 --------------------------------------------------------------------------------

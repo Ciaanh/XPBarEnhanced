@@ -256,7 +256,10 @@ function StyleMixin:_RebuildArcIfNeeded()
     self:SetSize(BASE_FRAME_SIZE * scale, BASE_FRAME_SIZE * scale)
 
     local clockwise = -1
-    local denominator = math.max(displayCount - 1, 1)
+    -- Full-circle sweep wraps around: divide by displayCount so the last segment
+    -- does not land on top of the first. Partial arcs are endpoint-inclusive.
+    local isFullCircle = sweep >= (2 * math.pi)
+    local denominator = isFullCircle and displayCount or math.max(displayCount - 1, 1)
 
     for index = 1, displayCount do
         local angle = startAngle + ((index - 1) / denominator) * sweep

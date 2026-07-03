@@ -120,9 +120,12 @@ function ProfileManager:NormalizeProfileName(name)
         return nil
     end
     
-    -- Validate length: max 32 characters for UI consistency, and max 128 bytes for storage safety
-    local byteLength = string.len(normalized)
-    if #normalized > 32 or byteLength > 128 then
+    -- Validate length: max 32 characters for UI consistency, and max 128 bytes
+    -- for storage safety. Characters are counted in UTF-8 so non-Latin names
+    -- (Cyrillic/CJK use multiple bytes per character) are not rejected early.
+    local charLength = strlenutf8 and strlenutf8(normalized) or #normalized
+    local byteLength = #normalized
+    if charLength > 32 or byteLength > 128 then
         return nil
     end
     

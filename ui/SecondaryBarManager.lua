@@ -28,23 +28,6 @@ local function GetSettingsTable(key, createIfMissing)
     return Addon.db[key]
 end
 
--- Safely hide a Blizzard container, deferring to after combat if in lockdown.
-local function SafeHideContainer(container)
-    if not container then return end
-    if InCombatLockdown() then
-        local f = CreateFrame("Frame")
-        f:RegisterEvent("PLAYER_REGEN_ENABLED")
-        f:SetScript("OnEvent", function(self)
-            self:UnregisterAllEvents()
-            if container:IsShown() then
-                container:Hide()
-            end
-        end)
-        return
-    end
-    container:Hide()
-end
-
 -- Maps each primary bar style key to its secondary bar template name.
 -- Add entries here as new secondary styles are implemented.
 local TEMPLATE_MAP = {
@@ -90,6 +73,32 @@ end
 
 function Manager:ShouldSuppressMainContainer()
     return ShouldSuppressMainContainer()
+end
+
+-- Predicates re-checked when a combat-deferred hide fires, so disabling the
+-- secondary bar mid-combat cannot hide Blizzard's bars once combat ends.
+local function ShouldHideSecondaryContainer()
+    return IsCustomStyle(Manager._currentStyle)
+end
+
+-- Any reason the main container must stay hidden (either manager). Deferred
+-- hides for a container are keyed per container, so both managers must agree
+-- on one main-container predicate.
+local function ShouldHideMainContainer()
+    local barManager = Addon.BarManager
+    if barManager and barManager.IsCustomStyle and barManager:IsCustomStyle(barManager.currentStyle) then
+        return true
+    end
+    return ShouldSuppressMainContainer()
+end
+
+-- Safely hide a Blizzard container, deferring to after combat if in lockdown.
+local function SafeHideContainer(container)
+    local predicate = ShouldHideMainContainer
+    if container == _G.SecondaryStatusTrackingBarContainer then
+        predicate = ShouldHideSecondaryContainer
+    end
+    Addon.Utils.SafeHideContainer(container, predicate)
 end
 
 -------------------------------------------------------------------

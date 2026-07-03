@@ -34,6 +34,36 @@ local POSITION_MODE = {
 	DRAGGABLE = "DRAGGABLE" -- User-movable with saved position
 }
 
+--- Capture the frame's current position as genuine UIParent-relative
+--- coordinates. GetPoint() may be relative to another frame (e.g. the
+--- Blizzard container in STATIC mode), so storing its offsets against
+--- UIParent would teleport the bar; the screen rect is anchor-independent.
+---@return table|nil position Saved-position table, or nil when no rect yet
+local function CaptureScreenPosition(frame)
+	local left = frame.GetLeft and frame:GetLeft()
+	local bottom = frame.GetBottom and frame:GetBottom()
+	if not left or not bottom then
+		return nil
+	end
+
+	-- GetLeft/GetBottom are expressed in the frame's effective scale;
+	-- convert into UIParent's coordinate space.
+	local scale = frame:GetEffectiveScale()
+	local parentScale = UIParent:GetEffectiveScale()
+	if parentScale and parentScale > 0 and scale and scale ~= parentScale then
+		left = left * scale / parentScale
+		bottom = bottom * scale / parentScale
+	end
+
+	return {
+		point = "BOTTOMLEFT",
+		relativeTo = "UIParent",
+		relativePoint = "BOTTOMLEFT",
+		x = left,
+		y = bottom
+	}
+end
+
 -------------------------------------------------------------------
 -- INITIALIZATION
 -------------------------------------------------------------------
@@ -108,20 +138,12 @@ end
 function PositionMixin:SavePosition()
 	local positions = GetSettingsTable("barPositions", true)
 
-	-- Get first anchor point
-	local point, relativeTo, relativePoint, x, y = self:GetPoint(1)
-	if not point then
+	local captured = CaptureScreenPosition(self)
+	if not captured then
 		return
 	end
 
-	-- Save position
-	positions[self.__position_key] = {
-		point = point,
-		relativeTo = "UIParent", -- Always save relative to UIParent for consistency
-		relativePoint = relativePoint,
-		x = x,
-		y = y
-	}
+	positions[self.__position_key] = captured
 end
 
 --- Restore saved position from SavedVariables
@@ -224,17 +246,13 @@ function PositionMixin:UpdatePositionMode(newMode)
 
 	-- When switching from STATIC to DRAGGABLE, capture current position
 	if oldMode == POSITION_MODE.STATIC and newMode == POSITION_MODE.DRAGGABLE then
-		-- Save current STATIC position as initial draggable position
-		local point, relativeTo, relativePoint, x, y = self:GetPoint(1)
-		if point then
+		-- Save current STATIC screen position as initial draggable position
+		-- (the STATIC anchor is container-relative and must not be replayed
+		-- against UIParent)
+		local captured = CaptureScreenPosition(self)
+		if captured then
 			local positions = GetSettingsTable("barPositions", true)
-			positions[self.__position_key] = {
-				point = point,
-				relativeTo = "UIParent",
-				relativePoint = relativePoint or point,
-				x = x or 0,
-				y = y or 0
-			}
+			positions[self.__position_key] = captured
 		end
 		-- Enable dragging
 		self:EnableDragging(true)

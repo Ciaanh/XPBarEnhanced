@@ -108,12 +108,10 @@ function XPBarExhaustionTickMixin:OnEnter()
     if bar.GetSnapshot and type(bar.GetSnapshot) == "function" then
         ctx = bar:GetSnapshot() -- some styles may expose a snapshot API
     end
-    -- Fallback to bar.state
-    if not ctx then
-        ctx = {
-            restedXP = (bar.state and bar.state.restedXP) or (bar.restedXP and bar.restedXP),
-            xpMax = (bar.state and bar.state.xpMax) or (bar.xpMax and bar.xpMax)
-        }
+    -- Fallback to the centralized context builder (dot-call: BuildContext is
+    -- not a method), which owns all raw XP API access
+    if not ctx and XPBarContextBuilder and XPBarContextBuilder.BuildContext then
+        ctx = XPBarContextBuilder.BuildContext("TOOLTIP")
     end
 
     local tt = GameTooltip
@@ -122,7 +120,7 @@ function XPBarExhaustionTickMixin:OnEnter()
     end
     tt:SetOwner(self, "ANCHOR_TOP")
     if ctx and ctx.restedXP and ctx.restedXP > 0 then
-        local maxXP = ctx.xpMax or ((type(UnitXPMax) == "function" and UnitXPMax("player")) or 1)
+        local maxXP = ctx.xpMax or 1
         local percent = (ctx.restedXP / maxXP) * 100
         tt:AddLine("Rested XP", 1, 1, 1)
         tt:AddDoubleLine("Amount:", tostring(ctx.restedXP), 0.8, 0.8, 0.8, 1, 1, 1)
@@ -134,7 +132,8 @@ function XPBarExhaustionTickMixin:OnEnter()
 end
 
 function XPBarExhaustionTickMixin:OnLeave()
-    if GameTooltip then
+    -- Only hide the tooltip we own; another frame may have claimed it since
+    if GameTooltip and GameTooltip:GetOwner() == self then
         GameTooltip:Hide()
     end
 end

@@ -427,25 +427,44 @@ function XPBarEnhancedOptionsMixin:OnLoad()
 
     -- DYNAMIC SCROLLBOX SETUP:
     -- Calculate content height dynamically based on actual content
+    local optionsPanel = self
     local function CalculateContentHeight()
-        -- Find the bottom-most element to determine actual content height
+        local contentTop = scrollChild:GetTop()
+        if not contentTop then
+            -- Not laid out yet (OnLoad); use a provisional extent, the
+            -- deferred refresh below re-queries once rects are valid
+            return 800
+        end
+
+        -- Find the bottom-most shown element to determine actual content height
         local bottomY = 0
-        local contentTop = scrollChild:GetTop() or 0
-
-        -- Check reset buttons (they're at the bottom)
-        local bottomElements = {}
-
-        for _, element in ipairs(bottomElements) do
-            if element and element:IsShown() and element:GetBottom() then
-                local elementBottom = contentTop - element:GetBottom()
-                if elementBottom > bottomY then
-                    bottomY = elementBottom
+        local function consider(element)
+            if element and element.IsShown and element:IsShown() and element.GetBottom then
+                local bottom = element:GetBottom()
+                if bottom then
+                    local extent = contentTop - bottom
+                    if extent > bottomY then
+                        bottomY = extent
+                    end
                 end
             end
         end
 
-        -- Add padding at the bottom
-        return math.max(bottomY + 40, 800) -- Minimum 800, plus 40px padding
+        for _, child in ipairs({scrollChild:GetChildren()}) do
+            consider(child)
+        end
+        if scrollChild.GetRegions then
+            for _, region in ipairs({scrollChild:GetRegions()}) do
+                consider(region)
+            end
+        end
+
+        -- At least fill the viewport, plus 40px bottom padding for the content
+        local minHeight = (optionsPanel.ScrollBox and optionsPanel.ScrollBox:GetHeight()) or 0
+        if minHeight <= 0 then
+            minHeight = 400
+        end
+        return math.max(bottomY + 40, minHeight)
     end
 
     -- Use the modern ScrollBox API with ContentFrame as the scroll target
@@ -1358,9 +1377,6 @@ function Options:OnOptionChanged(key)
         if panel and panel.UpdateStylePreview then
             panel:UpdateStylePreview(value)
         end
-    elseif key == "hideBlizzardBar" then
-        -- Update Blizzard bar visibility (handled by Config side effects)
-        -- No additional action needed here
     elseif key == "barLocked" then
     elseif key == "classicBarDraggable" then
     elseif key == "showMinimapButton" then
@@ -1461,7 +1477,7 @@ function Options:OnOptionChanged(key)
             end
         end
     elseif
-        key == "showQuestXP" or key == "showQuestPercent" or key == "questOverlaysEnabled" or
+        key == "showQuestXP" or key == "showQuestPercent" or
             key == "showCompleteQuestOverlay" or
             key == "showIncompleteQuestOverlay"
      then

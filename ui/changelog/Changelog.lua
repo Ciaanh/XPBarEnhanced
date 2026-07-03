@@ -8,6 +8,22 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.1.7",
+        notes = {
+            "Fixed session XP missing the level-crossing amount on level-ups, multi-level jumps, and levels sharing the same XP requirement.",
+            "Fixed reputation gains lost when crossing a renown level or paragon cycle, and housing favor lost on house level-ups.",
+            "Fixed Lua error when mouse-wheeling over the minimap ring (removed zoom API).",
+            "Profile overrides now apply everywhere (session resets, text toggles, quest overlays, color resets).",
+            "Session data is now stored per character, so alts no longer inherit played time; housing session resets on login.",
+            "Fixed options panel scrolling cutting off tall tabs.",
+            "Fixed bar teleporting to the screen corner when enabling draggable positioning.",
+            "Fixed XP bar flash briefly showing a stale fill on small XP gains.",
+            "Fixed chat filter that could suppress system messages after requesting played time.",
+            "Stats window now honors number abbreviation, refreshes only while open, and keeps its position across UI-scale changes.",
+            "Many stability fixes: frame leaks in combat, event bus subscription leaks, tooltip ownership, rested XP tooltip.",
+        },
+    },
+    {
         version = "1.1.6",
         notes = {
             "Fixed housing favor secondary bar not refreshing after gaining housing XP.",
@@ -111,14 +127,30 @@ local function GetCurrentVersion()
     return version or "0.0.0"
 end
 
+local function ParseVersion(version)
+    local major, minor, patch = tostring(version or ""):match("^(%d+)%.(%d+)%.?(%d*)")
+    return tonumber(major) or 0, tonumber(minor) or 0, tonumber(patch) or 0
+end
+
+-- True when version a is at or below version b
+local function IsVersionAtOrBelow(a, b)
+    local aMajor, aMinor, aPatch = ParseVersion(a)
+    local bMajor, bMinor, bPatch = ParseVersion(b)
+    if aMajor ~= bMajor then return aMajor < bMajor end
+    if aMinor ~= bMinor then return aMinor < bMinor end
+    return aPatch <= bPatch
+end
+
 local function CollectEntriesThrough(boundaryVersion)
     local entries = {}
     for _, entry in ipairs(Changelog.entries or {}) do
-        entries[#entries + 1] = entry
-        -- Include the boundary version entry, then stop.
-        if boundaryVersion and entry.version == boundaryVersion then
+        -- Stop at the first entry the user has already seen. Numeric
+        -- comparison, not equality: the boundary version may have no entry
+        -- of its own (skipped versions must not surface the whole history).
+        if boundaryVersion and IsVersionAtOrBelow(entry.version, boundaryVersion) then
             break
         end
+        entries[#entries + 1] = entry
     end
     return entries
 end
@@ -178,25 +210,33 @@ function Changelog:Show(boundaryVersion)
     frame:Show()
 end
 
+-- FontStrings can never be destroyed, so pool and reuse them across refreshes
+function Changelog:AcquireLine(index, fontTemplate)
+    self.lines = self.lines or {}
+    local line = self.lines[index]
+    if not line then
+        line = self.content:CreateFontString(nil, "OVERLAY", fontTemplate)
+        self.lines[index] = line
+    end
+    line:SetFontObject(fontTemplate)
+    line:ClearAllPoints()
+    line:Show()
+    return line
+end
+
 function Changelog:RefreshContent(entries)
     if not self.content then
         return
     end
 
-    if self.lines then
-        for _, line in ipairs(self.lines) do
-            line:Hide()
-        end
-    end
-    self.lines = {}
-
+    local lineCount = 0
     local y = -4
     for _, entry in ipairs(entries) do
-        local versionLabel = self.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        lineCount = lineCount + 1
+        local versionLabel = self:AcquireLine(lineCount, "GameFontNormal")
         versionLabel:SetPoint("TOPLEFT", self.content, "TOPLEFT", 6, y)
         versionLabel:SetText(string.format("v%s", entry.version))
         versionLabel:SetTextColor(0.35, 0.75, 1.0, 1.0)
-        self.lines[#self.lines + 1] = versionLabel
 
         y = y - versionLabel:GetStringHeight() - 6
 
@@ -208,7 +248,8 @@ function Changelog:RefreshContent(entries)
             end
         end
 
-        local notes = self.content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        lineCount = lineCount + 1
+        local notes = self:AcquireLine(lineCount, "GameFontHighlightSmall")
         notes:SetPoint("TOPLEFT", self.content, "TOPLEFT", 10, y)
         notes:SetPoint("RIGHT", self.content, "RIGHT", -8, 0)
         notes:SetJustifyH("LEFT")
@@ -216,9 +257,15 @@ function Changelog:RefreshContent(entries)
         notes:SetSpacing(2)
         notes:SetTextColor(0.90, 0.90, 0.90, 1)
         notes:SetText(noteText)
-        self.lines[#self.lines + 1] = notes
 
         y = y - notes:GetStringHeight() - 16
+    end
+
+    -- Hide surplus pooled lines from a previous, longer refresh
+    if self.lines then
+        for i = lineCount + 1, #self.lines do
+            self.lines[i]:Hide()
+        end
     end
 
     self.content:SetHeight(math.max(1, -y + 8))

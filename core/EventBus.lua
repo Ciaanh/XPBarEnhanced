@@ -33,8 +33,6 @@ local EventBus = Addon.EventBus
 local Utils = Addon.Utils
 
 EventBus.listeners = EventBus.listeners or {}
-EventBus._executingEvents = EventBus._executingEvents or {}
-EventBus._deferredRegistrations = EventBus._deferredRegistrations or {}
 EventBus._debugEnabled = EventBus._debugEnabled or false
 EventBus._debugCounters = EventBus._debugCounters or {}
 
@@ -68,12 +66,9 @@ function EventBus:Register(eventName, idOrHandler, handler)
         error("EventBus:Register requires a function handler")
     end
     id = id or tostring(fn)
-    -- If currently dispatching this event, defer registration to avoid iterator invalidation
-    if self._executingEvents[eventName] and self._executingEvents[eventName] > 0 then
-        self._deferredRegistrations[eventName] = self._deferredRegistrations[eventName] or {}
-        self._deferredRegistrations[eventName][id] = fn
-        return id
-    end
+    -- Registering during a dispatch of the same event is safe: Emit iterates a
+    -- snapshot taken before any handler runs, so mutating the live table here
+    -- cannot invalidate that iteration. The new handler runs from the next emit.
     EventBus.listeners[eventName] = EventBus.listeners[eventName] or {}
     EventBus.listeners[eventName][id] = fn
     return id
@@ -128,33 +123,21 @@ function EventBus:Emit(eventName, context)
         error("EventBus:Emit called without context for event: " .. tostring(eventName))
     end
 
-    -- Increment re-entrancy depth so Register() knows to defer new subscriptions
-    self._executingEvents[eventName] = (self._executingEvents[eventName] or 0) + 1
-
-    -- Iterate over a stable snapshot so handlers can safely unregister during emit
-    -- without causing skipped callbacks due to table mutation during pairs().
-    local dispatchList = {}
-    for _, handler in pairs(listenersForEvent) do
-        dispatchList[#dispatchList + 1] = handler
+    -- Iterate over a stable snapshot so handlers can safely register/unregister
+    -- during emit without mutating the table being iterated.
+    local dispatchIds = {}
+    local dispatchFns = {}
+    for id, handler in pairs(listenersForEvent) do
+        dispatchIds[#dispatchIds + 1] = id
+        dispatchFns[#dispatchFns + 1] = handler
     end
 
-    for i = 1, #dispatchList do
-        local handler = dispatchList[i]
-        xpcall(handler, Utils.ReportError, context)
-    end
-
-    self._executingEvents[eventName] = self._executingEvents[eventName] - 1
-
-    -- Apply any registrations that were deferred during dispatch
-    if self._executingEvents[eventName] == 0 then
-        self._executingEvents[eventName] = nil
-        local deferred = self._deferredRegistrations[eventName]
-        if deferred then
-            self._deferredRegistrations[eventName] = nil
-            EventBus.listeners[eventName] = EventBus.listeners[eventName] or {}
-            for id, fn in pairs(deferred) do
-                EventBus.listeners[eventName][id] = fn
-            end
+    for i = 1, #dispatchIds do
+        local handler = dispatchFns[i]
+        -- Skip handlers unregistered by an earlier handler in this dispatch —
+        -- they may belong to frames that were just torn down.
+        if listenersForEvent[dispatchIds[i]] == handler then
+            xpcall(handler, Utils.ReportError, context)
         end
     end
 

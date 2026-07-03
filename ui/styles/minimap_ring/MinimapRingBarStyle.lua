@@ -74,10 +74,13 @@ function MinimapRingBarStyleTemplate:_SetupRingTooltipHitFrames()
         f:SetScript("OnMouseDown", function(_, button) ringBar:OnMouseDown(button) end)
         f:SetScript("OnMouseUp", function(_, button) ringBar:OnMouseUp(button) end)
         f:SetScript("OnMouseWheel", function(_, delta)
+            if not (Minimap and Minimap.SetZoom and Minimap.GetZoom and Minimap.GetZoomLevels) then
+                return
+            end
             if delta > 0 then
-                Minimap_ZoomIn()
+                Minimap:SetZoom(math.min(Minimap:GetZoom() + 1, Minimap:GetZoomLevels() - 1))
             else
-                Minimap_ZoomOut()
+                Minimap:SetZoom(math.max(Minimap:GetZoom() - 1, 0))
             end
         end)
         return f
@@ -531,6 +534,11 @@ function MinimapRingBarStyleTemplate:UpdateButtonCollection(forceRefresh)
     end
 
     if Config and Config.GetOptionValue and Config:GetOptionValue("minimapRingCollectButtons") then
+        -- Only claim the collection while visible; a hidden bar must never
+        -- re-take ownership after OnHide released it (release stays unconditional).
+        if not self:IsShown() then
+            return
+        end
         local needsRefresh = forceRefresh or collector.owner ~= self
         collector:SetOwner(self)
         if needsRefresh then

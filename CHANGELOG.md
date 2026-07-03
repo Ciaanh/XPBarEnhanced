@@ -4,6 +4,24 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.7] - 2026-07-03
+
+### Fixed
+
+- **Level-Up XP Accounting**: Session XP no longer drops the level-crossing amount. `Session:OnLevelUp` now credits the wrap-around XP of the old level before re-baselining (handles `PLAYER_LEVEL_UP` arriving before `PLAYER_XP_UPDATE`), and `XPCalculations.ComputeGain` detects level-ups from level snapshots instead of relying solely on `xpMax` changes (fixes equal-`xpMax` consecutive levels and multi-level jumps).
+- **Renown/Paragon/Housing Gains at Thresholds**: Reputation gained across a renown level or paragon cycle is now credited via wrap-aware gain computation; housing favor gained across a house level-up is no longer discarded; paragon `threshold = 0` no longer produces NaN.
+- **Minimap Ring Zoom Error**: Mouse-wheeling over the minimap ring hit strips no longer throws — replaced removed `Minimap_ZoomIn`/`Minimap_ZoomOut` globals with `Minimap:SetZoom`.
+- **Profile Overrides Everywhere**: Session, ReputationSession, ContextBuilder, TextFormatter and quest-summary paths now resolve options through `Config:GetOptionValue`, so active profile overrides apply; `Config:SetOptionKey` writes profile overrides even when the value matches the inherited one; `/xpbe resetcolors` and `Colors:ResetAll` clear profile color overrides and refresh without `/reload`.
+- **Per-Character Sessions**: XP/reputation/housing session data is now stored per character (alts no longer inherit played time); housing session resets on login like the other sessions; level time no longer inflated by offline wall-clock.
+- **Chat Filter**: The played-time chat suppression now only blocks the actual "Time played" lines and times out after 5 seconds, instead of swallowing all system messages indefinitely on a lost response.
+- **Animation Flash**: Tiny XP gains with flash enabled no longer overwrite the bar fill with a stale ratio for the flash duration.
+- **Combat Deferral**: Deferred Blizzard-bar hides reuse a single frame (no frame leak) and re-check style state at combat end, so switching to style "none" mid-combat can no longer hide Blizzard's XP bar; profile-change deferral no longer misses combat ending within 0.1s.
+- **EventBus**: Removed the deferred-registration mechanism (subscriptions made during dispatch could never be unregistered and leaked); handlers unregistered mid-dispatch are no longer invoked from the stale snapshot.
+- **Stats Window**: No longer leaks a global `frame`; subscribes to EventBus broadcasts instead of registering WoW events directly; skips refreshes while hidden; honors `abbreviateNumbers`; removed per-frame empty `OnUpdate`; window position restore prefers saved anchor data (survives UI-scale changes).
+- **Options Panel**: Scroll height now measures actual content instead of a hardcoded 800px, making tall tabs fully scrollable; removed dead `hideBlizzardBar`/`questOverlaysEnabled` branches and 13 orphaned defaults for features that don't exist.
+- **Bar Position**: Switching the classic bar from static to draggable positioning no longer teleports it to the screen corner (positions are captured as true screen coordinates).
+- **Misc**: Exhaustion-tick tooltip now reports actual rested XP; XP/h text honors `abbreviateNumbers`; tooltips only hide when owned (no longer dismissing other addons' tooltips); changelog popup shows only unseen entries and pools its font strings; secret-safe housing GUID handling; profile names count UTF-8 characters; full-circle secondary ring no longer overlaps its first segment.
+
 ## [1.1.6] - 2026-06-21
 
 ### Fixed

@@ -124,9 +124,11 @@ function Config:SetOptionKey(key, value, silent)
         newValue = value and true or false
     end
 
-    local oldValue = self:GetOptionValue(key)
-    if oldValue == newValue then return end
+    -- Compare against the raw stored value in the write target, not the
+    -- effective value: with a profile active, an effective value inherited
+    -- from global/defaults must still be written as a profile override.
     local target = getWriteTargetTable()
+    if target[key] == newValue then return end
     target[key] = newValue
 
     if silent then
@@ -295,21 +297,25 @@ function Config:GetProfileNames()
 end
 
 function Config:NotifyProfileChanged()
-    -- Combat lockdown protection: defer UI changes if in combat
+    -- Combat lockdown protection: defer UI changes if in combat.
+    -- The frame is registered immediately (no timer) so a combat that ends
+    -- right away still delivers PLAYER_REGEN_ENABLED, and it is reused so
+    -- repeated deferrals never allocate new frames.
     if InCombatLockdown() then
         if not self._deferredProfileChange then
             self._deferredProfileChange = true
             local deferredConfig = self
-            C_Timer.After(0.1, function()
-                -- Register for combat end event
-                local frame = CreateFrame("Frame")
-                frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+            local frame = self._profileDeferFrame
+            if not frame then
+                frame = CreateFrame("Frame")
+                self._profileDeferFrame = frame
                 frame:SetScript("OnEvent", function()
                     frame:UnregisterAllEvents()
                     deferredConfig._deferredProfileChange = nil
                     deferredConfig:NotifyProfileChanged()
                 end)
-            end)
+            end
+            frame:RegisterEvent("PLAYER_REGEN_ENABLED")
         end
         return
     end
