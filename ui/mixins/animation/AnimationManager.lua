@@ -183,6 +183,9 @@ function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 
 	-- Detect level-up
 	if AnimationUtils.DetectLevelUp(xpContext) then
+		-- Level-up celebration (golden glow + optional fanfare)
+		self:PlayLevelUpCelebration(bar, config)
+
 		-- Cancel current animation
 		if anim.isAnimating then
 			self:Unregister(bar)
@@ -387,6 +390,63 @@ function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 
 	-- Register with driver
 	self:Register(bar)
+end
+
+--- Level-up celebration: golden glow pulses over the bar plus an optional
+--- fanfare. Uses a native AnimationGroup (no OnUpdate) and a per-bar pooled
+--- texture. Styles without a StatusBar region get the sound only — no hard
+--- errors from style code.
+-- @param bar table: Bar instance
+-- @param config table: Animation config from GetAnimationConfig()
+function AnimationManager:PlayLevelUpCelebration(bar, config)
+	if not config or config.levelUpCelebration == false then
+		return
+	end
+
+	if config.celebrationSound ~= false and PlaySound and SOUNDKIT and SOUNDKIT.UI_EPICLOOT_TOAST then
+		PlaySound(SOUNDKIT.UI_EPICLOOT_TOAST)
+	end
+
+	local anchor = bar.StatusBar
+	if not anchor then
+		return
+	end
+
+	local glow = bar._celebrationGlow
+	if not glow then
+		glow = anchor:CreateTexture(nil, "OVERLAY", nil, 7)
+		glow:SetAllPoints(anchor)
+		glow:SetColorTexture(1, 0.82, 0.1, 1)
+		glow:SetBlendMode("ADD")
+		glow:SetAlpha(0)
+		bar._celebrationGlow = glow
+
+		-- Two golden pulses: 0 -> 0.7 -> 0 -> 0.5 -> 0
+		local group = glow:CreateAnimationGroup()
+		local pulses = {
+			{from = 0, to = 0.7, duration = 0.15},
+			{from = 0.7, to = 0, duration = 0.45},
+			{from = 0, to = 0.5, duration = 0.15},
+			{from = 0.5, to = 0, duration = 0.6},
+		}
+		for order, pulse in ipairs(pulses) do
+			local alphaAnim = group:CreateAnimation("Alpha")
+			alphaAnim:SetOrder(order)
+			alphaAnim:SetFromAlpha(pulse.from)
+			alphaAnim:SetToAlpha(pulse.to)
+			alphaAnim:SetDuration(pulse.duration)
+		end
+		group:SetScript("OnFinished", function()
+			glow:SetAlpha(0)
+		end)
+		bar._celebrationGlowGroup = group
+	end
+
+	local group = bar._celebrationGlowGroup
+	if group then
+		group:Stop()
+		group:Play()
+	end
 end
 
 --- OnUpdate callback for animation driver

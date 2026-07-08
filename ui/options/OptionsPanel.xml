@@ -564,6 +564,57 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_levelUpCelebration" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="levelUpCelebration" type="string"/>
+                                            <KeyValue key="layoutIndex" value="44.1" type="number"/>
+                                            <KeyValue key="optionTab" value="behavior" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_celebrationSound" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="celebrationSound" type="string"/>
+                                            <KeyValue key="layoutIndex" value="44.2" type="number"/>
+                                            <KeyValue key="optionTab" value="behavior" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_fadeWhenInactive" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="fadeWhenInactive" type="string"/>
+                                            <KeyValue key="layoutIndex" value="44.3" type="number"/>
+                                            <KeyValue key="optionTab" value="behavior" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_fadeDelay" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="fadeDelay" type="string"/>
+                                            <KeyValue key="layoutIndex" value="44.4" type="number"/>
+                                            <KeyValue key="optionTab" value="behavior" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_idleOpacity" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="idleOpacity" type="string"/>
+                                            <KeyValue key="layoutIndex" value="44.5" type="number"/>
+                                            <KeyValue key="optionTab" value="behavior" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Colors ==================== -->
 
                                     <Frame parentKey="ColorsHeader" inherits="ConfigSectionHeader">

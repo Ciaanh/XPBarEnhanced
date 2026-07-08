@@ -182,6 +182,46 @@ local optionDetails = {
         description = Addon.L["OPT_TWO_PHASE_LEVEL_UP_DESC"],
         commandKeys = {"twophase", "levelupanimation"}
     },
+    levelUpCelebration = {
+        key = "levelUpCelebration",
+        label = Addon.L["OPT_LEVEL_UP_CELEBRATION"],
+        description = Addon.L["OPT_LEVEL_UP_CELEBRATION_DESC"],
+        commandKeys = {"celebration", "levelupcelebration"}
+    },
+    celebrationSound = {
+        key = "celebrationSound",
+        label = Addon.L["OPT_CELEBRATION_SOUND"],
+        description = Addon.L["OPT_CELEBRATION_SOUND_DESC"],
+        commandKeys = {"celebrationsound"}
+    },
+    fadeWhenInactive = {
+        key = "fadeWhenInactive",
+        label = Addon.L["OPT_FADE_WHEN_INACTIVE"],
+        description = Addon.L["OPT_FADE_WHEN_INACTIVE_DESC"],
+        commandKeys = {"fade", "fadewheninactive"}
+    },
+    fadeDelay = {
+        key = "fadeDelay",
+        type = "slider",
+        label = Addon.L["OPT_FADE_DELAY"],
+        description = Addon.L["OPT_FADE_DELAY_DESC"],
+        min = 1,
+        max = 30,
+        step = 1,
+        format = "%.0f",
+        commandKeys = {"fadedelay"}
+    },
+    idleOpacity = {
+        key = "idleOpacity",
+        type = "slider",
+        label = Addon.L["OPT_IDLE_OPACITY"],
+        description = Addon.L["OPT_IDLE_OPACITY_DESC"],
+        min = 0,
+        max = 90,
+        step = 5,
+        format = "%.0f",
+        commandKeys = {"idleopacity"}
+    },
     circularSize = {
         key = "circularSize",
         type = "dropdown",
@@ -342,6 +382,11 @@ local optionOrder = {
     "enableAnimations",
     "flashOnGain",
     "twoPhaseOnLevelUp",
+    "levelUpCelebration",
+    "celebrationSound",
+    "fadeWhenInactive",
+    "fadeDelay",
+    "idleOpacity",
     "flatSize",
     "verticalSize",
     "circularSize",

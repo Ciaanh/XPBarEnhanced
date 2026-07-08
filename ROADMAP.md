@@ -10,40 +10,40 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 
 ## New bar styles
 
-### 1. "Bubbles" retro style
+### 1. "Bubbles" retro option for the classic style
 | | |
 |---|---|
 | **Status** | proposed |
 | **Impact** | High — strong nostalgia appeal (vanilla WoW 20-bubble XP bar), community-recognizable |
 | **Effort** | Low-Medium |
-| **Reuse** | Flat style already has milestone ticks and segment pools; pure `statusBar` + overlays, all existing capabilities apply |
-| **Notes** | 20 discrete bubbles that fill progressively; quest overlay = tinted bubbles |
+| **Reuse** | Implemented as an option of the **classic** style, not a new style (decision 2026-07-08): a `classicBubbles` toggle that overlays 20 bubble separators on the classic bar |
+| **Notes** | Quest overlay = tinted bubbles. Follows the classic style's existing conditional-row pattern in the options panel |
 
 ### 2. Orb style
 | | |
 |---|---|
-| **Status** | proposed |
+| **Status** | planned |
 | **Impact** | Medium — distinctive look (Diablo-style filling sphere) |
 | **Effort** | Medium |
 | **Reuse** | Circular masking/texcoord work already solved in `CircularBarStyle`; an orb is a vertical fill inside a round mask — simpler than the arc math |
-| **Notes** | Secondary bar variant: smaller companion orb |
+| **Notes** | One of the two retained new-style candidates (decision 2026-07-08). Secondary bar variant: smaller companion orb |
 
 ### 3. Data-text / LibDataBroker feed
 | | |
 |---|---|
-| **Status** | proposed |
+| **Status** | planned |
 | **Impact** | High — reaches Titan Panel / Bazooka / ElvUI datatext users; big audience gain for little code |
 | **Effort** | Low |
 | **Reuse** | Style "none" is the precedent for barless operation; `ContextBuilder` already provides every formatted value (XP/h, time-to-level, session XP) |
-| **Notes** | Example feed: `12.4k XP/h · ding ~34 min`. Ship LibDataBroker-1.1 (embed like LibStub) |
+| **Notes** | One of the two retained new-style candidates (decision 2026-07-08). Example feed: `12.4k XP/h · ding ~34 min`. Ship LibDataBroker-1.1 (embed like LibStub) |
 
 ### 4. Edge-of-screen strip
 | | |
 |---|---|
-| **Status** | proposed |
+| **Status** | rejected |
 | **Impact** | Low-Medium — appeals to minimalist/immersive UI users |
 | **Effort** | Very low |
-| **Reuse** | Not a real style: an extreme flat-style size preset (2–3 px height, snapped to screen edge). Extends the existing size-preset system (1.1.4) |
+| **Reuse** | Not retained as a style candidate (decision 2026-07-08). Could resurface as a flat-style size preset if requested |
 
 ### 5. Fill-edge spark (capability, not a style)
 | | |
@@ -61,7 +61,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 1. Fade when inactive + level-up celebration
 | | |
 |---|---|
-| **Status** | proposed |
+| **Status** | in progress — implemented (fadeWhenInactive/fadeDelay/idleOpacity + levelUpCelebration/celebrationSound), pending in-game validation |
 | **Impact** | High — highly visible user-facing options |
 | **Effort** | Medium |
 | **Reuse** | These options existed as defaults (`fadeWhenInactive`, `idleOpacity`, `fadeDelay`, `levelUpCelebration`, `celebrationSound`, `celebrationSparkles`, `celebrationSpeed`) before being removed as orphans in v1.1.7 — they were the implied roadmap. The animation infrastructure and the two-phase level-up hold provide ~80% of the base |
@@ -79,7 +79,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 3. Session charts in the Stats window
 | | |
 |---|---|
-| **Status** | proposed |
+| **Status** | planned |
 | **Impact** | High — turns dormant data into a headline feature |
 | **Effort** | Medium |
 | **Reuse** | `gainsHistory` already persists 500 timestamped gains with source attribution (quest/other). XP/h histogram per 15-min slice + quest-vs-other breakdown is pure rendering |
@@ -97,7 +97,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 5. New secondary-bar sources
 | | |
 |---|---|
-| **Status** | proposed |
+| **Status** | planned |
 | **Impact** | Medium-High — extends the addon's core value |
 | **Effort** | Medium per source |
 | **Reuse** | `secondaryBarSource` architecture (reputation/housing) is designed for extension; `HousingSession` is the template: one service emitting a normalized context |
@@ -107,7 +107,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 6. Goals & ETA notifications
 | | |
 |---|---|
-| **Status** | proposed |
+| **Status** | planned |
 | **Impact** | Medium — engagement feature ("ding at ~21:40", toast at 25/50/75%, "level 80 by Sunday") |
 | **Effort** | Medium |
 | **Reuse** | `TimeCalculations` already computes projections; missing piece is a toast/sound notifier (throttled, no OnUpdate polling) |
@@ -133,12 +133,14 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 
 ---
 
-## Recommended order
+## Agreed order (decision 2026-07-08)
 
-1. **Fade + celebration + fonts** — the roadmap the orphaned defaults implied; infrastructure exists; highly visible.
-2. **LibDataBroker feed** — smallest code for largest audience reach.
-3. **Session charts** — the data already sleeps in saved variables.
-4. **"Bubbles" style** — best style candidate: high appeal, low risk.
+1. **Fade when inactive + level-up celebration** — in progress (implemented, pending in-game validation).
+2. **Session charts** in the Stats window.
+3. **New secondary-bar sources**.
+4. **Goals & ETA notifications**.
+
+New styles limited to **orb** and **data-text/LDB**; "bubbles" is reframed as an option of the classic style; edge strip rejected. Custom fonts, warband overview, localization, and profile import/export remain proposed (not scheduled).
 
 ## Architecture constraints (apply to every item)
 
