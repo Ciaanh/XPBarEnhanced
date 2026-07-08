@@ -79,7 +79,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 3. Session charts in the Stats window
 | | |
 |---|---|
-| **Status** | planned |
+| **Status** | in progress — implemented (XP/hour histogram + quest-vs-other split bar in a new ChartPanel), pending in-game validation |
 | **Impact** | High — turns dormant data into a headline feature |
 | **Effort** | Medium |
 | **Reuse** | `gainsHistory` already persists 500 timestamped gains with source attribution (quest/other). XP/h histogram per 15-min slice + quest-vs-other breakdown is pure rendering |
@@ -136,7 +136,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ## Agreed order (decision 2026-07-08)
 
 1. **Fade when inactive + level-up celebration** — in progress (implemented, pending in-game validation).
-2. **Session charts** in the Stats window.
+2. **Session charts** in the Stats window — in progress (implemented, pending in-game validation).
 3. **New secondary-bar sources**.
 4. **Goals & ETA notifications**.
 

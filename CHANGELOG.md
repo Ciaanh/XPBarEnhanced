@@ -4,6 +4,12 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Fade when inactive**: optional auto-fade of the bar to a configurable idle opacity after a delay with no XP gain; wakes on XP gain, level-up, mouseover, or option change, and never fades during combat (`fadeWhenInactive`, `fadeDelay`, `idleOpacity`).
+- **Level-up celebration**: optional golden glow pulse on the bar at level-up, with an optional fanfare sound (`levelUpCelebration`, `celebrationSound`).
+- **Session charts** in the Stats window: an XP/hour histogram across the session plus a quest-vs-other XP split bar, rendered in a new chart panel.
+
 ## [1.1.7] - 2026-07-03
 
 ### Fixed

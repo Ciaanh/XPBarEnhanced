@@ -212,6 +212,12 @@ L["OPT_FADE_DELAY_DESC"] = "How long to wait after the last XP gain before fadin
 L["OPT_IDLE_OPACITY"] = "Idle opacity (%)"
 L["OPT_IDLE_OPACITY_DESC"] = "Bar opacity while faded, as a percentage. 0 hides the bar completely when idle."
 
+-- Session chart (Stats window)
+L["STATS_CHART_TITLE"] = "Session XP Rate"
+L["STATS_CHART_EMPTY"] = "No XP gained yet this session."
+L["STATS_CHART_RATE_FORMAT"] = "%s/h"
+L["STATS_CHART_SPLIT_LEGEND"] = "Quest %d%%  \194\183  Other %d%%"
+
 -- Circular bar options
 L["OPT_BAR_SIZE_SMALL"] = "Small"
 L["OPT_BAR_SIZE_DEFAULT"] = "Default"

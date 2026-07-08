@@ -543,6 +543,172 @@ function Stats:UpdateSessionStats(statsFrame)
     end
 
     SetTextSafe(content.TotalSessionXPValue, FormatNumber(sessionXP))
+
+    -- Session XP-rate chart + quest/other split
+    self:RenderSessionChart(statsFrame, session)
+end
+
+--------------------------------------------------------------------------------
+-- Session Chart
+--------------------------------------------------------------------------------
+
+local HISTOGRAM_BUCKETS = 12
+
+---Acquire pooled texture #index from a frame's pool (creates on demand)
+local function acquireBar(frame, index, layer, subLevel)
+    frame._pool = frame._pool or {}
+    local tex = frame._pool[index]
+    if not tex then
+        tex = frame:CreateTexture(nil, layer or "ARTWORK", nil, subLevel or 1)
+        frame._pool[index] = tex
+    end
+    tex:Show()
+    return tex
+end
+
+---Hide pooled textures from `fromIndex` onward
+local function hidePoolFrom(frame, fromIndex)
+    if not frame._pool then return end
+    for i = fromIndex, #frame._pool do
+        frame._pool[i]:Hide()
+    end
+end
+
+local function colorOrDefault(key, dr, dg, db)
+    if Addon.Colors and Addon.Colors.Get then
+        local c = Addon.Colors:Get(key)
+        if c then
+            return c.r or dr, c.g or dg, c.b or db
+        end
+    end
+    return dr, dg, db
+end
+
+-- Render the session XP-rate histogram and the quest-vs-other split bar.
+-- Pure texture drawing (no OnUpdate); data are plain numbers from gainsHistory.
+function Stats:RenderSessionChart(statsFrame, session)
+    local panel = statsFrame and statsFrame.ChartPanel
+    if not panel then return end
+
+    -- All user-facing text goes through the locale table
+    if panel.Title then panel.Title:SetText(L["STATS_CHART_TITLE"]) end
+    if panel.EmptyLabel then panel.EmptyLabel:SetText(L["STATS_CHART_EMPTY"]) end
+
+    local plot = panel.Plot
+    local split = panel.Split
+    local gains = session and session.gainsHistory or {}
+    local sessionStart = session and session.sessionStart
+    local now = time()
+
+    -- Bucket gains into time slices and find the peak XP/hour
+    local span = sessionStart and (now - sessionStart) or 0
+    local buckets = {}
+    for i = 1, HISTOGRAM_BUCKETS do buckets[i] = 0 end
+
+    if span > 0 then
+        local bucketDur = span / HISTOGRAM_BUCKETS
+        for _, gain in ipairs(gains) do
+            local ts = gain.timestamp
+            local amount = gain.amount
+            if ts and amount and ts >= sessionStart then
+                local idx = math.floor((ts - sessionStart) / bucketDur) + 1
+                if idx < 1 then idx = 1 elseif idx > HISTOGRAM_BUCKETS then idx = HISTOGRAM_BUCKETS end
+                buckets[idx] = buckets[idx] + amount
+            end
+        end
+    end
+
+    local questXP = session and session.questXP or 0
+    local otherXP = session and session.otherXP or 0
+    local splitTotal = questXP + otherXP
+
+    -- Peak bucket rate (XP/hour) for scaling the bars
+    local bucketDur = (span > 0) and (span / HISTOGRAM_BUCKETS) or 1
+    local maxRate = 0
+    local rates = {}
+    for i = 1, HISTOGRAM_BUCKETS do
+        local rate = buckets[i] / bucketDur * 3600
+        rates[i] = rate
+        if rate > maxRate then maxRate = rate end
+    end
+
+    -- Empty state: nothing gained yet
+    if maxRate <= 0 and splitTotal <= 0 then
+        if panel.EmptyLabel then panel.EmptyLabel:Show() end
+        if panel.PlotMaxLabel then panel.PlotMaxLabel:SetText("") end
+        if panel.SplitLegend then panel.SplitLegend:SetText("") end
+        if plot then hidePoolFrom(plot, 1) end
+        if split then hidePoolFrom(split, 1) end
+        return
+    end
+    if panel.EmptyLabel then panel.EmptyLabel:Hide() end
+
+    -- Histogram bars
+    if plot then
+        local plotW = plot:GetWidth() or 0
+        local plotH = plot:GetHeight() or 0
+        if plotW > 0 and plotH > 0 and maxRate > 0 then
+            local slot = plotW / HISTOGRAM_BUCKETS
+            local barW = math.max(1, slot * 0.7)
+            local r, g, b = colorOrDefault("xpBar", 0.58, 0.0, 0.55)
+            for i = 1, HISTOGRAM_BUCKETS do
+                local h = math.max(0, (rates[i] / maxRate) * plotH)
+                local tex = acquireBar(plot, i)
+                tex:SetColorTexture(r, g, b, 0.9)
+                tex:ClearAllPoints()
+                if h > 0 then
+                    tex:SetSize(barW, h)
+                    tex:SetPoint("BOTTOMLEFT", plot, "BOTTOMLEFT", (i - 1) * slot + (slot - barW) / 2, 0)
+                    tex:Show()
+                else
+                    tex:Hide()
+                end
+            end
+            hidePoolFrom(plot, HISTOGRAM_BUCKETS + 1)
+        else
+            hidePoolFrom(plot, 1)
+        end
+        if panel.PlotMaxLabel then
+            panel.PlotMaxLabel:SetText(maxRate > 0 and string.format(L["STATS_CHART_RATE_FORMAT"], FormatNumber(maxRate)) or "")
+        end
+    end
+
+    -- Quest-vs-other split bar
+    if split then
+        local splitW = split:GetWidth() or 0
+        local splitH = split:GetHeight() or 0
+        if splitW > 0 and splitTotal > 0 then
+            local questFrac = questXP / splitTotal
+            local questW = math.max(0, splitW * questFrac)
+            local otherW = math.max(0, splitW - questW)
+
+            local qr, qg, qb = colorOrDefault("questComplete", 1.0, 0.65, 0.0)
+            local seg1 = acquireBar(split, 1)
+            seg1:SetColorTexture(qr, qg, qb, 0.9)
+            seg1:ClearAllPoints()
+            seg1:SetPoint("LEFT", split, "LEFT", 0, 0)
+            seg1:SetSize(math.max(1, questW), splitH)
+            if questW <= 0 then seg1:Hide() end
+
+            local orr, org, orb = colorOrDefault("xpBar", 0.58, 0.0, 0.55)
+            local seg2 = acquireBar(split, 2)
+            seg2:SetColorTexture(orr, org, orb, 0.9)
+            seg2:ClearAllPoints()
+            seg2:SetPoint("LEFT", split, "LEFT", questW, 0)
+            seg2:SetSize(math.max(1, otherW), splitH)
+            if otherW <= 0 then seg2:Hide() end
+
+            hidePoolFrom(split, 3)
+
+            if panel.SplitLegend then
+                local qpct = math.floor(questFrac * 100 + 0.5)
+                panel.SplitLegend:SetText(string.format(L["STATS_CHART_SPLIT_LEGEND"], qpct, 100 - qpct))
+            end
+        else
+            hidePoolFrom(split, 1)
+            if panel.SplitLegend then panel.SplitLegend:SetText("") end
+        end
+    end
 end
 
 --------------------------------------------------------------------------------
