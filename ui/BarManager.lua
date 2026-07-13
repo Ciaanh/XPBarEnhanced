@@ -34,6 +34,7 @@ local StyleTemplateNameMap = {
     circular = "CircularBarTemplate",
     minimap_ring = "MinimapRingBarTemplate",
     terminal = "TerminalBarTemplate",
+    orb      = "OrbBarTemplate",
 }
 
 -- Helper: true if style key corresponds to a custom addon style (not Blizzard's bar)

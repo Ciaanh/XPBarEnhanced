@@ -15,6 +15,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - **Tracked profession selector** (`professionSlot`): choose whether the Profession source tracks the first or second profession, or Auto (first primary with room to grow).
 - **Level progress notifications** (`goalNotifications`, on by default): announces 25%/50%/75% level progress with the estimated time to ding, once per level, with an optional sound (`goalSound`).
 - **LibDataBroker feed** (`enableDataBrokerFeed`, on by default): publishes "XP/h · time-to-level" to LDB displays (Titan Panel, Bazooka, ElvUI datatexts); shows the active secondary source at max level; click opens the Stats window. Active only when an LDB display addon is installed.
+- **Orb bar style**: a Diablo-style filling sphere (vertical fill clipped to a circle), draggable, with centered level and percent text. Supports animations, gain flash, custom colors and the max-level secondary mode. The standalone secondary bar is not yet available with this style.
 
 ## [1.1.7] - 2026-07-03
 

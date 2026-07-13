@@ -191,6 +191,7 @@ local STYLE_PREVIEW = {
     circular    = {r=0.6,  g=0.2,  b=0.9,  fill=0.80, label="Circular"},
     minimap_ring= {r=0.1,  g=0.8,  b=0.8,  fill=0.45, label="Minimap Ring"},
     terminal    = {r=0.0,  g=1.0,  b=0.3,  fill=0.65, label="Terminal"},
+    orb         = {r=0.58, g=0.0,  b=0.55, fill=0.70, label="Orb"},
 }
 
 function XPBarEnhancedOptionsMixin:UpdateStylePreview(styleName)

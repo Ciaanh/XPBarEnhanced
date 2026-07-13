@@ -22,11 +22,11 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 2. Orb style
 | | |
 |---|---|
-| **Status** | planned |
+| **Status** | implemented (2026-07-14) as `ui/styles/orb/`, pending in-game validation |
 | **Impact** | Medium — distinctive look (Diablo-style filling sphere) |
 | **Effort** | Medium |
-| **Reuse** | Circular masking/texcoord work already solved in `CircularBarStyle`; an orb is a vertical fill inside a round mask — simpler than the arc math |
-| **Notes** | One of the two retained new-style candidates (decision 2026-07-08). Secondary bar variant: smaller companion orb |
+| **Reuse** | VERTICAL StatusBar clipped by a circle `MaskTexture` (`TempPortraitAlphaMask`) — reuses the whole standard StatusBar render path (DisplayMixin/PaintMixin), so animations, flash, colors, tooltips and max-level repurpose all work unchanged |
+| **Notes** | Fixed 110px, draggable, level + percent centered; overlays/exhaustion tick disabled by capability. **Deferred:** size presets; secondary-bar orb variant (with orb primary the standalone secondary bar currently resolves to "none") |
 
 ### 3. Data-text / LibDataBroker feed
 | | |

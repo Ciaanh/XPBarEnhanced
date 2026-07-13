@@ -18,6 +18,7 @@ local optionDetails = {
             {value = "circular", label = Addon.L["OPT_BAR_STYLE_CIRCULAR"]},
             {value = "minimap_ring", label = Addon.L["OPT_BAR_STYLE_MINIMAP_RING"]},
             {value = "terminal", label = Addon.L["OPT_BAR_STYLE_TERMINAL"]},
+            {value = "orb", label = Addon.L["OPT_BAR_STYLE_ORB"]},
         },
         commandKeys = {"style", "mode", "barstyle"}
     },
