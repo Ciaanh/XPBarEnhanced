@@ -134,6 +134,24 @@ function BaseMixin:OnShow()
 				if self_ref then self_ref:MarkDirty(ctx) end
 			end
 		)
+
+		-- Max-level "primary shows secondary source" mode: the primary bar must
+		-- also react to the source broadcasts (no XP events fire at max level).
+		-- The handler only refreshes when repurposing is actually active.
+		local Shared = Addon.UI and Addon.UI.SharedStyleHelpers
+		if Shared and Shared.GetSecondaryBroadcastEventName then
+			self.__secondary_handles = {}
+			for _, evName in ipairs(Shared.GetSecondaryBroadcastEventName()) do
+				self.__secondary_handles[#self.__secondary_handles + 1] =
+					Addon.EventBus:RegisterWithHandle(evName, function()
+						local mgr = Addon.BarManager
+						if self_ref and mgr and mgr.ShouldRepurposePrimaryAtMaxLevel
+							and mgr:ShouldRepurposePrimaryAtMaxLevel() then
+							self_ref:MarkDirty(nil)
+						end
+					end)
+			end
+		end
 	end
 
 	-- (Re-)start periodic text ticker: session time, XP/hour, time-to-level
@@ -341,6 +359,14 @@ function BaseMixin:UnsubscribeFromEvents()
 	if self.__config_observer_handle then
 		self.__config_observer_handle:Unregister()
 		self.__config_observer_handle = nil
+	end
+	if self.__secondary_handles then
+		for _, handle in ipairs(self.__secondary_handles) do
+			if handle and handle.Unregister then
+				handle.Unregister()
+			end
+		end
+		self.__secondary_handles = nil
 	end
 end
 

@@ -43,6 +43,12 @@ local function DeriveSecondaryStyle()
     if not GetOptionValue("showSecondaryBar", false) then
         return "none"
     end
+    -- When the primary bar is repurposed to show this same source at max level,
+    -- hide the standalone secondary bar so the source isn't rendered twice.
+    if Addon.BarManager and Addon.BarManager.ShouldRepurposePrimaryAtMaxLevel
+        and Addon.BarManager:ShouldRepurposePrimaryAtMaxLevel() then
+        return "none"
+    end
     -- The secondary bar style is determined solely by the selected primary bar
     -- style. Use db.barStyle (user preference) rather than the runtime style so
     -- the secondary bar remains visible at max level even when the primary hides.

@@ -9,6 +9,7 @@ local defaults = {
     secondaryBarSource = "reputation",
     hideCompanionOutsideDelve = false,
     secondaryBarsAttached = true,
+    maxLevelPrimaryShowsSecondary = false,
     barLocked = false,
     circularSize = "medium",
     flatSize = "default",

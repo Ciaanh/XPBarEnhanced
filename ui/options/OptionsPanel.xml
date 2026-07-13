@@ -777,6 +777,16 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_maxLevelPrimaryShowsSecondary" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="maxLevelPrimaryShowsSecondary" type="string"/>
+                                            <KeyValue key="layoutIndex" value="55" type="number"/>
+                                            <KeyValue key="optionTab" value="secondary" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                 </Frames>
                             </Frame>
                         </Frames>

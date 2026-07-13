@@ -61,6 +61,19 @@ function BarManager:Initialize()
 
     -- Hide Blizzard default whenever a custom style is active
     self:ApplyDefaultXPBarVisibility()
+
+    -- Re-drive the style when the secondary source's availability changes at
+    -- max level (e.g. watched-faction data loads after login), so the
+    -- repurposed primary bar appears/disappears without a /reload. Single
+    -- lifetime subscription (BarManager is never torn down).
+    if Addon.EventBus and Addon.EventBus.Register and Addon.UI and Addon.UI.SharedStyleHelpers
+        and Addon.UI.SharedStyleHelpers.GetSecondaryBroadcastEventName then
+        for _, evName in ipairs(Addon.UI.SharedStyleHelpers.GetSecondaryBroadcastEventName()) do
+            Addon.EventBus:Register(evName, "barmanager-maxlevel-repurpose", function()
+                BarManager:RefreshMaxLevelRepurpose()
+            end)
+        end
+    end
 end
 
 local function IsPlayerAtMaxLevel(currentLevel)
@@ -79,6 +92,96 @@ local function IsPlayerAtMaxLevel(currentLevel)
     return level >= maxLevel
 end
 
+-- True when the primary bar should be repurposed to display the selected
+-- secondary source at max level: the option is on, the player is at max level,
+-- a custom style is configured, the secondary bar is enabled, and the active
+-- source has data to show.
+function BarManager:ShouldRepurposePrimaryAtMaxLevel()
+    if not IsPlayerAtMaxLevel() then
+        return false
+    end
+    if not GetOptionValue("maxLevelPrimaryShowsSecondary", false) then
+        return false
+    end
+    if not GetOptionValue("showSecondaryBar", false) then
+        return false
+    end
+    if not self:IsCustomStyle(GetOptionValue("barStyle", "none")) then
+        return false
+    end
+    local Shared = Addon.UI and Addon.UI.SharedStyleHelpers
+    if not (Shared and Shared.GetSecondaryInitialContext) then
+        return false
+    end
+    local ctx = Shared.GetSecondaryInitialContext()
+    return (ctx and ctx.isAvailable) and true or false
+end
+
+-- If max-level repurpose eligibility no longer matches the shown style,
+-- re-drive SetStyle. No-ops once stable, so it cannot loop.
+function BarManager:RefreshMaxLevelRepurpose()
+    if not IsPlayerAtMaxLevel() then
+        return
+    end
+    local shouldRepurpose = self:ShouldRepurposePrimaryAtMaxLevel()
+    local hasCustom = self:IsCustomStyle(self.currentStyle)
+    if shouldRepurpose ~= hasCustom then
+        self.currentStyle = nil
+        self:SetStyle(GetOptionValue("barStyle"))
+    end
+end
+
+-- Build an XP-shaped context from the active secondary source so the existing
+-- primary style RenderBar paths can paint it unchanged. Overlays/quest/rested
+-- fields are zeroed so those (XP-only) elements stay hidden; `_secondaryColor`
+-- recolors the fill via Shared.GetXPBarColor.
+function BarManager:GetMaxLevelSecondaryContext()
+    if not self:ShouldRepurposePrimaryAtMaxLevel() then
+        return nil
+    end
+
+    local Shared = Addon.UI and Addon.UI.SharedStyleHelpers
+    local StyleHelpers = Addon.UI and Addon.UI.StyleHelpers
+    local src = Shared and Shared.GetSecondaryInitialContext and Shared.GetSecondaryInitialContext()
+    if not src or not src.isAvailable then
+        return nil
+    end
+
+    local color = StyleHelpers and StyleHelpers.GetFactionColor and StyleHelpers.GetFactionColor(src) or nil
+    local maxVal = (src.max and src.max > 0) and src.max or 1
+
+    return {
+        event = "XPBAR:BROADCAST_UPDATE",
+        source = src.source,
+        currentXP = src.current or 0,
+        xpMax = maxVal,
+        level = src.currentLevel or src.reactionLevel or 0,
+        percent = src.percent,
+        standingLabel = src.standingLabel,
+        -- Suppress XP-only visuals
+        restedXP = 0,
+        hasRestedXP = false,
+        isResting = false,
+        isFullyRested = false,
+        completeQuestXP = 0,
+        incompleteQuestXP = 0,
+        hasGainedXP = false,
+        hasLeveledUp = false,
+        shouldAnimate = false,
+        shouldFlash = false,
+        restedChanged = false,
+        questsChanged = false,
+        -- Session-style text fields (repurposed from the source's rate/gain)
+        sessionXP = src.sessionGained,
+        xpPerHour = src.repPerHour,
+        timeToLevel = src.timeToNextLevel,
+        -- Secondary-mode markers
+        _secondaryMode = true,
+        _secondaryColor = color,
+        factionType = src.factionType,
+    }
+end
+
 function BarManager:AdjustContextForMaxLevel(context)
     if not context then
         return context
@@ -88,8 +191,9 @@ function BarManager:AdjustContextForMaxLevel(context)
         return context
     end
 
-    -- At max level the primary XP bar is always hidden.
-    return nil
+    -- At max level, optionally repurpose the primary bar for the secondary
+    -- source; otherwise the primary XP bar is hidden.
+    return self:GetMaxLevelSecondaryContext()
 end
 
 -- True while the Blizzard main container must stay hidden. Re-checked when a
@@ -159,10 +263,12 @@ function BarManager:SetStyle(nextStyle)
         nextStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
     end
 
-    -- XP-disabled and max-level modes always use Blizzard's default bar.
+    -- XP-disabled and max-level modes normally use Blizzard's default bar,
+    -- unless the max-level "primary shows secondary source" mode is active —
+    -- then keep the configured custom style so it can render the source.
     if IsXPUserDisabled and IsXPUserDisabled() then
         nextStyle = "none"
-    elseif IsPlayerAtMaxLevel() then
+    elseif IsPlayerAtMaxLevel() and not self:ShouldRepurposePrimaryAtMaxLevel() then
         nextStyle = "none"
     end
 
@@ -285,7 +391,7 @@ function BarManager:OnLevelUp(newLevel)
 
     if (IsXPUserDisabled and IsXPUserDisabled()) then
         self:SetStyle("none")
-    elseif IsPlayerAtMaxLevel(level) then
+    elseif IsPlayerAtMaxLevel(level) and not self:ShouldRepurposePrimaryAtMaxLevel() then
         self:SetStyle("none")
     else
         self:SetStyle(userStyle)

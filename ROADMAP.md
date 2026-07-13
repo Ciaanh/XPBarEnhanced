@@ -144,7 +144,7 @@ New styles limited to **orb** and **data-text/LDB**; "bubbles" is reframed as an
 
 ## Design note — repurpose the primary bar for the secondary source at max level
 
-**Status:** studied (2026-07-13), not scheduled. Requested alongside item 5.
+**Status:** implemented (2026-07-13) behind the `maxLevelPrimaryShowsSecondary` option (default off), pending in-game validation. Followed the lowest-risk shape below. Known limitation: `classic` and `terminal` primary styles don't route their fill through `Shared.GetXPBarColor`, so they show progress but not the source's color (flat/vertical/circular/minimap_ring recolor correctly).
 
 **Idea:** at max level the primary XP bar is hidden (it has no XP to show). Instead, render the selected secondary source (reputation/housing/honor/profession) on the *primary* bar frame, so the big bar stays useful. This mirrors Blizzard's own status-tracking bar, which promotes reputation/honor into the main container at max level.
 

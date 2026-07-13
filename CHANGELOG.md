@@ -11,6 +11,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - **Session charts** in the Stats window: an XP/hour histogram across the session plus a quest-vs-other XP split bar, rendered in a new chart panel.
 - **Honor secondary-bar source**: the secondary bar can now track Honor (PvP) progress, with wrap-aware gain across honor levels.
 - **Profession secondary-bar source**: the secondary bar can now track a primary profession's skill level (auto-selects the first primary profession with room to grow).
+- **Use main bar at max level** (`maxLevelPrimaryShowsSecondary`, default off): at max level, show the selected secondary source on the main bar instead of hiding it (mirrors Blizzard's status bar). The standalone secondary bar is hidden while active to avoid rendering the same source twice.
 
 ## [1.1.7] - 2026-07-03
 

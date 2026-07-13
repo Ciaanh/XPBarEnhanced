@@ -458,6 +458,20 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
         end
     end
 
+    -- Toggling the max-level "primary shows secondary" mode re-drives the
+    -- primary style (it may now keep a custom style at max level instead of
+    -- collapsing to "none") and the secondary bar (it hides to avoid a
+    -- double render). Clear currentStyle so SetStyle does not early-return.
+    if key == "maxLevelPrimaryShowsSecondary" then
+        if Addon.BarManager and Addon.BarManager.SetStyle then
+            Addon.BarManager.currentStyle = nil
+            Addon.BarManager:SetStyle(self:GetOptionValue("barStyle"))
+        end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+            Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+        end
+    end
+
     -- Emit a config-level event for fine-grained subscribers; also leave broadcast for compatibility
     if not suppressConfigEvent and Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))

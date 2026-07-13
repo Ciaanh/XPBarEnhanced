@@ -60,6 +60,12 @@ function Shared.ApplyStatusBarProgress(bar, context, color)
 end
 
 function Shared.GetXPBarColor(context)
+    -- Max-level "primary shows secondary source" mode supplies the source's
+    -- color so the repurposed primary bar matches the selected source.
+    if context and context._secondaryColor then
+        return context._secondaryColor
+    end
+
     local Colors = Addon and Addon.Colors
     if not Colors then
         return {r = 1, g = 1, b = 1, a = 1}

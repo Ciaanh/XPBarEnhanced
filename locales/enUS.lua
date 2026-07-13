@@ -195,6 +195,8 @@ L["OPT_HIDE_COMPANION_OUTSIDE_DELVE"] = "Hide companion bar outside Delves"
 L["OPT_HIDE_COMPANION_OUTSIDE_DELVE_DESC"] = "When enabled, the secondary bar is hidden if the watched faction is a Delve companion and you are not inside a Delve."
 L["OPT_SECONDARY_BARS_ATTACHED"] = "Attach to XP bar"
 L["OPT_SECONDARY_BARS_ATTACHED_DESC"] = "When enabled, the secondary bar is locked to the XP bar position. When disabled, it can be positioned independently by dragging."
+L["OPT_MAX_LEVEL_PRIMARY_SECONDARY"] = "Use main bar at max level"
+L["OPT_MAX_LEVEL_PRIMARY_SECONDARY_DESC"] = "At max level, show the selected secondary source on the main bar instead of hiding it. Requires a custom bar style and the secondary bar enabled. The standalone secondary bar is hidden while this is active to avoid showing the same source twice."
 
 -- Animation options
 L["OPT_ENABLE_ANIMATIONS"] = "Enable animations"

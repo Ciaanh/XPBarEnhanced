@@ -52,6 +52,12 @@ local optionDetails = {
         description = Addon.L["OPT_SECONDARY_BARS_ATTACHED_DESC"],
         commandKeys = {}
     },
+    maxLevelPrimaryShowsSecondary = {
+        key = "maxLevelPrimaryShowsSecondary",
+        label = Addon.L["OPT_MAX_LEVEL_PRIMARY_SECONDARY"],
+        description = Addon.L["OPT_MAX_LEVEL_PRIMARY_SECONDARY_DESC"],
+        commandKeys = {"maxlevelsecondary", "maxsecondary"}
+    },
     barLocked = {
         key = "barLocked",
         label = Addon.L["OPT_BAR_LOCKED"],
@@ -362,6 +368,7 @@ local optionOrder = {
     "secondaryBarSource",
     "hideCompanionOutsideDelve",
     "secondaryBarsAttached",
+    "maxLevelPrimaryShowsSecondary",
     "barLocked",
     "classicBarDraggable",
     "showMinimapButton",
