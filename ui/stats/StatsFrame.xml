@@ -5,7 +5,7 @@
 
     <!-- Book-Style Stats Frame with Two-Page Layout -->
     <Frame name="XPBarEnhancedStatsFrame" parent="UIParent" inherits="BasicFrameTemplateWithInset" hidden="true" mixin="XPBarEnhancedStatsMixin" frameStrata="DIALOG" toplevel="true" enableMouse="true" movable="true" clampedToScreen="true">
-        <Size x="700" y="650"/>
+        <Size x="700" y="685"/>
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
@@ -351,7 +351,7 @@
                         </FontString>
                         <FontString parentKey="SplitLegend" inherits="GameFontHighlightSmall">
                             <Anchors>
-                                <Anchor point="BOTTOMLEFT" x="4" y="2"/>
+                                <Anchor point="BOTTOMLEFT" x="4" y="9"/>
                             </Anchors>
                         </FontString>
                         <FontString parentKey="EmptyLabel" inherits="GameFontDisableSmall">
@@ -362,12 +362,22 @@
                     </Layer>
                 </Layers>
                 <Frames>
-                    <!-- Histogram plot area (bars drawn in Lua) -->
-                    <Frame parentKey="Plot">
-                        <Size x="0" y="86"/>
+                    <!-- Quest-vs-other split bar (segments drawn in Lua) -->
+                    <Frame parentKey="Split">
+                        <Size x="0" y="12"/>
                         <Anchors>
-                            <Anchor point="TOPLEFT" x="4" y="-18"/>
-                            <Anchor point="TOPRIGHT" x="-4" y="-18"/>
+                            <Anchor point="BOTTOMLEFT" x="4" y="26"/>
+                            <Anchor point="BOTTOMRIGHT" x="-4" y="26"/>
+                        </Anchors>
+                    </Frame>
+                    <!-- Histogram plot area (bars drawn in Lua); stretches to
+                         fill the space between the title and the split bar -->
+                    <Frame parentKey="Plot">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" x="4" y="-20"/>
+                            <Anchor point="TOPRIGHT" x="-4" y="-20"/>
+                            <Anchor point="BOTTOMLEFT" relativeKey="$parent.Split" relativePoint="TOPLEFT" x="0" y="6"/>
+                            <Anchor point="BOTTOMRIGHT" relativeKey="$parent.Split" relativePoint="TOPRIGHT" x="0" y="6"/>
                         </Anchors>
                         <Layers>
                             <Layer level="BACKGROUND">
@@ -381,14 +391,6 @@
                                 </Texture>
                             </Layer>
                         </Layers>
-                    </Frame>
-                    <!-- Quest-vs-other split bar (segments drawn in Lua) -->
-                    <Frame parentKey="Split">
-                        <Size x="0" y="14"/>
-                        <Anchors>
-                            <Anchor point="BOTTOMLEFT" x="4" y="18"/>
-                            <Anchor point="BOTTOMRIGHT" x="-4" y="18"/>
-                        </Anchors>
                     </Frame>
                 </Frames>
             </Frame>
