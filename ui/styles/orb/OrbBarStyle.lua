@@ -50,6 +50,19 @@ function OrbBarStyleTemplate:OnLoad()
         if self.GainFlash and self.GainFlash.AddMaskTexture then
             self.GainFlash:AddMaskTexture(fillMask)
         end
+        -- Quest overlays live on the StatusBar and must be clipped too
+        for _, key in ipairs({"QuestOverlayComplete", "QuestOverlayIncomplete"}) do
+            local overlay = self.StatusBar[key]
+            if overlay and overlay.AddMaskTexture then
+                overlay:AddMaskTexture(fillMask)
+            end
+        end
+    end
+
+    -- The rested extent lives on the root frame (under the fill); clip it
+    -- with the root circle mask.
+    if self.RestedOverlay and self.CircleMask and self.RestedOverlay.AddMaskTexture then
+        self.RestedOverlay:AddMaskTexture(self.CircleMask)
     end
 
     if XPBarMixinBase and XPBarMixinBase.OnLoad then
@@ -116,6 +129,137 @@ function OrbBarStyleTemplate:UpdatePercentText(context)
 end
 
 -------------------------------------------------------------------
+-- OVERLAY LAYOUTS (vertical bands clipped to the orb circle)
+-- Same math as the Vertical style: positions are proportional to the
+-- frame height, anchored from the bottom of the sphere.
+-------------------------------------------------------------------
+
+function OrbBarStyleTemplate:UpdateQuestCompleteBarLayout(context, overlayName)
+    overlayName = overlayName or "QuestOverlayComplete"
+    local overlay = self.StatusBar and self.StatusBar[overlayName]
+    if not overlay then
+        return
+    end
+
+    local completeXP = context.completeQuestXP or 0
+    local showQuestXP = context.showQuestXP
+    local showComplete = context.showCompleteQuestOverlay
+
+    local visible = false
+    if showQuestXP and showComplete and completeXP > 0 then
+        local currentXP = context.currentXP or 0
+        local maxXP = context.xpMax or 1
+        local remainingXP = math.max(0, maxXP - currentXP)
+        local questXPClamped = math.min(completeXP, remainingXP)
+        local ratio = questXPClamped / maxXP
+
+        if ratio >= 0.01 then
+            local barHeight = self:GetHeight()
+            local yOffset = barHeight * (currentXP / maxXP)
+
+            overlay:ClearAllPoints()
+            overlay:SetPoint("BOTTOMLEFT", self.StatusBar, "BOTTOMLEFT", 0, yOffset)
+            overlay:SetPoint("BOTTOMRIGHT", self.StatusBar, "BOTTOMRIGHT", 0, yOffset)
+            overlay:SetHeight(math.max(1, barHeight * ratio))
+            visible = true
+        end
+    end
+
+    overlay:SetShown(visible)
+end
+
+function OrbBarStyleTemplate:UpdateQuestIncompleteBarLayout(context, overlayName)
+    overlayName = overlayName or "QuestOverlayIncomplete"
+    local overlay = self.StatusBar and self.StatusBar[overlayName]
+    if not overlay then
+        return
+    end
+
+    local completeQuestXP = context.completeQuestXP or 0
+    local incompleteQuestXP = context.incompleteQuestXP or 0
+    local showQuestXP = context.showQuestXP
+    local showComplete = context.showCompleteQuestOverlay
+    local showIncomplete = context.showIncompleteQuestOverlay
+
+    local visible = false
+    if showQuestXP and showIncomplete and incompleteQuestXP > 0 then
+        local currentXP = context.currentXP or 0
+        local maxXP = context.xpMax or 1
+        local remainingXP = math.max(0, maxXP - currentXP)
+
+        if showComplete and completeQuestXP > 0 then
+            remainingXP = math.max(0, remainingXP - completeQuestXP)
+        end
+
+        local questXPClamped = math.min(incompleteQuestXP, remainingXP)
+        local ratio = questXPClamped / maxXP
+
+        if ratio >= 0.01 then
+            local barHeight = self:GetHeight()
+            local startXP = currentXP
+            if showComplete and completeQuestXP > 0 then
+                startXP = startXP + completeQuestXP
+            end
+            local yOffset = barHeight * (startXP / maxXP)
+
+            overlay:ClearAllPoints()
+            overlay:SetPoint("BOTTOMLEFT", self.StatusBar, "BOTTOMLEFT", 0, yOffset)
+            overlay:SetPoint("BOTTOMRIGHT", self.StatusBar, "BOTTOMRIGHT", 0, yOffset)
+            overlay:SetHeight(math.max(1, barHeight * ratio))
+            visible = true
+        end
+    end
+
+    overlay:SetShown(visible)
+end
+
+function OrbBarStyleTemplate:UpdateRestedBarLayout(context)
+    if not self.RestedOverlay then
+        return
+    end
+
+    local restedXP = context.restedXP or 0
+    local showRested = Addon.ConfigHelper.GetShowRestedOverlay(context)
+    local showQuestXP = context.showQuestXP
+    local showComplete = context.showCompleteQuestOverlay
+    local showIncomplete = context.showIncompleteQuestOverlay
+
+    local visible = false
+    if showRested and restedXP > 0 then
+        local currentXP = context.currentXP or 0
+        local maxXP = context.xpMax or 1
+        local remainingXP = math.max(0, maxXP - currentXP)
+        local restedXPClamped = math.min(restedXP, remainingXP)
+
+        -- Quest overlays sit between the fill and the rested extent
+        local questOffset = 0
+        local completeQuestXP = context.completeQuestXP or 0
+        local incompleteQuestXP = context.incompleteQuestXP or 0
+        if showQuestXP and showComplete and completeQuestXP > 0 then
+            questOffset = questOffset + math.min(completeQuestXP, remainingXP)
+        end
+        if showQuestXP and showIncomplete and incompleteQuestXP > 0 then
+            local remainingAfterComplete = math.max(0, remainingXP - questOffset)
+            questOffset = questOffset + math.min(incompleteQuestXP, remainingAfterComplete)
+        end
+
+        local totalXP = currentXP + questOffset + restedXPClamped
+        local totalRatio = math.min(totalXP / maxXP, 1.0)
+
+        if totalRatio >= 0.01 then
+            local barHeight = self:GetHeight()
+            self.RestedOverlay:ClearAllPoints()
+            self.RestedOverlay:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 0, 0)
+            self.RestedOverlay:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
+            self.RestedOverlay:SetHeight(math.max(1, barHeight * totalRatio))
+            visible = true
+        end
+    end
+
+    self.RestedOverlay:SetShown(visible)
+end
+
+-------------------------------------------------------------------
 -- DEFAULT CONFIG
 -------------------------------------------------------------------
 
@@ -129,7 +273,6 @@ local DefaultConfig = {
     position = {mode = "DRAGGABLE", positionKey = "OrbBar"},
     style = {},
     capabilities = {
-        overlays = false,
         exhaustionTick = false,
         textBelowBar = false,
     }

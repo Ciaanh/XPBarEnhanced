@@ -20,6 +20,11 @@
 					</MaskedTextures>
 				</MaskTexture>
 			</Layer>
+			<Layer level="BORDER">
+				<!-- Rested extent: behind the fill (parent layers render under child
+				     frames), grows from the bottom to current + quests + rested -->
+				<Texture parentKey="RestedOverlay" hidden="true" file="Interface\Buttons\WHITE8X8"/>
+			</Layer>
 			<Layer level="OVERLAY" textureSubLevel="2">
 				<!-- Gain flash, clipped at runtime with the fill mask -->
 				<Texture parentKey="GainFlash" hidden="true" alphaMode="BLEND" file="Interface\Buttons\WHITE8X8" setAllPoints="true">
@@ -30,6 +35,13 @@
 		<Frames>
 			<!-- XP StatusBar (vertical orientation; fill masked in OnLoad) -->
 			<StatusBar parentKey="StatusBar" minValue="0" maxValue="1" defaultValue="0" orientation="VERTICAL" setAllPoints="true">
+				<Layers>
+					<Layer level="ARTWORK" textureSubLevel="2">
+						<!-- Quest overlays above the fill (masked in OnLoad) -->
+						<Texture parentKey="QuestOverlayComplete" hidden="true" file="Interface\Buttons\WHITE8X8"/>
+						<Texture parentKey="QuestOverlayIncomplete" hidden="true" file="Interface\Buttons\WHITE8X8"/>
+					</Layer>
+				</Layers>
 				<BarTexture file="Interface\Buttons\WHITE8X8"/>
 			</StatusBar>
 
