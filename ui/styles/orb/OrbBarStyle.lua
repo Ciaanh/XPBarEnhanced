@@ -70,9 +70,17 @@ function OrbBarStyleTemplate:UpdateLevelText(context)
         return
     end
 
-    -- Max-level repurpose mode shows the source standing/name instead
+    -- Max-level repurpose mode: the orb is too small for the full standing
+    -- label ("Honor Level 29"), so show the bare numeric level when the
+    -- source has one — the tooltip carries the full context. Sources with
+    -- no numeric level (renown standing, profession name) keep their label.
     if context and context.levelTextOverride and context.levelTextOverride ~= "" then
-        self.LevelText:SetText(context.levelTextOverride)
+        local numericLevel = tonumber(context.level)
+        if numericLevel and numericLevel > 0 then
+            self.LevelText:SetText(tostring(numericLevel))
+        else
+            self.LevelText:SetText(context.levelTextOverride)
+        end
         return
     end
 
