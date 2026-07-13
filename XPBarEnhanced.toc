@@ -107,6 +107,7 @@ ui\styles\classic\ClassicSecondaryBarTemplate.xml
 ui\styles\vertical\VerticalBarTemplate.xml
 ui\styles\vertical\VerticalSecondaryBarTemplate.xml
 ui\styles\orb\OrbBarTemplate.xml
+ui\styles\orb\OrbSecondaryBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
 ui\styles\circular\CircularSecondaryBarTemplate.xml
 ui\styles\minimap_ring\MinimapRingBarTemplate.xml

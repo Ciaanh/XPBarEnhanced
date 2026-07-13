@@ -26,7 +26,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 | **Impact** | Medium — distinctive look (Diablo-style filling sphere) |
 | **Effort** | Medium |
 | **Reuse** | VERTICAL StatusBar clipped by a circle `MaskTexture` (`TempPortraitAlphaMask`) — reuses the whole standard StatusBar render path (DisplayMixin/PaintMixin), so animations, flash, colors, tooltips and max-level repurpose all work unchanged |
-| **Notes** | Fixed 110px, draggable, level + percent centered; overlays/exhaustion tick disabled by capability. **Deferred:** size presets; secondary-bar orb variant (with orb primary the standalone secondary bar currently resolves to "none") |
+| **Notes** | Fixed 110px, draggable, level + percent centered; overlays/exhaustion tick disabled by capability. Diablo-style dressing via shipped TGA art (`assets/orb_glass.tga` gloss+vignette, `assets/orb_ring.tga` metallic rim — generated, no third-party assets). Companion secondary orb (70px, label underneath) implemented (`OrbSecondaryBarStyle`). **Deferred:** size presets |
 
 ### 3. Data-text / LibDataBroker feed
 | | |

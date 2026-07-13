@@ -1,0 +1,75 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\Blizzard_SharedXML\UI.xsd">
+
+	<!-- XP Bar Enhanced - Orb Secondary Bar Template -->
+	<!-- Smaller companion orb for the secondary source, label underneath -->
+
+	<Script file="OrbSecondaryBarStyle.lua"/>
+
+	<Frame name="OrbReputationBarTemplate" virtual="true" mixin="XPBarOrbReputationMixin" frameStrata="MEDIUM" fixedFrameStrata="true" enableMouse="true">
+		<Size x="70" y="86"/>
+		<Frames>
+			<!-- Orb disc area (top 70x70 of the frame; label uses the rest) -->
+			<Frame parentKey="Orb">
+				<Size x="70" y="70"/>
+				<Anchors>
+					<Anchor point="TOP"/>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture parentKey="Background" file="Interface\Buttons\WHITE8X8" setAllPoints="true">
+							<Color r="0.07" g="0.07" b="0.10" a="0.92"/>
+						</Texture>
+						<MaskTexture parentKey="CircleMask" file="Interface\CharacterFrame\TempPortraitAlphaMask" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE" setAllPoints="true">
+							<MaskedTextures>
+								<MaskedTexture childKey="Background"/>
+							</MaskedTextures>
+						</MaskTexture>
+					</Layer>
+					<Layer level="OVERLAY" textureSubLevel="3">
+						<Texture parentKey="Glass" file="Interface\AddOns\XPBarEnhanced\assets\orb_glass" alphaMode="BLEND" setAllPoints="true"/>
+					</Layer>
+					<Layer level="OVERLAY" textureSubLevel="4">
+						<Texture parentKey="Ring" file="Interface\AddOns\XPBarEnhanced\assets\orb_ring" alphaMode="BLEND" setAllPoints="true"/>
+					</Layer>
+				</Layers>
+			</Frame>
+
+			<!-- Fill StatusBar overlapping the orb disc -->
+			<StatusBar parentKey="Bar" minValue="0" maxValue="1" defaultValue="0" orientation="VERTICAL">
+				<Size x="70" y="70"/>
+				<Anchors>
+					<Anchor point="TOP"/>
+				</Anchors>
+				<BarTexture file="Interface\Buttons\WHITE8X8"/>
+			</StatusBar>
+
+			<!-- Label under the orb -->
+			<Frame parentKey="LabelContainer" frameStrata="MEDIUM" setAllPoints="true">
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString parentKey="Label" inherits="GameFontNormalSmall" justifyH="CENTER">
+							<Anchors>
+								<Anchor point="BOTTOM" x="0" y="0"/>
+							</Anchors>
+							<Shadow>
+								<Offset x="1" y="-1"/>
+								<Color r="0" g="0" b="0" a="0.8"/>
+							</Shadow>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnLoad method="OnLoad"/>
+			<OnShow method="OnShow"/>
+			<OnHide method="OnHide"/>
+			<OnEnter method="OnEnter"/>
+			<OnLeave method="OnLeave"/>
+			<OnMouseUp method="OnMouseUp"/>
+			<OnDragStart method="OnDragStart"/>
+			<OnDragStop method="OnDragStop"/>
+		</Scripts>
+	</Frame>
+</Ui>

@@ -37,6 +37,7 @@ local TEMPLATE_MAP = {
     minimap_ring = "MinimapArcReputationBarTemplate",
     vertical = "VerticalReputationBarTemplate",
     terminal = "TerminalReputationBarTemplate",
+    orb      = "OrbReputationBarTemplate",
 }
 
 local function DeriveSecondaryStyle()
