@@ -26,12 +26,6 @@
 							</MaskedTextures>
 						</MaskTexture>
 					</Layer>
-					<Layer level="OVERLAY" textureSubLevel="3">
-						<Texture parentKey="Glass" file="Interface\AddOns\XPBarEnhanced\assets\orb_glass" alphaMode="BLEND" setAllPoints="true"/>
-					</Layer>
-					<Layer level="OVERLAY" textureSubLevel="4">
-						<Texture parentKey="Ring" file="Interface\AddOns\XPBarEnhanced\assets\orb_ring" alphaMode="BLEND" setAllPoints="true"/>
-					</Layer>
 				</Layers>
 			</Frame>
 
@@ -43,6 +37,22 @@
 				</Anchors>
 				<BarTexture file="Interface\Buttons\WHITE8X8"/>
 			</StatusBar>
+
+			<!-- Glass/ring dressing above the fill -->
+			<Frame parentKey="OrbOverlay">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.Orb" relativePoint="TOPLEFT"/>
+					<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Orb" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture parentKey="Glass" file="Interface\AddOns\XPBarEnhanced\assets\orb_glass" alphaMode="BLEND" setAllPoints="true"/>
+					</Layer>
+					<Layer level="BORDER">
+						<Texture parentKey="Ring" file="Interface\AddOns\XPBarEnhanced\assets\orb_ring" alphaMode="BLEND" setAllPoints="true"/>
+					</Layer>
+				</Layers>
+			</Frame>
 
 			<!-- Label under the orb -->
 			<Frame parentKey="LabelContainer" frameStrata="MEDIUM" setAllPoints="true">

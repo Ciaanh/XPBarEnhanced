@@ -26,14 +26,6 @@
 					<Color r="1" g="1" b="1" a="0"/>
 				</Texture>
 			</Layer>
-			<Layer level="OVERLAY" textureSubLevel="3">
-				<!-- Glass highlight + edge vignette (Diablo-style sheen) -->
-				<Texture parentKey="Glass" file="Interface\AddOns\XPBarEnhanced\assets\orb_glass" alphaMode="BLEND" setAllPoints="true"/>
-			</Layer>
-			<Layer level="OVERLAY" textureSubLevel="4">
-				<!-- Metallic rim ring -->
-				<Texture parentKey="Ring" file="Interface\AddOns\XPBarEnhanced\assets\orb_ring" alphaMode="BLEND" setAllPoints="true"/>
-			</Layer>
 		</Layers>
 		<Frames>
 			<!-- XP StatusBar (vertical orientation; fill masked in OnLoad) -->
@@ -41,9 +33,18 @@
 				<BarTexture file="Interface\Buttons\WHITE8X8"/>
 			</StatusBar>
 
-			<!-- Overlay frame for centered text -->
+			<!-- Overlay frame for glass/ring dressing and centered text.
+			     Lives above the StatusBar so the sheen shows over the fill. -->
 			<Frame parentKey="OverlayFrameTextContainer" frameStrata="MEDIUM" setAllPoints="true">
 				<Layers>
+					<Layer level="BACKGROUND">
+						<!-- Glass highlight + edge vignette (Diablo-style sheen) -->
+						<Texture parentKey="Glass" file="Interface\AddOns\XPBarEnhanced\assets\orb_glass" alphaMode="BLEND" setAllPoints="true"/>
+					</Layer>
+					<Layer level="BORDER">
+						<!-- Metallic rim ring -->
+						<Texture parentKey="Ring" file="Interface\AddOns\XPBarEnhanced\assets\orb_ring" alphaMode="BLEND" setAllPoints="true"/>
+					</Layer>
 					<Layer level="OVERLAY">
 						<FontString parentKey="LevelText" inherits="GameFontNormalLarge" hidden="true">
 							<Anchors>

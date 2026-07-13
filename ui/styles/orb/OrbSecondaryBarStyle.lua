@@ -41,6 +41,12 @@ function StyleMixin:GetFallbackPosition()
     return SharedStyleHelpers.BuildConfiguredStyleOffsetFallback("BOTTOM", 0, 34, 20)
 end
 
+--- Attached placement: sit to the RIGHT of the primary orb, bottom-aligned
+--- (Diablo-style companion orb), instead of stacked centered above it.
+function StyleMixin:GetAttachedAnchor()
+    return "BOTTOMLEFT", "BOTTOMRIGHT", 6, 0
+end
+
 function StyleMixin:GetBroadcastEventName()
     return SharedStyleHelpers.GetSecondaryBroadcastEventName()
 end
