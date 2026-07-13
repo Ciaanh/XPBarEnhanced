@@ -42,28 +42,49 @@ local function BuildUnavailableContext()
     }
 end
 
--- Resolve the primary profession to track: prefer the first primary profession
--- that still has room to grow, otherwise the first primary profession.
--- Returns name, rank, maxRank, skillLine (all plain numbers/strings), or nil.
+local function GetProfessionInfoForIndex(index)
+    if not index then
+        return nil
+    end
+    local name, _, rank, maxRank, _, _, skillLine = GetProfessionInfo(index)
+    rank = SafeNumber(rank)
+    maxRank = SafeNumber(maxRank)
+    if name and rank and maxRank and maxRank > 0 then
+        return name, rank, maxRank, skillLine
+    end
+    return nil
+end
+
+-- Resolve the tracked primary profession, honoring the `professionSlot` option:
+--   "first"/"second" → that specific primary slot,
+--   "auto" (default) → the first primary with room to grow, else the first.
+-- Returns name, rank, maxRank, skillLine (plain numbers/strings), or nil.
 local function GetTrackedProfession()
     if not (GetProfessions and GetProfessionInfo) then
         return nil
     end
 
     local prof1, prof2 = GetProfessions()
-    local candidates = { prof1, prof2 }
 
+    local slot = "auto"
+    if Addon.Config and Addon.Config.GetOptionValue then
+        slot = Addon.Config:GetOptionValue("professionSlot") or "auto"
+    end
+
+    if slot == "first" then
+        return GetProfessionInfoForIndex(prof1)
+    elseif slot == "second" then
+        return GetProfessionInfoForIndex(prof2)
+    end
+
+    -- auto
     local fallback = nil
-    for _, index in ipairs(candidates) do
-        if index then
-            local name, _, rank, maxRank, _, _, skillLine = GetProfessionInfo(index)
-            rank = SafeNumber(rank)
-            maxRank = SafeNumber(maxRank)
-            if name and rank and maxRank and maxRank > 0 then
-                fallback = fallback or { name = name, rank = rank, maxRank = maxRank, skillLine = skillLine }
-                if rank < maxRank then
-                    return name, rank, maxRank, skillLine
-                end
+    for _, index in ipairs({ prof1, prof2 }) do
+        local name, rank, maxRank, skillLine = GetProfessionInfoForIndex(index)
+        if name then
+            fallback = fallback or { name = name, rank = rank, maxRank = maxRank, skillLine = skillLine }
+            if rank < maxRank then
+                return name, rank, maxRank, skillLine
             end
         end
     end

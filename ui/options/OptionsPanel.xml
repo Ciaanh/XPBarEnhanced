@@ -757,6 +757,16 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_professionSlot" inherits="ConfigDropdownTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="professionSlot" type="string"/>
+                                            <KeyValue key="layoutIndex" value="52.6" type="number"/>
+                                            <KeyValue key="optionTab" value="secondary" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <Frame parentKey="Row_hideCompanionOutsideDelve" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="hideCompanionOutsideDelve" type="string"/>

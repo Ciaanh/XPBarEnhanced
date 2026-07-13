@@ -7,6 +7,7 @@ local defaults = {
     barStyle = "classic",
     showSecondaryBar = false,
     secondaryBarSource = "reputation",
+    professionSlot = "auto",
     hideCompanionOutsideDelve = false,
     secondaryBarsAttached = true,
     maxLevelPrimaryShowsSecondary = false,

@@ -40,6 +40,18 @@ local optionDetails = {
         },
         commandKeys = {"secondarysource", "secondarybarsource"}
     },
+    professionSlot = {
+        key = "professionSlot",
+        type = "dropdown",
+        label = Addon.L["OPT_PROFESSION_SLOT"],
+        description = Addon.L["OPT_PROFESSION_SLOT_DESC"],
+        options = {
+            {value = "auto", label = Addon.L["OPT_PROFESSION_SLOT_AUTO"]},
+            {value = "first", label = Addon.L["OPT_PROFESSION_SLOT_FIRST"]},
+            {value = "second", label = Addon.L["OPT_PROFESSION_SLOT_SECOND"]},
+        },
+        commandKeys = {"professionslot"}
+    },
     hideCompanionOutsideDelve = {
         key = "hideCompanionOutsideDelve",
         label = Addon.L["OPT_HIDE_COMPANION_OUTSIDE_DELVE"],
@@ -366,6 +378,7 @@ local optionOrder = {
     "barStyle",
     "showSecondaryBar",
     "secondaryBarSource",
+    "professionSlot",
     "hideCompanionOutsideDelve",
     "secondaryBarsAttached",
     "maxLevelPrimaryShowsSecondary",

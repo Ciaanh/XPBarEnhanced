@@ -505,6 +505,19 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
         end
     end
 
+    if key == "professionSlot" then
+        -- Re-baseline to the newly tracked profession so session gain doesn't
+        -- jump, then refresh the bar.
+        if Addon.ProfessionSession then
+            if Addon.ProfessionSession.Snapshot then
+                Addon.ProfessionSession:Snapshot()
+            end
+            if Addon.ProfessionSession.EmitUpdate then
+                Addon.ProfessionSession:EmitUpdate()
+            end
+        end
+    end
+
     if key == "circularSecondaryFullCircle" or key == "minimapArcStartExpanded"
        or key == "minimapArcDisplayAngle" or key == "minimapArcIconAngle" then
         if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
