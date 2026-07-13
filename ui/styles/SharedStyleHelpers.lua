@@ -416,7 +416,8 @@ local function ResolveConfiguredSecondarySource()
     if source == nil and Addon.db then
         source = Addon.db.secondaryBarSource
     end
-    if source == "housing" or source == "reputation" then
+    if source == "housing" or source == "reputation"
+        or source == "honor" or source == "profession" then
         return source
     end
     return "reputation"
@@ -436,6 +437,20 @@ local function GetReputationContext()
     return nil
 end
 
+local function GetHonorContext()
+    if Addon.HonorSession and Addon.HonorSession.GetCurrentContext then
+        return Addon.HonorSession:GetCurrentContext()
+    end
+    return nil
+end
+
+local function GetProfessionContext()
+    if Addon.ProfessionSession and Addon.ProfessionSession.GetCurrentContext then
+        return Addon.ProfessionSession:GetCurrentContext()
+    end
+    return nil
+end
+
 function Shared.GetActiveSecondarySource()
     return ResolveConfiguredSecondarySource()
 end
@@ -451,6 +466,8 @@ function Shared.GetSecondaryBroadcastEventName()
     return {
         Addon.EventNames.REPUTATION_BROADCAST_UPDATE or "REPUTATION:BROADCAST_UPDATE",
         Addon.EventNames.HOUSING_BROADCAST_UPDATE or "HOUSING:BROADCAST_UPDATE",
+        Addon.EventNames.HONOR_BROADCAST_UPDATE or "HONOR:BROADCAST_UPDATE",
+        Addon.EventNames.PROFESSION_BROADCAST_UPDATE or "PROFESSION:BROADCAST_UPDATE",
     }
 end
 
@@ -458,6 +475,10 @@ function Shared.GetSecondaryInitialContext()
     local source = Shared.GetActiveSecondarySource()
     if source == "housing" then
         return GetHousingContext()
+    elseif source == "honor" then
+        return GetHonorContext()
+    elseif source == "profession" then
+        return GetProfessionContext()
     end
 
     return GetReputationContext()

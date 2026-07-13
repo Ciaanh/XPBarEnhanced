@@ -97,12 +97,12 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 5. New secondary-bar sources
 | | |
 |---|---|
-| **Status** | planned |
+| **Status** | in progress — **Honor** (`HonorSession`) and **Profession** (`ProfessionSession`) implemented, pending in-game validation |
 | **Impact** | Medium-High — extends the addon's core value |
 | **Effort** | Medium per source |
 | **Reuse** | `secondaryBarSource` architecture (reputation/housing) is designed for extension; `HousingSession` is the template: one service emitting a normalized context |
-| **Candidates** | Honor/PvP progress, profession knowledge, Delve journey level |
-| **Notes** | 12.x secret-value constraints: normalize/sanitize inside the service, exactly as `HousingSession` does. Verify each API against 12.x before building |
+| **Candidates** | ~~Honor/PvP~~ ✅, ~~profession knowledge~~ ✅ (skill rank), Delve journey level (not started) |
+| **Notes** | Honor uses wrap-aware gain (`ComputeWrappedGain`, like renown) via `UnitHonor/UnitHonorMax/UnitHonorLevel`; routed on `HONOR_XP_UPDATE`/`HONOR_LEVEL_UPDATE`. Profession tracks the first primary profession with room to grow (falls back to the first primary), via `GetProfessions`/`GetProfessionInfo`; routed on `SKILL_LINES_CHANGED`/`TRADE_SKILL_UPDATE`. Both sanitize with `issecretvalue`/`SafeNumber`. **Deferred:** per-profession sub-selection (which of the two primaries to track) — currently automatic. |
 
 ### 6. Goals & ETA notifications
 | | |
@@ -137,10 +137,29 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 
 1. **Fade when inactive + level-up celebration** — in progress (implemented, pending in-game validation).
 2. **Session charts** in the Stats window — in progress (implemented, pending in-game validation).
-3. **New secondary-bar sources**.
+3. **New secondary-bar sources** — in progress (Honor + Profession implemented, pending in-game validation).
 4. **Goals & ETA notifications**.
 
 New styles limited to **orb** and **data-text/LDB**; "bubbles" is reframed as an option of the classic style; edge strip rejected. Custom fonts, warband overview, localization, and profile import/export remain proposed (not scheduled).
+
+## Design note — repurpose the primary bar for the secondary source at max level
+
+**Status:** studied (2026-07-13), not scheduled. Requested alongside item 5.
+
+**Idea:** at max level the primary XP bar is hidden (it has no XP to show). Instead, render the selected secondary source (reputation/housing/honor/profession) on the *primary* bar frame, so the big bar stays useful. This mirrors Blizzard's own status-tracking bar, which promotes reputation/honor into the main container at max level.
+
+**Feasibility:** moderate effort, architecturally clean. The XP context and the secondary-source context are already separate data planes, and primary styles already paint a status bar from an immutable context. The catch is the primary render path is XP-shaped (`context.currentXP`/`xpMax`/`level`), so an adapter is needed.
+
+**Lowest-risk shape** (confines new logic to `BarManager.lua` + `BaseMixin.lua`, leaves the 7 style `RenderBar` methods and the 4 session services untouched):
+- Add `BarManager:GetMaxLevelSecondaryContext()` that, when `showSecondaryBar` is on and a source is active, resolves the active source (`SharedStyleHelpers.GetSecondaryInitialContext()`) and translates its `current/min/max/ratio` + `factionType` color into an XP-shaped context carrying a "secondary mode" flag.
+- In `BaseMixin:TriggerBarRefresh`, replace the "hide at max level" branch with: if the adapter returns a context, render it (gating off XP-only capabilities — rested/quest overlays, exhaustion tick, XP/level text); else hide as today.
+- Stop `BarManager:SetStyle` from collapsing to `"none"` at max level when this mode is enabled (the `IsPlayerAtMaxLevel` short-circuit appears in `SetStyle`, `OnLevelUp`, `AdjustContextForMaxLevel`).
+- `SecondaryBarManager` must not also draw the standalone secondary bar for the same source (avoid double render).
+- Primary `BaseMixin:OnShow` must additionally subscribe to the source broadcast(s) to live-update at max level.
+
+**Concerns:** secret values are already laundered by the services (safe to pass the normalized fields to `SetValue`); the adapter must gate XP-only capabilities; no protected/secure frames involved, so no combat-taint risk from the render itself.
+
+**Recommendation:** gate behind a new option (e.g. `maxLevelPrimaryShowsSecondary`, default off) and do it as its own change after item 5 validates. It touches the primary render path (higher blast radius) so it should not ride along with the source additions.
 
 ## Architecture constraints (apply to every item)
 

@@ -61,7 +61,9 @@ local defaults = {
         questComplete = {r = 1.0, g = 0.65, b = 0.0, a = 0.85},
         questIncomplete = {r = 0.5, g = 1.0, b = 0.2, a = 0.85},
         secondaryReputation = {r = 0.70, g = 0.30, b = 0.85, a = 1},
-        secondaryHousing = {r = 0.85, g = 0.55, b = 0.20, a = 1}
+        secondaryHousing = {r = 0.85, g = 0.55, b = 0.20, a = 1},
+        secondaryHonor = {r = 0.80, g = 0.20, b = 0.20, a = 1},
+        secondaryProfession = {r = 0.30, g = 0.65, b = 0.75, a = 1}
     },
     barPosition = {
         point = "CENTER",

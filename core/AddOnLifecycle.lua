@@ -45,6 +45,16 @@ function eventHandlers:OnPlayerLogin()
         Addon.HousingSession:Initialize()
     end
 
+    -- Initialize Honor session
+    if Addon.HonorSession and Addon.HonorSession.Initialize then
+        Addon.HonorSession:Initialize()
+    end
+
+    -- Initialize Profession session
+    if Addon.ProfessionSession and Addon.ProfessionSession.Initialize then
+        Addon.ProfessionSession:Initialize()
+    end
+
     -- Initialize features
     local stats = Addon.Stats
     if stats and stats.Initialize then

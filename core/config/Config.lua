@@ -475,11 +475,19 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
     end
 
     if key == "secondaryBarSource" then
+        -- Emit every source so whichever one is now active re-resolves and the
+        -- secondary bar re-renders immediately.
         if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
             Addon.ReputationSession:EmitUpdate()
         end
         if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
             Addon.HousingSession:EmitUpdate()
+        end
+        if Addon.HonorSession and Addon.HonorSession.EmitUpdate then
+            Addon.HonorSession:EmitUpdate()
+        end
+        if Addon.ProfessionSession and Addon.ProfessionSession.EmitUpdate then
+            Addon.ProfessionSession:EmitUpdate()
         end
     end
 

@@ -88,6 +88,18 @@ local function DispatchHouseLevelChanged()
     RequestHousingFavorRefresh()
 end
 
+local function DispatchHonorUpdate()
+    if Addon.HonorSession and Addon.HonorSession._session and Addon.HonorSession.OnHonorUpdate then
+        Addon.HonorSession:OnHonorUpdate()
+    end
+end
+
+local function DispatchProfessionUpdate()
+    if Addon.ProfessionSession and Addon.ProfessionSession._session and Addon.ProfessionSession.OnSkillUpdate then
+        Addon.ProfessionSession:OnSkillUpdate()
+    end
+end
+
 local function DispatchQuestEvent(event)
     if Addon.QuestXP and Addon.QuestXP.HandleRoutedEvent then
         Addon.QuestXP:HandleRoutedEvent(event)
@@ -184,6 +196,14 @@ local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
 
     if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnEnteringWorld then
         Addon.HousingSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    end
+
+    if Addon.HonorSession and Addon.HonorSession._session and Addon.HonorSession.OnEnteringWorld then
+        Addon.HonorSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    end
+
+    if Addon.ProfessionSession and Addon.ProfessionSession._session and Addon.ProfessionSession.OnEnteringWorld then
+        Addon.ProfessionSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
     DispatchQuestEvent("PLAYER_ENTERING_WORLD")
@@ -284,6 +304,18 @@ local ROUTER_DISPATCH = {
     end,
     NEIGHBORHOOD_INITIATIVE_UPDATED = function()
         RequestHousingFavorRefresh()
+    end,
+    HONOR_XP_UPDATE = function()
+        DispatchHonorUpdate()
+    end,
+    HONOR_LEVEL_UPDATE = function()
+        DispatchHonorUpdate()
+    end,
+    SKILL_LINES_CHANGED = function()
+        DispatchProfessionUpdate()
+    end,
+    TRADE_SKILL_UPDATE = function()
+        DispatchProfessionUpdate()
     end,
     UNIT_QUEST_LOG_CHANGED = function()
         DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")

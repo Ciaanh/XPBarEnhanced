@@ -35,6 +35,8 @@ local optionDetails = {
         options = {
             {value = "reputation", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_REPUTATION"]},
             {value = "housing", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_HOUSING"]},
+            {value = "honor", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_HONOR"]},
+            {value = "profession", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_PROFESSION"]},
         },
         commandKeys = {"secondarysource", "secondarybarsource"}
     },
@@ -410,7 +412,9 @@ local colorOptionsList = {
     { key = "questIncomplete", command = "questincomplete", aliases = {"incomplete"}, label = Addon.L["COLOR_QUEST_INCOMPLETE"], description = Addon.L["COLOR_QUEST_INCOMPLETE_DESC"], preview = "texture" },
     { key = "rested", command = "rested", aliases = {"rest"}, label = Addon.L["COLOR_RESTED"], description = Addon.L["COLOR_RESTED_DESC"], preview = "texture" },
     { key = "secondaryReputation", command = "secondaryreputation", aliases = {"repbar","reputationbar"}, label = Addon.L["COLOR_SECONDARY_REPUTATION"], description = Addon.L["COLOR_SECONDARY_REPUTATION_DESC"], preview = "statusbar" },
-    { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" }
+    { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" },
+    { key = "secondaryHonor", command = "secondaryhonor", aliases = {"honorbar"}, label = Addon.L["COLOR_SECONDARY_HONOR"], description = Addon.L["COLOR_SECONDARY_HONOR_DESC"], preview = "statusbar" },
+    { key = "secondaryProfession", command = "secondaryprofession", aliases = {"professionbar","skillbar"}, label = Addon.L["COLOR_SECONDARY_PROFESSION"], description = Addon.L["COLOR_SECONDARY_PROFESSION_DESC"], preview = "statusbar" }
 }
 
 -- Build lookup maps

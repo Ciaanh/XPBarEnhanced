@@ -30,7 +30,9 @@ Colors.Key = {
     QuestComplete = "questComplete",
     QuestIncomplete = "questIncomplete",
     SecondaryReputation = "secondaryReputation",
-    SecondaryHousing = "secondaryHousing"
+    SecondaryHousing = "secondaryHousing",
+    SecondaryHonor = "secondaryHonor",
+    SecondaryProfession = "secondaryProfession"
 }
 
 -------------------------------------------------------------------

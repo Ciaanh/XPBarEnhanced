@@ -189,6 +189,8 @@ L["OPT_SECONDARY_BAR_SOURCE"] = "Secondary source"
 L["OPT_SECONDARY_BAR_SOURCE_DESC"] = "Choose which progression source drives the secondary bar."
 L["OPT_SECONDARY_BAR_SOURCE_REPUTATION"] = "Reputation"
 L["OPT_SECONDARY_BAR_SOURCE_HOUSING"] = "Housing Favor"
+L["OPT_SECONDARY_BAR_SOURCE_HONOR"] = "Honor"
+L["OPT_SECONDARY_BAR_SOURCE_PROFESSION"] = "Profession"
 L["OPT_HIDE_COMPANION_OUTSIDE_DELVE"] = "Hide companion bar outside Delves"
 L["OPT_HIDE_COMPANION_OUTSIDE_DELVE_DESC"] = "When enabled, the secondary bar is hidden if the watched faction is a Delve companion and you are not inside a Delve."
 L["OPT_SECONDARY_BARS_ATTACHED"] = "Attach to XP bar"
@@ -279,6 +281,10 @@ L["COLOR_SECONDARY_REPUTATION"] = "Secondary Bar: Reputation"
 L["COLOR_SECONDARY_REPUTATION_DESC"] = "Color of the secondary bar when Reputation is selected as the source."
 L["COLOR_SECONDARY_HOUSING"] = "Secondary Bar: Housing Favor"
 L["COLOR_SECONDARY_HOUSING_DESC"] = "Color of the secondary bar when Housing Favor is selected as the source."
+L["COLOR_SECONDARY_HONOR"] = "Secondary Bar: Honor"
+L["COLOR_SECONDARY_HONOR_DESC"] = "Color of the secondary bar when Honor is selected as the source."
+L["COLOR_SECONDARY_PROFESSION"] = "Secondary Bar: Profession"
+L["COLOR_SECONDARY_PROFESSION_DESC"] = "Color of the secondary bar when Profession is selected as the source."
 
 -- ============================================================================
 -- MESSAGES
@@ -302,6 +308,14 @@ L["REP_STANDING_PARAGON"] = "Paragon"
 L["HOUSING_NAME"] = "Housing Favor"
 L["HOUSING_MAX_LEVEL_LABEL"] = "Max House Level"
 L["HOUSING_LEVEL_FMT"] = "Level %d"
+
+-- ============================================================================
+-- HONOR / PROFESSION (secondary bar sources)
+-- ============================================================================
+L["HONOR_NAME"] = "Honor"
+L["HONOR_LEVEL_FMT"] = "Honor Level %d"
+L["PROFESSION_NAME"] = "Profession"
+L["PROFESSION_MAX_LABEL"] = "Max Skill"
 
 -- ============================================================================
 -- ERRORS

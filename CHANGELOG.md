@@ -9,6 +9,8 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - **Fade when inactive**: optional auto-fade of the bar to a configurable idle opacity after a delay with no XP gain; wakes on XP gain, level-up, mouseover, or option change, and never fades during combat (`fadeWhenInactive`, `fadeDelay`, `idleOpacity`).
 - **Level-up celebration**: optional golden glow pulse on the bar at level-up, with an optional fanfare sound (`levelUpCelebration`, `celebrationSound`).
 - **Session charts** in the Stats window: an XP/hour histogram across the session plus a quest-vs-other XP split bar, rendered in a new chart panel.
+- **Honor secondary-bar source**: the secondary bar can now track Honor (PvP) progress, with wrap-aware gain across honor levels.
+- **Profession secondary-bar source**: the secondary bar can now track a primary profession's skill level (auto-selects the first primary profession with room to grow).
 
 ## [1.1.7] - 2026-07-03
 

@@ -23,6 +23,8 @@ local FALLBACK_FACTION_COLORS = {
     paragon = {r = 0.95, g = 0.75, b = 0.10, a = 1},
     companion = {r = 0.20, g = 0.80, b = 0.80, a = 1},
     housing = {r = 0.85, g = 0.55, b = 0.20, a = 1},
+    honor = {r = 0.80, g = 0.20, b = 0.20, a = 1},
+    profession = {r = 0.30, g = 0.65, b = 0.75, a = 1},
 }
 
 local COLOR_KEY_BY_TYPE = {
@@ -32,6 +34,8 @@ local COLOR_KEY_BY_TYPE = {
     paragon = "SecondaryReputation",
     companion = "SecondaryReputation",
     housing = "SecondaryHousing",
+    honor = "SecondaryHonor",
+    profession = "SecondaryProfession",
 }
 
 local function Clamp(value, minValue, maxValue)

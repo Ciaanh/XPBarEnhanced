@@ -57,6 +57,8 @@ core\services\ProfileManager.lua
 core\services\Session.lua
 core\services\ReputationSession.lua
 core\services\HousingSession.lua
+core\services\HonorSession.lua
+core\services\ProfessionSession.lua
 core\services\ContextBuilder.lua
 
 # UI Features

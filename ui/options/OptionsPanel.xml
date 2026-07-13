@@ -703,6 +703,28 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="ColorRow_secondaryHonor" inherits="ConfigColorPickerTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="secondaryHonor" type="string"/>
+                                            <KeyValue key="optionTab" value="colors" type="string"/>
+                                            <KeyValue key="previewType" value="statusbar" type="string"/>
+                                            <KeyValue key="layoutIndex" value="50.3" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="ColorRow_secondaryProfession" inherits="ConfigColorPickerTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="secondaryProfession" type="string"/>
+                                            <KeyValue key="optionTab" value="colors" type="string"/>
+                                            <KeyValue key="previewType" value="statusbar" type="string"/>
+                                            <KeyValue key="layoutIndex" value="50.4" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Secondary Bars ==================== -->
 
                                     <Frame parentKey="SecondaryBarsHeader" inherits="ConfigSectionHeader">
