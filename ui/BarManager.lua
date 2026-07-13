@@ -158,6 +158,10 @@ function BarManager:GetMaxLevelSecondaryContext()
         level = src.currentLevel or src.reactionLevel or 0,
         percent = src.percent,
         standingLabel = src.standingLabel,
+        -- The on-bar "level" text shows the source's standing (e.g. "Renown 3",
+        -- "Honor Level 5", "42 / 100") instead of "Level N", since most sources
+        -- have no plain numeric level.
+        levelTextOverride = src.standingLabel,
         -- Suppress XP-only visuals
         restedXP = 0,
         hasRestedXP = false,

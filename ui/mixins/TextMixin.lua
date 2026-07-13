@@ -107,6 +107,13 @@ function XPBarTextMixin:UpdateLevelText(context)
 		error("UpdateLevelText requires an explicit immutable context")
 	end
 
+	-- Max-level "primary shows secondary source" mode supplies a standing label
+	-- (e.g. "Renown 3") to show instead of a numeric "Level N".
+	if context.levelTextOverride and context.levelTextOverride ~= "" then
+		self.LevelText:SetText(context.levelTextOverride)
+		return
+	end
+
 	if Addon.TextFormatter then
 		local level = context.level or UnitLevel("player")
 		local levelText = Addon.TextFormatter:GetLevelText(level)
