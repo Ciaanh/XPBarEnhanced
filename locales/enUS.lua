@@ -220,6 +220,26 @@ L["OPT_FADE_DELAY"] = "Fade delay (seconds)"
 L["OPT_FADE_DELAY_DESC"] = "How long to wait after the last XP gain before fading the bar."
 L["OPT_IDLE_OPACITY"] = "Idle opacity (%)"
 L["OPT_IDLE_OPACITY_DESC"] = "Bar opacity while faded, as a percentage. 0 hides the bar completely when idle."
+L["OPT_GOAL_NOTIFICATIONS"] = "Level progress notifications"
+L["OPT_GOAL_NOTIFICATIONS_DESC"] = "Announce 25%, 50% and 75% level progress with the estimated time to level up."
+L["OPT_GOAL_SOUND"] = "Notification sound"
+L["OPT_GOAL_SOUND_DESC"] = "Play a sound with level progress notifications."
+L["OPT_DATA_BROKER_FEED"] = "LibDataBroker feed"
+L["OPT_DATA_BROKER_FEED_DESC"] = "Publish XP rate and time-to-level to LibDataBroker displays such as Titan Panel, Bazooka, or ElvUI datatexts."
+
+-- Goal / milestone notifications
+L["GOAL_MILESTONE"] = "Level %d: %d%%"
+L["GOAL_MILESTONE_ETA"] = "Level %d: %d%% - ding in ~%s"
+
+-- LibDataBroker feed
+L["LDB_LABEL"] = "XP Bar Enhanced"
+L["LDB_TEXT_FMT"] = "%s XP/h \194\183 ~%s"
+L["LDB_RATE_FMT"] = "%s XP/h"
+L["LDB_CALCULATING"] = "XP: calculating..."
+L["LDB_MAX_LEVEL"] = "Max level"
+L["LDB_TT_SESSION_XP"] = "Session XP:"
+L["LDB_TT_RATE"] = "XP per hour:"
+L["LDB_TT_CLICK"] = "Click to toggle the stats window"
 
 -- Session chart (Stats window)
 L["STATS_CHART_TITLE"] = "Session XP Rate"

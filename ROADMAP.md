@@ -31,11 +31,11 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 3. Data-text / LibDataBroker feed
 | | |
 |---|---|
-| **Status** | planned |
+| **Status** | implemented (2026-07-14) as `ui/DataBrokerFeed.lua` + `enableDataBrokerFeed` option, pending in-game validation |
 | **Impact** | High — reaches Titan Panel / Bazooka / ElvUI datatext users; big audience gain for little code |
 | **Effort** | Low |
-| **Reuse** | Style "none" is the precedent for barless operation; `ContextBuilder` already provides every formatted value (XP/h, time-to-level, session XP) |
-| **Notes** | One of the two retained new-style candidates (decision 2026-07-08). Example feed: `12.4k XP/h · ding ~34 min`. Ship LibDataBroker-1.1 (embed like LibStub) |
+| **Reuse** | Session rate/ETA getters; secondary-source context at max level |
+| **Notes** | Registration is **conditional** on LibDataBroker-1.1 being loaded (every LDB display ships it), so no library is embedded — when no display addon exists there is nothing to feed anyway. Feed: `12.4K XP/h · ~34m`; max level shows the active secondary source; click toggles the Stats window |
 
 ### 4. Edge-of-screen strip
 | | |
@@ -107,11 +107,11 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 6. Goals & ETA notifications
 | | |
 |---|---|
-| **Status** | planned |
-| **Impact** | Medium — engagement feature ("ding at ~21:40", toast at 25/50/75%, "level 80 by Sunday") |
-| **Effort** | Medium |
-| **Reuse** | `TimeCalculations` already computes projections; missing piece is a toast/sound notifier (throttled, no OnUpdate polling) |
-| **Notes** | Store goals per character; notify via EventBus subscriber, not direct calls |
+| **Status** | scoped to lot 1 only (decision 2026-07-14) — implemented, pending in-game validation |
+| **Impact** | Medium — engagement feature |
+| **Effort** | Low (as scoped) |
+| **Reuse** | `GoalTracker` service driven by `XPBAR_BROADCAST_UPDATE` (no WoW events, no OnUpdate); ETA from the context's `timeToLevel` |
+| **Notes** | **Lot 1 (kept):** 25/50/75% milestone announcements via UIErrorsFrame with ETA + optional sound (`goalNotifications`, `goalSound`); fires once per level, per-character state. **Lot 2 (dated level goal) and lot 3 (secondary-source targets): rejected for now.** |
 
 ### 7. Localization
 | | |

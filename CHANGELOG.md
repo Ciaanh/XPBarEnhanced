@@ -13,6 +13,8 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - **Profession secondary-bar source**: the secondary bar can now track a primary profession's skill level (auto-selects the first primary profession with room to grow).
 - **Use main bar at max level** (`maxLevelPrimaryShowsSecondary`, default off): at max level, show the selected secondary source on the main bar instead of hiding it (mirrors Blizzard's status bar). The standalone secondary bar is hidden while active to avoid rendering the same source twice.
 - **Tracked profession selector** (`professionSlot`): choose whether the Profession source tracks the first or second profession, or Auto (first primary with room to grow).
+- **Level progress notifications** (`goalNotifications`, on by default): announces 25%/50%/75% level progress with the estimated time to ding, once per level, with an optional sound (`goalSound`).
+- **LibDataBroker feed** (`enableDataBrokerFeed`, on by default): publishes "XP/h · time-to-level" to LDB displays (Titan Panel, Bazooka, ElvUI datatexts); shows the active secondary source at max level; click opens the Stats window. Active only when an LDB display addon is installed.
 
 ## [1.1.7] - 2026-07-03
 

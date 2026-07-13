@@ -615,6 +615,38 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_goalNotifications" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="goalNotifications" type="string"/>
+                                            <KeyValue key="layoutIndex" value="44.6" type="number"/>
+                                            <KeyValue key="optionTab" value="behavior" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_goalSound" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="goalSound" type="string"/>
+                                            <KeyValue key="layoutIndex" value="44.7" type="number"/>
+                                            <KeyValue key="optionTab" value="behavior" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_enableDataBrokerFeed" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="enableDataBrokerFeed" type="string"/>
+                                            <KeyValue key="layoutIndex" value="44.8" type="number"/>
+                                            <KeyValue key="optionTab" value="behavior" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Colors ==================== -->
 
                                     <Frame parentKey="ColorsHeader" inherits="ConfigSectionHeader">

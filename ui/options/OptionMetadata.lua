@@ -242,6 +242,24 @@ local optionDetails = {
         format = "%.0f",
         commandKeys = {"idleopacity"}
     },
+    goalNotifications = {
+        key = "goalNotifications",
+        label = Addon.L["OPT_GOAL_NOTIFICATIONS"],
+        description = Addon.L["OPT_GOAL_NOTIFICATIONS_DESC"],
+        commandKeys = {"goalnotifications", "milestones"}
+    },
+    goalSound = {
+        key = "goalSound",
+        label = Addon.L["OPT_GOAL_SOUND"],
+        description = Addon.L["OPT_GOAL_SOUND_DESC"],
+        commandKeys = {"goalsound"}
+    },
+    enableDataBrokerFeed = {
+        key = "enableDataBrokerFeed",
+        label = Addon.L["OPT_DATA_BROKER_FEED"],
+        description = Addon.L["OPT_DATA_BROKER_FEED_DESC"],
+        commandKeys = {"ldb", "databroker"}
+    },
     circularSize = {
         key = "circularSize",
         type = "dropdown",
@@ -409,6 +427,9 @@ local optionOrder = {
     "fadeWhenInactive",
     "fadeDelay",
     "idleOpacity",
+    "goalNotifications",
+    "goalSound",
+    "enableDataBrokerFeed",
     "flatSize",
     "verticalSize",
     "circularSize",
