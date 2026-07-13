@@ -548,6 +548,25 @@ function TooltipMixin:OnEnter()
 		return
 	end
 
+	-- Max-level "primary shows secondary source" mode: the primary bar is
+	-- displaying the secondary source, so its tooltip must show that source's
+	-- stats (name/standing/progress/rate), not the XP tooltip. Reuse the
+	-- shared secondary-tooltip builder with the raw source context.
+	local manager = Addon.BarManager
+	local Shared = Addon.UI and Addon.UI.SharedStyleHelpers
+	if manager and manager.ShouldRepurposePrimaryAtMaxLevel and manager:ShouldRepurposePrimaryAtMaxLevel()
+		and Shared and Shared.GetSecondaryInitialContext and Shared.ShowSecondaryTooltip then
+		local srcContext = Shared.GetSecondaryInitialContext()
+		if srcContext and srcContext.isAvailable ~= false then
+			Shared.ShowSecondaryTooltip(self, srcContext, self:GetBestAnchor())
+			if Shared.FinishSecondaryTooltip then
+				Shared.FinishSecondaryTooltip()
+			end
+			TooltipMixin.currentTooltipOwner = self
+			return
+		end
+	end
+
 	-- Build the context using centralized builder (dot-call: not a method)
 	local context = XPBarContextBuilder.BuildContext("TOOLTIP")
 
