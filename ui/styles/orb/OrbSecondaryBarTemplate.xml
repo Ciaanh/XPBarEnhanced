@@ -46,13 +46,13 @@
 				</Layers>
 			</Frame>
 
-			<!-- Compact label hanging below the orb -->
+			<!-- Compact label centered inside the orb (matches the primary orb) -->
 			<Frame parentKey="LabelContainer" frameStrata="MEDIUM" setAllPoints="true">
 				<Layers>
 					<Layer level="OVERLAY">
 						<FontString parentKey="Label" inherits="GameFontNormalSmall" justifyH="CENTER">
 							<Anchors>
-								<Anchor point="TOP" relativePoint="BOTTOM" x="0" y="-2"/>
+								<Anchor point="CENTER" x="0" y="0"/>
 							</Anchors>
 							<Shadow>
 								<Offset x="1" y="-1"/>
