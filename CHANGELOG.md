@@ -4,6 +4,8 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.7] - 2026-07-14
+
 ### Added
 
 - **Fade when inactive**: optional auto-fade of the bar to a configurable idle opacity after a delay with no XP gain; wakes on XP gain, level-up, mouseover, or option change, and never fades during combat (`fadeWhenInactive`, `fadeDelay`, `idleOpacity`).
@@ -15,9 +17,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - **Tracked profession selector** (`professionSlot`): choose whether the Profession source tracks the first or second profession, or Auto (first primary with room to grow).
 - **Level progress notifications** (`goalNotifications`, on by default): announces 25%/50%/75% level progress with the estimated time to ding, once per level, with an optional sound (`goalSound`).
 - **LibDataBroker feed** (`enableDataBrokerFeed`, on by default): publishes "XP/h · time-to-level" to LDB displays (Titan Panel, Bazooka, ElvUI datatexts); shows the active secondary source at max level; click opens the Stats window. Active only when an LDB display addon is installed.
-- **Orb bar style**: a Diablo-style filling sphere (vertical fill clipped to a circle) with a glass highlight and metallic rim, draggable, with centered level and percent text. Supports animations, gain flash, custom colors and the max-level secondary mode. Includes a smaller companion orb for the secondary bar with the source label underneath.
-
-## [1.1.7] - 2026-07-03
+- **Orb bar style**: a Diablo-style filling sphere (vertical fill clipped to a circle) with a glass highlight and metallic rim, draggable, with centered level and percent text. Supports animations, gain flash, custom colors and the max-level secondary mode. Includes a smaller companion orb for the secondary bar, docked to the right of the primary orb.
 
 ### Fixed
 
