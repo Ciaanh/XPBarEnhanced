@@ -135,6 +135,8 @@ L["OPT_BAR_STYLE_CIRCULAR"] = "Circular (Progress ring)"
 L["OPT_BAR_STYLE_MINIMAP_RING"] = "Minimap Ring"
 L["OPT_BAR_STYLE_TERMINAL"] = "Terminal (ASCII progress bar)"
 L["OPT_BAR_STYLE_ORB"] = "Orb (filling sphere)"
+L["OPT_BAR_STYLE_MAX_LEVEL"] = "Blizzard Bar (Max Level)"
+L["OPT_BAR_STYLE_MAX_LEVEL_DESC"] = "Disabled at max level: Blizzard experience bar enforced"
 L["OPT_BAR_LOCKED"] = "Lock bar position"
 L["OPT_BAR_LOCKED_DESC"] = "Prevent the Flat bar from being moved with Shift+Drag. Applies only to Flat bar style."
 L["OPT_SHOW_MINIMAP_BUTTON"] = "Show minimap button"
@@ -162,6 +164,15 @@ L["OPT_HEADER_ANIMATION"] = "Animation"
 L["OPT_HEADER_COLORS"] = "Colors"
 L["OPT_HEADER_CIRCULAR"] = "Circular Bar"
 L["OPT_HEADER_SECONDARY_BARS"] = "Secondary Bars"
+
+-- Options panel chrome (subtitle + tab labels)
+L["OPT_SUBTITLE"] = "Configure the custom experience bar, quest overlays, and leveling statistics."
+L["OPT_TAB_VISUAL"] = "Visual"
+L["OPT_TAB_TEXT"] = "Text"
+L["OPT_TAB_BEHAVIOR"] = "Behavior"
+L["OPT_TAB_SECONDARY"] = "Secondary Bar"
+L["OPT_TAB_COLORS"] = "Colors"
+
 L["OPT_HEADER_PROFILES"] = "Profiles"
 L["OPT_PROFILE_SELECTOR"] = "Profile => "
 L["OPT_PROFILE_GLOBAL"] = "Global Settings"
@@ -236,6 +247,7 @@ L["GOAL_MILESTONE_ETA"] = "Level %d: %d%% - ding in ~%s"
 L["LDB_LABEL"] = "XP Bar Enhanced"
 L["LDB_TEXT_FMT"] = "%s XP/h \194\183 ~%s"
 L["LDB_RATE_FMT"] = "%s XP/h"
+L["LDB_SOURCE_FMT"] = "%s: %d%%"
 L["LDB_CALCULATING"] = "XP: calculating..."
 L["LDB_MAX_LEVEL"] = "Max level"
 L["LDB_TT_SESSION_XP"] = "Session XP:"
@@ -247,6 +259,33 @@ L["STATS_CHART_TITLE"] = "Session XP Rate"
 L["STATS_CHART_EMPTY"] = "No XP gained yet this session."
 L["STATS_CHART_RATE_FORMAT"] = "%s/h"
 L["STATS_CHART_SPLIT_LEGEND"] = "Quest %d%%  \194\183  Other %d%%"
+
+-- Stats window pages and row labels
+L["STATS_PAGE_CURRENT_LEVEL"] = "Current Level"
+L["STATS_PAGE_CURRENT_SESSION"] = "Current Session"
+L["STATS_LABEL_LEVEL"] = "Level:"
+L["STATS_LABEL_CURRENT_XP"] = "Current XP:"
+L["STATS_LABEL_MAX_XP"] = "Max XP:"
+L["STATS_LABEL_PROGRESS"] = "Progress:"
+L["STATS_LABEL_XP_TO_LEVEL"] = "XP to Level:"
+L["STATS_LABEL_RESTED_XP"] = "Rested XP:"
+L["STATS_LABEL_QUEST_XP"] = "Quest XP:"
+L["STATS_LABEL_TIME_ON_LEVEL"] = "Time on Level:"
+L["STATS_LABEL_EST_TIME_TO_LEVEL"] = "Est. Time to Level:"
+L["STATS_LABEL_DURATION"] = "Duration:"
+L["STATS_LABEL_STARTED"] = "Started:"
+L["STATS_LABEL_XP_GAINED"] = "XP Gained:"
+L["STATS_LABEL_LEVELS_GAINED"] = "Levels Gained:"
+L["STATS_LABEL_XP_PER_HOUR"] = "XP/Hour:"
+L["STATS_LABEL_TOTAL_XP"] = "Total XP:"
+
+-- Minimap button
+L["MINIMAP_TT_SESSION_XP"] = "Session XP:"
+L["MINIMAP_TT_SESSION_TIME"] = "Session Time:"
+L["MINIMAP_TT_HINT_LEFT_CLICK"] = "|cff00ff00Left-Click:|r Open Stats"
+L["MINIMAP_TT_HINT_RIGHT_CLICK"] = "|cff00ff00Right-Click:|r Open Options"
+L["MINIMAP_TT_HINT_SHIFT_CLICK"] = "|cff00ff00Shift-Click:|r Reset Session"
+L["MINIMAP_TT_HINT_DRAG"] = "|cff00ff00Drag:|r Move Button"
 
 -- Circular bar options
 L["OPT_BAR_SIZE_SMALL"] = "Small"
@@ -314,6 +353,11 @@ L["COLOR_SECONDARY_HONOR_DESC"] = "Color of the secondary bar when Honor is sele
 L["COLOR_SECONDARY_PROFESSION"] = "Secondary Bar: Profession"
 L["COLOR_SECONDARY_PROFESSION_DESC"] = "Color of the secondary bar when Profession is selected as the source."
 
+-- Color picker rows (Options panel)
+L["OPT_COLOR_CURRENT_FMT"] = "Current: #%s (Alpha %d%%)"
+L["OPT_COLOR_SWATCH_TITLE_FMT"] = "%s Color"
+L["OPT_COLOR_SWATCH_RESET_HINT"] = "Shift-Click to restore the default color."
+
 -- ============================================================================
 -- MESSAGES
 -- ============================================================================
@@ -327,6 +371,10 @@ L["MSG_OPTIONS_UNAVAILABLE"] = "Options panel is unavailable."
 L["MSG_RESET_UNAVAILABLE"] = "Unable to reset settings."
 L["MSG_RESET_STATS_UNAVAILABLE"] = "Unable to reset statistics."
 L["MSG_SETTINGS_RESET"] = "Settings reset to defaults"
+L["MSG_SESSION_RESET"] = "Session reset."
+L["MSG_USE_STATS_COMMAND"] = "Use /xpbe stats to open stats window."
+L["MSG_USE_OPTIONS_COMMAND"] = "Use /xpbe to open options."
+L["MSG_COLOR_PICKER_UNAVAILABLE"] = "Color picker is not available."
 
 -- ============================================================================
 -- REPUTATION

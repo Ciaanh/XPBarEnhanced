@@ -309,7 +309,23 @@ function Shared.BuildSecondaryLabel(context)
 end
 
 function Shared.OpenReputationPanel()
-    if Shared.GetActiveSecondarySource and Shared.GetActiveSecondarySource() == "housing" then
+    local source = Shared.GetActiveSecondarySource and Shared.GetActiveSecondarySource()
+
+    -- Honor: open the PvP UI; Profession: open the professions book.
+    if source == "honor" and TogglePVPUI then
+        TogglePVPUI()
+        return
+    elseif source == "profession" then
+        if ToggleProfessionsBook then
+            ToggleProfessionsBook()
+            return
+        elseif ToggleSpellBook then
+            ToggleSpellBook("professions")
+            return
+        end
+    end
+
+    if source == "housing" then
         if HousingFramesUtil and HousingFramesUtil.ToggleHousingDashboard then
             HousingFramesUtil.ToggleHousingDashboard()
             return

@@ -66,10 +66,21 @@ function GoalTracker:OnXPBroadcast(context)
         return
     end
 
-    -- New level (or first run): reset fired milestones.
+    -- New level (or first run): reset fired milestones. On the very first
+    -- run for a character, seed already-crossed milestones silently so
+    -- pre-existing progress is not announced at login.
     if state.level ~= level then
+        local firstRun = not state.level or state.level == 0
         state.level = level
         state.fired = {}
+        if firstRun then
+            local seedPct = (currentXP / xpMax) * 100
+            for _, milestone in ipairs(MILESTONES) do
+                if seedPct >= milestone then
+                    state.fired[milestone] = true
+                end
+            end
+        end
     end
 
     local pct = (currentXP / xpMax) * 100

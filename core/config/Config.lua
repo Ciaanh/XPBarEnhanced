@@ -625,6 +625,18 @@ function Config:Reset()
     if Addon.Database and Addon.Database.Initialize then
         Addon.Database:Initialize()
     end
+    -- Re-initialize session services (their cached _session tables point at
+    -- the discarded db) and re-drive the primary style to the new default.
+    for _, service in ipairs({"Session", "ReputationSession", "HousingSession", "HonorSession", "ProfessionSession"}) do
+        local svc = Addon[service]
+        if svc and svc.Initialize then
+            svc:Initialize()
+        end
+    end
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        Addon.BarManager.currentStyle = nil
+        Addon.BarManager:SetStyle(self:GetOptionValue("barStyle"))
+    end
     -- Emit config change so UI updates
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         local ctx = XPBarContextBuilder.BuildContext("CONFIG_UPDATED")

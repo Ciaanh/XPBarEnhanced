@@ -466,8 +466,14 @@ end
 
 local function ShowTerminalTooltip(owner)
     local cfg = owner.__xpbar_config or {}
-    local db  = Addon.db or {}
-    if (cfg.tooltip and cfg.tooltip.enabled == false) or db.showTooltip == false then return end
+    -- Profile-aware read (falls back to raw db pre-Config)
+    local showTooltip
+    if Addon.Config and Addon.Config.GetOptionValue then
+        showTooltip = Addon.Config:GetOptionValue("showTooltip")
+    else
+        showTooltip = Addon.db and Addon.db.showTooltip
+    end
+    if (cfg.tooltip and cfg.tooltip.enabled == false) or showTooltip == false then return end
 
     local context = XPBarContextBuilder and XPBarContextBuilder.BuildContext("TOOLTIP") or {}
     local f   = GetOrCreateTerminalTooltip()

@@ -70,7 +70,7 @@ function Database:Initialize()
     Addon.db.professionSessionData = Addon.db.professionSessionData or {}
 
     -- Set player key
-    local playerName = UnitName("player") or "Unknown"
+    local playerName = (C_PlayerInfo and C_PlayerInfo.GetName and C_PlayerInfo.GetName()) or UnitName("player") or "Unknown"
     local realmName = GetRealmName() or "Unknown"
     Addon.playerKey = string.format("%s-%s", playerName, realmName)
 
@@ -141,7 +141,7 @@ end
 function Database:GetPlayerKey()
     -- Generate playerKey on-demand if not yet initialized
     if not Addon.playerKey then
-        local playerName = UnitName("player") or "Unknown"
+        local playerName = (C_PlayerInfo and C_PlayerInfo.GetName and C_PlayerInfo.GetName()) or UnitName("player") or "Unknown"
         local realmName = GetRealmName() or "Unknown"
         Addon.playerKey = string.format("%s-%s", playerName, realmName)
     end

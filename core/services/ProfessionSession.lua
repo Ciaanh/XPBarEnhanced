@@ -43,10 +43,17 @@ local function BuildUnavailableContext()
 end
 
 local function GetProfessionInfoForIndex(index)
-    if not index then
+    -- Sanitize consistently: no truthiness/comparison on possibly-secret values
+    if IsSecret(index) or not index then
         return nil
     end
     local name, _, rank, maxRank, _, _, skillLine = GetProfessionInfo(index)
+    if IsSecret(name) then
+        name = nil
+    end
+    if IsSecret(skillLine) then
+        skillLine = nil
+    end
     rank = SafeNumber(rank)
     maxRank = SafeNumber(maxRank)
     if name and rank and maxRank and maxRank > 0 then

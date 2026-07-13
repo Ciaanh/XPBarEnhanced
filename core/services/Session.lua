@@ -324,7 +324,7 @@ function Session:OnLevelUp(level)
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         Addon.EventBus:Emit(
             Addon.EventNames.XPBAR_BROADCAST_UPDATE,
-            XPBarContextBuilder.BuildContext("PLAYER_LEVEL_UP")
+            XPBarContextBuilder.BuildContext("PLAYER_LEVEL_UP", currentLevel)
         )
     end
 end

@@ -4,6 +4,7 @@
 
 local Addon = XPBarEnhanced
 Addon.MinimapButton = Addon.MinimapButton or {}
+local L = Addon.L or {}
 
 ---@class MinimapButton
 local MinimapButton = Addon.MinimapButton
@@ -98,7 +99,7 @@ local function ShowTooltip()
     GameTooltip:ClearLines()
 
     -- Title
-    GameTooltip:AddLine("XP Bar Enhanced", 1, 0.82, 0)
+    GameTooltip:AddLine(L["ADDON_NAME"], 1, 0.82, 0)
 
     -- Quick stats if available
     local session = Addon.Session and Addon.Session:GetCurrent()
@@ -109,21 +110,21 @@ local function ShowTooltip()
 
         if gainedXP > 0 then
             GameTooltip:AddLine(" ")
-            GameTooltip:AddDoubleLine("Session XP:", tostring(gainedXP), 0.8, 0.8, 0.8, 1, 1, 1)
+            GameTooltip:AddDoubleLine(L["MINIMAP_TT_SESSION_XP"], tostring(gainedXP), 0.8, 0.8, 0.8, 1, 1, 1)
 
             if duration > 0 then
                 local durationStr = TimeCalc and TimeCalc.FormatSmart(duration) or (duration .. "s")
-                GameTooltip:AddDoubleLine("Session Time:", durationStr, 0.8, 0.8, 0.8, 1, 1, 1)
+                GameTooltip:AddDoubleLine(L["MINIMAP_TT_SESSION_TIME"], durationStr, 0.8, 0.8, 0.8, 1, 1, 1)
             end
         end
     end
 
     -- Instructions
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("|cff00ff00Left-Click:|r Open Stats", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("|cff00ff00Right-Click:|r Open Options", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("|cff00ff00Shift-Click:|r Reset Session", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("|cff00ff00Drag:|r Move Button", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L["MINIMAP_TT_HINT_LEFT_CLICK"], 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L["MINIMAP_TT_HINT_RIGHT_CLICK"], 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L["MINIMAP_TT_HINT_SHIFT_CLICK"], 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L["MINIMAP_TT_HINT_DRAG"], 0.8, 0.8, 0.8)
 
     GameTooltip:Show()
 end
@@ -148,7 +149,7 @@ local function OnClick(self, mouseButton)
             -- and a broadcast refreshes the UI.
             if Addon.Session and Addon.Session.OnEnteringWorld then
                 Addon.Session:OnEnteringWorld(true, false)
-                print("|cff00ff00XP Bar Enhanced:|r Session reset.")
+                print("|cff00ff00" .. L["ADDON_NAME"] .. ":|r " .. L["MSG_SESSION_RESET"])
             end
         else
             -- Open stats window
@@ -162,7 +163,7 @@ local function OnClick(self, mouseButton)
                     frame:Show()
                 end
             else
-                print("|cff00ff00XP Bar Enhanced:|r Use /xpbe stats to open stats window.")
+                print("|cff00ff00" .. L["ADDON_NAME"] .. ":|r " .. L["MSG_USE_STATS_COMMAND"])
             end
         end
     elseif mouseButton == "RightButton" then
@@ -170,9 +171,9 @@ local function OnClick(self, mouseButton)
         if Addon.Options and Addon.Options.Open then
             Addon.Options:Open()
         elseif Settings and Settings.OpenToCategory then
-            Settings.OpenToCategory("XP Bar Enhanced")
+            Settings.OpenToCategory(L["ADDON_NAME"])
         else
-            print("|cff00ff00XP Bar Enhanced:|r Use /xpbe to open options.")
+            print("|cff00ff00" .. L["ADDON_NAME"] .. ":|r " .. L["MSG_USE_OPTIONS_COMMAND"])
         end
     end
 

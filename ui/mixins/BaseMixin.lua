@@ -148,6 +148,8 @@ function BaseMixin:OnShow()
 						if self_ref and mgr and mgr.ShouldRepurposePrimaryAtMaxLevel
 							and mgr:ShouldRepurposePrimaryAtMaxLevel() then
 							self_ref:MarkDirty(nil)
+							-- Source gains count as activity for fade-when-inactive
+							self_ref:WakeFromFade()
 						end
 					end)
 			end
@@ -276,6 +278,11 @@ function BaseMixin:MarkDirty(context)
 	-- Always prefer the most recent should-animate context for up-to-date XP state;
 	-- only fall back to keeping an earlier context if nothing is pending yet.
 	if context and context.shouldAnimate then
+		-- A replaced CONFIG_UPDATED context must still trigger the fade
+		-- re-evaluation (the option may have just been toggled off).
+		if self._pendingContext and self._pendingContext.event == "CONFIG_UPDATED" then
+			self._pendingFadeRefresh = true
+		end
 		self._pendingContext = context
 	elseif not self._pendingContext then
 		self._pendingContext = context
@@ -298,7 +305,8 @@ function BaseMixin:MarkDirty(context)
 
 				-- Fade-when-inactive: gains/levels count as activity; config
 				-- changes re-evaluate the option (it may have been toggled)
-				if ctx and ctx.event == "CONFIG_UPDATED" then
+				if (ctx and ctx.event == "CONFIG_UPDATED") or self_ref._pendingFadeRefresh then
+					self_ref._pendingFadeRefresh = nil
 					self_ref:RefreshFadeState()
 				elseif ctx and (ctx.hasGainedXP or ctx.hasLeveledUp) then
 					self_ref:WakeFromFade()

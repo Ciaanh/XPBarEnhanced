@@ -119,15 +119,9 @@ function OrbBarStyleTemplate:UpdatePercentText(context)
     local currentXP = (context and context.currentXP) or 0
     local maxXP = (context and context.xpMax) or 1
 
-    local decimals = 1
-    if Addon and Addon.Database then
-        local db = Addon.Database:GetDB()
-        if db then
-            decimals = db.percentDecimals or 1
-        end
-    elseif context then
-        decimals = context.percentDecimals or 1
-    end
+    -- Context first (already profile-resolved), then profile-aware Config fallback
+    local decimals = (context and context.percentDecimals) or
+        (Addon and Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("percentDecimals")) or 1
 
     local percent = (maxXP > 0) and (currentXP / maxXP * 100) or 0
     self.PercentText:SetText(string.format("%." .. decimals .. "f%%", percent))

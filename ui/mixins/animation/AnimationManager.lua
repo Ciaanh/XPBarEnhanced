@@ -356,6 +356,7 @@ function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 
 	-- Setup animation state
 	anim.isAnimating = true
+	anim.completionHandled = nil
 	anim.startTime = now
 	anim.duration = duration
 	anim.targetRatio = targetRatio
@@ -644,6 +645,11 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 		-- DON'T clear isFlashing here - let flash complete independently
 		-- DON'T clear eventContext yet - flash still needs it
 
+		-- The flash tail keeps the bar registered after completion; run the
+		-- cleanup step and completion callback only once.
+		local firstCompletion = not anim.completionHandled
+		anim.completionHandled = true
+
 		-- Send final cleanup step with iteration data + event context
 		local cleanupIterationData = {
 			currentRatio = anim.targetRatio,
@@ -663,7 +669,7 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 			config = config
 		}
 
-		if bar.ApplyAnimationStep then
+		if firstCompletion and bar.ApplyAnimationStep then
 			bar:ApplyAnimationStep(cleanupIterationData, eventContext)
 		end
 
@@ -722,6 +728,7 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 
 			-- Start phase 2: animate from 0 to new XP
 			anim.isAnimating = true
+			anim.completionHandled = nil
 			anim.startRatio = 0
 			anim.targetRatio = phase2.targetRatio
 			anim.startTime = now
@@ -734,8 +741,8 @@ function AnimationManager:UpdateBarAnimation(bar, now)
 			-- Register bar to continue animation
 			self:Register(bar)
 		else
-			-- Call completion callback if bar provides one
-			if bar.OnAnimationComplete then
+			-- Call completion callback if bar provides one (once per animation)
+			if firstCompletion and bar.OnAnimationComplete then
 				bar:OnAnimationComplete(eventContext)
 			end
 		end

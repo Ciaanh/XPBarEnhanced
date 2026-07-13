@@ -27,7 +27,7 @@ local function buildText()
     if level >= maxLevel and Shared and Shared.GetSecondaryInitialContext then
         local src = Shared.GetSecondaryInitialContext()
         if src and src.isAvailable then
-            return string.format("%s: %d%%", src.name or "", src.percent or 0)
+            return string.format(L["LDB_SOURCE_FMT"], src.name or "", src.percent or 0)
         end
         return L["LDB_MAX_LEVEL"]
     end

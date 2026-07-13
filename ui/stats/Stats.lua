@@ -253,6 +253,43 @@ function StatsFrameMixin:EnableDrag(options)
 end
 -- End: embedded position + drag behavior
 
+---Apply localized text to the XML-defined FontStrings (page titles, row
+---labels, window title). XML carries no hardcoded text= attributes.
+function StatsFrameMixin:ApplyLocalizedLabels()
+    SetTextSafe(self.TitleText, L["ADDON_NAME"])
+
+    local leftPage = self.LeftPage
+    if leftPage then
+        SetTextSafe(leftPage.PageTitle, L["STATS_PAGE_CURRENT_LEVEL"])
+        local content = leftPage.Content
+        if content then
+            SetTextSafe(content.CurrentLevelLabel, L["STATS_LABEL_LEVEL"])
+            SetTextSafe(content.CurrentXPLabel, L["STATS_LABEL_CURRENT_XP"])
+            SetTextSafe(content.MaxXPLabel, L["STATS_LABEL_MAX_XP"])
+            SetTextSafe(content.ProgressLabel, L["STATS_LABEL_PROGRESS"])
+            SetTextSafe(content.RemainingXPLabel, L["STATS_LABEL_XP_TO_LEVEL"])
+            SetTextSafe(content.RestedXPLabel, L["STATS_LABEL_RESTED_XP"])
+            SetTextSafe(content.QuestXPLabel, L["STATS_LABEL_QUEST_XP"])
+            SetTextSafe(content.LevelTimeLabel, L["STATS_LABEL_TIME_ON_LEVEL"])
+            SetTextSafe(content.TimeToLevelLabel, L["STATS_LABEL_EST_TIME_TO_LEVEL"])
+        end
+    end
+
+    local rightPage = self.RightPage
+    if rightPage then
+        SetTextSafe(rightPage.PageTitle, L["STATS_PAGE_CURRENT_SESSION"])
+        local content = rightPage.Content
+        if content then
+            SetTextSafe(content.SessionDurationLabel, L["STATS_LABEL_DURATION"])
+            SetTextSafe(content.SessionStartLabel, L["STATS_LABEL_STARTED"])
+            SetTextSafe(content.SessionXPLabel, L["STATS_LABEL_XP_GAINED"])
+            SetTextSafe(content.LevelsGainedLabel, L["STATS_LABEL_LEVELS_GAINED"])
+            SetTextSafe(content.XPPerHourLabel, L["STATS_LABEL_XP_PER_HOUR"])
+            SetTextSafe(content.TotalSessionXPLabel, L["STATS_LABEL_TOTAL_XP"])
+        end
+    end
+end
+
 function StatsFrameMixin:OnLoad()
     if self._xpbeInitialized then
         return
@@ -261,6 +298,8 @@ function StatsFrameMixin:OnLoad()
 
     local statsFrame = self
     Stats:SetFrame(statsFrame)
+
+    statsFrame:ApplyLocalizedLabels()
 
     statsFrame:SetClampedToScreen(true)
 

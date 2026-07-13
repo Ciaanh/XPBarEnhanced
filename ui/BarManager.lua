@@ -298,10 +298,14 @@ function BarManager:SetStyle(nextStyle)
             end
         end
         self.currentStyle = "none"
-        self:ApplyDefaultXPBarVisibility()
+        -- Refresh the secondary manager FIRST so the suppression predicate is
+        -- evaluated against its current style: otherwise, in combat, the main
+        -- container is shown here and the secondary's re-hide defers to regen,
+        -- leaving both Blizzard's bar and ours visible for the fight.
         if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
             Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
         end
+        self:ApplyDefaultXPBarVisibility()
         return
     end
 
@@ -396,14 +400,15 @@ function BarManager:OnLevelUp(newLevel)
     local level = newLevel or (UnitLevel("player") or 0)
     local userStyle = GetOptionValue("barStyle", "classic")
 
-    -- Fire style-specific celebration hook before switching style
-    self:TriggerStyleCelebration()
-
     if (IsXPUserDisabled and IsXPUserDisabled()) then
         self:SetStyle("none")
     elseif IsPlayerAtMaxLevel(level) and not self:ShouldRepurposePrimaryAtMaxLevel() then
+        -- Ding to max with no repurpose: the bar is about to hide, so no
+        -- celebration (UIFrameFlash would force-Show the hidden frame).
         self:SetStyle("none")
     else
+        -- Fire style-specific celebration hook, then re-assert the style
+        self:TriggerStyleCelebration()
         self:SetStyle(userStyle)
     end
 end
