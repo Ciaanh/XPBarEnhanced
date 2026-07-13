@@ -63,6 +63,15 @@ function StyleMixin:GetTextTickerContext()
     return self._lastContext or self:GetInitialContext()
 end
 
+-- Compact label suited to the orb footprint: percent only (or MAX); the
+-- full name/standing details live in the tooltip.
+local function BuildOrbLabel(context)
+    if context and context.isMaxed then
+        return "MAX"
+    end
+    return string.format("%d%%", (context and context.percent) or 0)
+end
+
 function StyleMixin:Render(context)
     if not SharedStyleHelpers.BeginSecondaryRender(self, context) then
         return
@@ -72,7 +81,7 @@ function StyleMixin:Render(context)
         or {r = 0.7, g = 0.3, b = 0.85, a = 1}
     SharedStyleHelpers.ApplyStatusBarProgress(self.Bar, context, color)
     if self.LabelContainer and self.LabelContainer.Label then
-        self.LabelContainer.Label:SetText(SharedStyleHelpers.BuildSecondaryLabel(context))
+        self.LabelContainer.Label:SetText(BuildOrbLabel(context))
     end
 end
 
@@ -102,7 +111,7 @@ function StyleMixin:OnTextTick(context)
         return
     end
     if self.LabelContainer and self.LabelContainer.Label then
-        self.LabelContainer.Label:SetText(SharedStyleHelpers.BuildSecondaryLabel(context))
+        self.LabelContainer.Label:SetText(BuildOrbLabel(context))
     end
 end
 
@@ -119,11 +128,20 @@ function StyleMixin:OnSecondaryLoad()
     if self.Bar then
         local fillMask = self.Bar:CreateMaskTexture()
         fillMask:SetTexture(CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-        fillMask:SetAllPoints(self.Orb or self.Bar)
+        fillMask:SetAllPoints(self)
 
         local fillTexture = self.Bar.GetStatusBarTexture and self.Bar:GetStatusBarTexture()
         if fillTexture and fillTexture.AddMaskTexture then
             fillTexture:AddMaskTexture(fillMask)
+        end
+    end
+
+    -- Sibling frames share a frame level; force the glass/ring dressing above
+    -- the fill StatusBar so the sheen curves over the fill.
+    if self.OrbOverlay and self.Bar then
+        self.OrbOverlay:SetFrameLevel(self.Bar:GetFrameLevel() + 1)
+        if self.LabelContainer then
+            self.LabelContainer:SetFrameLevel(self.Bar:GetFrameLevel() + 2)
         end
     end
 

@@ -7,14 +7,10 @@
 	<Script file="OrbSecondaryBarStyle.lua"/>
 
 	<Frame name="OrbReputationBarTemplate" virtual="true" mixin="XPBarOrbReputationMixin" frameStrata="MEDIUM" fixedFrameStrata="true" enableMouse="true">
-		<Size x="70" y="86"/>
+		<Size x="70" y="70"/>
 		<Frames>
-			<!-- Orb disc area (top 70x70 of the frame; label uses the rest) -->
-			<Frame parentKey="Orb">
-				<Size x="70" y="70"/>
-				<Anchors>
-					<Anchor point="TOP"/>
-				</Anchors>
+			<!-- Orb disc (the whole frame; the label hangs below it) -->
+			<Frame parentKey="Orb" setAllPoints="true">
 				<Layers>
 					<Layer level="BACKGROUND">
 						<Texture parentKey="Background" file="Interface\Buttons\WHITE8X8" setAllPoints="true">
@@ -30,11 +26,7 @@
 			</Frame>
 
 			<!-- Fill StatusBar overlapping the orb disc -->
-			<StatusBar parentKey="Bar" minValue="0" maxValue="1" defaultValue="0" orientation="VERTICAL">
-				<Size x="70" y="70"/>
-				<Anchors>
-					<Anchor point="TOP"/>
-				</Anchors>
+			<StatusBar parentKey="Bar" minValue="0" maxValue="1" defaultValue="0" orientation="VERTICAL" setAllPoints="true">
 				<BarTexture file="Interface\Buttons\WHITE8X8"/>
 			</StatusBar>
 
@@ -54,13 +46,13 @@
 				</Layers>
 			</Frame>
 
-			<!-- Label under the orb -->
+			<!-- Compact label hanging below the orb -->
 			<Frame parentKey="LabelContainer" frameStrata="MEDIUM" setAllPoints="true">
 				<Layers>
 					<Layer level="OVERLAY">
 						<FontString parentKey="Label" inherits="GameFontNormalSmall" justifyH="CENTER">
 							<Anchors>
-								<Anchor point="BOTTOM" x="0" y="0"/>
+								<Anchor point="TOP" relativePoint="BOTTOM" x="0" y="-2"/>
 							</Anchors>
 							<Shadow>
 								<Offset x="1" y="-1"/>
