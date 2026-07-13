@@ -102,7 +102,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 | **Effort** | Medium per source |
 | **Reuse** | `secondaryBarSource` architecture (reputation/housing) is designed for extension; `HousingSession` is the template: one service emitting a normalized context |
 | **Candidates** | ~~Honor/PvP~~ ✅, ~~profession knowledge~~ ✅ (skill rank), Delve journey level (not started) |
-| **Notes** | Honor uses wrap-aware gain (`ComputeWrappedGain`, like renown) via `UnitHonor/UnitHonorMax/UnitHonorLevel`; routed on `HONOR_XP_UPDATE`/`HONOR_LEVEL_UPDATE`. Profession tracks the first primary profession with room to grow (falls back to the first primary), via `GetProfessions`/`GetProfessionInfo`; routed on `SKILL_LINES_CHANGED`/`TRADE_SKILL_UPDATE`. Both sanitize with `issecretvalue`/`SafeNumber`. **Deferred:** per-profession sub-selection (which of the two primaries to track) — currently automatic. |
+| **Notes** | Honor uses wrap-aware gain (`ComputeWrappedGain`, like renown) via `UnitHonor/UnitHonorMax/UnitHonorLevel`; routed on `HONOR_XP_UPDATE`/`HONOR_LEVEL_UPDATE`. Profession tracks the first primary profession with room to grow (falls back to the first primary), via `GetProfessions`/`GetProfessionInfo`; routed on `SKILL_LINES_CHANGED`/`CHAT_MSG_SKILL`. Both sanitize with `issecretvalue`/`SafeNumber`. **Deferred:** per-profession sub-selection (which of the two primaries to track) — currently automatic. |
 
 ### 6. Goals & ETA notifications
 | | |

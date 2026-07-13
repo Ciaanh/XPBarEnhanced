@@ -314,7 +314,7 @@ local ROUTER_DISPATCH = {
     SKILL_LINES_CHANGED = function()
         DispatchProfessionUpdate()
     end,
-    TRADE_SKILL_UPDATE = function()
+    CHAT_MSG_SKILL = function()
         DispatchProfessionUpdate()
     end,
     UNIT_QUEST_LOG_CHANGED = function()
