@@ -67,7 +67,7 @@ end
 -- full name/standing details live in the tooltip.
 local function BuildOrbLabel(context)
     if context and context.isMaxed then
-        return "MAX"
+        return (Addon.L and Addon.L["LABEL_MAX"]) or "MAX"
     end
     return string.format("%d%%", (context and context.percent) or 0)
 end

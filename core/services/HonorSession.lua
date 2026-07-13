@@ -153,12 +153,15 @@ function HonorSession:OnHonorUpdate()
     local level = SafeNumber(UnitHonorLevel("player"))
 
     if current and level and session.lastHonor ~= nil and session.lastHonorLevel ~= nil then
-        local RepCalc = Addon.ReputationCalculations
         local gain
-        if level > session.lastHonorLevel and RepCalc and RepCalc.ComputeWrappedGain then
-            -- Level up: credit the remainder of the previous level plus the new
-            -- level's progress (wrap-aware, like renown).
-            gain = RepCalc.ComputeWrappedGain(current, session.lastHonor, session.lastHonorMax)
+        if level > session.lastHonorLevel then
+            -- Level crossed: credit the remainder of the previous level plus
+            -- the new level's progress. We KNOW a level was crossed, so this
+            -- must not depend on current < lastHonor (a big award can land
+            -- above the old value and would otherwise drop a full cycle).
+            local lastMax = session.lastHonorMax or 0
+            local remainder = math.max(0, lastMax - session.lastHonor)
+            gain = remainder + math.max(0, current)
         else
             gain = math.max(0, current - session.lastHonor)
         end

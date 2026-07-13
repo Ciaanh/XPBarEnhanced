@@ -462,7 +462,10 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
     -- primary style (it may now keep a custom style at max level instead of
     -- collapsing to "none") and the secondary bar (it hides to avoid a
     -- double render). Clear currentStyle so SetStyle does not early-return.
-    if key == "maxLevelPrimaryShowsSecondary" then
+    if key == "maxLevelPrimaryShowsSecondary" or key == "showSecondaryBar" then
+        -- Both options change repurpose eligibility at max level; re-drive the
+        -- primary style so the repurposed bar appears/disappears immediately
+        -- instead of waiting for the next source broadcast.
         if Addon.BarManager and Addon.BarManager.SetStyle then
             Addon.BarManager.currentStyle = nil
             Addon.BarManager:SetStyle(self:GetOptionValue("barStyle"))
@@ -637,15 +640,20 @@ function Config:ResetStats()
         Addon.db.sessionData            = {}
         Addon.db.stats                  = {}
         Addon.db.reputationSessionData  = {}
+        Addon.db.housingSessionData     = {}
+        Addon.db.honorSessionData       = {}
+        Addon.db.professionSessionData  = {}
     end
     if Addon.ContextBuilder and Addon.ContextBuilder.ResetSession then
         Addon.ContextBuilder.ResetSession()
     end
-    if Addon.Session and Addon.Session.Initialize then
-        Addon.Session:Initialize()
-    end
-    if Addon.ReputationSession and Addon.ReputationSession.Initialize then
-        Addon.ReputationSession:Initialize()
+    -- Re-initialize every session service so their cached _session tables
+    -- point at the fresh stores.
+    for _, service in ipairs({"Session", "ReputationSession", "HousingSession", "HonorSession", "ProfessionSession"}) do
+        local svc = Addon[service]
+        if svc and svc.Initialize then
+            svc:Initialize()
+        end
     end
     local stats = Addon.Stats
     if stats and stats.Update then

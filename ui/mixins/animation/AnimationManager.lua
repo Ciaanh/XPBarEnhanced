@@ -419,6 +419,14 @@ function AnimationManager:PlayLevelUpCelebration(bar, config)
 		glow:SetColorTexture(1, 0.82, 0.1, 1)
 		glow:SetBlendMode("ADD")
 		glow:SetAlpha(0)
+		-- Styles with non-rectangular fills (orb) expose a mask to clip
+		-- runtime-created effect textures to their shape.
+		if bar.GetCelebrationMask then
+			local mask = bar:GetCelebrationMask()
+			if mask and glow.AddMaskTexture then
+				glow:AddMaskTexture(mask)
+			end
+		end
 		bar._celebrationGlow = glow
 
 		-- Two golden pulses: 0 -> 0.7 -> 0 -> 0.5 -> 0

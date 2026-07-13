@@ -520,8 +520,12 @@ end
 
 function RepSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     if not self._session then return end
+    local session = self._session
     if isInitialLogin then
-        local session = self._session
+        session.factionTotals = {}
+        session.sessionStart  = time()
+    elseif isReloadingUI and Addon.Config and Addon.Config:GetOptionValue("resetOnReload") then
+        -- Same reset semantics as the other session services
         session.factionTotals = {}
         session.sessionStart  = time()
     end

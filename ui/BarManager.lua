@@ -149,12 +149,16 @@ function BarManager:GetMaxLevelSecondaryContext()
     end
 
     local color = StyleHelpers and StyleHelpers.GetFactionColor and StyleHelpers.GetFactionColor(src) or nil
-    local maxVal = (src.max and src.max > 0) and src.max or 1
+    -- Rebase min-based scales (standard/friendship reputation, housing favor
+    -- use cumulative values with min > 0) so ratio and texts are correct.
+    local minVal = src.min or 0
+    local maxVal = math.max(1, (src.max or 1) - minVal)
+    local curVal = math.max(0, (src.current or 0) - minVal)
 
     return {
         event = "XPBAR:BROADCAST_UPDATE",
         source = src.source,
-        currentXP = src.current or 0,
+        currentXP = curVal,
         xpMax = maxVal,
         level = src.currentLevel or src.reactionLevel or 0,
         percent = src.percent,

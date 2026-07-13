@@ -276,6 +276,19 @@ function Session:OnLevelUp(level)
             session.sessionXP = session.gainedXP
             if source == "quest" then
                 session.questXP = (session.questXP or 0) + remainder
+            else
+                session.otherXP = (session.otherXP or 0) + remainder
+            end
+            -- Record in history like OnXPUpdate so charts/rates stay consistent
+            session.gainsHistory = session.gainsHistory or {}
+            table.insert(session.gainsHistory, {
+                timestamp = time(),
+                amount = remainder,
+                source = source,
+                level = currentLevel,
+            })
+            if #session.gainsHistory > 500 then
+                table.remove(session.gainsHistory, 1)
             end
         end
         -- Rebaseline to the start of the new level so the next PLAYER_XP_UPDATE

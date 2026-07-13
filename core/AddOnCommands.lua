@@ -93,10 +93,10 @@ local function handleStyle(style)
             currentStyle = Addon.db.barStyle or "classic"
         end
         print("|cFF00FF00XP Bar Enhanced:|r Current bar style: " .. currentStyle)
-        print("Usage: /xpbe style <none|classic|flat|vertical|circular|minimap_ring|terminal>")
+        print("Usage: /xpbe style <none|classic|flat|vertical|circular|minimap_ring|terminal|orb>")
         return
     end
-    if style == "none" or style == "classic" or style == "flat" or style == "vertical" or style == "circular" or style == "minimap_ring" or style == "terminal" then
+    if style == "none" or style == "classic" or style == "flat" or style == "vertical" or style == "circular" or style == "minimap_ring" or style == "terminal" or style == "orb" then
         if Addon.Config and Addon.Config.SetOptionKey then
             Addon.Config:SetOptionKey("barStyle", style)
             print("|cFF00FF00XP Bar Enhanced:|r Bar style set to: " .. style)

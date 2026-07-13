@@ -143,17 +143,12 @@ local function OnClick(self, mouseButton)
 
     if mouseButton == "LeftButton" then
         if IsShiftKeyDown() then
-            -- Reset session
-            if Addon.Session and Addon.Session.ResetSession then
-                Addon.Session:ResetSession()
+            -- Reset session: reuse the full login-reset path so every session
+            -- field (quest/other XP, history, levels, accum time) is cleared
+            -- and a broadcast refreshes the UI.
+            if Addon.Session and Addon.Session.OnEnteringWorld then
+                Addon.Session:OnEnteringWorld(true, false)
                 print("|cff00ff00XP Bar Enhanced:|r Session reset.")
-            elseif Addon.Session then
-                local session = Addon.Session:GetCurrent()
-                if session then
-                    session.gainedXP = 0
-                    session.sessionStart = time()
-                    print("|cff00ff00XP Bar Enhanced:|r Session reset.")
-                end
             end
         else
             -- Open stats window

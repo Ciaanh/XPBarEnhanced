@@ -344,6 +344,7 @@ L["HONOR_NAME"] = "Honor"
 L["HONOR_LEVEL_FMT"] = "Honor Level %d"
 L["PROFESSION_NAME"] = "Profession"
 L["PROFESSION_MAX_LABEL"] = "Max Skill"
+L["LABEL_MAX"] = "MAX"
 
 -- ============================================================================
 -- ERRORS

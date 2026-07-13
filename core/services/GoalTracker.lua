@@ -47,6 +47,13 @@ function GoalTracker:OnXPBroadcast(context)
         return
     end
 
+    -- Skip level-up broadcasts: UnitXP/UnitLevel can lag the event, and a
+    -- mixed-stale context would silently mark the new level's milestones as
+    -- fired. The following PLAYER_XP_UPDATE carries consistent values.
+    if context.hasLeveledUp then
+        return
+    end
+
     local currentXP = tonumber(context.currentXP)
     local xpMax = tonumber(context.xpMax)
     local level = tonumber(context.level)

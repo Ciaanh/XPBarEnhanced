@@ -1505,43 +1505,25 @@ end
 
 function Options:OnColorReset()
     self:UpdateColorControls()
-    -- Refresh bars to apply new colors
-    if Addon.Session and Addon.Session.EmitUpdate then
-        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
-    end
-    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
-        Addon.ReputationSession:EmitUpdate()
-    end
-    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
-        Addon.HousingSession:EmitUpdate()
+    -- Refresh bars to apply new colors (all domains, single helper)
+    if Addon.Colors and Addon.Colors.NotifyColorsChanged then
+        Addon.Colors:NotifyColorsChanged()
     end
 end
 
 function Options:OnColorChanged(colorKey, hex)
     self:UpdateColorControls()
-    -- Refresh bars to apply new colors
-    if Addon.Session and Addon.Session.EmitUpdate then
-        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
-    end
-    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
-        Addon.ReputationSession:EmitUpdate()
-    end
-    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
-        Addon.HousingSession:EmitUpdate()
+    -- Refresh bars to apply new colors (all domains, single helper)
+    if Addon.Colors and Addon.Colors.NotifyColorsChanged then
+        Addon.Colors:NotifyColorsChanged()
     end
 end
 
 function Options:OnColorCancel(colorKey, previousHex)
     self:UpdateColorControls()
-    -- Refresh bars to apply new colors
-    if Addon.Session and Addon.Session.EmitUpdate then
-        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
-    end
-    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
-        Addon.ReputationSession:EmitUpdate()
-    end
-    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
-        Addon.HousingSession:EmitUpdate()
+    -- Refresh bars to apply new colors (all domains, single helper)
+    if Addon.Colors and Addon.Colors.NotifyColorsChanged then
+        Addon.Colors:NotifyColorsChanged()
     end
 end
 

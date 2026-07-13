@@ -42,6 +42,7 @@ function OrbBarStyleTemplate:OnLoad()
         local fillMask = self.StatusBar:CreateMaskTexture()
         fillMask:SetTexture(CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
         fillMask:SetAllPoints(self)
+        self._fillMask = fillMask
 
         local fillTexture = self.StatusBar.GetStatusBarTexture and self.StatusBar:GetStatusBarTexture()
         if fillTexture and fillTexture.AddMaskTexture then
@@ -68,6 +69,11 @@ function OrbBarStyleTemplate:OnLoad()
     if XPBarMixinBase and XPBarMixinBase.OnLoad then
         XPBarMixinBase.OnLoad(self)
     end
+end
+
+--- Clip runtime-created effect textures (celebration glow) to the orb circle
+function OrbBarStyleTemplate:GetCelebrationMask()
+    return self._fillMask
 end
 
 -------------------------------------------------------------------
@@ -125,7 +131,8 @@ function OrbBarStyleTemplate:UpdatePercentText(context)
 
     local percent = (maxXP > 0) and (currentXP / maxXP * 100) or 0
     self.PercentText:SetText(string.format("%." .. decimals .. "f%%", percent))
-    self.PercentText:Show()
+    -- No unconditional Show(): visibility is owned by UpdateTextVisibility
+    -- (which honors the Blizzard status-text CVar).
 end
 
 -------------------------------------------------------------------
