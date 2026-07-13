@@ -104,7 +104,9 @@ local function BuildProfessionContext(self)
         source = "profession",
         isAvailable = true,
         name = name,
-        standingLabel = isMaxed and PROFESSION_MAX_LABEL or string.format("%d / %d", rank, maxRank),
+        -- No numeric standing: the "current / max" is already shown as the
+        -- progress value, so only label the maxed state to avoid duplication.
+        standingLabel = isMaxed and PROFESSION_MAX_LABEL or nil,
         factionType = "profession",
         isCompanion = false,
         current = rank,

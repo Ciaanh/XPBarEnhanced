@@ -159,9 +159,10 @@ function BarManager:GetMaxLevelSecondaryContext()
         percent = src.percent,
         standingLabel = src.standingLabel,
         -- The on-bar "level" text shows the source's standing (e.g. "Renown 3",
-        -- "Honor Level 5", "42 / 100") instead of "Level N", since most sources
-        -- have no plain numeric level.
-        levelTextOverride = src.standingLabel,
+        -- "Honor Level 5") instead of "Level N". Profession has no standing —
+        -- its progress is numeric and already shown centered — so use the
+        -- profession name there instead of duplicating the progress text.
+        levelTextOverride = (src.factionType == "profession") and src.name or src.standingLabel,
         -- Suppress XP-only visuals
         restedXP = 0,
         hasRestedXP = false,
