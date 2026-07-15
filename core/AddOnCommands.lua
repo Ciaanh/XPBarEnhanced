@@ -23,6 +23,8 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFprofile delete [name]|r - Delete a profile")
     print("  /xpbe |cFFFFFFFFreps|r - Export all faction IDs")
     print("  /xpbe |cFFFFFFFFdebugevents [on|off|show|reset]|r - Toggle/show/reset EventBus counters")
+    print("  /xpbe |cFFFFFFFFtest celebration|r - Preview the level-up celebration (no real level-up)")
+    print("  /xpbe |cFFFFFFFFtest milestone|r - Preview a level-progress notification (no real milestone)")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -295,6 +297,41 @@ local function handleProfile(arg)
     print("Usage: /xpbe profile [global|use <name>|new <name>|rename <new name>|delete [name]]")
 end
 
+-- Preview-only triggers for promo screenshots/GIFs: fire the visual effect
+-- directly on the current bar/session state without mutating real XP data
+-- or session totals.
+local function handleTest(arg)
+    arg = string.lower(arg or "")
+
+    if arg == "celebration" then
+        local manager = Addon.BarManager
+        local bar = manager and manager.GetCurrentFrame and manager:GetCurrentFrame()
+        local anim = Addon.AnimationManager
+        if bar and anim and anim.PlayLevelUpCelebration then
+            local config = bar.GetAnimationConfig and bar:GetAnimationConfig() or nil
+            anim:PlayLevelUpCelebration(bar, config)
+            print("|cff33ff99XP Bar Enhanced:|r Celebration preview triggered.")
+        else
+            print("|cFFFF0000XP Bar Enhanced:|r No active bar frame to preview on.")
+        end
+        return
+    elseif arg == "milestone" then
+        local tracker = Addon.GoalTracker
+        if tracker and tracker.PreviewMilestone then
+            -- Preview-only: does not touch persisted milestone state, so it
+            -- can't suppress or duplicate a real notification later.
+            local level = (UnitLevel and UnitLevel("player")) or 1
+            tracker:PreviewMilestone(75, level, 1800)
+            print("|cff33ff99XP Bar Enhanced:|r Milestone preview triggered (75%).")
+        else
+            print("|cFFFF0000XP Bar Enhanced:|r Milestone tracker unavailable.")
+        end
+        return
+    end
+
+    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe test <celebration|milestone>")
+end
+
 local function handleSlashCommand(message)
     local command, arg = string.match(message or "", "^(%S*)%s*(.-)$")
     command = string.lower(command or "")
@@ -321,6 +358,8 @@ local function handleSlashCommand(message)
         handleReps()
     elseif command == "debugevents" then
         handleDebugEvents(arg)
+    elseif command == "test" then
+        handleTest(arg)
     else
         printUnknown(command)
     end

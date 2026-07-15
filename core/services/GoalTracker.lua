@@ -104,6 +104,20 @@ function GoalTracker:OnXPBroadcast(context)
     end
 end
 
+-- Preview a milestone notification without touching persisted milestone
+-- state (used by /xpbe test milestone for promo screenshots/GIFs).
+function GoalTracker:PreviewMilestone(milestone, level, eta)
+    milestone = milestone or 75
+    level = level or 1
+    local text
+    if eta and eta > 0 and Addon.TextFormatter and Addon.TextFormatter.FormatTime then
+        text = string.format(L["GOAL_MILESTONE_ETA"], level, milestone, Addon.TextFormatter:FormatTime(eta, true))
+    else
+        text = string.format(L["GOAL_MILESTONE"], level, milestone)
+    end
+    notify(text)
+end
+
 function GoalTracker:Initialize()
     if self._initialized then
         return
