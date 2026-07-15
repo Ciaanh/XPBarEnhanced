@@ -10,6 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 Reads version from `XPBarEnhanced.toc`, stages addon files into an `XPBarEnhanced/` directory, and produces `.build/XPBarEnhanced-v<version>.zip`. There are no automated tests or lint steps — validation is manual, in-game. If a Lua 5.1 toolchain is available, run `luac -p <file>` on every touched Lua file before considering a change done (WoW runs Lua 5.1).
 
+**Publish:** pushing a `v*` tag triggers `.github/workflows/release.yml` (BigWigs packager), which packages per `.pkgmeta` and publishes to CurseForge, WoWInterface, and GitHub Releases (project IDs come from the TOC; changelog from `CHANGELOG.md`; requires the `CF_API_KEY`/`WOWI_API_TOKEN` repo secrets).
+
 Feature/style proposals and their impact studies live in `ROADMAP.md`.
 
 **Version changes must stay consistent across all four locations:**

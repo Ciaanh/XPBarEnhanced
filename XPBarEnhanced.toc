@@ -13,6 +13,7 @@
 ## X-Category: Quests & Leveling
 ## X-Website: https://github.com/Ciaanh/XPBarEnhanced
 ## X-Curse-Project-ID: 1372659
+## X-WoWI-ID: 27090
 ## X-License: MIT
 ## X-Localizations: enUS
 ## X-Compatibility: Retail
