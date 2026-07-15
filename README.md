@@ -20,7 +20,6 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 - **Color Customization** — Full control over bar and overlay colors
 - **Minimap Button** — Quick access to options and stats
 - **Animations & Celebration** — Smooth fill, flash-on-gain, two-phase level-up animations, and an optional level-up celebration with golden glow and fanfare
-- **Fade When Inactive** — Optionally fade the bar to a configurable opacity when no XP is gained for a while
 - **Level Progress Notifications** — Announces 25%/50%/75% level progress with the estimated time to ding
 - **LibDataBroker Feed** — XP/h and time-to-level datatext for Titan Panel, Bazooka, or ElvUI
 

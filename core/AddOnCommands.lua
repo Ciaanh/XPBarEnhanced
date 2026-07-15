@@ -25,8 +25,6 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFdebugevents [on|off|show|reset]|r - Toggle/show/reset EventBus counters")
     print("  /xpbe |cFFFFFFFFtest celebration|r - Preview the level-up celebration (no real level-up)")
     print("  /xpbe |cFFFFFFFFtest milestone|r - Preview a level-progress notification (no real milestone)")
-    print("  /xpbe |cFFFFFFFFtest fade|r - Fade the bar now (requires 'Fade when inactive' enabled)")
-    print("  /xpbe |cFFFFFFFFtest wake|r - Restore full opacity after a fade test")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -329,35 +327,9 @@ local function handleTest(arg)
             print("|cFFFF0000XP Bar Enhanced:|r Milestone tracker unavailable.")
         end
         return
-    elseif arg == "fade" then
-        local manager = Addon.BarManager
-        local bar = manager and manager.GetCurrentFrame and manager:GetCurrentFrame()
-        if not bar or not bar._OnFadeIdle then
-            print("|cFFFF0000XP Bar Enhanced:|r No active bar frame to preview on.")
-            return
-        end
-        if Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("fadeWhenInactive") ~= true then
-            print("|cFFFF0000XP Bar Enhanced:|r Enable 'Fade when inactive' in options first, then retry.")
-            return
-        end
-        -- Skip straight to the idle-fade step (normally reached after fadeDelay).
-        bar:CancelFadeTimer()
-        bar:_OnFadeIdle()
-        print("|cff33ff99XP Bar Enhanced:|r Fade preview triggered. Use '/xpbe test wake' to restore.")
-        return
-    elseif arg == "wake" then
-        local manager = Addon.BarManager
-        local bar = manager and manager.GetCurrentFrame and manager:GetCurrentFrame()
-        if bar and bar.WakeFromFade then
-            bar:WakeFromFade()
-            print("|cff33ff99XP Bar Enhanced:|r Restored full opacity.")
-        else
-            print("|cFFFF0000XP Bar Enhanced:|r No active bar frame to restore.")
-        end
-        return
     end
 
-    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe test <celebration|milestone|fade|wake>")
+    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe test <celebration|milestone>")
 end
 
 local function handleSlashCommand(message)

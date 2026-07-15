@@ -4,6 +4,10 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+
+- **Fade when inactive**: removed. The feature only faded the primary bar, leaving the secondary bar at full opacity whenever both were shown together — inconsistent enough that it was pulled rather than extended (`fadeWhenInactive`, `fadeDelay`, `idleOpacity` options and their runtime code are gone).
+
 ## [1.1.7] - 2026-07-14
 
 ### Added

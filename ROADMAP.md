@@ -61,11 +61,11 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 1. Fade when inactive + level-up celebration
 | | |
 |---|---|
-| **Status** | in progress — implemented (fadeWhenInactive/fadeDelay/idleOpacity + levelUpCelebration/celebrationSound), pending in-game validation |
+| **Status** | celebration shipped in v1.1.7; **fade-when-inactive removed** (decision 2026-07-16) |
 | **Impact** | High — highly visible user-facing options |
 | **Effort** | Medium |
 | **Reuse** | These options existed as defaults (`fadeWhenInactive`, `idleOpacity`, `fadeDelay`, `levelUpCelebration`, `celebrationSound`, `celebrationSparkles`, `celebrationSpeed`) before being removed as orphans in v1.1.7 — they were the implied roadmap. The animation infrastructure and the two-phase level-up hold provide ~80% of the base |
-| **Notes** | Requires the full 4-layer config wiring (defaults → Config accessor → options control → runtime consumer). Fade must respect combat visibility rules |
+| **Notes** | Fade-when-inactive only faded the primary bar, so it looked inconsistent whenever a secondary bar was shown alongside it — removed rather than extended. If revisited, the secondary bar needs its own fade path (independent, on its own source's inactivity, per the discussion that led to removal) before this returns. |
 
 ### 2. Custom fonts via LibSharedMedia
 | | |

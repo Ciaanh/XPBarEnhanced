@@ -215,34 +215,6 @@ local optionDetails = {
         description = Addon.L["OPT_CELEBRATION_SOUND_DESC"],
         commandKeys = {"celebrationsound"}
     },
-    fadeWhenInactive = {
-        key = "fadeWhenInactive",
-        label = Addon.L["OPT_FADE_WHEN_INACTIVE"],
-        description = Addon.L["OPT_FADE_WHEN_INACTIVE_DESC"],
-        commandKeys = {"fade", "fadewheninactive"}
-    },
-    fadeDelay = {
-        key = "fadeDelay",
-        type = "slider",
-        label = Addon.L["OPT_FADE_DELAY"],
-        description = Addon.L["OPT_FADE_DELAY_DESC"],
-        min = 1,
-        max = 30,
-        step = 1,
-        format = "%.0f",
-        commandKeys = {"fadedelay"}
-    },
-    idleOpacity = {
-        key = "idleOpacity",
-        type = "slider",
-        label = Addon.L["OPT_IDLE_OPACITY"],
-        description = Addon.L["OPT_IDLE_OPACITY_DESC"],
-        min = 0,
-        max = 90,
-        step = 5,
-        format = "%.0f",
-        commandKeys = {"idleopacity"}
-    },
     goalNotifications = {
         key = "goalNotifications",
         label = Addon.L["OPT_GOAL_NOTIFICATIONS"],
@@ -425,9 +397,6 @@ local optionOrder = {
     "twoPhaseOnLevelUp",
     "levelUpCelebration",
     "celebrationSound",
-    "fadeWhenInactive",
-    "fadeDelay",
-    "idleOpacity",
     "goalNotifications",
     "goalSound",
     "enableDataBrokerFeed",
