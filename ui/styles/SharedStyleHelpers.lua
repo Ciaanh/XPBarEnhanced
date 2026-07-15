@@ -60,6 +60,12 @@ function Shared.ApplyStatusBarProgress(bar, context, color)
 end
 
 function Shared.GetXPBarColor(context)
+    -- Max-level "primary shows secondary source" mode supplies the source's
+    -- color so the repurposed primary bar matches the selected source.
+    if context and context._secondaryColor then
+        return context._secondaryColor
+    end
+
     local Colors = Addon and Addon.Colors
     if not Colors then
         return {r = 1, g = 1, b = 1, a = 1}
@@ -303,7 +309,23 @@ function Shared.BuildSecondaryLabel(context)
 end
 
 function Shared.OpenReputationPanel()
-    if Shared.GetActiveSecondarySource and Shared.GetActiveSecondarySource() == "housing" then
+    local source = Shared.GetActiveSecondarySource and Shared.GetActiveSecondarySource()
+
+    -- Honor: open the PvP UI; Profession: open the professions book.
+    if source == "honor" and TogglePVPUI then
+        TogglePVPUI()
+        return
+    elseif source == "profession" then
+        if ToggleProfessionsBook then
+            ToggleProfessionsBook()
+            return
+        elseif ToggleSpellBook then
+            ToggleSpellBook("professions")
+            return
+        end
+    end
+
+    if source == "housing" then
         if HousingFramesUtil and HousingFramesUtil.ToggleHousingDashboard then
             HousingFramesUtil.ToggleHousingDashboard()
             return
@@ -416,7 +438,8 @@ local function ResolveConfiguredSecondarySource()
     if source == nil and Addon.db then
         source = Addon.db.secondaryBarSource
     end
-    if source == "housing" or source == "reputation" then
+    if source == "housing" or source == "reputation"
+        or source == "honor" or source == "profession" then
         return source
     end
     return "reputation"
@@ -436,6 +459,20 @@ local function GetReputationContext()
     return nil
 end
 
+local function GetHonorContext()
+    if Addon.HonorSession and Addon.HonorSession.GetCurrentContext then
+        return Addon.HonorSession:GetCurrentContext()
+    end
+    return nil
+end
+
+local function GetProfessionContext()
+    if Addon.ProfessionSession and Addon.ProfessionSession.GetCurrentContext then
+        return Addon.ProfessionSession:GetCurrentContext()
+    end
+    return nil
+end
+
 function Shared.GetActiveSecondarySource()
     return ResolveConfiguredSecondarySource()
 end
@@ -451,6 +488,8 @@ function Shared.GetSecondaryBroadcastEventName()
     return {
         Addon.EventNames.REPUTATION_BROADCAST_UPDATE or "REPUTATION:BROADCAST_UPDATE",
         Addon.EventNames.HOUSING_BROADCAST_UPDATE or "HOUSING:BROADCAST_UPDATE",
+        Addon.EventNames.HONOR_BROADCAST_UPDATE or "HONOR:BROADCAST_UPDATE",
+        Addon.EventNames.PROFESSION_BROADCAST_UPDATE or "PROFESSION:BROADCAST_UPDATE",
     }
 end
 
@@ -458,6 +497,10 @@ function Shared.GetSecondaryInitialContext()
     local source = Shared.GetActiveSecondarySource()
     if source == "housing" then
         return GetHousingContext()
+    elseif source == "honor" then
+        return GetHonorContext()
+    elseif source == "profession" then
+        return GetProfessionContext()
     end
 
     return GetReputationContext()

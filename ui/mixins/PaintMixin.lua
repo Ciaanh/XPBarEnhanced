@@ -22,12 +22,18 @@ function XPBarPaintMixin:UpdateBarColors(context, barName)
 		return
 	end
 
-	-- Select color based on whether player has rested XP (not just in resting area)
-	-- Use hasRestedXP field if available, otherwise check restedXP > 0
-	local hasRestedXP = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
-	local colorKey = hasRestedXP and Addon.Colors.Key.XpBarRested or Addon.Colors.Key.XpBar
-	local color = Addon.Colors:Get(colorKey)
-	bar:SetStatusBarColor(color.r, color.g, color.b, color.a)
+	-- Max-level "primary shows secondary source" mode overrides the fill color
+	-- with the source's color (this is the main-fill path; Shared.GetXPBarColor
+	-- covers the styles that colour their fill through it instead).
+	local color = context and context._secondaryColor
+	if not color then
+		-- Select color based on whether player has rested XP (not just in resting area)
+		-- Use hasRestedXP field if available, otherwise check restedXP > 0
+		local hasRestedXP = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
+		local colorKey = hasRestedXP and Addon.Colors.Key.XpBarRested or Addon.Colors.Key.XpBar
+		color = Addon.Colors:Get(colorKey)
+	end
+	bar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
 end
 
 --- Update rested overlay color

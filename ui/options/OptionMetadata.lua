@@ -18,6 +18,7 @@ local optionDetails = {
             {value = "circular", label = Addon.L["OPT_BAR_STYLE_CIRCULAR"]},
             {value = "minimap_ring", label = Addon.L["OPT_BAR_STYLE_MINIMAP_RING"]},
             {value = "terminal", label = Addon.L["OPT_BAR_STYLE_TERMINAL"]},
+            {value = "orb", label = Addon.L["OPT_BAR_STYLE_ORB"]},
         },
         commandKeys = {"style", "mode", "barstyle"}
     },
@@ -35,8 +36,22 @@ local optionDetails = {
         options = {
             {value = "reputation", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_REPUTATION"]},
             {value = "housing", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_HOUSING"]},
+            {value = "honor", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_HONOR"]},
+            {value = "profession", label = Addon.L["OPT_SECONDARY_BAR_SOURCE_PROFESSION"]},
         },
         commandKeys = {"secondarysource", "secondarybarsource"}
+    },
+    professionSlot = {
+        key = "professionSlot",
+        type = "dropdown",
+        label = Addon.L["OPT_PROFESSION_SLOT"],
+        description = Addon.L["OPT_PROFESSION_SLOT_DESC"],
+        options = {
+            {value = "auto", label = Addon.L["OPT_PROFESSION_SLOT_AUTO"]},
+            {value = "first", label = Addon.L["OPT_PROFESSION_SLOT_FIRST"]},
+            {value = "second", label = Addon.L["OPT_PROFESSION_SLOT_SECOND"]},
+        },
+        commandKeys = {"professionslot"}
     },
     hideCompanionOutsideDelve = {
         key = "hideCompanionOutsideDelve",
@@ -49,6 +64,12 @@ local optionDetails = {
         label = Addon.L["OPT_SECONDARY_BARS_ATTACHED"],
         description = Addon.L["OPT_SECONDARY_BARS_ATTACHED_DESC"],
         commandKeys = {}
+    },
+    maxLevelPrimaryShowsSecondary = {
+        key = "maxLevelPrimaryShowsSecondary",
+        label = Addon.L["OPT_MAX_LEVEL_PRIMARY_SECONDARY"],
+        description = Addon.L["OPT_MAX_LEVEL_PRIMARY_SECONDARY_DESC"],
+        commandKeys = {"maxlevelsecondary", "maxsecondary"}
     },
     barLocked = {
         key = "barLocked",
@@ -181,6 +202,64 @@ local optionDetails = {
         label = Addon.L["OPT_TWO_PHASE_LEVEL_UP"],
         description = Addon.L["OPT_TWO_PHASE_LEVEL_UP_DESC"],
         commandKeys = {"twophase", "levelupanimation"}
+    },
+    levelUpCelebration = {
+        key = "levelUpCelebration",
+        label = Addon.L["OPT_LEVEL_UP_CELEBRATION"],
+        description = Addon.L["OPT_LEVEL_UP_CELEBRATION_DESC"],
+        commandKeys = {"celebration", "levelupcelebration"}
+    },
+    celebrationSound = {
+        key = "celebrationSound",
+        label = Addon.L["OPT_CELEBRATION_SOUND"],
+        description = Addon.L["OPT_CELEBRATION_SOUND_DESC"],
+        commandKeys = {"celebrationsound"}
+    },
+    fadeWhenInactive = {
+        key = "fadeWhenInactive",
+        label = Addon.L["OPT_FADE_WHEN_INACTIVE"],
+        description = Addon.L["OPT_FADE_WHEN_INACTIVE_DESC"],
+        commandKeys = {"fade", "fadewheninactive"}
+    },
+    fadeDelay = {
+        key = "fadeDelay",
+        type = "slider",
+        label = Addon.L["OPT_FADE_DELAY"],
+        description = Addon.L["OPT_FADE_DELAY_DESC"],
+        min = 1,
+        max = 30,
+        step = 1,
+        format = "%.0f",
+        commandKeys = {"fadedelay"}
+    },
+    idleOpacity = {
+        key = "idleOpacity",
+        type = "slider",
+        label = Addon.L["OPT_IDLE_OPACITY"],
+        description = Addon.L["OPT_IDLE_OPACITY_DESC"],
+        min = 0,
+        max = 90,
+        step = 5,
+        format = "%.0f",
+        commandKeys = {"idleopacity"}
+    },
+    goalNotifications = {
+        key = "goalNotifications",
+        label = Addon.L["OPT_GOAL_NOTIFICATIONS"],
+        description = Addon.L["OPT_GOAL_NOTIFICATIONS_DESC"],
+        commandKeys = {"goalnotifications", "milestones"}
+    },
+    goalSound = {
+        key = "goalSound",
+        label = Addon.L["OPT_GOAL_SOUND"],
+        description = Addon.L["OPT_GOAL_SOUND_DESC"],
+        commandKeys = {"goalsound"}
+    },
+    enableDataBrokerFeed = {
+        key = "enableDataBrokerFeed",
+        label = Addon.L["OPT_DATA_BROKER_FEED"],
+        description = Addon.L["OPT_DATA_BROKER_FEED_DESC"],
+        commandKeys = {"ldb", "databroker"}
     },
     circularSize = {
         key = "circularSize",
@@ -318,8 +397,10 @@ local optionOrder = {
     "barStyle",
     "showSecondaryBar",
     "secondaryBarSource",
+    "professionSlot",
     "hideCompanionOutsideDelve",
     "secondaryBarsAttached",
+    "maxLevelPrimaryShowsSecondary",
     "barLocked",
     "classicBarDraggable",
     "showMinimapButton",
@@ -342,6 +423,14 @@ local optionOrder = {
     "enableAnimations",
     "flashOnGain",
     "twoPhaseOnLevelUp",
+    "levelUpCelebration",
+    "celebrationSound",
+    "fadeWhenInactive",
+    "fadeDelay",
+    "idleOpacity",
+    "goalNotifications",
+    "goalSound",
+    "enableDataBrokerFeed",
     "flatSize",
     "verticalSize",
     "circularSize",
@@ -365,7 +454,9 @@ local colorOptionsList = {
     { key = "questIncomplete", command = "questincomplete", aliases = {"incomplete"}, label = Addon.L["COLOR_QUEST_INCOMPLETE"], description = Addon.L["COLOR_QUEST_INCOMPLETE_DESC"], preview = "texture" },
     { key = "rested", command = "rested", aliases = {"rest"}, label = Addon.L["COLOR_RESTED"], description = Addon.L["COLOR_RESTED_DESC"], preview = "texture" },
     { key = "secondaryReputation", command = "secondaryreputation", aliases = {"repbar","reputationbar"}, label = Addon.L["COLOR_SECONDARY_REPUTATION"], description = Addon.L["COLOR_SECONDARY_REPUTATION_DESC"], preview = "statusbar" },
-    { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" }
+    { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" },
+    { key = "secondaryHonor", command = "secondaryhonor", aliases = {"honorbar"}, label = Addon.L["COLOR_SECONDARY_HONOR"], description = Addon.L["COLOR_SECONDARY_HONOR_DESC"], preview = "statusbar" },
+    { key = "secondaryProfession", command = "secondaryprofession", aliases = {"professionbar","skillbar"}, label = Addon.L["COLOR_SECONDARY_PROFESSION"], description = Addon.L["COLOR_SECONDARY_PROFESSION_DESC"], preview = "statusbar" }
 }
 
 -- Build lookup maps

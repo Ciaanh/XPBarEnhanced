@@ -28,7 +28,7 @@ local CreateFrame = rawget(_G, "CreateFrame")
 local MenuTemplates = rawget(_G, "MenuTemplates")
 local MenuVariants = rawget(_G, "MenuVariants")
 
-local PANEL_NAME = "XP Bar Enhanced"
+local PANEL_NAME = ResolveLocale("ADDON_NAME")
 local PROFILE_CREATE_POPUP = "XPBE_CREATE_PROFILE"
 local PROFILE_RENAME_POPUP = "XPBE_RENAME_PROFILE"
 local PROFILE_DELETE_POPUP = "XPBE_DELETE_PROFILE"
@@ -182,39 +182,13 @@ end
 -- ControlHelpers is used for centralized option control setup
 local ControlHelpers = Addon.UI.ControlHelpers
 
--- Style preview appearance data keyed by barStyle value
-local STYLE_PREVIEW = {
-    none        = {r=0.4,  g=0.4,  b=0.4,  fill=0,   label="None"},
-    classic     = {r=0.2,  g=0.5,  b=1.0,  fill=0.72, label="Classic"},
-    flat        = {r=0.2,  g=0.8,  b=0.3,  fill=0.60, label="Flat"},
-    vertical    = {r=0.9,  g=0.7,  b=0.1,  fill=0.55, label="Vertical"},
-    circular    = {r=0.6,  g=0.2,  b=0.9,  fill=0.80, label="Circular"},
-    minimap_ring= {r=0.1,  g=0.8,  b=0.8,  fill=0.45, label="Minimap Ring"},
-    terminal    = {r=0.0,  g=1.0,  b=0.3,  fill=0.65, label="Terminal"},
-}
-
-function XPBarEnhancedOptionsMixin:UpdateStylePreview(styleName)
-    local preview = self.ContentFrame and self.ContentFrame.OptionsContainer and
-                    self.ContentFrame.OptionsContainer.StylePreviewFrame
-    if not preview then return end
-
-    local data = STYLE_PREVIEW[styleName] or STYLE_PREVIEW["flat"]
-    if preview.PreviewBar then
-        preview.PreviewBar:SetStatusBarColor(data.r, data.g, data.b, 1)
-        preview.PreviewBar:SetValue(data.fill * 100)
-    end
-    if preview.PreviewLabel and preview.PreviewLabel.StyleName then
-        preview.PreviewLabel.StyleName:SetText(data.label)
-    end
-end
-
 -- Tab definitions in display order
 local TABS = {
-    {id = "visual",    label = "Visual"},
-    {id = "text",      label = "Text"},
-    {id = "behavior",  label = "Behavior"},
-    {id = "secondary", label = "Secondary Bar"},
-    {id = "colors",    label = "Colors"},
+    {id = "visual",    label = ResolveLocale("OPT_TAB_VISUAL")},
+    {id = "text",      label = ResolveLocale("OPT_TAB_TEXT")},
+    {id = "behavior",  label = ResolveLocale("OPT_TAB_BEHAVIOR")},
+    {id = "secondary", label = ResolveLocale("OPT_TAB_SECONDARY")},
+    {id = "colors",    label = ResolveLocale("OPT_TAB_COLORS")},
 }
 
 function XPBarEnhancedOptionsMixin:SelectTab(tabId)
@@ -526,9 +500,7 @@ function XPBarEnhancedOptionsMixin:OnLoad()
     end
 
     if scrollChild.SubtitleText then
-        scrollChild.SubtitleText:SetText(
-            "Configure the custom experience bar, quest overlays, and leveling statistics."
-        )
+        scrollChild.SubtitleText:SetText(ResolveLocale("OPT_SUBTITLE"))
         if scrollChild.SubtitleText.SetJustifyH then
             scrollChild.SubtitleText:SetJustifyH("LEFT")
         end
@@ -637,8 +609,6 @@ function XPBarEnhancedOptionsMixin:OnLoad()
     self:SetupTabs()
     self:SelectTab("visual")
     self:Refresh()
-    local initialStyle = Config:GetOptionValue("barStyle") or "flat"
-    self:UpdateStylePreview(initialStyle)
     self:RegisterCategory()
 
     local observerId = self:GetName() or ("_bar_" .. tostring(self))
@@ -883,7 +853,7 @@ function XPBarEnhancedOptionsMixin:UpdateColorControls()
                 local hex = Config:GetColorHex(info.key) or "FFFFFFFF"
                 local alphaPercent = math.floor(a * 100 + 0.5)
                 controls.valueText:SetText(
-                    string.format("Current: #%s (Alpha %d%%)", string.sub(hex, 1, 6), alphaPercent)
+                    string.format(ResolveLocale("OPT_COLOR_CURRENT_FMT"), string.sub(hex, 1, 6), alphaPercent)
                 )
             end
 
@@ -905,7 +875,7 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     local hasColorPicker = ColorPickerFrame or rawget(_G, "OpenColorPicker")
 
     if not hasColorPicker then
-        print("|cFFFF5555XP Bar Enhanced:|r Color picker is not available.")
+        print("|cFFFF5555" .. ResolveLocale("ADDON_NAME") .. ":|r " .. ResolveLocale("MSG_COLOR_PICKER_UNAVAILABLE"))
         return
     end
 
@@ -1273,30 +1243,30 @@ end
 function Options:AcceptCreateProfileDialog(name)
     local success, err = Config:CreateProfile(name, true)
     if success then
-        print(string.format("|cFF00FF00XP Bar Enhanced:|r " .. ResolveLocale("MSG_PROFILE_CREATED"), tostring(name)))
+        print(string.format("|cFF00FF00" .. ResolveLocale("ADDON_NAME") .. ":|r " .. ResolveLocale("MSG_PROFILE_CREATED"), tostring(name)))
         self:Refresh()
     else
-        print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+        print("|cFFFF0000" .. ResolveLocale("ADDON_NAME") .. ":|r " .. tostring(err))
     end
 end
 
 function Options:AcceptRenameProfileDialog(oldName, newName)
     local success, err = Config:RenameProfile(oldName, newName)
     if success then
-        print(string.format("|cFF00FF00XP Bar Enhanced:|r " .. ResolveLocale("MSG_PROFILE_RENAMED"), tostring(newName)))
+        print(string.format("|cFF00FF00" .. ResolveLocale("ADDON_NAME") .. ":|r " .. ResolveLocale("MSG_PROFILE_RENAMED"), tostring(newName)))
         self:Refresh()
     else
-        print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+        print("|cFFFF0000" .. ResolveLocale("ADDON_NAME") .. ":|r " .. tostring(err))
     end
 end
 
 function Options:AcceptDeleteProfileDialog(name)
     local success, err = Config:DeleteProfile(name)
     if success then
-        print(string.format("|cFF00FF00XP Bar Enhanced:|r " .. ResolveLocale("MSG_PROFILE_DELETED"), tostring(name)))
+        print(string.format("|cFF00FF00" .. ResolveLocale("ADDON_NAME") .. ":|r " .. ResolveLocale("MSG_PROFILE_DELETED"), tostring(name)))
         self:Refresh()
     else
-        print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
+        print("|cFFFF0000" .. ResolveLocale("ADDON_NAME") .. ":|r " .. tostring(err))
     end
 end
 
@@ -1371,11 +1341,6 @@ function Options:OnOptionChanged(key)
         local value = (Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("barStyle")) or "classic"
         if Addon.BarManager and Addon.BarManager.SetStyle then
             Addon.BarManager:SetStyle(value)
-        end
-        -- Update style preview
-        local panel = self.frame
-        if panel and panel.UpdateStylePreview then
-            panel:UpdateStylePreview(value)
         end
     elseif key == "barLocked" then
     elseif key == "classicBarDraggable" then
@@ -1504,43 +1469,25 @@ end
 
 function Options:OnColorReset()
     self:UpdateColorControls()
-    -- Refresh bars to apply new colors
-    if Addon.Session and Addon.Session.EmitUpdate then
-        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
-    end
-    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
-        Addon.ReputationSession:EmitUpdate()
-    end
-    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
-        Addon.HousingSession:EmitUpdate()
+    -- Refresh bars to apply new colors (all domains, single helper)
+    if Addon.Colors and Addon.Colors.NotifyColorsChanged then
+        Addon.Colors:NotifyColorsChanged()
     end
 end
 
 function Options:OnColorChanged(colorKey, hex)
     self:UpdateColorControls()
-    -- Refresh bars to apply new colors
-    if Addon.Session and Addon.Session.EmitUpdate then
-        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
-    end
-    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
-        Addon.ReputationSession:EmitUpdate()
-    end
-    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
-        Addon.HousingSession:EmitUpdate()
+    -- Refresh bars to apply new colors (all domains, single helper)
+    if Addon.Colors and Addon.Colors.NotifyColorsChanged then
+        Addon.Colors:NotifyColorsChanged()
     end
 end
 
 function Options:OnColorCancel(colorKey, previousHex)
     self:UpdateColorControls()
-    -- Refresh bars to apply new colors
-    if Addon.Session and Addon.Session.EmitUpdate then
-        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
-    end
-    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
-        Addon.ReputationSession:EmitUpdate()
-    end
-    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
-        Addon.HousingSession:EmitUpdate()
+    -- Refresh bars to apply new colors (all domains, single helper)
+    if Addon.Colors and Addon.Colors.NotifyColorsChanged then
+        Addon.Colors:NotifyColorsChanged()
     end
 end
 

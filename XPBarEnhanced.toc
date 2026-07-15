@@ -57,10 +57,14 @@ core\services\ProfileManager.lua
 core\services\Session.lua
 core\services\ReputationSession.lua
 core\services\HousingSession.lua
+core\services\HonorSession.lua
+core\services\ProfessionSession.lua
+core\services\GoalTracker.lua
 core\services\ContextBuilder.lua
 
 # UI Features
 ui\MinimapButton.lua
+ui\DataBrokerFeed.lua
 
 # Base and Mixins (must load before StyleBuilder)
 ui\mixins\BaseMixin.lua
@@ -102,6 +106,8 @@ ui\styles\classic\ClassicBarTemplate.xml
 ui\styles\classic\ClassicSecondaryBarTemplate.xml
 ui\styles\vertical\VerticalBarTemplate.xml
 ui\styles\vertical\VerticalSecondaryBarTemplate.xml
+ui\styles\orb\OrbBarTemplate.xml
+ui\styles\orb\OrbSecondaryBarTemplate.xml
 ui\styles\circular\CircularBarTemplate.xml
 ui\styles\circular\CircularSecondaryBarTemplate.xml
 ui\styles\minimap_ring\MinimapRingBarTemplate.xml

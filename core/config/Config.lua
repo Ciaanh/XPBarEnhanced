@@ -458,6 +458,23 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
         end
     end
 
+    -- Toggling the max-level "primary shows secondary" mode re-drives the
+    -- primary style (it may now keep a custom style at max level instead of
+    -- collapsing to "none") and the secondary bar (it hides to avoid a
+    -- double render). Clear currentStyle so SetStyle does not early-return.
+    if key == "maxLevelPrimaryShowsSecondary" or key == "showSecondaryBar" then
+        -- Both options change repurpose eligibility at max level; re-drive the
+        -- primary style so the repurposed bar appears/disappears immediately
+        -- instead of waiting for the next source broadcast.
+        if Addon.BarManager and Addon.BarManager.SetStyle then
+            Addon.BarManager.currentStyle = nil
+            Addon.BarManager:SetStyle(self:GetOptionValue("barStyle"))
+        end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+            Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+        end
+    end
+
     -- Emit a config-level event for fine-grained subscribers; also leave broadcast for compatibility
     if not suppressConfigEvent and Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
@@ -475,11 +492,32 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
     end
 
     if key == "secondaryBarSource" then
+        -- Emit every source so whichever one is now active re-resolves and the
+        -- secondary bar re-renders immediately.
         if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
             Addon.ReputationSession:EmitUpdate()
         end
         if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
             Addon.HousingSession:EmitUpdate()
+        end
+        if Addon.HonorSession and Addon.HonorSession.EmitUpdate then
+            Addon.HonorSession:EmitUpdate()
+        end
+        if Addon.ProfessionSession and Addon.ProfessionSession.EmitUpdate then
+            Addon.ProfessionSession:EmitUpdate()
+        end
+    end
+
+    if key == "professionSlot" then
+        -- Re-baseline to the newly tracked profession so session gain doesn't
+        -- jump, then refresh the bar.
+        if Addon.ProfessionSession then
+            if Addon.ProfessionSession.Snapshot then
+                Addon.ProfessionSession:Snapshot()
+            end
+            if Addon.ProfessionSession.EmitUpdate then
+                Addon.ProfessionSession:EmitUpdate()
+            end
         end
     end
 
@@ -587,6 +625,18 @@ function Config:Reset()
     if Addon.Database and Addon.Database.Initialize then
         Addon.Database:Initialize()
     end
+    -- Re-initialize session services (their cached _session tables point at
+    -- the discarded db) and re-drive the primary style to the new default.
+    for _, service in ipairs({"Session", "ReputationSession", "HousingSession", "HonorSession", "ProfessionSession"}) do
+        local svc = Addon[service]
+        if svc and svc.Initialize then
+            svc:Initialize()
+        end
+    end
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        Addon.BarManager.currentStyle = nil
+        Addon.BarManager:SetStyle(self:GetOptionValue("barStyle"))
+    end
     -- Emit config change so UI updates
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
         local ctx = XPBarContextBuilder.BuildContext("CONFIG_UPDATED")
@@ -602,15 +652,20 @@ function Config:ResetStats()
         Addon.db.sessionData            = {}
         Addon.db.stats                  = {}
         Addon.db.reputationSessionData  = {}
+        Addon.db.housingSessionData     = {}
+        Addon.db.honorSessionData       = {}
+        Addon.db.professionSessionData  = {}
     end
     if Addon.ContextBuilder and Addon.ContextBuilder.ResetSession then
         Addon.ContextBuilder.ResetSession()
     end
-    if Addon.Session and Addon.Session.Initialize then
-        Addon.Session:Initialize()
-    end
-    if Addon.ReputationSession and Addon.ReputationSession.Initialize then
-        Addon.ReputationSession:Initialize()
+    -- Re-initialize every session service so their cached _session tables
+    -- point at the fresh stores.
+    for _, service in ipairs({"Session", "ReputationSession", "HousingSession", "HonorSession", "ProfessionSession"}) do
+        local svc = Addon[service]
+        if svc and svc.Initialize then
+            svc:Initialize()
+        end
     end
     local stats = Addon.Stats
     if stats and stats.Update then

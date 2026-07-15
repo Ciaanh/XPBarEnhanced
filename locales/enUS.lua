@@ -134,6 +134,9 @@ L["OPT_BAR_STYLE_VERTICAL"] = "Vertical (Falling XP)"
 L["OPT_BAR_STYLE_CIRCULAR"] = "Circular (Progress ring)"
 L["OPT_BAR_STYLE_MINIMAP_RING"] = "Minimap Ring"
 L["OPT_BAR_STYLE_TERMINAL"] = "Terminal (ASCII progress bar)"
+L["OPT_BAR_STYLE_ORB"] = "Orb (filling sphere)"
+L["OPT_BAR_STYLE_MAX_LEVEL"] = "Blizzard Bar (Max Level)"
+L["OPT_BAR_STYLE_MAX_LEVEL_DESC"] = "Disabled at max level: Blizzard experience bar enforced"
 L["OPT_BAR_LOCKED"] = "Lock bar position"
 L["OPT_BAR_LOCKED_DESC"] = "Prevent the Flat bar from being moved with Shift+Drag. Applies only to Flat bar style."
 L["OPT_SHOW_MINIMAP_BUTTON"] = "Show minimap button"
@@ -161,6 +164,15 @@ L["OPT_HEADER_ANIMATION"] = "Animation"
 L["OPT_HEADER_COLORS"] = "Colors"
 L["OPT_HEADER_CIRCULAR"] = "Circular Bar"
 L["OPT_HEADER_SECONDARY_BARS"] = "Secondary Bars"
+
+-- Options panel chrome (subtitle + tab labels)
+L["OPT_SUBTITLE"] = "Configure the custom experience bar, quest overlays, and leveling statistics."
+L["OPT_TAB_VISUAL"] = "Visual"
+L["OPT_TAB_TEXT"] = "Text"
+L["OPT_TAB_BEHAVIOR"] = "Behavior"
+L["OPT_TAB_SECONDARY"] = "Secondary Bar"
+L["OPT_TAB_COLORS"] = "Colors"
+
 L["OPT_HEADER_PROFILES"] = "Profiles"
 L["OPT_PROFILE_SELECTOR"] = "Profile => "
 L["OPT_PROFILE_GLOBAL"] = "Global Settings"
@@ -189,10 +201,19 @@ L["OPT_SECONDARY_BAR_SOURCE"] = "Secondary source"
 L["OPT_SECONDARY_BAR_SOURCE_DESC"] = "Choose which progression source drives the secondary bar."
 L["OPT_SECONDARY_BAR_SOURCE_REPUTATION"] = "Reputation"
 L["OPT_SECONDARY_BAR_SOURCE_HOUSING"] = "Housing Favor"
+L["OPT_SECONDARY_BAR_SOURCE_HONOR"] = "Honor"
+L["OPT_SECONDARY_BAR_SOURCE_PROFESSION"] = "Profession"
+L["OPT_PROFESSION_SLOT"] = "Tracked profession"
+L["OPT_PROFESSION_SLOT_DESC"] = "Which profession the Profession secondary source tracks. Auto picks the first primary profession that still has room to grow."
+L["OPT_PROFESSION_SLOT_AUTO"] = "Auto"
+L["OPT_PROFESSION_SLOT_FIRST"] = "First profession"
+L["OPT_PROFESSION_SLOT_SECOND"] = "Second profession"
 L["OPT_HIDE_COMPANION_OUTSIDE_DELVE"] = "Hide companion bar outside Delves"
 L["OPT_HIDE_COMPANION_OUTSIDE_DELVE_DESC"] = "When enabled, the secondary bar is hidden if the watched faction is a Delve companion and you are not inside a Delve."
 L["OPT_SECONDARY_BARS_ATTACHED"] = "Attach to XP bar"
 L["OPT_SECONDARY_BARS_ATTACHED_DESC"] = "When enabled, the secondary bar is locked to the XP bar position. When disabled, it can be positioned independently by dragging."
+L["OPT_MAX_LEVEL_PRIMARY_SECONDARY"] = "Use main bar at max level"
+L["OPT_MAX_LEVEL_PRIMARY_SECONDARY_DESC"] = "At max level, show the selected secondary source on the main bar instead of hiding it. Requires a custom bar style and the secondary bar enabled. The standalone secondary bar is hidden while this is active to avoid showing the same source twice."
 
 -- Animation options
 L["OPT_ENABLE_ANIMATIONS"] = "Enable animations"
@@ -201,6 +222,70 @@ L["OPT_FLASH_ON_GAIN"] = "Flash on XP gain"
 L["OPT_FLASH_ON_GAIN_DESC"] = "Briefly flash the bar when XP is gained."
 L["OPT_TWO_PHASE_LEVEL_UP"] = "Two-phase level-up animation"
 L["OPT_TWO_PHASE_LEVEL_UP_DESC"] = "When leveling up, animate the bar filling to 100% first, then reset and animate to your new XP."
+L["OPT_LEVEL_UP_CELEBRATION"] = "Level-up celebration"
+L["OPT_LEVEL_UP_CELEBRATION_DESC"] = "Play a golden glow effect on the bar when you level up."
+L["OPT_CELEBRATION_SOUND"] = "Celebration sound"
+L["OPT_CELEBRATION_SOUND_DESC"] = "Play a fanfare sound with the level-up celebration."
+L["OPT_FADE_WHEN_INACTIVE"] = "Fade when inactive"
+L["OPT_FADE_WHEN_INACTIVE_DESC"] = "Fade the bar to a reduced opacity when no XP has been gained for a while. The bar returns to full opacity on XP gain or mouseover, and never fades during combat."
+L["OPT_FADE_DELAY"] = "Fade delay (seconds)"
+L["OPT_FADE_DELAY_DESC"] = "How long to wait after the last XP gain before fading the bar."
+L["OPT_IDLE_OPACITY"] = "Idle opacity (%)"
+L["OPT_IDLE_OPACITY_DESC"] = "Bar opacity while faded, as a percentage. 0 hides the bar completely when idle."
+L["OPT_GOAL_NOTIFICATIONS"] = "Level progress notifications"
+L["OPT_GOAL_NOTIFICATIONS_DESC"] = "Announce 25%, 50% and 75% level progress with the estimated time to level up."
+L["OPT_GOAL_SOUND"] = "Notification sound"
+L["OPT_GOAL_SOUND_DESC"] = "Play a sound with level progress notifications."
+L["OPT_DATA_BROKER_FEED"] = "LibDataBroker feed"
+L["OPT_DATA_BROKER_FEED_DESC"] = "Publish XP rate and time-to-level to LibDataBroker displays such as Titan Panel, Bazooka, or ElvUI datatexts."
+
+-- Goal / milestone notifications
+L["GOAL_MILESTONE"] = "Level %d: %d%%"
+L["GOAL_MILESTONE_ETA"] = "Level %d: %d%% - ding in ~%s"
+
+-- LibDataBroker feed
+L["LDB_LABEL"] = "XP Bar Enhanced"
+L["LDB_TEXT_FMT"] = "%s XP/h \194\183 ~%s"
+L["LDB_RATE_FMT"] = "%s XP/h"
+L["LDB_SOURCE_FMT"] = "%s: %d%%"
+L["LDB_CALCULATING"] = "XP: calculating..."
+L["LDB_MAX_LEVEL"] = "Max level"
+L["LDB_TT_SESSION_XP"] = "Session XP:"
+L["LDB_TT_RATE"] = "XP per hour:"
+L["LDB_TT_CLICK"] = "Click to toggle the stats window"
+
+-- Session chart (Stats window)
+L["STATS_CHART_TITLE"] = "Session XP Rate"
+L["STATS_CHART_EMPTY"] = "No XP gained yet this session."
+L["STATS_CHART_RATE_FORMAT"] = "%s/h"
+L["STATS_CHART_SPLIT_LEGEND"] = "Quest %d%%  \194\183  Other %d%%"
+
+-- Stats window pages and row labels
+L["STATS_PAGE_CURRENT_LEVEL"] = "Current Level"
+L["STATS_PAGE_CURRENT_SESSION"] = "Current Session"
+L["STATS_LABEL_LEVEL"] = "Level:"
+L["STATS_LABEL_CURRENT_XP"] = "Current XP:"
+L["STATS_LABEL_MAX_XP"] = "Max XP:"
+L["STATS_LABEL_PROGRESS"] = "Progress:"
+L["STATS_LABEL_XP_TO_LEVEL"] = "XP to Level:"
+L["STATS_LABEL_RESTED_XP"] = "Rested XP:"
+L["STATS_LABEL_QUEST_XP"] = "Quest XP:"
+L["STATS_LABEL_TIME_ON_LEVEL"] = "Time on Level:"
+L["STATS_LABEL_EST_TIME_TO_LEVEL"] = "Est. Time to Level:"
+L["STATS_LABEL_DURATION"] = "Duration:"
+L["STATS_LABEL_STARTED"] = "Started:"
+L["STATS_LABEL_XP_GAINED"] = "XP Gained:"
+L["STATS_LABEL_LEVELS_GAINED"] = "Levels Gained:"
+L["STATS_LABEL_XP_PER_HOUR"] = "XP/Hour:"
+L["STATS_LABEL_TOTAL_XP"] = "Total XP:"
+
+-- Minimap button
+L["MINIMAP_TT_SESSION_XP"] = "Session XP:"
+L["MINIMAP_TT_SESSION_TIME"] = "Session Time:"
+L["MINIMAP_TT_HINT_LEFT_CLICK"] = "|cff00ff00Left-Click:|r Open Stats"
+L["MINIMAP_TT_HINT_RIGHT_CLICK"] = "|cff00ff00Right-Click:|r Open Options"
+L["MINIMAP_TT_HINT_SHIFT_CLICK"] = "|cff00ff00Shift-Click:|r Reset Session"
+L["MINIMAP_TT_HINT_DRAG"] = "|cff00ff00Drag:|r Move Button"
 
 -- Circular bar options
 L["OPT_BAR_SIZE_SMALL"] = "Small"
@@ -263,6 +348,15 @@ L["COLOR_SECONDARY_REPUTATION"] = "Secondary Bar: Reputation"
 L["COLOR_SECONDARY_REPUTATION_DESC"] = "Color of the secondary bar when Reputation is selected as the source."
 L["COLOR_SECONDARY_HOUSING"] = "Secondary Bar: Housing Favor"
 L["COLOR_SECONDARY_HOUSING_DESC"] = "Color of the secondary bar when Housing Favor is selected as the source."
+L["COLOR_SECONDARY_HONOR"] = "Secondary Bar: Honor"
+L["COLOR_SECONDARY_HONOR_DESC"] = "Color of the secondary bar when Honor is selected as the source."
+L["COLOR_SECONDARY_PROFESSION"] = "Secondary Bar: Profession"
+L["COLOR_SECONDARY_PROFESSION_DESC"] = "Color of the secondary bar when Profession is selected as the source."
+
+-- Color picker rows (Options panel)
+L["OPT_COLOR_CURRENT_FMT"] = "Current: #%s (Alpha %d%%)"
+L["OPT_COLOR_SWATCH_TITLE_FMT"] = "%s Color"
+L["OPT_COLOR_SWATCH_RESET_HINT"] = "Shift-Click to restore the default color."
 
 -- ============================================================================
 -- MESSAGES
@@ -277,6 +371,10 @@ L["MSG_OPTIONS_UNAVAILABLE"] = "Options panel is unavailable."
 L["MSG_RESET_UNAVAILABLE"] = "Unable to reset settings."
 L["MSG_RESET_STATS_UNAVAILABLE"] = "Unable to reset statistics."
 L["MSG_SETTINGS_RESET"] = "Settings reset to defaults"
+L["MSG_SESSION_RESET"] = "Session reset."
+L["MSG_USE_STATS_COMMAND"] = "Use /xpbe stats to open stats window."
+L["MSG_USE_OPTIONS_COMMAND"] = "Use /xpbe to open options."
+L["MSG_COLOR_PICKER_UNAVAILABLE"] = "Color picker is not available."
 
 -- ============================================================================
 -- REPUTATION
@@ -286,6 +384,15 @@ L["REP_STANDING_PARAGON"] = "Paragon"
 L["HOUSING_NAME"] = "Housing Favor"
 L["HOUSING_MAX_LEVEL_LABEL"] = "Max House Level"
 L["HOUSING_LEVEL_FMT"] = "Level %d"
+
+-- ============================================================================
+-- HONOR / PROFESSION (secondary bar sources)
+-- ============================================================================
+L["HONOR_NAME"] = "Honor"
+L["HONOR_LEVEL_FMT"] = "Honor Level %d"
+L["PROFESSION_NAME"] = "Profession"
+L["PROFESSION_MAX_LABEL"] = "Max Skill"
+L["LABEL_MAX"] = "MAX"
 
 -- ============================================================================
 -- ERRORS

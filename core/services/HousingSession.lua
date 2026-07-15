@@ -202,7 +202,8 @@ function HousingSession:OnPlayerHouseListUpdated(list)
     -- Pick the first valid house entry (most players have exactly one).
     -- The houseGUID here is what GetCurrentHouseLevelFavor actually expects.
     local chosen = list[1]
-    if chosen and chosen.houseGUID then
+    -- The GUID may be secret; a secret GUID is still a usable value
+    if chosen and (IsSecret(chosen.houseGUID) or chosen.houseGUID) then
         session.houseGUID = chosen.houseGUID
     end
 
@@ -289,13 +290,16 @@ function HousingSession:OnHouseLevelFavorUpdated(a1, a2, a3)
     -- session and corrupt lastHouseFavor. (SafeIsSameGuid treats secret GUIDs
     -- as matching since they cannot be compared.)
     local payloadGuid = houseLevelFavor.houseGUID
-    if payloadGuid ~= nil then
+    -- Never nil-compare possibly-secret GUIDs: establish presence via IsSecret first
+    local hasPayloadGuid = IsSecret(payloadGuid) or payloadGuid ~= nil
+    if hasPayloadGuid then
         local trackedGuid = C_Housing and C_Housing.GetTrackedHouseGuid and C_Housing.GetTrackedHouseGuid()
         local referenceGuid = trackedGuid
         if not IsSecret(referenceGuid) and not referenceGuid then
             referenceGuid = session.houseGUID
         end
-        if referenceGuid ~= nil and not SafeIsSameGuid(payloadGuid, referenceGuid) then
+        local hasReferenceGuid = IsSecret(referenceGuid) or referenceGuid ~= nil
+        if hasReferenceGuid and not SafeIsSameGuid(payloadGuid, referenceGuid) then
             return
         end
     end

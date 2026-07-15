@@ -592,13 +592,9 @@ function CircularBarStyleTemplate:UpdatePercentText(context)
     local maxv = context.xpMax or 1
     local current = context.currentXP or 0
     if Addon.TextFormatter then
-        local decimals = 1
-        if Addon and Addon.Database then
-            local db = Addon.Database:GetDB()
-            if db then
-                decimals = db.percentDecimals or 1
-            end
-        end
+        -- Context first (already profile-resolved), then profile-aware Config fallback
+        local decimals = (context and context.percentDecimals) or
+            (Addon and Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("percentDecimals")) or 1
 
         -- Use simple percent formatting (no quest additions)
         local percent = (maxv > 0) and (current / maxv * 100) or 0

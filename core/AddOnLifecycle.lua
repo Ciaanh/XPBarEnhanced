@@ -45,6 +45,26 @@ function eventHandlers:OnPlayerLogin()
         Addon.HousingSession:Initialize()
     end
 
+    -- Initialize Honor session
+    if Addon.HonorSession and Addon.HonorSession.Initialize then
+        Addon.HonorSession:Initialize()
+    end
+
+    -- Initialize Profession session
+    if Addon.ProfessionSession and Addon.ProfessionSession.Initialize then
+        Addon.ProfessionSession:Initialize()
+    end
+
+    -- Initialize milestone notifications
+    if Addon.GoalTracker and Addon.GoalTracker.Initialize then
+        Addon.GoalTracker:Initialize()
+    end
+
+    -- Initialize the LibDataBroker feed (no-op when no LDB display is installed)
+    if Addon.DataBrokerFeed and Addon.DataBrokerFeed.Initialize then
+        Addon.DataBrokerFeed:Initialize()
+    end
+
     -- Initialize features
     local stats = Addon.Stats
     if stats and stats.Initialize then

@@ -6,19 +6,23 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 
 ## Features
 
-- **Multiple Bar Styles** — None (Blizzard default), Classic, Flat, Vertical, Circular, Minimap Ring, and Terminal
+- **Multiple Bar Styles** — None (Blizzard default), Classic, Flat, Vertical, Circular, Minimap Ring, Terminal, and Orb
 - **Quest XP Overlay** — See pending and completed quest XP directly on the bar
 - **Session Tracking** — Track XP gained, time played, levels gained, and XP/hour rate
 - **Session Breakdown & Rate Smoothing** — Session stats include quest XP vs other XP totals, with a rolling recent XP/hour rate for faster responsiveness
-- **Statistics Window** — Detailed breakdown of your leveling progress
+- **Statistics Window & Session Charts** — Detailed breakdown of your leveling progress, with an XP/hour histogram and a quest-vs-other split chart
 - **Profile System** — Create, rename, delete, and switch between named settings profiles; Blizzard-style dropdown with inline actions and a global shared profile option
 - **Bar Size Presets** — Scale the Flat and Vertical bars to Small, Default, Large, or Huge without distorting text or overlays
-- **Reputation, Companion, and Housing Tracking** — The secondary bar can track watched faction progress (including Delve companion flavor) or Housing Favor progress for the tracked house
-- **Secondary Source Selector** — Choose `Reputation` or `Housing Favor` as the secondary bar source
-- **Style-Aware Secondary Bars** — Secondary progress display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar)
+- **Reputation, Companion, Housing, Honor, and Profession Tracking** — The secondary bar can track watched faction progress (including Delve companion flavor), Housing Favor, Honor (PvP) levels, or a profession's skill
+- **Secondary Source Selector** — Choose `Reputation`, `Housing Favor`, `Honor`, or `Profession` as the secondary bar source (with a first/second/auto profession selector)
+- **Main Bar at Max Level** — Optionally repurpose the main bar to display the selected secondary source once you reach max level
+- **Style-Aware Secondary Bars** — Secondary progress display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar, companion Orb)
 - **Color Customization** — Full control over bar and overlay colors
 - **Minimap Button** — Quick access to options and stats
-- **Animations** — Smooth fill, flash-on-gain, and two-phase level-up animations
+- **Animations & Celebration** — Smooth fill, flash-on-gain, two-phase level-up animations, and an optional level-up celebration with golden glow and fanfare
+- **Fade When Inactive** — Optionally fade the bar to a configurable opacity when no XP is gained for a while
+- **Level Progress Notifications** — Announces 25%/50%/75% level progress with the estimated time to ding
+- **LibDataBroker Feed** — XP/h and time-to-level datatext for Titan Panel, Bazooka, or ElvUI
 
 ## Bar Styles
 
@@ -31,6 +35,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | **Circular** | Progress ring with configurable size, segments, and scalable center text |
 | **Minimap Ring** | XP ring anchored around the minimap with optional button collection |
 | **Terminal** | ASCII-style retro bar with phosphor-green progress display |
+| **Orb** | Diablo-style filling sphere with glass highlight and metallic rim, plus a companion orb for the secondary source |
 
 ## Installation
 

@@ -30,7 +30,9 @@ Colors.Key = {
     QuestComplete = "questComplete",
     QuestIncomplete = "questIncomplete",
     SecondaryReputation = "secondaryReputation",
-    SecondaryHousing = "secondaryHousing"
+    SecondaryHousing = "secondaryHousing",
+    SecondaryHonor = "secondaryHonor",
+    SecondaryProfession = "secondaryProfession"
 }
 
 -------------------------------------------------------------------
@@ -141,6 +143,12 @@ function Colors:NotifyColorsChanged()
     end
     if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
         Addon.HousingSession:EmitUpdate()
+    end
+    if Addon.HonorSession and Addon.HonorSession.EmitUpdate then
+        Addon.HonorSession:EmitUpdate()
+    end
+    if Addon.ProfessionSession and Addon.ProfessionSession.EmitUpdate then
+        Addon.ProfessionSession:EmitUpdate()
     end
 end
 

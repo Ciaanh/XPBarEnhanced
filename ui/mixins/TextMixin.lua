@@ -107,6 +107,13 @@ function XPBarTextMixin:UpdateLevelText(context)
 		error("UpdateLevelText requires an explicit immutable context")
 	end
 
+	-- Max-level "primary shows secondary source" mode supplies a standing label
+	-- (e.g. "Renown 3") to show instead of a numeric "Level N".
+	if context.levelTextOverride and context.levelTextOverride ~= "" then
+		self.LevelText:SetText(context.levelTextOverride)
+		return
+	end
+
 	if Addon.TextFormatter then
 		local level = context.level or UnitLevel("player")
 		local levelText = Addon.TextFormatter:GetLevelText(level)
@@ -158,7 +165,10 @@ function XPBarTextMixin:UpdatePercentText(context)
 
 	if Addon.TextFormatter then
 		local decimals = context.percentDecimals or 1
-		local showQuestPercent = Addon.ConfigHelper.GetShowQuestPercent(context)
+		-- Max-level repurpose contexts display a secondary source: quest XP is
+		-- meaningless there and must not augment the percent.
+		local showQuestPercent = not (context and context._secondaryMode)
+			and Addon.ConfigHelper.GetShowQuestPercent(context)
 
 		local questXP = 0
 		local showComplete = Addon.ConfigHelper.GetShowCompleteQuestOverlay(context)

@@ -99,6 +99,11 @@ function BaseMixin:OnLoad()
 		self:BuildVisuals()
 	end
 
+	-- Mouseover restores full opacity when fade-when-inactive is active
+	self:HookScript("OnEnter", function(frame)
+		frame:WakeFromFade()
+	end)
+
 	-- Apply style config if provided
 	if self.ApplyStyle and self.__xpbar_config.style then
 		self:ApplyStyle(self.__xpbar_config.style)
@@ -129,6 +134,26 @@ function BaseMixin:OnShow()
 				if self_ref then self_ref:MarkDirty(ctx) end
 			end
 		)
+
+		-- Max-level "primary shows secondary source" mode: the primary bar must
+		-- also react to the source broadcasts (no XP events fire at max level).
+		-- The handler only refreshes when repurposing is actually active.
+		local Shared = Addon.UI and Addon.UI.SharedStyleHelpers
+		if Shared and Shared.GetSecondaryBroadcastEventName then
+			self.__secondary_handles = {}
+			for _, evName in ipairs(Shared.GetSecondaryBroadcastEventName()) do
+				self.__secondary_handles[#self.__secondary_handles + 1] =
+					Addon.EventBus:RegisterWithHandle(evName, function()
+						local mgr = Addon.BarManager
+						if self_ref and mgr and mgr.ShouldRepurposePrimaryAtMaxLevel
+							and mgr:ShouldRepurposePrimaryAtMaxLevel() then
+							self_ref:MarkDirty(nil)
+							-- Source gains count as activity for fade-when-inactive
+							self_ref:WakeFromFade()
+						end
+					end)
+			end
+		end
 	end
 
 	-- (Re-)start periodic text ticker: session time, XP/hour, time-to-level
@@ -152,6 +177,97 @@ function BaseMixin:OnShow()
 
 	-- Initial render after registering subscriptions
 	self:Refresh()
+
+	-- Apply the current fade-when-inactive state
+	self:RefreshFadeState()
+end
+
+-------------------------------------------------------------------
+-- FADE WHEN INACTIVE
+-------------------------------------------------------------------
+
+local FADE_IN_DURATION = 0.3
+local FADE_OUT_DURATION = 0.5
+
+--- Fade the frame toward the target alpha using Blizzard's fade helpers
+--- (native, no OnUpdate of our own); falls back to an instant SetAlpha.
+local function fadeFrameTo(frame, targetAlpha, duration)
+	local current = frame:GetAlpha() or 1
+	if targetAlpha > current and UIFrameFadeIn then
+		UIFrameFadeIn(frame, duration, current, targetAlpha)
+	elseif targetAlpha < current and UIFrameFadeOut then
+		UIFrameFadeOut(frame, duration, current, targetAlpha)
+	else
+		frame:SetAlpha(targetAlpha)
+	end
+end
+
+local function isFadeEnabled()
+	return Addon.Config and Addon.Config.GetOptionValue
+		and Addon.Config:GetOptionValue("fadeWhenInactive") == true
+end
+
+function BaseMixin:CancelFadeTimer()
+	if self._fadeTimer then
+		self._fadeTimer:Cancel()
+		self._fadeTimer = nil
+	end
+end
+
+--- Re-evaluate the fade option (OnShow and CONFIG_UPDATED): restore full
+--- opacity when disabled, otherwise restart the idle countdown.
+function BaseMixin:RefreshFadeState()
+	if not isFadeEnabled() then
+		self:CancelFadeTimer()
+		self._isFaded = nil
+		if (self:GetAlpha() or 1) < 1 then
+			fadeFrameTo(self, 1, FADE_IN_DURATION)
+		end
+		return
+	end
+	self:WakeFromFade()
+end
+
+--- Activity happened (XP gain, level up, mouseover): restore full opacity
+--- and restart the idle countdown.
+function BaseMixin:WakeFromFade()
+	if not isFadeEnabled() then
+		return
+	end
+
+	self:CancelFadeTimer()
+	if self._isFaded then
+		self._isFaded = nil
+		fadeFrameTo(self, 1, FADE_IN_DURATION)
+	end
+
+	local delay = tonumber(Addon.Config:GetOptionValue("fadeDelay")) or 5
+	if delay < 1 then
+		delay = 1
+	end
+	local self_ref = self
+	self._fadeTimer = C_Timer.NewTimer(delay, function()
+		self_ref._fadeTimer = nil
+		self_ref:_OnFadeIdle()
+	end)
+end
+
+--- Idle countdown elapsed: fade to the configured opacity unless the player
+--- is in combat or hovering the bar (then just try again later).
+function BaseMixin:_OnFadeIdle()
+	if not self:IsShown() or not isFadeEnabled() then
+		return
+	end
+
+	if (InCombatLockdown and InCombatLockdown()) or (self.IsMouseOver and self:IsMouseOver()) then
+		self:WakeFromFade()
+		return
+	end
+
+	local pct = tonumber(Addon.Config:GetOptionValue("idleOpacity")) or 30
+	if pct < 0 then pct = 0 elseif pct > 90 then pct = 90 end
+	self._isFaded = true
+	fadeFrameTo(self, pct / 100, FADE_OUT_DURATION)
 end
 
 --- Schedule a deferred render, coalescing rapid-fire events into one frame.
@@ -162,6 +278,11 @@ function BaseMixin:MarkDirty(context)
 	-- Always prefer the most recent should-animate context for up-to-date XP state;
 	-- only fall back to keeping an earlier context if nothing is pending yet.
 	if context and context.shouldAnimate then
+		-- A replaced CONFIG_UPDATED context must still trigger the fade
+		-- re-evaluation (the option may have just been toggled off).
+		if self._pendingContext and self._pendingContext.event == "CONFIG_UPDATED" then
+			self._pendingFadeRefresh = true
+		end
 		self._pendingContext = context
 	elseif not self._pendingContext then
 		self._pendingContext = context
@@ -181,6 +302,15 @@ function BaseMixin:MarkDirty(context)
 				else
 					xpcall(self_ref.Refresh, Utils.ReportError, self_ref)
 				end
+
+				-- Fade-when-inactive: gains/levels count as activity; config
+				-- changes re-evaluate the option (it may have been toggled)
+				if (ctx and ctx.event == "CONFIG_UPDATED") or self_ref._pendingFadeRefresh then
+					self_ref._pendingFadeRefresh = nil
+					self_ref:RefreshFadeState()
+				elseif ctx and (ctx.hasGainedXP or ctx.hasLeveledUp) then
+					self_ref:WakeFromFade()
+				end
 			end
 		end)
 	end
@@ -197,6 +327,16 @@ function BaseMixin:OnHide()
 		self._textRefreshTicker:Cancel()
 		self._textRefreshTicker = nil
 	end
+
+	-- Reset fade state so the bar reappears at full opacity next time.
+	-- Pull the frame out of Blizzard's fade manager first so an in-flight
+	-- fade can't override the alpha reset after we hide.
+	self:CancelFadeTimer()
+	self._isFaded = nil
+	if UIFrameFadeRemoveFrame then
+		UIFrameFadeRemoveFrame(self)
+	end
+	self:SetAlpha(1)
 
 	-- Cleanup animation state (from AnimationBase mixin)
 	if self.CleanupAnimation then
@@ -227,6 +367,14 @@ function BaseMixin:UnsubscribeFromEvents()
 	if self.__config_observer_handle then
 		self.__config_observer_handle:Unregister()
 		self.__config_observer_handle = nil
+	end
+	if self.__secondary_handles then
+		for _, handle in ipairs(self.__secondary_handles) do
+			if handle and handle.Unregister then
+				handle.Unregister()
+			end
+		end
+		self.__secondary_handles = nil
 	end
 end
 
@@ -351,6 +499,8 @@ function BaseMixin:HandleAnimatedUpdate(context)
 		enableAnimations   = context.enableAnimations ~= false and true,
 		flashOnGain        = context.flashOnGain ~= false and true,
 		twoPhaseOnLevelUp  = context.twoPhaseOnLevelUp ~= false and true,
+		levelUpCelebration = context.levelUpCelebration ~= false and true,
+		celebrationSound   = context.celebrationSound ~= false and true,
 	}
 
 	-- Update overlays before animation to avoid stale visuals

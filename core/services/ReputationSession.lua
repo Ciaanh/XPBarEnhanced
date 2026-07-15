@@ -331,7 +331,16 @@ function RepSession:OnFactionUpdate()
     elseif factionType == "major" or factionType == "paragon" then
         -- Renown levels and paragon cycles wrap current back towards 0;
         -- credit the remainder of the previous cycle when that happens.
-        gain = RepCalc.ComputeWrappedGain(snapshot.current, session.lastStanding, session.lastMax)
+        -- When a renown level-up was just signalled, the cycle wrapped even
+        -- if the new value landed at or above the old one.
+        if session._renownJustLeveled and (snapshot.current or 0) >= (session.lastStanding or 0) then
+            local lastMax = session.lastMax or 0
+            local remainder = math.max(0, lastMax - (session.lastStanding or 0))
+            gain = remainder + math.max(0, snapshot.current or 0)
+        else
+            gain = RepCalc.ComputeWrappedGain(snapshot.current, session.lastStanding, session.lastMax)
+        end
+        session._renownJustLeveled = nil
     else
         gain = RepCalc.ComputeGain(snapshot.current, session.lastStanding)
     end
@@ -370,6 +379,9 @@ function RepSession:OnRenownLevelChanged(factionID, newRenownLevel, oldRenownLev
     if factionID == session.watchedFactionID then
         -- Route through the gain-aware update so rep earned across the renown
         -- level-up is credited (wrap-aware) instead of re-baselined away.
+        -- Flag the crossing: a big award can land above the old value, which
+        -- the value-drop heuristic alone would miss.
+        session._renownJustLeveled = true
         self:OnFactionUpdate()
     end
 end
@@ -520,8 +532,12 @@ end
 
 function RepSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     if not self._session then return end
+    local session = self._session
     if isInitialLogin then
-        local session = self._session
+        session.factionTotals = {}
+        session.sessionStart  = time()
+    elseif isReloadingUI and Addon.Config and Addon.Config:GetOptionValue("resetOnReload") then
+        -- Same reset semantics as the other session services
         session.factionTotals = {}
         session.sessionStart  = time()
     end

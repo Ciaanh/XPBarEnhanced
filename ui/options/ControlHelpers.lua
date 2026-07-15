@@ -8,6 +8,11 @@ Addon.UI.ControlHelpers = Addon.UI.ControlHelpers or {}
 local ControlHelpers = {}
 local Config = Addon.Config
 
+-- Helper function to resolve locale keys (matches Options.lua)
+local function ResolveLocale(key)
+    return Addon.L and Addon.L[key] or key
+end
+
 -- Play sound helper from Options.lua
 local PlaySound = rawget(_G, "PlaySound")
 local SOUNDKIT = rawget(_G, "SOUNDKIT")
@@ -360,9 +365,9 @@ function ControlHelpers.SetupDropdown(selfFrame, dropdown, key, detail)
     -- If player is at max level and this dropdown controls the bar style, disable it
     if key == "barStyle" and IsPlayerAtMaxLevel() then
         button:Disable()
-        button:SetText(Addon.L and "Blizzard Bar (Max Level)" or "Blizzard Bar (Max Level)")
+        button:SetText(ResolveLocale("OPT_BAR_STYLE_MAX_LEVEL"))
         if button.SetTooltip then
-            button:SetTooltip("Disabled at max level: Blizzard experience bar enforced")
+            button:SetTooltip(ResolveLocale("OPT_BAR_STYLE_MAX_LEVEL_DESC"))
         end
     end
 
@@ -567,11 +572,11 @@ function ControlHelpers.SetupColorRow(selfFrame, row, info)
 
         swatch:SetScript("OnEnter", function(widget)
             GameTooltip:SetOwner(widget, "ANCHOR_RIGHT")
-            GameTooltip:AddLine(info.label .. " Color", 1, 1, 1)
+            GameTooltip:AddLine(string.format(ResolveLocale("OPT_COLOR_SWATCH_TITLE_FMT"), info.label), 1, 1, 1)
             if info.description and info.description ~= "" then
                 GameTooltip:AddLine(info.description, 0.8, 0.8, 0.8, true)
             end
-            GameTooltip:AddLine("Shift-Click to restore the default color.", 0.6, 0.6, 0.6)
+            GameTooltip:AddLine(ResolveLocale("OPT_COLOR_SWATCH_RESET_HINT"), 0.6, 0.6, 0.6)
             GameTooltip:Show()
         end)
         swatch:SetScript("OnLeave", function() GameTooltip:Hide() end)

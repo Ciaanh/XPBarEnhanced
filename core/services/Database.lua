@@ -14,6 +14,19 @@ Addon.Database = Addon.Database or {}
 
 local Database = Addon.Database
 
+-- Resolve the player's name for the per-character storage key.
+-- C_PlayerInfo.GetName REQUIRES a playerLocation argument; pcall-guarded
+-- since a bad call here would take down all per-character storage.
+local function GetSafePlayerName()
+    if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
+        local ok, name = pcall(C_PlayerInfo.GetName, PlayerLocation:CreateFromUnit("player"))
+        if ok and type(name) == "string" and name ~= "" then
+            return name
+        end
+    end
+    return UnitName("player") or "Unknown"
+end
+
 -------------------------------------------------------------------
 -- INITIALIZATION
 -------------------------------------------------------------------
@@ -66,9 +79,11 @@ function Database:Initialize()
     Addon.db.sessionData = Addon.db.sessionData or {}
     Addon.db.reputationSessionData = Addon.db.reputationSessionData or {}
     Addon.db.housingSessionData = Addon.db.housingSessionData or {}
+    Addon.db.honorSessionData = Addon.db.honorSessionData or {}
+    Addon.db.professionSessionData = Addon.db.professionSessionData or {}
 
     -- Set player key
-    local playerName = UnitName("player") or "Unknown"
+    local playerName = GetSafePlayerName()
     local realmName = GetRealmName() or "Unknown"
     Addon.playerKey = string.format("%s-%s", playerName, realmName)
 
@@ -125,11 +140,21 @@ function Database:GetHousingSessionData()
     return getPerCharacterTable(self:GetDB(), "housingSessionData")
 end
 
+---Return the honor session data table stored in the database
+function Database:GetHonorSessionData()
+    return getPerCharacterTable(self:GetDB(), "honorSessionData")
+end
+
+---Return the profession session data table stored in the database
+function Database:GetProfessionSessionData()
+    return getPerCharacterTable(self:GetDB(), "professionSessionData")
+end
+
 ---Return the cached player/realm key used for per-character storage
 function Database:GetPlayerKey()
     -- Generate playerKey on-demand if not yet initialized
     if not Addon.playerKey then
-        local playerName = UnitName("player") or "Unknown"
+        local playerName = GetSafePlayerName()
         local realmName = GetRealmName() or "Unknown"
         Addon.playerKey = string.format("%s-%s", playerName, realmName)
     end

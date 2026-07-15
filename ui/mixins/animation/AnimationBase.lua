@@ -149,7 +149,7 @@ end
 
 --- Get animation configuration from database
 -- Override in bar mixin if needed, or provide default config
--- @return table: { enableAnimations = bool, flashOnGain = bool }
+-- @return table: { enableAnimations, flashOnGain, twoPhaseOnLevelUp, levelUpCelebration, celebrationSound }
 function AnimationBase:GetAnimationConfig()
 	-- First check for frame-specific config
 	local frameConfig = self.__xpbar_config
@@ -157,23 +157,33 @@ function AnimationBase:GetAnimationConfig()
 		local anim = frameConfig.animation
 		return {
 			enableAnimations = anim.enableAnimations ~= false,
-			flashOnGain = anim.flashOnGain ~= false
+			flashOnGain = anim.flashOnGain ~= false,
+			twoPhaseOnLevelUp = anim.twoPhaseOnLevelUp ~= false,
+			levelUpCelebration = anim.levelUpCelebration ~= false,
+			celebrationSound = anim.celebrationSound ~= false
 		}
 	end
 
 	-- Fall back to global database
 	local Addon = XPBarEnhanced
 	if Addon and Addon.Config and Addon.Config.GetOptionValue then
+		local Config = Addon.Config
 		return {
-			enableAnimations = Addon.Config:GetOptionValue("enableAnimations") ~= false,
-			flashOnGain = Addon.Config:GetOptionValue("flashOnGain") ~= false
+			enableAnimations = Config:GetOptionValue("enableAnimations") ~= false,
+			flashOnGain = Config:GetOptionValue("flashOnGain") ~= false,
+			twoPhaseOnLevelUp = Config:GetOptionValue("twoPhaseOnLevelUp") ~= false,
+			levelUpCelebration = Config:GetOptionValue("levelUpCelebration") ~= false,
+			celebrationSound = Config:GetOptionValue("celebrationSound") ~= false
 		}
 	end
 
 	-- Fallback default config
 	return {
 		enableAnimations = true,
-		flashOnGain = true
+		flashOnGain = true,
+		twoPhaseOnLevelUp = true,
+		levelUpCelebration = true,
+		celebrationSound = true
 	}
 end
 

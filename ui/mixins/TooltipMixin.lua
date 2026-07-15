@@ -14,8 +14,13 @@ local Addon = XPBarEnhanced
 Addon.UI.Mixins.Tooltip = XPBarTooltipMixin
 local L = Addon and Addon.L or {}
 
-local function GetGlobalDB()
-	return Addon and Addon.db or {}
+-- Profile-aware option read: resolves active profile → global → defaults.
+-- Falls back to raw db access only when Config is not yet available.
+local function GetOption(key)
+	if Addon and Addon.Config and Addon.Config.GetOptionValue then
+		return Addon.Config:GetOptionValue(key)
+	end
+	return Addon and Addon.db and Addon.db[key]
 end
 
 function TooltipMixin:FormatNumber(n)
@@ -224,8 +229,7 @@ end
 -- Quest section: totals for complete/incomplete (context-only, no counts, no per-quest listing)
 function TooltipMixin:AddQuestSection(content, context, cfg)
 	-- If global or bar config disables quest tooltip, skip
-	local global = GetGlobalDB()
-	if (cfg and cfg.showQuestXP == false) or (global.showQuestXP == false) then
+	if (cfg and cfg.showQuestXP == false) or (GetOption("showQuestXP") == false) then
 		return
 	end
 
@@ -345,8 +349,7 @@ function TooltipMixin:AddSessionSection(content, context, cfg)
 	local sessionStart = context.sessionStart or nil
 
 	-- check explicit per-bar or global enable/disable
-	local global = GetGlobalDB()
-	if (cfg and cfg.showSession == false) or (global.showSession == false) then
+	if (cfg and cfg.showSession == false) or (GetOption("showSession") == false) then
 		return
 	end
 
@@ -359,8 +362,8 @@ function TooltipMixin:AddSessionSection(content, context, cfg)
 		sessionDuration = time() - sessionStart
 	end
 	-- classic thresholds: at least 30s and at least 100 xp to show (preserve parity)
-	local minDuration = (cfg and cfg.sessionMinDuration) or global.sessionMinDuration or 30
-	local minXP = (cfg and cfg.sessionMinXP) or global.sessionMinXP or 100
+	local minDuration = (cfg and cfg.sessionMinDuration) or GetOption("sessionMinDuration") or 30
+	local minXP = (cfg and cfg.sessionMinXP) or GetOption("sessionMinXP") or 100
 
 	-- if duration nil (unknown) allow showing; otherwise require minDuration
 	if sessionDuration and sessionDuration < minDuration then
@@ -450,8 +453,7 @@ end
 
 -- final hints section (classic displayed help/hints)
 function TooltipMixin:AddHintSection(content, context, cfg)
-	local global = GetGlobalDB()
-	if (cfg and cfg.showHints == false) or (global.showHints == false) then
+	if (cfg and cfg.showHints == false) or (GetOption("showHints") == false) then
 		return
 	end
 
@@ -538,14 +540,33 @@ function TooltipMixin:OnEnter()
 
 	local config = self.__xpbar_config or {}
 	local tooltipConfig = config.tooltip or {}
-	local global = GetGlobalDB()
+	local showTooltip = GetOption("showTooltip")
 
 	-- respect per-bar override then global toggle
 	if
-		tooltipConfig.enabled == false or global.showTooltip == false or
-			(global.showTooltip == nil and tooltipConfig.enabled == false)
+		tooltipConfig.enabled == false or showTooltip == false or
+			(showTooltip == nil and tooltipConfig.enabled == false)
 	 then
 		return
+	end
+
+	-- Max-level "primary shows secondary source" mode: the primary bar is
+	-- displaying the secondary source, so its tooltip must show that source's
+	-- stats (name/standing/progress/rate), not the XP tooltip. Reuse the
+	-- shared secondary-tooltip builder with the raw source context.
+	local manager = Addon.BarManager
+	local Shared = Addon.UI and Addon.UI.SharedStyleHelpers
+	if manager and manager.ShouldRepurposePrimaryAtMaxLevel and manager:ShouldRepurposePrimaryAtMaxLevel()
+		and Shared and Shared.GetSecondaryInitialContext and Shared.ShowSecondaryTooltip then
+		local srcContext = Shared.GetSecondaryInitialContext()
+		if srcContext and srcContext.isAvailable ~= false then
+			Shared.ShowSecondaryTooltip(self, srcContext, self:GetBestAnchor())
+			if Shared.FinishSecondaryTooltip then
+				Shared.FinishSecondaryTooltip()
+			end
+			TooltipMixin.currentTooltipOwner = self
+			return
+		end
 	end
 
 	-- Build the context using centralized builder (dot-call: not a method)

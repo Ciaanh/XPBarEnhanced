@@ -21,6 +21,8 @@ Addon.EventNames = {
     XPBAR_ANIMATION_CONTEXT = "XPBAR:ANIMATION_CONTEXT",
     REPUTATION_BROADCAST_UPDATE = "REPUTATION:BROADCAST_UPDATE",
     HOUSING_BROADCAST_UPDATE = "HOUSING:BROADCAST_UPDATE",
+    HONOR_BROADCAST_UPDATE = "HONOR:BROADCAST_UPDATE",
+    PROFESSION_BROADCAST_UPDATE = "PROFESSION:BROADCAST_UPDATE",
 }
 
 Addon.OptionsCategory = "XP Bar Enhanced"
@@ -34,6 +36,8 @@ Addon.Utils = Addon.Utils or {}
 Addon.ReputationCalculations = Addon.ReputationCalculations or {}
 Addon.ReputationSession = Addon.ReputationSession or {}
 Addon.HousingSession = Addon.HousingSession or {}
+Addon.HonorSession = Addon.HonorSession or {}
+Addon.ProfessionSession = Addon.ProfessionSession or {}
 Addon.SecondaryBarManager = Addon.SecondaryBarManager or {}
 
 -- State
