@@ -2,7 +2,7 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail only** · Interface 120007 · Version 1.1.7
+**Retail only** · Interface 120007 · Version 1.1.8
 
 ## Features
 
@@ -50,7 +50,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | `/xpbe options` | Open the options panel |
 | `/xpbe stats` | Toggle the statistics window |
 | `/xpbe changelog` | Show the update changelog |
-| `/xpbe style <none\|classic\|flat\|vertical\|circular\|minimap_ring\|terminal>` | Set the active bar style |
+| `/xpbe style <none\|classic\|flat\|vertical\|circular\|minimap_ring\|terminal\|orb>` | Set the active bar style |
 | `/xpbe profile` | Show current profile and list available profiles |
 | `/xpbe profile global` | Switch to the global shared profile |
 | `/xpbe profile use <name>` | Switch to a named profile |
@@ -59,6 +59,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | `/xpbe profile delete [name]` | Delete a profile |
 | `/xpbe reps` | Export all faction IDs |
 | `/xpbe debugevents [on\|off\|show\|reset]` | Toggle and inspect EventBus emit counters |
+| `/xpbe test <celebration\|milestone>` | Preview the level-up celebration or a progress notification |
 | `/xpbe reset` | Reset all settings |
 | `/xpbe resetstats` | Reset session statistics |
 | `/xpbe resetcolors` | Reset colors to defaults |
@@ -74,7 +75,7 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 - **Colors** — Customize XP bar, rested XP, quest XP overlays
 - **Display** — Toggle text rows, quest overlays, animations, and minimap button
 - **Profiles** — Manage named settings profiles; switch per character or use a shared global profile
-- **Secondary Progress Bar** — Enable the secondary bar and choose source mode (`Reputation` or `Housing Favor`); optionally attach it above the XP bar or position it freely; hide the Delve companion bar when outside a Delve
+- **Secondary Progress Bar** — Enable the secondary bar and choose its source (`Reputation`, `Housing Favor`, `Honor`, or `Profession` — with a first/second/auto profession selector); optionally attach it above the XP bar or position it freely; hide the Delve companion bar when outside a Delve
 - **Session Behavior** — Optional reset of session tracking on `/reload`
 - **Circular Bar** — Ring size (Small/Medium/Large/Huge), segment count, texture style, optional center text scaling, and optional full-circle secondary arc
 - **Minimap Ring** — Ring padding, segment count, segment dimensions, optional minimap button collection, and optional "start minimap arc expanded" behavior for the reputation arc
@@ -84,11 +85,6 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 
 - World of Warcraft Retail
 - No external dependencies
-
-## Development Notes
-
-- Event ownership guidance: see docs/event-ownership.md
-- Manual release validation: see docs/qa-checklist.md
 
 ## Credits
 

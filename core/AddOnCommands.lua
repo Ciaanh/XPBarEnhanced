@@ -14,7 +14,7 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFoptions|r - Open options panel")
     print("  /xpbe |cFFFFFFFFstats|r - Toggle statistics window")
     print("  /xpbe |cFFFFFFFFchangelog|r - Show the update changelog")
-    print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|terminal>|r - Change bar style")
+    print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|terminal|orb>|r - Change bar style")
     print("  /xpbe |cFFFFFFFFprofile|r - Show current profile and available profiles")
     print("  /xpbe |cFFFFFFFFprofile global|r - Use global shared settings")
     print("  /xpbe |cFFFFFFFFprofile use <name>|r - Switch to a named profile")
@@ -106,7 +106,7 @@ local function handleStyle(style)
             print("|cFFFF0000XP Bar Enhanced:|r Config module not available")
         end
     else
-        print("|cFFFF0000XP Bar Enhanced:|r Invalid style. Use: none, classic, flat, vertical, circular, minimap_ring, terminal")
+        print("|cFFFF0000XP Bar Enhanced:|r Invalid style. Use: none, classic, flat, vertical, circular, minimap_ring, terminal, orb")
     end
 end
 

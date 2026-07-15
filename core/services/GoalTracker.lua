@@ -29,13 +29,17 @@ end
 
 -------------------------------------------------------------------
 -- NOTIFICATION TOAST
--- A small bordered frame (icon + text) instead of UIErrorsFrame, so
--- milestone announcements don't look like a system error message and
--- can't be interleaved with unrelated Blizzard error text.
+-- A small bordered frame (icon + text) so milestone announcements
+-- read as addon notices, distinct from Blizzard system/error text.
 -------------------------------------------------------------------
 
-local ADDON_ICON = 4675649 -- matches the TOC IconTexture
+local ADDON_ICON = tonumber(C_AddOns and C_AddOns.GetAddOnMetadata
+    and C_AddOns.GetAddOnMetadata("XPBarEnhanced", "IconTexture")) or 4675649
 local TOAST_VISIBLE_SECONDS = 4
+local TOAST_MIN_WIDTH = 220
+local TOAST_MAX_WIDTH = 480
+-- Horizontal chrome around the text: 8 (icon left) + 28 (icon) + 10 (gap) + 12 (right)
+local TOAST_TEXT_PADDING = 58
 
 local toastFrame
 
@@ -66,7 +70,6 @@ local function GetToastFrame()
 
     local text = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     text:SetPoint("LEFT", icon, "RIGHT", 10, 0)
-    text:SetPoint("RIGHT", f, "RIGHT", -8, 0)
     text:SetJustifyH("LEFT")
     text:SetWordWrap(false)
     text:SetTextColor(1, 0.82, 0.1, 1)
@@ -78,7 +81,18 @@ end
 
 local function notify(text)
     local f = GetToastFrame()
+    -- Release any previous truncation width so the string measures naturally,
+    -- then size the toast to its content (clamped) and re-cap the text.
+    f.Text:SetWidth(0)
     f.Text:SetText(text)
+    local width = f.Text:GetStringWidth() + TOAST_TEXT_PADDING
+    if width < TOAST_MIN_WIDTH then
+        width = TOAST_MIN_WIDTH
+    elseif width > TOAST_MAX_WIDTH then
+        width = TOAST_MAX_WIDTH
+    end
+    f:SetWidth(width)
+    f.Text:SetWidth(width - TOAST_TEXT_PADDING)
     f:Show()
 
     if f._hideTimer then

@@ -215,7 +215,7 @@
                                     <Frame parentKey="Row_minimapRingPadding" inherits="ConfigSliderTemplate" hidden="true">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="minimapRingPadding" type="string"/>
-                                            <KeyValue key="layoutIndex" value="11" type="number"/>
+                                            <KeyValue key="layoutIndex" value="11.5" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="20" type="number"/>
                                             <KeyValue key="optionTab" value="visual" type="string"/>

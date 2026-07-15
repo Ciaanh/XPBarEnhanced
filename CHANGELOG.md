@@ -4,6 +4,17 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.8] - 2026-07-16
+
+### Changed
+
+- **Level progress notifications** now appear as a compact bordered toast with the addon icon, auto-sized to its text, instead of plain text at the top of the screen.
+
+### Fixed
+
+- The Orb style was missing from the `/xpbe help` style list, the invalid-style error message, and the README command reference.
+- Documentation: the README's secondary-bar configuration section now lists all four sources (Reputation, Housing Favor, Honor, Profession).
+
 ## [1.1.7] - 2026-07-14
 
 ### Added

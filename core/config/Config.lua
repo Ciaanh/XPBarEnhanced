@@ -85,6 +85,21 @@ function Config:Initialize()
             end
         end
 
+        -- Prune option keys that no longer exist so stale saved values can't
+        -- resurface if a same-named option is ever reintroduced.
+        local removedKeys = { "fadeWhenInactive", "fadeDelay", "idleOpacity", "celebrationSound", "goalSound" }
+        for _, key in ipairs(removedKeys) do
+            Addon.db[key] = nil
+        end
+        if type(Addon.db.profiles) == "table" then
+            for _, profile in pairs(Addon.db.profiles) do
+                if type(profile) == "table" then
+                    for _, key in ipairs(removedKeys) do
+                        profile[key] = nil
+                    end
+                end
+            end
+        end
     end
 end
 
@@ -616,7 +631,7 @@ function Config:ShowHelp()
     print("     Customize colors and features from the options panel.")
     print("  |cFFFFD700/xpbe reset|r - Reset all settings to defaults")
     print("  |cFFFFD700/xpbe resetstats|r - Clear all tracked statistics")
-    print("  |cFFFFD700/xpbe style <none|classic|flat|vertical|circular|minimap_ring|terminal>|r - Change bar style")
+    print("  |cFFFFD700/xpbe style <none|classic|flat|vertical|circular|minimap_ring|terminal|orb>|r - Change bar style")
 end
 
 function Config:Reset()

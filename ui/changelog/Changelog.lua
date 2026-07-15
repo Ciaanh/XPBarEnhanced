@@ -8,6 +8,13 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.1.8",
+        notes = {
+            "Level progress notifications now appear as a compact toast with the addon icon instead of plain text at the top of the screen.",
+            "The Orb style is now listed in the /xpbe help style list.",
+        },
+    },
+    {
         version = "1.1.7",
         notes = {
             "New Orb bar style: a Diablo-style filling sphere with glass and rim art, plus a companion orb for the secondary bar.",
