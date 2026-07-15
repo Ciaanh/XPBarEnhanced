@@ -59,8 +59,16 @@ local function getCharacterKey(characterKey)
         return Addon.Database:GetPlayerKey()
     end
 
-    -- Use C_PlayerInfo.GetName() to avoid secret value issues in 12.0.0+
-    local playerName = (C_PlayerInfo and C_PlayerInfo.GetName and C_PlayerInfo.GetName()) or UnitName("player") or "Unknown"
+    -- Use C_PlayerInfo.GetName (REQUIRES a playerLocation) to avoid secret
+    -- value issues in 12.0.0+; pcall-guarded with a UnitName fallback.
+    local playerName
+    if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
+        local ok, name = pcall(C_PlayerInfo.GetName, PlayerLocation:CreateFromUnit("player"))
+        if ok and type(name) == "string" and name ~= "" then
+            playerName = name
+        end
+    end
+    playerName = playerName or UnitName("player") or "Unknown"
     local realmName = GetRealmName() or "Unknown"
     return string.format("%s-%s", playerName, realmName)
 end

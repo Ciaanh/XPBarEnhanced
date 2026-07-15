@@ -14,6 +14,19 @@ Addon.Database = Addon.Database or {}
 
 local Database = Addon.Database
 
+-- Resolve the player's name for the per-character storage key.
+-- C_PlayerInfo.GetName REQUIRES a playerLocation argument; pcall-guarded
+-- since a bad call here would take down all per-character storage.
+local function GetSafePlayerName()
+    if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
+        local ok, name = pcall(C_PlayerInfo.GetName, PlayerLocation:CreateFromUnit("player"))
+        if ok and type(name) == "string" and name ~= "" then
+            return name
+        end
+    end
+    return UnitName("player") or "Unknown"
+end
+
 -------------------------------------------------------------------
 -- INITIALIZATION
 -------------------------------------------------------------------
@@ -70,7 +83,7 @@ function Database:Initialize()
     Addon.db.professionSessionData = Addon.db.professionSessionData or {}
 
     -- Set player key
-    local playerName = (C_PlayerInfo and C_PlayerInfo.GetName and C_PlayerInfo.GetName()) or UnitName("player") or "Unknown"
+    local playerName = GetSafePlayerName()
     local realmName = GetRealmName() or "Unknown"
     Addon.playerKey = string.format("%s-%s", playerName, realmName)
 
@@ -141,7 +154,7 @@ end
 function Database:GetPlayerKey()
     -- Generate playerKey on-demand if not yet initialized
     if not Addon.playerKey then
-        local playerName = (C_PlayerInfo and C_PlayerInfo.GetName and C_PlayerInfo.GetName()) or UnitName("player") or "Unknown"
+        local playerName = GetSafePlayerName()
         local realmName = GetRealmName() or "Unknown"
         Addon.playerKey = string.format("%s-%s", playerName, realmName)
     end
