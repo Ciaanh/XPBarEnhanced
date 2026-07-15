@@ -13,7 +13,7 @@ Changelog.entries = {
             "New Orb bar style: a Diablo-style filling sphere with glass and rim art, plus a companion orb for the secondary bar.",
             "New secondary bar sources: Honor (PvP) and Profession skill, with a selector for which profession to track.",
             "New option to show the selected secondary source on the main bar at max level, with matching color, text, and tooltip.",
-            "Level-up celebration: golden glow and optional fanfare when you ding.",
+            "Level-up celebration: a golden glow when you ding.",
             "Session XP charts in the Stats window: XP/hour histogram and quest-vs-other split.",
             "Level progress notifications at 25/50/75% with estimated time to ding.",
             "LibDataBroker feed (XP/h and time-to-level) for Titan Panel, Bazooka, and ElvUI datatexts.",

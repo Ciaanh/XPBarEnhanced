@@ -378,7 +378,6 @@ function BaseMixin:HandleAnimatedUpdate(context)
 		flashOnGain        = context.flashOnGain ~= false and true,
 		twoPhaseOnLevelUp  = context.twoPhaseOnLevelUp ~= false and true,
 		levelUpCelebration = context.levelUpCelebration ~= false and true,
-		celebrationSound   = context.celebrationSound ~= false and true,
 	}
 
 	-- Update overlays before animation to avoid stale visuals

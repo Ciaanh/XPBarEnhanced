@@ -27,18 +27,67 @@ local function getState()
     return session.milestones
 end
 
-local function notify(text)
-    if UIErrorsFrame and UIErrorsFrame.AddMessage then
-        UIErrorsFrame:AddMessage(text, 1.0, 0.82, 0.1, 1.0)
-    else
-        print(text)
+-------------------------------------------------------------------
+-- NOTIFICATION TOAST
+-- A small bordered frame (icon + text) instead of UIErrorsFrame, so
+-- milestone announcements don't look like a system error message and
+-- can't be interleaved with unrelated Blizzard error text.
+-------------------------------------------------------------------
+
+local ADDON_ICON = 4675649 -- matches the TOC IconTexture
+local TOAST_VISIBLE_SECONDS = 4
+
+local toastFrame
+
+local function GetToastFrame()
+    if toastFrame then
+        return toastFrame
     end
 
-    if Addon.Config and Addon.Config.GetOptionValue
-        and Addon.Config:GetOptionValue("goalSound") == true
-        and PlaySound and SOUNDKIT and SOUNDKIT.RAID_WARNING then
-        PlaySound(SOUNDKIT.RAID_WARNING)
+    local f = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    f:SetSize(320, 44)
+    f:SetPoint("TOP", UIParent, "TOP", 0, -220)
+    f:SetFrameStrata("HIGH")
+    f:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 },
+    })
+    f:SetBackdropColor(0.05, 0.05, 0.08, 0.85)
+    f:SetBackdropBorderColor(1, 0.82, 0.1, 0.9)
+    f:Hide()
+
+    local icon = f:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(28, 28)
+    icon:SetPoint("LEFT", f, "LEFT", 8, 0)
+    icon:SetTexture(ADDON_ICON)
+    f.Icon = icon
+
+    local text = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    text:SetPoint("LEFT", icon, "RIGHT", 10, 0)
+    text:SetPoint("RIGHT", f, "RIGHT", -8, 0)
+    text:SetJustifyH("LEFT")
+    text:SetWordWrap(false)
+    text:SetTextColor(1, 0.82, 0.1, 1)
+    f.Text = text
+
+    toastFrame = f
+    return f
+end
+
+local function notify(text)
+    local f = GetToastFrame()
+    f.Text:SetText(text)
+    f:Show()
+
+    if f._hideTimer then
+        f._hideTimer:Cancel()
     end
+    f._hideTimer = C_Timer.NewTimer(TOAST_VISIBLE_SECONDS, function()
+        f._hideTimer = nil
+        f:Hide()
+    end)
 end
 
 -- Handle an XP broadcast context: fire any newly crossed milestones.

@@ -183,7 +183,7 @@ function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 
 	-- Detect level-up
 	if AnimationUtils.DetectLevelUp(xpContext) then
-		-- Level-up celebration (golden glow + optional fanfare)
+		-- Level-up celebration (golden glow)
 		self:PlayLevelUpCelebration(bar, config)
 
 		-- Cancel current animation
@@ -393,19 +393,14 @@ function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 	self:Register(bar)
 end
 
---- Level-up celebration: golden glow pulses over the bar plus an optional
---- fanfare. Uses a native AnimationGroup (no OnUpdate) and a per-bar pooled
---- texture. Styles without a StatusBar region get the sound only — no hard
---- errors from style code.
+--- Level-up celebration: a golden glow pulses over the bar. Uses a native
+--- AnimationGroup (no OnUpdate) and a per-bar pooled texture. Styles without
+--- a StatusBar region are a no-op — no hard errors from style code.
 -- @param bar table: Bar instance
 -- @param config table: Animation config from GetAnimationConfig()
 function AnimationManager:PlayLevelUpCelebration(bar, config)
 	if not config or config.levelUpCelebration == false then
 		return
-	end
-
-	if config.celebrationSound ~= false and PlaySound and SOUNDKIT and SOUNDKIT.UI_EPICLOOT_TOAST then
-		PlaySound(SOUNDKIT.UI_EPICLOOT_TOAST)
 	end
 
 	local anchor = bar.StatusBar

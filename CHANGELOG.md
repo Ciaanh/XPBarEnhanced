@@ -4,22 +4,17 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
-### Removed
-
-- **Fade when inactive**: removed. The feature only faded the primary bar, leaving the secondary bar at full opacity whenever both were shown together — inconsistent enough that it was pulled rather than extended (`fadeWhenInactive`, `fadeDelay`, `idleOpacity` options and their runtime code are gone).
-
 ## [1.1.7] - 2026-07-14
 
 ### Added
 
-- **Fade when inactive**: optional auto-fade of the bar to a configurable idle opacity after a delay with no XP gain; wakes on XP gain, level-up, mouseover, or option change, and never fades during combat (`fadeWhenInactive`, `fadeDelay`, `idleOpacity`).
-- **Level-up celebration**: optional golden glow pulse on the bar at level-up, with an optional fanfare sound (`levelUpCelebration`, `celebrationSound`).
+- **Level-up celebration**: a golden glow pulse on the bar at level-up (`levelUpCelebration`).
 - **Session charts** in the Stats window: an XP/hour histogram across the session plus a quest-vs-other XP split bar, rendered in a new chart panel.
 - **Honor secondary-bar source**: the secondary bar can now track Honor (PvP) progress, with wrap-aware gain across honor levels.
 - **Profession secondary-bar source**: the secondary bar can now track a primary profession's skill level (auto-selects the first primary profession with room to grow).
 - **Use main bar at max level** (`maxLevelPrimaryShowsSecondary`, default off): at max level, show the selected secondary source on the main bar instead of hiding it (mirrors Blizzard's status bar). The standalone secondary bar is hidden while active to avoid rendering the same source twice.
 - **Tracked profession selector** (`professionSlot`): choose whether the Profession source tracks the first or second profession, or Auto (first primary with room to grow).
-- **Level progress notifications** (`goalNotifications`, on by default): announces 25%/50%/75% level progress with the estimated time to ding, once per level, with an optional sound (`goalSound`).
+- **Level progress notifications** (`goalNotifications`, on by default): announces 25%/50%/75% level progress with the estimated time to ding, once per level, shown as a small on-screen notice.
 - **LibDataBroker feed** (`enableDataBrokerFeed`, on by default): publishes "XP/h · time-to-level" to LDB displays (Titan Panel, Bazooka, ElvUI datatexts); shows the active secondary source at max level; click opens the Stats window. Active only when an LDB display addon is installed.
 - **Orb bar style**: a Diablo-style filling sphere (vertical fill clipped to a circle) with a glass highlight and metallic rim, draggable, with centered level and percent text. Renders the rested extent and quest XP overlays as circle-clipped bands, and supports animations, gain flash, custom colors and the max-level secondary mode. Includes a smaller companion orb for the secondary bar, docked to the right of the primary orb.
 

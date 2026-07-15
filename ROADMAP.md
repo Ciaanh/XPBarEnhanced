@@ -58,14 +58,14 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 
 ## Features (ranked by value/effort)
 
-### 1. Fade when inactive + level-up celebration
+### 1. Level-up celebration
 | | |
 |---|---|
-| **Status** | celebration shipped in v1.1.7; **fade-when-inactive removed** (decision 2026-07-16) |
-| **Impact** | High — highly visible user-facing options |
+| **Status** | shipped in v1.1.7 |
+| **Impact** | High — highly visible user-facing option |
 | **Effort** | Medium |
-| **Reuse** | These options existed as defaults (`fadeWhenInactive`, `idleOpacity`, `fadeDelay`, `levelUpCelebration`, `celebrationSound`, `celebrationSparkles`, `celebrationSpeed`) before being removed as orphans in v1.1.7 — they were the implied roadmap. The animation infrastructure and the two-phase level-up hold provide ~80% of the base |
-| **Notes** | Fade-when-inactive only faded the primary bar, so it looked inconsistent whenever a secondary bar was shown alongside it — removed rather than extended. If revisited, the secondary bar needs its own fade path (independent, on its own source's inactivity, per the discussion that led to removal) before this returns. |
+| **Reuse** | `levelUpCelebration` existed as an orphaned default before being wired up — the animation infrastructure and the two-phase level-up hold provided most of the base |
+| **Notes** | A golden glow pulse rendered via a native AnimationGroup on the bar's fill texture |
 
 ### 2. Custom fonts via LibSharedMedia
 | | |
@@ -111,7 +111,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 | **Impact** | Medium — engagement feature |
 | **Effort** | Low (as scoped) |
 | **Reuse** | `GoalTracker` service driven by `XPBAR_BROADCAST_UPDATE` (no WoW events, no OnUpdate); ETA from the context's `timeToLevel` |
-| **Notes** | **Lot 1 (kept):** 25/50/75% milestone announcements via UIErrorsFrame with ETA + optional sound (`goalNotifications`, `goalSound`); fires once per level, per-character state. **Lot 2 (dated level goal) and lot 3 (secondary-source targets): rejected for now.** |
+| **Notes** | **Lot 1 (kept):** 25/50/75% milestone announcements via a small custom on-screen notice with ETA (`goalNotifications`); fires once per level, per-character state. **Lot 2 (dated level goal) and lot 3 (secondary-source targets): rejected for now.** |
 
 ### 7. Localization
 | | |
@@ -135,7 +135,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 
 ## Agreed order (decision 2026-07-08)
 
-1. **Fade when inactive + level-up celebration** — in progress (implemented, pending in-game validation).
+1. **Level-up celebration** — shipped in v1.1.7.
 2. **Session charts** in the Stats window — in progress (implemented, pending in-game validation).
 3. **New secondary-bar sources** — in progress (Honor + Profession implemented, pending in-game validation).
 4. **Goals & ETA notifications**.

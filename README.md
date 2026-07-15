@@ -19,7 +19,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 - **Style-Aware Secondary Bars** — Secondary progress display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar, companion Orb)
 - **Color Customization** — Full control over bar and overlay colors
 - **Minimap Button** — Quick access to options and stats
-- **Animations & Celebration** — Smooth fill, flash-on-gain, two-phase level-up animations, and an optional level-up celebration with golden glow and fanfare
+- **Animations & Celebration** — Smooth fill, flash-on-gain, two-phase level-up animations, and an optional golden-glow level-up celebration
 - **Level Progress Notifications** — Announces 25%/50%/75% level progress with the estimated time to ding
 - **LibDataBroker Feed** — XP/h and time-to-level datatext for Titan Panel, Bazooka, or ElvUI
 

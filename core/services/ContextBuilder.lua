@@ -74,7 +74,6 @@ local function BuildDBConfig()
 	setIfPresent("enableAnimations")
 	setIfPresent("twoPhaseOnLevelUp")
 	setIfPresent("levelUpCelebration")
-	setIfPresent("celebrationSound")
 
 	return cfg
 end
