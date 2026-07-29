@@ -9,14 +9,15 @@
 	<Frame name="CircularBarTemplate" virtual="true" mixin="CircularBarXPBarMixin" frameStrata="LOW" enableMouse="true" fixedFrameStrata="true">
 		<Size x="256" y="256"/>
 		<Layers>
-			<!-- Border PNG -->
+			<!-- Border ring. Extensionless like every other asset reference: the
+			     files on disk are .tga, so an explicit .png never loaded. -->
 			<Layer level="BACKGROUND" textureSubLevel="0">
-				<Texture parentKey="BorderRing" setAllPoints="true" file="Interface\AddOns\XPBarEnhanced\assets\border.png"/>
+				<Texture parentKey="BorderRing" setAllPoints="true" file="Interface\AddOns\XPBarEnhanced\assets\border"/>
 			</Layer>
 
-			<!-- Center PNG background -->
+			<!-- Center background -->
 			<Layer level="BACKGROUND" textureSubLevel="1">
-				<Texture parentKey="CenterBG" setAllPoints="true" file="Interface\AddOns\XPBarEnhanced\assets\center.png">
+				<Texture parentKey="CenterBG" setAllPoints="true" file="Interface\AddOns\XPBarEnhanced\assets\center">
 					<Color r="1.0" g="1.0" b="1.0" a="0.8"/>
 				</Texture>
 			</Layer>
