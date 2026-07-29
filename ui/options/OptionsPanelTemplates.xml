@@ -274,6 +274,39 @@
         </Frames>
     </Frame>
 
+    <!-- Collapsible section header
+         Same look as ConfigSectionHeader, plus a full-width transparent button so
+         the whole header toggles its group. The expand marker is a prefix on the
+         Title text (set in Options.lua), which avoids depending on arrow assets.
+    -->
+    <Frame name="ConfigDisclosureHeader" virtual="true">
+        <Size x="0" y="35"/>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString parentKey="Title" inherits="GameFontNormalLarge" justifyH="LEFT">
+                    <Anchors>
+                        <Anchor point="LEFT" x="16"/>
+                        <Anchor point="RIGHT" x="-16"/>
+                    </Anchors>
+                    <Color r="1.0" g="0.82" b="0.0"/> <!-- Gold -->
+                </FontString>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture parentKey="Divider">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativeKey="$parent.Title" relativePoint="BOTTOMLEFT" y="-4"/>
+                        <Anchor point="RIGHT" relativeKey="$parent.Title" relativePoint="RIGHT"/>
+                    </Anchors>
+                    <Size x="0" y="1"/>
+                    <Color r="0.5" g="0.5" b="0.5" a="0.5"/>
+                </Texture>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button parentKey="Toggle" setAllPoints="true"/>
+        </Frames>
+    </Frame>
+
     <!-- Section header with divider line
          Gold header text with horizontal divider below
     -->

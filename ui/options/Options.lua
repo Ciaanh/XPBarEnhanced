@@ -231,9 +231,11 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
         local childTab = child and child.optionTab
         if childTab then
             -- A row is visible only if: correct tab AND not hidden by style conditions
+            -- AND its disclosure group (if any) is expanded
             local tabMatch = (childTab == tabId)
             local styleOk = (child._styleVisible == nil or child._styleVisible == true)
-            child:SetShown(tabMatch and styleOk)
+            local disclosureOk = self:IsDisclosureExpanded(child.disclosureGroup)
+            child:SetShown(tabMatch and styleOk and disclosureOk)
         end
     end
 
@@ -617,6 +619,7 @@ function XPBarEnhancedOptionsMixin:OnLoad()
     self:BuildOptionCheckboxes()
     self:BuildColorControls()
     self:SetupPresetRow()
+    self:SetupDisclosures()
     self:SetupTabs()
     self:SelectTab("visual")
     self:Refresh()
@@ -1022,6 +1025,76 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     end
 end
 
+--- True when rows in `group` should be shown. Rows with no group always show.
+---@param group string|nil
+---@return boolean
+function XPBarEnhancedOptionsMixin:IsDisclosureExpanded(group)
+    if not group then
+        return true
+    end
+    return (self._disclosureExpanded and self._disclosureExpanded[group]) and true or false
+end
+
+--- Update a disclosure header's own text to match its expanded state
+function XPBarEnhancedOptionsMixin:RefreshDisclosureHeaders()
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    if not container then
+        return
+    end
+
+    for _, child in ipairs({container:GetChildren()}) do
+        local group = child and child.disclosureToggle
+        if group and child.Title then
+            local marker = self:IsDisclosureExpanded(group) and "-" or "+"
+            child.Title:SetText(marker .. " " .. ResolveLocale("OPT_SECTION_" .. string.upper(group)))
+        end
+    end
+end
+
+--- Expand or collapse a disclosure group and relayout the active tab
+---@param group string
+---@param expanded boolean
+function XPBarEnhancedOptionsMixin:SetDisclosureExpanded(group, expanded)
+    self._disclosureExpanded = self._disclosureExpanded or {}
+    self._disclosureExpanded[group] = expanded and true or false
+    self:RefreshDisclosureHeaders()
+    -- Re-run the tab filter so the group's rows appear/disappear and the
+    -- container reflows around them.
+    if self._activeTab then
+        self:SelectTab(self._activeTab)
+    end
+end
+
+--- Wire the disclosure headers. Collapsed initially unless the player is already
+--- on a custom readout, in which case the individual toggles are what they came
+--- for and hiding them would be the wrong default.
+function XPBarEnhancedOptionsMixin:SetupDisclosures()
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    if not container then
+        return
+    end
+
+    local presets = Addon.ReadoutPresets
+    local isCustom = presets and presets:Detect() == presets.CUSTOM
+
+    self._disclosureExpanded = self._disclosureExpanded or {}
+    for _, child in ipairs({container:GetChildren()}) do
+        local group = child and child.disclosureToggle
+        if group then
+            if self._disclosureExpanded[group] == nil then
+                self._disclosureExpanded[group] = isCustom and true or false
+            end
+            if child.Toggle then
+                child.Toggle:SetScript("OnClick", function()
+                    self:SetDisclosureExpanded(group, not self:IsDisclosureExpanded(group))
+                end)
+            end
+        end
+    end
+
+    self:RefreshDisclosureHeaders()
+end
+
 --- Wire the three readout-preset buttons and the reset shortcut.
 --- Presets are the new player's path from "I want a minimal bar" to the boolean
 --- toggles that produce one; the individual toggles stay one click away.
@@ -1046,6 +1119,8 @@ function XPBarEnhancedOptionsMixin:SetupPresetRow()
             button.tooltipRequirement = ResolveLocale("OPT_READOUT_PRESET_" .. upper .. "_DESC")
             button:SetScript("OnClick", function()
                 presets:Apply(name)
+                -- Choosing a preset means the details are handled; fold them away.
+                self:SetDisclosureExpanded("advanced", false)
                 self:Refresh()
             end)
         end
@@ -1055,6 +1130,7 @@ function XPBarEnhancedOptionsMixin:SetupPresetRow()
         row.ResetButton:SetText(ResolveLocale("OPT_READOUT_PRESET_RESET"))
         row.ResetButton:SetScript("OnClick", function()
             presets:Apply("standard")
+            self:SetDisclosureExpanded("advanced", false)
             self:Refresh()
         end)
     end

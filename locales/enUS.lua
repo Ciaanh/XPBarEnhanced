@@ -100,6 +100,9 @@ L["OPT_READOUT_PRESET_LEVELLER_DESC"] = "Standard plus milestone ticks and incom
 L["OPT_READOUT_PRESET_CUSTOM"] = "Custom"
 L["OPT_READOUT_PRESET_RESET"] = "Reset to Standard"
 
+-- Collapsible section holding the individual toggles a preset covers
+L["OPT_SECTION_ADVANCED"] = "Advanced"
+
 -- Current options in OptionsMetadata
 L["OPT_SHOW_RESTED_OVERLAY"] = "Show rested overlay"
 L["OPT_SHOW_RESTED_OVERLAY_DESC"] = "Show an overlay for rested XP on the XP bar when rested XP is available."

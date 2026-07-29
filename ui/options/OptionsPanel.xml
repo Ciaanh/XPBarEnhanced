@@ -341,14 +341,26 @@
 
                                     <!-- ==================== Text Display ==================== -->
 
-                                    <!-- Presets come before any checkbox on this tab: layoutIndex 25
+                                    <!-- Presets come before any checkbox on this tab: layoutIndex 24
                                          sorts ahead of the text rows, which start at 26. -->
                                     <Frame parentKey="Row_readoutPreset" inherits="ConfigPresetRowTemplate">
                                         <KeyValues>
-                                            <KeyValue key="layoutIndex" value="25" type="number"/>
+                                            <KeyValue key="layoutIndex" value="24" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <!-- Everything below on this tab (layoutIndex 26+) carries
+                                         disclosureGroup="advanced" and collapses under this header. -->
+                                    <Frame parentKey="AdvancedDisclosure" inherits="ConfigDisclosureHeader">
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="25" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="16" type="number"/>
+                                            <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="disclosureToggle" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -358,6 +370,7 @@
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="20" type="number"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -367,6 +380,7 @@
                                             <KeyValue key="layoutIndex" value="27" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -378,6 +392,7 @@
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -387,6 +402,7 @@
                                             <KeyValue key="layoutIndex" value="29" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -396,6 +412,7 @@
                                             <KeyValue key="layoutIndex" value="30" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -407,6 +424,7 @@
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="6" type="number"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -417,6 +435,7 @@
                                             <KeyValue key="optionTab" value="text" type="string"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="6" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -427,6 +446,7 @@
                                             <KeyValue key="optionTab" value="text" type="string"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -438,6 +458,7 @@
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="16" type="number"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -458,6 +479,7 @@
                                             <KeyValue key="topPadding" value="16" type="number"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -468,6 +490,7 @@
                                             <KeyValue key="optionTab" value="text" type="string"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -478,6 +501,7 @@
                                             <KeyValue key="optionTab" value="text" type="string"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -500,6 +524,7 @@
                                             <KeyValue key="topPadding" value="16" type="number"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -510,6 +535,7 @@
                                             <KeyValue key="optionTab" value="text" type="string"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -520,6 +546,7 @@
                                             <KeyValue key="optionTab" value="text" type="string"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -530,6 +557,7 @@
                                             <KeyValue key="optionTab" value="text" type="string"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
