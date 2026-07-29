@@ -616,6 +616,7 @@ function XPBarEnhancedOptionsMixin:OnLoad()
 
     self:BuildOptionCheckboxes()
     self:BuildColorControls()
+    self:SetupPresetRow()
     self:SetupTabs()
     self:SelectTab("visual")
     self:Refresh()
@@ -1021,6 +1022,73 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     end
 end
 
+--- Wire the three readout-preset buttons and the reset shortcut.
+--- Presets are the new player's path from "I want a minimal bar" to the boolean
+--- toggles that produce one; the individual toggles stay one click away.
+function XPBarEnhancedOptionsMixin:SetupPresetRow()
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    local row = container and container.Row_readoutPreset
+    local presets = Addon.ReadoutPresets
+    if not row or not presets then
+        return
+    end
+
+    if row.Label then
+        row.Label:SetText(ResolveLocale("OPT_READOUT_PRESET"))
+    end
+
+    for index, name in ipairs(presets.ORDER) do
+        local button = row["PresetButton" .. index]
+        if button then
+            local upper = string.upper(name)
+            button:SetText(ResolveLocale("OPT_READOUT_PRESET_" .. upper))
+            button.tooltipText = ResolveLocale("OPT_READOUT_PRESET_" .. upper)
+            button.tooltipRequirement = ResolveLocale("OPT_READOUT_PRESET_" .. upper .. "_DESC")
+            button:SetScript("OnClick", function()
+                presets:Apply(name)
+                self:Refresh()
+            end)
+        end
+    end
+
+    if row.ResetButton then
+        row.ResetButton:SetText(ResolveLocale("OPT_READOUT_PRESET_RESET"))
+        row.ResetButton:SetScript("OnClick", function()
+            presets:Apply("standard")
+            self:Refresh()
+        end)
+    end
+end
+
+--- Reflect the preset currently in effect: highlight nothing when Custom, and
+--- offer the reset shortcut only then.
+function XPBarEnhancedOptionsMixin:RefreshPresetRow()
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    local row = container and container.Row_readoutPreset
+    local presets = Addon.ReadoutPresets
+    if not row or not presets then
+        return
+    end
+
+    local active = presets:Detect()
+
+    for index, name in ipairs(presets.ORDER) do
+        local button = row["PresetButton" .. index]
+        if button then
+            -- The active preset's own button is redundant, not broken: disabling it
+            -- states "you are already here" without removing the row.
+            button:SetEnabled(active ~= name)
+        end
+    end
+
+    if row.StatusText then
+        row.StatusText:SetText(ResolveLocale("OPT_READOUT_PRESET_" .. string.upper(active)))
+    end
+    if row.ResetButton then
+        row.ResetButton:SetShown(active == presets.CUSTOM)
+    end
+end
+
 --- Enable or disable one option row, keeping it visible either way.
 --- Rows the active style cannot use are disabled and their label is muted with a
 --- trailing reason rather than hidden, so the panel's shape stays constant across
@@ -1164,6 +1232,8 @@ function XPBarEnhancedOptionsMixin:Refresh()
 
     -- Disable rows the active style cannot render (kept visible, with a reason)
     self:RefreshRowAvailability(barStyle)
+
+    self:RefreshPresetRow()
 
     -- Refresh dropdowns
     if self.dropdowns then

@@ -29,6 +29,13 @@ end
 local function CheckboxOnClick(selfFrame, checkbox, key)
     PlayCheckboxSound(checkbox:GetChecked())
     Config:SetOptionKey(key, checkbox:GetChecked(), true)
+    -- A toggle that diverges from the active preset makes it Custom. Written
+    -- silently so it batches into the ApplyPendingOptionChanges below and the
+    -- whole change still emits exactly one CONFIG_UPDATED.
+    local presets = Addon.ReadoutPresets
+    if presets and presets:Owns(key) then
+        presets:Resync()
+    end
     if Config.ApplyPendingOptionChanges then
         Config:ApplyPendingOptionChanges()
     end

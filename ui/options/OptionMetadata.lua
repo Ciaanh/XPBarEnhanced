@@ -5,6 +5,22 @@ local Addon = XPBarEnhanced
 local Config = Addon.Config
 
 local optionDetails = {
+    -- Declared as a dropdown so Config:SetOptionKey preserves the string value
+    -- rather than coercing it to a boolean. Deliberately absent from optionOrder:
+    -- the panel renders it as preset buttons, not an auto-built dropdown row.
+    readoutPreset = {
+        key = "readoutPreset",
+        type = "dropdown",
+        label = Addon.L["OPT_READOUT_PRESET"],
+        description = Addon.L["OPT_READOUT_PRESET_DESC"],
+        options = {
+            {value = "minimal", label = Addon.L["OPT_READOUT_PRESET_MINIMAL"]},
+            {value = "standard", label = Addon.L["OPT_READOUT_PRESET_STANDARD"]},
+            {value = "leveller", label = Addon.L["OPT_READOUT_PRESET_LEVELLER"]},
+            {value = "custom", label = Addon.L["OPT_READOUT_PRESET_CUSTOM"]},
+        },
+        commandKeys = {"preset", "readout"}
+    },
     barStyle = {
         key = "barStyle",
         type = "dropdown",

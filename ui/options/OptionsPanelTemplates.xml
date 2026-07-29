@@ -225,6 +225,55 @@
         </Frames>
     </Frame>
 
+    <!-- Readout preset row
+         Three one-click starting points for the boolean options, plus the name of
+         the preset currently in effect and a reset shortcut when it reads Custom.
+         Buttons are index-keyed so adding a preset means adding one Button here.
+    -->
+    <Frame name="ConfigPresetRowTemplate" virtual="true">
+        <Size x="0" y="66"/>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString parentKey="Label" inherits="GameFontNormal" justifyH="LEFT">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="16" y="-4"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="StatusText" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                    <Anchors>
+                        <Anchor point="TOPRIGHT" x="-16" y="-6"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button parentKey="PresetButton1" inherits="UIPanelButtonTemplate">
+                <Size x="106" y="24"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.Label" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
+                </Anchors>
+            </Button>
+            <Button parentKey="PresetButton2" inherits="UIPanelButtonTemplate">
+                <Size x="106" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.PresetButton1" relativePoint="RIGHT" x="8" y="0"/>
+                </Anchors>
+            </Button>
+            <Button parentKey="PresetButton3" inherits="UIPanelButtonTemplate">
+                <Size x="106" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.PresetButton2" relativePoint="RIGHT" x="8" y="0"/>
+                </Anchors>
+            </Button>
+            <Button parentKey="ResetButton" inherits="UIPanelButtonTemplate" hidden="true">
+                <Size x="140" y="22"/>
+                <Anchors>
+                    <Anchor point="TOPRIGHT" relativeKey="$parent.StatusText" relativePoint="BOTTOMRIGHT" x="0" y="-6"/>
+                </Anchors>
+            </Button>
+        </Frames>
+    </Frame>
+
     <!-- Section header with divider line
          Gold header text with horizontal divider below
     -->

@@ -87,6 +87,19 @@ L["KEY_ALT"] = "Alt"
 -- but disabled, so the panel's shape does not change when switching style.
 L["OPT_UNAVAIL_NO_BAR"] = "— no bar to animate"
 
+-- Readout presets: named starting points for the boolean options
+L["OPT_READOUT_PRESET"] = "Readout preset"
+L["OPT_READOUT_PRESET_DESC"] =
+    "A starting point for every on/off setting. Changing any individual toggle switches this to Custom."
+L["OPT_READOUT_PRESET_MINIMAL"] = "Minimal"
+L["OPT_READOUT_PRESET_MINIMAL_DESC"] = "Percentage only — nothing beneath the bar."
+L["OPT_READOUT_PRESET_STANDARD"] = "Standard"
+L["OPT_READOUT_PRESET_STANDARD_DESC"] = "Level, XP, percentage, and the session readouts."
+L["OPT_READOUT_PRESET_LEVELLER"] = "Leveller"
+L["OPT_READOUT_PRESET_LEVELLER_DESC"] = "Standard plus milestone ticks and incomplete quest XP."
+L["OPT_READOUT_PRESET_CUSTOM"] = "Custom"
+L["OPT_READOUT_PRESET_RESET"] = "Reset to Standard"
+
 -- Current options in OptionsMetadata
 L["OPT_SHOW_RESTED_OVERLAY"] = "Show rested overlay"
 L["OPT_SHOW_RESTED_OVERLAY_DESC"] = "Show an overlay for rested XP on the XP bar when rested XP is available."

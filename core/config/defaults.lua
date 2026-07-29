@@ -29,6 +29,10 @@ local defaults = {
     minimapRingSegmentHeight = 25,
     minimapArcStartExpanded = false,
 
+    -- Named starting point for the boolean options; see core/config/ReadoutPresets.lua.
+    -- "custom" once any owned boolean diverges from every preset.
+    readoutPreset = "standard",
+
     showPercentage = true,
     showMilestoneTicks = false,
     showQuestXP = true,

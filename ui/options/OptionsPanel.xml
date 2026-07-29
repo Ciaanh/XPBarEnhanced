@@ -341,6 +341,17 @@
 
                                     <!-- ==================== Text Display ==================== -->
 
+                                    <!-- Presets come before any checkbox on this tab: layoutIndex 25
+                                         sorts ahead of the text rows, which start at 26. -->
+                                    <Frame parentKey="Row_readoutPreset" inherits="ConfigPresetRowTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="25" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="8" type="number"/>
+                                            <KeyValue key="optionTab" value="text" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <Frame parentKey="TextDisplayHeader" inherits="ConfigSectionHeader">
                                         <KeyValues>
                                             <KeyValue key="layoutIndex" value="26" type="number"/>

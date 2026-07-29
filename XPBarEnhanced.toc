@@ -52,6 +52,7 @@ core\EventRouter.lua
 
 core\config\Config.lua
 core\config\ConfigHelper.lua
+core\config\ReadoutPresets.lua
 
 core\services\Database.lua
 core\services\ProfileManager.lua
