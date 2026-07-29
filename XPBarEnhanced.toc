@@ -5,7 +5,7 @@
 ## Notes: Enhanced XP bar with quest XP tracking and comprehensive statistics
 
 ## Author: Ciaanh
-## Version: 1.1.8
+## Version: 1.2.0
 
 ## SavedVariables: XPBarEnhancedDB
 ## IconTexture: 4675649

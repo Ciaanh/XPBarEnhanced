@@ -4,6 +4,29 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-29
+
+### Added
+
+- **Readout presets**: Minimal, Standard and Leveller set every text and overlay toggle in one click. Editing any of them switches the preset to Custom; a "Reset to Standard" link puts it back.
+- **Style gallery**: pick a bar style from labelled previews of all eight styles instead of a text dropdown, with the selected one ringed in the addon's own colour. `/xpbe style <name>` is unchanged.
+
+### Changed
+
+- **Individual text toggles** now live under a collapsed **Advanced** section, so the presets come first. Advanced opens automatically when the preset is Custom.
+- **Options rows no longer appear and disappear** when you switch bar style. Rows the active style ignores stay in place, disabled, with the reason beside them ("— Circular only"), so the panel keeps a constant height and you can see what each style offers.
+- **Level-up celebration works on every bar style.** It previously anchored to a StatusBar, so it was invisible on Circular, Minimap Ring and Terminal; it now anchors to the bar and is clipped to the ring shape on the round styles.
+- **Colors tab leads with the secondary-source colour actually in use**, tagged "(active)". The other three fold into an "Other secondary sources" section and stay editable, so you can set a colour before switching to that source.
+- **Stats window rebuilt around the two numbers you open it for.** XP/hour and time to level are now large hero figures; session totals sit on one compact strip; the level bookkeeping rows collapse into a **Details** section. The window is 384px tall instead of 685.
+- **Minimap tooltip keeps a fixed shape** — the XP and time rows stay present reading `0` at the start of a session instead of vanishing and changing the tooltip's height — and its XP number is now formatted like the rest of the UI.
+- The LibDataBroker feed honours the number-abbreviation option instead of always abbreviating.
+
+### Fixed
+
+- **The Circular style's ring border and centre disc never rendered.** Both were requested as `.png` while the shipped art is `.tga`; WoW silently draws nothing for an explicit wrong extension. Present since the first release.
+- The XP gain flash tinted itself with the rested *overlay* colour while every other rested-aware fill path uses the rested *fill* colour, so the flash disagreed with the bar it flashed over.
+- The Stats window showed the session XP total twice, as "XP Gained" and "Total XP", one separator apart.
+
 ## [1.1.8] - 2026-07-16
 
 ### Changed

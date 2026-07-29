@@ -8,6 +8,21 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.2.0",
+        notes = {
+            "New readout presets: Minimal, Standard and Leveller set every text and overlay toggle in one click. The individual toggles moved under a collapsed Advanced section.",
+            "Bar styles are now picked from a gallery of labelled previews instead of a text dropdown.",
+            "Options rows no longer vanish when you switch bar style: rows the style ignores stay put, disabled, with the reason beside them.",
+            "Level-up celebration now works on the Circular, Minimap Ring and Terminal styles, where it was previously invisible.",
+            "The Colors tab now leads with the secondary-source colour actually in use; the other three fold away but stay editable.",
+            "Stats window rebuilt: XP/hour and time to level are now large hero numbers, the bookkeeping rows collapse into a Details section, and the window is half its old height.",
+            "The minimap tooltip keeps the same shape at the start of a session and formats its XP number like the rest of the UI.",
+            "Fixed the Circular style's ring border and centre disc, which never rendered because the art was requested with the wrong file extension.",
+            "Fixed the XP gain flash using the rested overlay colour instead of the bar's rested fill colour.",
+            "Removed the duplicate session XP row in the Stats window.",
+        },
+    },
+    {
         version = "1.1.8",
         notes = {
             "Level progress notifications now appear as a compact toast with the addon icon instead of plain text at the top of the screen.",
