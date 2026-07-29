@@ -83,6 +83,10 @@ L["KEY_ALT"] = "Alt"
 -- ============================================================================
 -- OPTIONS PANEL
 -- ============================================================================
+-- Muted notes on rows the active bar style cannot render. Such rows stay visible
+-- but disabled, so the panel's shape does not change when switching style.
+L["OPT_UNAVAIL_NO_BAR"] = "— no bar to animate"
+
 -- Current options in OptionsMetadata
 L["OPT_SHOW_RESTED_OVERLAY"] = "Show rested overlay"
 L["OPT_SHOW_RESTED_OVERLAY_DESC"] = "Show an overlay for rested XP on the XP bar when rested XP is available."

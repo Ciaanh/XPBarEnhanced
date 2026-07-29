@@ -24,6 +24,7 @@ local SEGMENT_TYPE = {
 }
 
 local EMPTY_SEGMENT_COLOR = {r = 0.08, g = 0.08, b = 0.08, a = 0.35}
+local CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 
 local MINIMAP_RING_STYLE = {
     SEGMENT_WIDTH_PX = 5,
@@ -547,6 +548,19 @@ function MinimapRingBarStyleTemplate:UpdateButtonCollection(forceRefresh)
     elseif collector.owner == self then
         collector:ReleaseOwner(self)
     end
+end
+
+--- Clip runtime-created effect textures (celebration glow) to the ring circle.
+--- This style has no StatusBar, so the glow anchors to the bar frame and would
+--- otherwise pulse as a square behind the round minimap.
+function MinimapRingBarStyleTemplate:GetCelebrationMask()
+    if not self._celebrationMask then
+        local mask = self:CreateMaskTexture()
+        mask:SetTexture(CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        mask:SetAllPoints(self)
+        self._celebrationMask = mask
+    end
+    return self._celebrationMask
 end
 
 function MinimapRingBarStyleTemplate:AnimateBarEffect(iterationData, eventContext)

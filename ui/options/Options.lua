@@ -35,6 +35,16 @@ local PROFILE_DELETE_POPUP = "XPBE_DELETE_PROFILE"
 
 local XPBarEnhancedOptionsMixin = {}
 
+-- Rows the active style cannot render, keyed by config key then style name, with
+-- the locale key of the muted reason to show. A style absent from a row's table
+-- can use that row. Such rows are disabled with the reason rather than hidden:
+-- a control that vanishes teaches nothing about which style owns the feature.
+local UNAVAILABLE_BY_STYLE = {
+    flashOnGain        = {none = "OPT_UNAVAIL_NO_BAR"},
+    twoPhaseOnLevelUp  = {none = "OPT_UNAVAIL_NO_BAR"},
+    levelUpCelebration = {none = "OPT_UNAVAIL_NO_BAR"},
+}
+
 local function clamp01(value)
     if not value then
         return 0
@@ -1011,6 +1021,52 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     end
 end
 
+--- Enable or disable one option row, keeping it visible either way.
+--- Rows the active style cannot use are disabled and their label is muted with a
+--- trailing reason rather than hidden, so the panel's shape stays constant across
+--- styles and the player learns which style owns the feature.
+--- The reason is appended to the row's own Label so this works for every row
+--- template, including the color rows that do not inherit ConfigRowBase.
+---@param key string Config key; the row frame is OptionsContainer["Row_" .. key]
+---@param available boolean
+---@param reason string|nil Trailing note shown when unavailable
+function XPBarEnhancedOptionsMixin:SetRowAvailability(key, available, reason)
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    local row = container and container["Row_" .. key]
+
+    local label = row and row.Label
+    if label and label.SetText then
+        local detail = Config.optionDetails and Config.optionDetails[key]
+        local base = (detail and detail.label) or label.__xpbeBaseText or label:GetText() or ""
+        -- Remember the untagged text: GetText() would return the tagged version
+        -- on the next call and the reason would accumulate.
+        label.__xpbeBaseText = base
+        label:SetText(available and base or (base .. "   " .. (reason or "")))
+        if label.SetFontObject then
+            label:SetFontObject(available and "GameFontHighlight" or "GameFontDisable")
+        end
+    end
+
+    -- Slider rows register the row frame itself; checkboxes register the button.
+    local control = self.controls and self.controls[key]
+    local widget = control and (control.Slider or control.Dropdown or control)
+    if widget and widget.SetEnabled then
+        widget:SetEnabled(available)
+    end
+    if widget and widget.SetAlpha then
+        widget:SetAlpha(available and 1 or 0.5)
+    end
+end
+
+--- Apply UNAVAILABLE_BY_STYLE to every row it covers for the active style.
+---@param barStyle string
+function XPBarEnhancedOptionsMixin:RefreshRowAvailability(barStyle)
+    for key, byStyle in pairs(UNAVAILABLE_BY_STYLE) do
+        local localeKey = byStyle[barStyle]
+        self:SetRowAvailability(key, localeKey == nil, localeKey and ResolveLocale(localeKey))
+    end
+end
+
 function XPBarEnhancedOptionsMixin:Refresh()
     if not self.controls then
         return
@@ -1105,6 +1161,9 @@ function XPBarEnhancedOptionsMixin:Refresh()
             end
         end
     end
+
+    -- Disable rows the active style cannot render (kept visible, with a reason)
+    self:RefreshRowAvailability(barStyle)
 
     -- Refresh dropdowns
     if self.dropdowns then

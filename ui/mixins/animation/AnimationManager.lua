@@ -394,8 +394,8 @@ function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 end
 
 --- Level-up celebration: a golden glow pulses over the bar. Uses a native
---- AnimationGroup (no OnUpdate) and a per-bar pooled texture. Styles without
---- a StatusBar region are a no-op — no hard errors from style code.
+--- AnimationGroup (no OnUpdate) and a per-bar pooled texture. Every style with
+--- a frame can celebrate — no hard errors from style code.
 -- @param bar table: Bar instance
 -- @param config table: Animation config from GetAnimationConfig()
 function AnimationManager:PlayLevelUpCelebration(bar, config)
@@ -403,7 +403,14 @@ function AnimationManager:PlayLevelUpCelebration(bar, config)
 		return
 	end
 
+	-- Anchor to the StatusBar only when the style actually shows one: terminal
+	-- keeps an alpha=0 StatusBar for mixin compatibility, and circular /
+	-- minimap_ring have none at all. Those anchor to the bar frame instead and
+	-- clip the glow with GetCelebrationMask, or the celebration is invisible.
 	local anchor = bar.StatusBar
+	if not anchor or (bar.HasCapability and not bar:HasCapability("statusBar")) then
+		anchor = bar
+	end
 	if not anchor then
 		return
 	end

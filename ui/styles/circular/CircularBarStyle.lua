@@ -25,6 +25,7 @@ end
 
 local MAX_SEGMENTS = 100 -- Always create this many (pool size)
 local DEFAULT_SEGMENTS = 50 -- Default visible segments
+local CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 
 local SEGMENT_TYPE = {
     HIDDEN = -1, -- Not displayed (beyond configured count)
@@ -320,6 +321,19 @@ function CircularBarStyleTemplate:AnimateBarEffect(iterationData, eventContext)
         gainFlash:SetAlpha(0)
         gainFlash:Hide()
     end
+end
+
+--- Clip runtime-created effect textures (celebration glow) to the ring circle.
+--- This style has no StatusBar, so the glow anchors to the bar frame and would
+--- otherwise pulse as a square over a round bar.
+function CircularBarStyleTemplate:GetCelebrationMask()
+    if not self._celebrationMask then
+        local mask = self:CreateMaskTexture()
+        mask:SetTexture(CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        mask:SetAllPoints(self)
+        self._celebrationMask = mask
+    end
+    return self._celebrationMask
 end
 
 -------------------------------------------------------------------
