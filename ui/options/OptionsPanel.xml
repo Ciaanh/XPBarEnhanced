@@ -97,7 +97,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_barStyle" inherits="ConfigDropdownTemplate">
+                                    <Frame parentKey="Row_barStyle" inherits="ConfigStyleGalleryTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="barStyle" type="string"/>
                                             <KeyValue key="layoutIndex" value="2" type="number"/>

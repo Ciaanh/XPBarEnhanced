@@ -148,7 +148,17 @@ L["OPT_ABBREVIATE_NUMBERS_DESC"] = "Use abbreviated number format (K, M, B) inst
 
 -- Options
 L["OPT_BAR_STYLE"] = "Bar Style"
-L["OPT_BAR_STYLE_DESC"] = "Choose which XP bar to display: None (Blizzard only), Classic (Blizzard-style), Flat (Draggable), Vertical, Circular (Progress ring), Minimap Ring, or Terminal (ASCII progress bar)."
+L["OPT_BAR_STYLE_DESC"] = "Choose which XP bar to display: None (Blizzard only), Classic (Blizzard-style), Flat (Draggable), Vertical, Circular (Progress ring), Minimap Ring, Terminal (ASCII progress bar), or Orb (filling sphere)."
+-- Short forms for the style gallery captions and the "<Style> only" row notes.
+-- The long labels above stay for prose; they do not fit a 120px swatch.
+L["OPT_BAR_STYLE_SHORT_NONE"] = "None"
+L["OPT_BAR_STYLE_SHORT_CLASSIC"] = "Classic"
+L["OPT_BAR_STYLE_SHORT_FLAT"] = "Flat"
+L["OPT_BAR_STYLE_SHORT_VERTICAL"] = "Vertical"
+L["OPT_BAR_STYLE_SHORT_CIRCULAR"] = "Circular"
+L["OPT_BAR_STYLE_SHORT_MINIMAP_RING"] = "Minimap Ring"
+L["OPT_BAR_STYLE_SHORT_TERMINAL"] = "Terminal"
+L["OPT_BAR_STYLE_SHORT_ORB"] = "Orb"
 L["OPT_BAR_STYLE_NONE"] = "None (Blizzard only)"
 L["OPT_BAR_STYLE_CLASSIC"] = "Classic (Blizzard-style)"
 L["OPT_BAR_STYLE_FLAT"] = "Flat (Custom draggable)"

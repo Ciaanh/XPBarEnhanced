@@ -69,14 +69,16 @@ local ROW_OWNER_STYLE = {
     terminalUseCustomColors     = "terminal",
 }
 
---- Localized display name of a bar style, reusing the barStyle dropdown labels
+--- Short display name of a bar style, from the barStyle option list.
+--- Short, not long: "— Circular only" reads better than
+--- "— Circular (Progress ring) only", and it also fits the gallery's status line.
 ---@param styleValue string
 ---@return string
 local function GetStyleLabel(styleValue)
     local detail = Config.optionDetails and Config.optionDetails.barStyle
     for _, option in ipairs((detail and detail.options) or {}) do
         if option.value == styleValue then
-            return option.label
+            return option.shortLabel or option.label
         end
     end
     return styleValue
@@ -655,6 +657,7 @@ function XPBarEnhancedOptionsMixin:OnLoad()
 
     self:BuildOptionCheckboxes()
     self:BuildColorControls()
+    self:SetupStyleGallery()
     self:SetupPresetRow()
     self:SetupDisclosures()
     self:SetupTabs()
@@ -747,7 +750,12 @@ function XPBarEnhancedOptionsMixin:BuildOptionCheckboxes()
         if detail and frame then
             -- Route based on template type (detect two-column templates)
             -- Check for Slider and Dropdown FIRST (before Checkbox) to avoid misdetection
-            if frame.Slider then
+            if frame.Grid then
+                -- Swatch gallery row (ConfigStyleGalleryTemplate) — built by
+                -- SetupStyleGallery, which needs the click handler this loop has
+                -- no way to express.
+                frame.Label:SetText(detail.label)
+            elseif frame.Slider then
                 -- Two-column slider template (ConfigSliderTemplate)
                 ControlHelpers.SetupProperSlider(self, frame, key, detail)
             elseif frame.Dropdown then
@@ -874,6 +882,10 @@ function XPBarEnhancedOptionsMixin:OnResetBarPositionClicked()
 end
 
 function XPBarEnhancedOptionsMixin:UpdateColorControls()
+    -- The style swatches paint their fills with the configured xpBar colour, so a
+    -- colour change has to reach them too — not only the Colors tab's own rows.
+    self:RefreshStyleGallery(Config and Config:GetOptionValue("barStyle"))
+
     if not Config or not Config.colorOptionsList then
         return
     end
@@ -1132,6 +1144,43 @@ function XPBarEnhancedOptionsMixin:SetupDisclosures()
     self:RefreshDisclosureHeaders()
 end
 
+--- Build the bar-style swatch gallery that replaced the barStyle dropdown.
+--- Selection writes the same barStyle values the dropdown wrote, so slash
+--- commands and saved variables are unaffected.
+function XPBarEnhancedOptionsMixin:SetupStyleGallery()
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    local row = container and container.Row_barStyle
+    local gallery = Addon.StyleGallery
+    if not row or not gallery then
+        return
+    end
+
+    gallery:Build(row, function(styleValue)
+        -- Deferred write plus one apply: ApplyPendingOptionChanges is what runs
+        -- BarManager:SetStyle and emits the single CONFIG_UPDATED.
+        Config:SetOptionKey("barStyle", styleValue, true)
+        Config:ApplyPendingOptionChanges()
+        -- Style scoping is availability, not visibility (see RefreshRowAvailability),
+        -- so a new style re-labels rows without changing the panel's shape.
+        self:Refresh()
+    end)
+end
+
+--- Ring the active style's swatch and re-apply the configured bar colour.
+function XPBarEnhancedOptionsMixin:RefreshStyleGallery(barStyle)
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    local row = container and container.Row_barStyle
+    local gallery = Addon.StyleGallery
+    if not row or not gallery then
+        return
+    end
+
+    gallery:Refresh(row, barStyle)
+    if row.StatusText then
+        row.StatusText:SetText(GetStyleLabel(barStyle))
+    end
+end
+
 --- Wire the three readout-preset buttons and the reset shortcut.
 --- Presets are the new player's path from "I want a minimal bar" to the boolean
 --- toggles that produce one; the individual toggles stay one click away.
@@ -1304,6 +1353,7 @@ function XPBarEnhancedOptionsMixin:Refresh()
     -- Disable rows the active style cannot render (kept visible, with a reason)
     self:RefreshRowAvailability(barStyle)
 
+    self:RefreshStyleGallery(barStyle)
     self:RefreshPresetRow()
 
     -- Refresh dropdowns

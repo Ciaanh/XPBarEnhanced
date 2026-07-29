@@ -26,15 +26,17 @@ local optionDetails = {
         type = "dropdown",
         label = Addon.L["OPT_BAR_STYLE"],
         description = Addon.L["OPT_BAR_STYLE_DESC"],
+        -- shortLabel is what the style gallery prints under each swatch and what
+        -- the "<Style> only" row notes name; the long label stays for prose.
         options = {
-            {value = "none", label = Addon.L["OPT_BAR_STYLE_NONE"]},
-            {value = "classic", label = Addon.L["OPT_BAR_STYLE_CLASSIC"]},
-            {value = "flat", label = Addon.L["OPT_BAR_STYLE_FLAT"]},
-            {value = "vertical", label = Addon.L["OPT_BAR_STYLE_VERTICAL"]},
-            {value = "circular", label = Addon.L["OPT_BAR_STYLE_CIRCULAR"]},
-            {value = "minimap_ring", label = Addon.L["OPT_BAR_STYLE_MINIMAP_RING"]},
-            {value = "terminal", label = Addon.L["OPT_BAR_STYLE_TERMINAL"]},
-            {value = "orb", label = Addon.L["OPT_BAR_STYLE_ORB"]},
+            {value = "none", label = Addon.L["OPT_BAR_STYLE_NONE"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_NONE"]},
+            {value = "classic", label = Addon.L["OPT_BAR_STYLE_CLASSIC"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_CLASSIC"]},
+            {value = "flat", label = Addon.L["OPT_BAR_STYLE_FLAT"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_FLAT"]},
+            {value = "vertical", label = Addon.L["OPT_BAR_STYLE_VERTICAL"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_VERTICAL"]},
+            {value = "circular", label = Addon.L["OPT_BAR_STYLE_CIRCULAR"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_CIRCULAR"]},
+            {value = "minimap_ring", label = Addon.L["OPT_BAR_STYLE_MINIMAP_RING"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_MINIMAP_RING"]},
+            {value = "terminal", label = Addon.L["OPT_BAR_STYLE_TERMINAL"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_TERMINAL"]},
+            {value = "orb", label = Addon.L["OPT_BAR_STYLE_ORB"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_ORB"]},
         },
         commandKeys = {"style", "mode", "barstyle"}
     },

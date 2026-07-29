@@ -96,6 +96,7 @@ ui\styles\SecondaryBarStyleHelpers.lua
 ui\options\OptionsPanelTemplates.xml
 ui\options\OptionMetadata.lua
 ui\options\ControlHelpers.lua
+ui\options\StyleGallery.lua
 ui\options\OptionsPanel.xml
 
 ui\stats\StatsFrame.xml

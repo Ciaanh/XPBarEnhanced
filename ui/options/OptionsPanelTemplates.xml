@@ -225,6 +225,106 @@
         </Frames>
     </Frame>
 
+    <!-- One bar-style swatch: a miniature of the style drawn from the same
+         textures the real bar uses, with its name underneath.
+         The preview art is built in ui/options/StyleGallery.lua and parented to
+         Preview, so a style's miniature lives next to the style's own knowledge
+         of which textures it draws.
+         The selection ring is four 2px edges rather than a border texture: the
+         colour is the addon's own default xpBar purple, not Blizzard blue, and a
+         flat texture tints exactly.
+    -->
+    <Button name="ConfigStyleSwatchTemplate" virtual="true">
+        <Size x="120" y="78"/>
+        <HighlightTexture file="Interface\Buttons\WHITE8X8" alphaMode="ADD">
+            <Color r="1" g="1" b="1" a="0.08"/>
+        </HighlightTexture>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="Backdrop" setAllPoints="true" file="Interface\Buttons\WHITE8X8">
+                    <Color r="0.06" g="0.06" b="0.07" a="0.85"/>
+                </Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <Texture parentKey="RingTop" hidden="true" file="Interface\Buttons\WHITE8X8">
+                    <Size x="0" y="2"/>
+                    <Anchors>
+                        <Anchor point="TOPLEFT"/>
+                        <Anchor point="TOPRIGHT"/>
+                    </Anchors>
+                </Texture>
+                <Texture parentKey="RingBottom" hidden="true" file="Interface\Buttons\WHITE8X8">
+                    <Size x="0" y="2"/>
+                    <Anchors>
+                        <Anchor point="BOTTOMLEFT"/>
+                        <Anchor point="BOTTOMRIGHT"/>
+                    </Anchors>
+                </Texture>
+                <Texture parentKey="RingLeft" hidden="true" file="Interface\Buttons\WHITE8X8">
+                    <Size x="2" y="0"/>
+                    <Anchors>
+                        <Anchor point="TOPLEFT"/>
+                        <Anchor point="BOTTOMLEFT"/>
+                    </Anchors>
+                </Texture>
+                <Texture parentKey="RingRight" hidden="true" file="Interface\Buttons\WHITE8X8">
+                    <Size x="2" y="0"/>
+                    <Anchors>
+                        <Anchor point="TOPRIGHT"/>
+                        <Anchor point="BOTTOMRIGHT"/>
+                    </Anchors>
+                </Texture>
+                <FontString parentKey="Caption" inherits="GameFontHighlightSmall" justifyH="CENTER">
+                    <Anchors>
+                        <Anchor point="BOTTOM" y="5"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Frame parentKey="Preview" enableMouse="false">
+                <Size x="112" y="52"/>
+                <Anchors>
+                    <Anchor point="TOP" y="-4"/>
+                </Anchors>
+            </Frame>
+        </Frames>
+    </Button>
+
+    <!-- Bar style gallery row
+         Replaces the barStyle dropdown: eight labelled miniatures in a 4x2 grid,
+         so every style is recognisable without applying it first. The swatches
+         themselves are created and positioned in StyleGallery.lua, which keeps
+         the grid geometry in one place instead of eight anchor chains here.
+    -->
+    <Frame name="ConfigStyleGalleryTemplate" virtual="true">
+        <Size x="0" y="198"/>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString parentKey="Label" inherits="GameFontNormal" justifyH="LEFT">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="16" y="-4"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="StatusText" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                    <Anchors>
+                        <Anchor point="TOPRIGHT" x="-16" y="-6"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <!-- Swatches are anchored to this, so the grid can be re-laid out
+                 without touching the row's own label anchors. -->
+            <Frame parentKey="Grid" enableMouse="false">
+                <Size x="492" y="162"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.Label" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
+                </Anchors>
+            </Frame>
+        </Frames>
+    </Frame>
+
     <!-- Readout preset row
          Three one-click starting points for the boolean options, plus the name of
          the preset currently in effect and a reset shortcut when it reads Custom.
