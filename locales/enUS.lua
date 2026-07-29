@@ -267,7 +267,6 @@ L["STATS_LABEL_STARTED"] = "Started:"
 L["STATS_LABEL_XP_GAINED"] = "XP Gained:"
 L["STATS_LABEL_LEVELS_GAINED"] = "Levels Gained:"
 L["STATS_LABEL_XP_PER_HOUR"] = "XP/Hour:"
-L["STATS_LABEL_TOTAL_XP"] = "Total XP:"
 
 -- Minimap button
 L["MINIMAP_TT_SESSION_XP"] = "Session XP:"

@@ -285,7 +285,6 @@ function StatsFrameMixin:ApplyLocalizedLabels()
             SetTextSafe(content.SessionXPLabel, L["STATS_LABEL_XP_GAINED"])
             SetTextSafe(content.LevelsGainedLabel, L["STATS_LABEL_LEVELS_GAINED"])
             SetTextSafe(content.XPPerHourLabel, L["STATS_LABEL_XP_PER_HOUR"])
-            SetTextSafe(content.TotalSessionXPLabel, L["STATS_LABEL_TOTAL_XP"])
         end
     end
 end
@@ -580,8 +579,6 @@ function Stats:UpdateSessionStats(statsFrame)
             SetTextSafe(content.XPPerHourValue, L["TT_CALCULATING"])
         end
     end
-
-    SetTextSafe(content.TotalSessionXPValue, FormatNumber(sessionXP))
 
     -- Session XP-rate chart + quest/other split
     self:RenderSessionChart(statsFrame, session)
