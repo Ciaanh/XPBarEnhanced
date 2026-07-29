@@ -107,7 +107,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_barLocked" inherits="ConfigCheckboxTemplate" hidden="true">
+                                    <Frame parentKey="Row_barLocked" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="barLocked" type="string"/>
                                             <KeyValue key="layoutIndex" value="3" type="number"/>
@@ -116,7 +116,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_classicBarDraggable" inherits="ConfigCheckboxTemplate" hidden="true">
+                                    <Frame parentKey="Row_classicBarDraggable" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="classicBarDraggable" type="string"/>
                                             <KeyValue key="layoutIndex" value="4" type="number"/>
@@ -146,7 +146,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_flatSize" inherits="ConfigDropdownTemplate" hidden="true">
+                                    <Frame parentKey="Row_flatSize" inherits="ConfigDropdownTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="flatSize" type="string"/>
                                             <KeyValue key="layoutIndex" value="7" type="number"/>
@@ -155,7 +155,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_verticalSize" inherits="ConfigDropdownTemplate" hidden="true">
+                                    <Frame parentKey="Row_verticalSize" inherits="ConfigDropdownTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="verticalSize" type="string"/>
                                             <KeyValue key="layoutIndex" value="7.1" type="number"/>
@@ -203,7 +203,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_circularSecondaryFullCircle" inherits="ConfigCheckboxTemplate" hidden="true">
+                                    <Frame parentKey="Row_circularSecondaryFullCircle" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="circularSecondaryFullCircle" type="string"/>
                                             <KeyValue key="layoutIndex" value="11.1" type="number"/>
@@ -212,7 +212,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_minimapRingPadding" inherits="ConfigSliderTemplate" hidden="true">
+                                    <Frame parentKey="Row_minimapRingPadding" inherits="ConfigSliderTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="minimapRingPadding" type="string"/>
                                             <KeyValue key="layoutIndex" value="11.5" type="number"/>
@@ -222,7 +222,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_minimapRingSegments" inherits="ConfigSliderTemplate" hidden="true">
+                                    <Frame parentKey="Row_minimapRingSegments" inherits="ConfigSliderTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="minimapRingSegments" type="string"/>
                                             <KeyValue key="layoutIndex" value="12" type="number"/>
@@ -231,7 +231,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_minimapRingCollectButtons" inherits="ConfigCheckboxTemplate" hidden="true">
+                                    <Frame parentKey="Row_minimapRingCollectButtons" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="minimapRingCollectButtons" type="string"/>
                                             <KeyValue key="layoutIndex" value="13" type="number"/>
@@ -240,7 +240,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_minimapRingSegmentWidth" inherits="ConfigSliderTemplate" hidden="true">
+                                    <Frame parentKey="Row_minimapRingSegmentWidth" inherits="ConfigSliderTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="minimapRingSegmentWidth" type="string"/>
                                             <KeyValue key="layoutIndex" value="15" type="number"/>
@@ -249,7 +249,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_minimapRingSegmentHeight" inherits="ConfigSliderTemplate" hidden="true">
+                                    <Frame parentKey="Row_minimapRingSegmentHeight" inherits="ConfigSliderTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="minimapRingSegmentHeight" type="string"/>
                                             <KeyValue key="layoutIndex" value="16" type="number"/>
@@ -258,7 +258,7 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <Frame parentKey="Row_minimapArcStartExpanded" inherits="ConfigCheckboxTemplate" hidden="true">
+                                    <Frame parentKey="Row_minimapArcStartExpanded" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="minimapArcStartExpanded" type="string"/>
                                             <KeyValue key="layoutIndex" value="16.1" type="number"/>
@@ -269,7 +269,7 @@
 
                                     <!-- ==================== Terminal Bar ==================== -->
 
-                                    <Frame parentKey="Row_terminalUseCustomColors" inherits="ConfigCheckboxTemplate" hidden="true">
+                                    <Frame parentKey="Row_terminalUseCustomColors" inherits="ConfigCheckboxTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="terminalUseCustomColors" type="string"/>
                                             <KeyValue key="layoutIndex" value="19" type="number"/>

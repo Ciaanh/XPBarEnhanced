@@ -86,6 +86,8 @@ L["KEY_ALT"] = "Alt"
 -- Muted notes on rows the active bar style cannot render. Such rows stay visible
 -- but disabled, so the panel's shape does not change when switching style.
 L["OPT_UNAVAIL_NO_BAR"] = "— no bar to animate"
+-- %s is a bar style's display name, e.g. "— Circular only".
+L["OPT_UNAVAIL_STYLE_ONLY"] = "— %s only"
 
 -- Readout presets: named starting points for the boolean options
 L["OPT_READOUT_PRESET"] = "Readout preset"

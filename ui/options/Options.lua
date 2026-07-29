@@ -43,7 +43,44 @@ local UNAVAILABLE_BY_STYLE = {
     flashOnGain        = {none = "OPT_UNAVAIL_NO_BAR"},
     twoPhaseOnLevelUp  = {none = "OPT_UNAVAIL_NO_BAR"},
     levelUpCelebration = {none = "OPT_UNAVAIL_NO_BAR"},
+    barLocked          = {none = "OPT_UNAVAIL_NO_BAR"},
 }
+
+-- Rows that configure exactly one bar style. Under any other style the row is
+-- disabled and labelled "<Style> only" rather than hidden, so the row count and
+-- scroll height stay constant across all eight styles and the player learns that
+-- e.g. Segment count belongs to Circular instead of finding it simply absent.
+local ROW_OWNER_STYLE = {
+    flatSize                    = "flat",
+    showMilestoneTicks          = "flat",
+    verticalSize                = "vertical",
+    classicBarDraggable         = "classic",
+    circularSize                = "circular",
+    circularSegments            = "circular",
+    circularUseTexture          = "circular",
+    circularScaleCenterText     = "circular",
+    circularSecondaryFullCircle = "circular",
+    minimapRingPadding          = "minimap_ring",
+    minimapRingSegments         = "minimap_ring",
+    minimapRingCollectButtons   = "minimap_ring",
+    minimapRingSegmentWidth     = "minimap_ring",
+    minimapRingSegmentHeight    = "minimap_ring",
+    minimapArcStartExpanded     = "minimap_ring",
+    terminalUseCustomColors     = "terminal",
+}
+
+--- Localized display name of a bar style, reusing the barStyle dropdown labels
+---@param styleValue string
+---@return string
+local function GetStyleLabel(styleValue)
+    local detail = Config.optionDetails and Config.optionDetails.barStyle
+    for _, option in ipairs((detail and detail.options) or {}) do
+        if option.value == styleValue then
+            return option.label
+        end
+    end
+    return styleValue
+end
 
 local function clamp01(value)
     if not value then
@@ -230,12 +267,12 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
     for _, child in ipairs(children) do
         local childTab = child and child.optionTab
         if childTab then
-            -- A row is visible only if: correct tab AND not hidden by style conditions
-            -- AND its disclosure group (if any) is expanded
+            -- A row is visible only if: correct tab AND its disclosure group
+            -- (if any) is expanded. Bar style never hides a row — see
+            -- RefreshRowAvailability, which enables or disables instead.
             local tabMatch = (childTab == tabId)
-            local styleOk = (child._styleVisible == nil or child._styleVisible == true)
             local disclosureOk = self:IsDisclosureExpanded(child.disclosureGroup)
-            child:SetShown(tabMatch and styleOk and disclosureOk)
+            child:SetShown(tabMatch and disclosureOk)
         end
     end
 
@@ -1191,9 +1228,12 @@ function XPBarEnhancedOptionsMixin:SetRowAvailability(key, available, reason)
         end
     end
 
-    -- Slider rows register the row frame itself; checkboxes register the button.
+    -- Resolve the interactive widget from the row itself: only checkboxes and
+    -- sliders land in self.controls, so dropdown and color rows would otherwise
+    -- stay clickable while reading as disabled.
     local control = self.controls and self.controls[key]
-    local widget = control and (control.Slider or control.Dropdown or control)
+    local widget = (row and (row.Slider or row.Dropdown or row.Checkbox or row.Swatch))
+        or (control and (control.Slider or control.Dropdown or control))
     if widget and widget.SetEnabled then
         widget:SetEnabled(available)
     end
@@ -1202,12 +1242,21 @@ function XPBarEnhancedOptionsMixin:SetRowAvailability(key, available, reason)
     end
 end
 
---- Apply UNAVAILABLE_BY_STYLE to every row it covers for the active style.
+--- Apply UNAVAILABLE_BY_STYLE and ROW_OWNER_STYLE for the active style.
 ---@param barStyle string
 function XPBarEnhancedOptionsMixin:RefreshRowAvailability(barStyle)
     for key, byStyle in pairs(UNAVAILABLE_BY_STYLE) do
         local localeKey = byStyle[barStyle]
         self:SetRowAvailability(key, localeKey == nil, localeKey and ResolveLocale(localeKey))
+    end
+
+    for key, ownerStyle in pairs(ROW_OWNER_STYLE) do
+        local available = (ownerStyle == barStyle)
+        self:SetRowAvailability(
+            key,
+            available,
+            not available and string.format(ResolveLocale("OPT_UNAVAIL_STYLE_ONLY"), GetStyleLabel(ownerStyle)) or nil
+        )
     end
 end
 
@@ -1216,70 +1265,16 @@ function XPBarEnhancedOptionsMixin:Refresh()
         return
     end
 
-    -- Get current barStyle value for conditional visibility
+    -- Current barStyle drives row availability, not row visibility.
     local barStyle = Config:GetOptionValue("barStyle")
-    local isNoneMode = (barStyle == "none")
-    local isCircularMode = (barStyle == "circular")
-    local isMinimapRingMode = (barStyle == "minimap_ring")
 
     -- Refresh checkboxes
     for key, checkbox in pairs(self.controls) do
         if checkbox and checkbox.SetChecked then
             local value = Config:GetOptionValue(key)
             checkbox:SetChecked(value and true or false)
-
-            -- Conditional visibility: only show flat-mode options when in flat mode
-            if key == "barLocked" then
-                -- Get the parent row frame (Row_barLocked)
-                local rowKey = "Row_" .. key
-                local rowFrame =
-                    self.ContentFrame and self.ContentFrame.OptionsContainer and
-                    self.ContentFrame.OptionsContainer[rowKey]
-
-                if rowFrame then
-                    rowFrame._styleVisible = not isNoneMode
-                end
-                if isNoneMode then
-                    checkbox:Hide()
-                    if rowFrame then rowFrame:Hide() end
-                else
-                    checkbox:Show()
-                    if rowFrame then rowFrame:Show() end
-                end
-            elseif key == "classicBarDraggable" then
-                -- Only show classicBarDraggable when Classic style is selected
-                local rowKey = "Row_" .. key
-                local rowFrame =
-                    self.ContentFrame and self.ContentFrame.OptionsContainer and
-                    self.ContentFrame.OptionsContainer[rowKey]
-
-                local isClassicMode = (barStyle == "classic")
-                if rowFrame then
-                    rowFrame._styleVisible = isClassicMode
-                end
-                if isClassicMode then
-                    checkbox:Show()
-                    if rowFrame then rowFrame:Show() end
-                else
-                    checkbox:Hide()
-                    if rowFrame then rowFrame:Hide() end
-                end
-            elseif key == "showMilestoneTicks" then
-                local rowKey = "Row_" .. key
-                local container = self.ContentFrame and self.ContentFrame.OptionsContainer
-                local rowFrame = container and container[rowKey]
-                local isFlatMode = (barStyle == "flat")
-                if rowFrame then
-                    rowFrame._styleVisible = isFlatMode
-                end
-                if isFlatMode then
-                    checkbox:Show()
-                    if rowFrame then rowFrame:Show() end
-                else
-                    checkbox:Hide()
-                    if rowFrame then rowFrame:Hide() end
-                end
-            end
+            -- Style scoping is applied uniformly in RefreshRowAvailability below:
+            -- rows stay visible and are enabled or disabled instead of hidden.
         elseif checkbox and checkbox.Slider then
             -- It's a slider control
             local value = Config:GetOptionValue(key)
@@ -1364,64 +1359,14 @@ function XPBarEnhancedOptionsMixin:Refresh()
         end
     end
 
-    -- Style-specific sections: show/hide rows, then reflow.
-    -- VerticalLayoutMixin skips hidden children automatically — no anchor
-    -- manipulation needed.
+    -- Re-apply the tab filter so the container reflows. Style scoping no longer
+    -- shows or hides anything, so row count and scroll height are the same for
+    -- every bar style — only which rows are enabled changes.
     local container = self.ContentFrame and self.ContentFrame.OptionsContainer
-    local isFlatMode = (barStyle == "flat")
-    local isVerticalMode = (barStyle == "vertical")
-    local isTerminalMode = (barStyle == "terminal")
-
     if container then
-        if container.Row_flatSize then
-            container.Row_flatSize._styleVisible = isFlatMode
-        end
-        if container.Row_verticalSize then
-            container.Row_verticalSize._styleVisible = isVerticalMode
-        end
-
-        -- Circular rows
-        local circularRowKeys = {
-            "circularSize",
-            "circularSegments",
-            "circularUseTexture",
-            "circularScaleCenterText",
-            "circularSecondaryFullCircle"
-        }
-        for _, key in ipairs(circularRowKeys) do
-            local rowFrame = container["Row_" .. key]
-            if rowFrame then rowFrame._styleVisible = isCircularMode end
-        end
-
-        local minimapRingRowKeys = {
-            "minimapRingPadding",
-            "minimapRingSegments",
-            "minimapRingCollectButtons",
-            "minimapRingSegmentWidth",
-            "minimapRingSegmentHeight",
-            "minimapArcStartExpanded",
-        }
-        for _, key in ipairs(minimapRingRowKeys) do
-            local rowFrame = container["Row_" .. key]
-            if rowFrame then rowFrame._styleVisible = isMinimapRingMode end
-        end
-
-        -- Terminal rows
-        if container.Row_terminalUseCustomColors then
-            container.Row_terminalUseCustomColors._styleVisible = isTerminalMode
-        end
-
-        -- Re-apply tab filter (respects both style visibility and tab selection)
         if self._activeTab then
             self:SelectTab(self._activeTab)
         else
-            -- Apply _styleVisible flags directly when no tab is active
-            local children = {container:GetChildren()}
-            for _, child in ipairs(children) do
-                if child._styleVisible ~= nil then
-                    child:SetShown(child._styleVisible)
-                end
-            end
             container:Layout()
             self:RefreshScrollLayout()
         end
