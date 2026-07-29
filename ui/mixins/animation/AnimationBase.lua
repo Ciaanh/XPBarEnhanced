@@ -222,7 +222,9 @@ function AnimationBase:AnimateBarEffect(iterationData, eventContext)
 	if flashData and flashData.active and flashData.currentAlpha and flashData.currentAlpha > 0 then
 		local colors = Addon and Addon.Colors
 		local hasRestedXP = eventContext and eventContext.hasRestedXP
-		local colorKey = colors and (hasRestedXP and colors.Key.Rested or colors.Key.XpBar)
+		-- Flash tints toward the bar's fill colour, not the RestedOverlay's:
+		-- every other rested-aware fill path selects XpBarRested (see PaintMixin:33).
+		local colorKey = colors and (hasRestedXP and colors.Key.XpBarRested or colors.Key.XpBar)
 		local color = colorKey and colors:Get(colorKey)
 		if color then
 			gainFlash:SetColorTexture(color.r, color.g, color.b, flashData.currentAlpha)
