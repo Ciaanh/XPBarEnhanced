@@ -40,7 +40,13 @@ local function buildText()
         return L["LDB_CALCULATING"]
     end
 
-    local rate = formatter.AbbreviateNumber and formatter:AbbreviateNumber(xpPerHour) or tostring(xpPerHour)
+    -- The broker text honours abbreviateNumbers like the rest of the UI instead
+    -- of falling back to a raw tostring (which printed "551938.4571" verbatim).
+    local abbreviate = true
+    if Addon.Config and Addon.Config.GetOptionValue then
+        abbreviate = Addon.Config:GetOptionValue("abbreviateNumbers") ~= false
+    end
+    local rate = formatter:FormatNumber(xpPerHour, abbreviate)
     if timeToLevel and timeToLevel > 0 and formatter.FormatTime then
         return string.format(L["LDB_TEXT_FMT"], rate, formatter:FormatTime(timeToLevel, true))
     end

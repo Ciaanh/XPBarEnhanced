@@ -60,6 +60,39 @@ local function SetTextSafe(el, value)
 end
 
 --------------------------------------------------------------------------------
+-- Field index
+--------------------------------------------------------------------------------
+
+-- Frames that own the label/value FontStrings. The update paths address every
+-- field by its parentKey, so moving one between these containers is a layout
+-- change only and needs no code change here.
+local FIELD_CONTAINERS = {"HeroXPPerHour", "HeroTimeToLevel", "SummaryStrip", "LevelDetail"}
+
+---True for FontStrings only. GetStringWidth is FontString-specific, so the
+---background textures and the disclosure button cannot slip into the index.
+local function isFontString(value)
+    local valueType = type(value)
+    if valueType ~= "table" and valueType ~= "userdata" then return false end
+    return type(value.SetText) == "function" and type(value.GetStringWidth) == "function"
+end
+
+---Flatten every container's FontStrings into one parentKey -> FontString map.
+local function CollectFields(statsFrame)
+    local fields = {}
+    for _, containerKey in ipairs(FIELD_CONTAINERS) do
+        local container = statsFrame[containerKey]
+        if container then
+            for key, value in pairs(container) do
+                if type(key) == "string" and isFontString(value) then
+                    fields[key] = value
+                end
+            end
+        end
+    end
+    return fields
+end
+
+--------------------------------------------------------------------------------
 -- Frame Mixin (for XML-defined frame)
 --------------------------------------------------------------------------------
 
@@ -253,40 +286,77 @@ function StatsFrameMixin:EnableDrag(options)
 end
 -- End: embedded position + drag behavior
 
----Apply localized text to the XML-defined FontStrings (page titles, row
----labels, window title). XML carries no hardcoded text= attributes.
+-- Label text per field, keyed by the FontString's parentKey. Ordering here is
+-- irrelevant — layout lives in StatsFrame.xml.
+local FIELD_LABELS = {
+    -- Hero cards
+    XPPerHourLabel = "STATS_LABEL_XP_PER_HOUR",
+    TimeToLevelLabel = "STATS_LABEL_EST_TIME_TO_LEVEL",
+    -- Session summary strip
+    SessionXPLabel = "STATS_LABEL_XP_GAINED",
+    LevelsGainedLabel = "STATS_LABEL_LEVELS_GAINED",
+    SessionDurationLabel = "STATS_LABEL_DURATION",
+    -- Details disclosure
+    CurrentLevelLabel = "STATS_LABEL_LEVEL",
+    CurrentXPLabel = "STATS_LABEL_CURRENT_XP",
+    MaxXPLabel = "STATS_LABEL_MAX_XP",
+    ProgressLabel = "STATS_LABEL_PROGRESS",
+    RemainingXPLabel = "STATS_LABEL_XP_TO_LEVEL",
+    RestedXPLabel = "STATS_LABEL_RESTED_XP",
+    QuestXPLabel = "STATS_LABEL_QUEST_XP",
+    LevelTimeLabel = "STATS_LABEL_TIME_ON_LEVEL",
+    SessionStartLabel = "STATS_LABEL_STARTED",
+}
+
+---Apply localized text to the XML-defined FontStrings (row labels, window
+---title). XML carries no hardcoded text= attributes.
 function StatsFrameMixin:ApplyLocalizedLabels()
     SetTextSafe(self.TitleText, L["ADDON_NAME"])
 
-    local leftPage = self.LeftPage
-    if leftPage then
-        SetTextSafe(leftPage.PageTitle, L["STATS_PAGE_CURRENT_LEVEL"])
-        local content = leftPage.Content
-        if content then
-            SetTextSafe(content.CurrentLevelLabel, L["STATS_LABEL_LEVEL"])
-            SetTextSafe(content.CurrentXPLabel, L["STATS_LABEL_CURRENT_XP"])
-            SetTextSafe(content.MaxXPLabel, L["STATS_LABEL_MAX_XP"])
-            SetTextSafe(content.ProgressLabel, L["STATS_LABEL_PROGRESS"])
-            SetTextSafe(content.RemainingXPLabel, L["STATS_LABEL_XP_TO_LEVEL"])
-            SetTextSafe(content.RestedXPLabel, L["STATS_LABEL_RESTED_XP"])
-            SetTextSafe(content.QuestXPLabel, L["STATS_LABEL_QUEST_XP"])
-            SetTextSafe(content.LevelTimeLabel, L["STATS_LABEL_TIME_ON_LEVEL"])
-            SetTextSafe(content.TimeToLevelLabel, L["STATS_LABEL_EST_TIME_TO_LEVEL"])
-        end
+    local fields = self.Fields or CollectFields(self)
+    for fieldKey, localeKey in pairs(FIELD_LABELS) do
+        SetTextSafe(fields[fieldKey], L[localeKey])
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Details disclosure
+--------------------------------------------------------------------------------
+
+-- The window shrinks around a closed section rather than leaving a gap, so the
+-- collapsed height is the one that matters for "how tall is this window".
+-- Both figures are InsetBg's 60px top offset plus the stacked frame heights in
+-- StatsFrame.xml plus a 16px bottom margin; keep them in step with that file.
+local COLLAPSED_HEIGHT = 384
+local EXPANDED_HEIGHT = 488
+
+function StatsFrameMixin:IsDetailExpanded()
+    return (Addon.db and Addon.db.statsDetailExpanded) and true or false
+end
+
+function StatsFrameMixin:SetDetailExpanded(expanded)
+    expanded = expanded and true or false
+
+    if Addon.db then
+        Addon.db.statsDetailExpanded = expanded
     end
 
-    local rightPage = self.RightPage
-    if rightPage then
-        SetTextSafe(rightPage.PageTitle, L["STATS_PAGE_CURRENT_SESSION"])
-        local content = rightPage.Content
-        if content then
-            SetTextSafe(content.SessionDurationLabel, L["STATS_LABEL_DURATION"])
-            SetTextSafe(content.SessionStartLabel, L["STATS_LABEL_STARTED"])
-            SetTextSafe(content.SessionXPLabel, L["STATS_LABEL_XP_GAINED"])
-            SetTextSafe(content.LevelsGainedLabel, L["STATS_LABEL_LEVELS_GAINED"])
-            SetTextSafe(content.XPPerHourLabel, L["STATS_LABEL_XP_PER_HOUR"])
-        end
+    if self.LevelDetail then
+        self.LevelDetail:SetShown(expanded)
     end
+
+    -- The marker is a text prefix rather than an arrow texture, so the header
+    -- needs no assets.
+    if self.DetailHeader then
+        local marker = expanded and "-" or "+"
+        SetTextSafe(self.DetailHeader.Title, marker .. " " .. (L["STATS_SECTION_DETAIL"] or ""))
+    end
+
+    self:SetHeight(expanded and EXPANDED_HEIGHT or COLLAPSED_HEIGHT)
+end
+
+function StatsFrameMixin:ToggleDetail()
+    self:SetDetailExpanded(not self:IsDetailExpanded())
 end
 
 function StatsFrameMixin:OnLoad()
@@ -298,6 +368,8 @@ function StatsFrameMixin:OnLoad()
     local statsFrame = self
     Stats:SetFrame(statsFrame)
 
+    -- Index the FontStrings once; every update path reads through it.
+    statsFrame.Fields = CollectFields(statsFrame)
     statsFrame:ApplyLocalizedLabels()
 
     statsFrame:SetClampedToScreen(true)
@@ -332,11 +404,23 @@ function StatsFrameMixin:OnLoad()
         end)
     end
 
+    -- Details disclosure
+    if statsFrame.DetailHeader and statsFrame.DetailHeader.Toggle then
+        statsFrame.DetailHeader.Toggle:SetScript("OnClick", function()
+            statsFrame:ToggleDetail()
+        end)
+    end
+    statsFrame:SetDetailExpanded(statsFrame:IsDetailExpanded())
+
     -- Initial update
     Stats:Update()
 end
 
 function StatsFrameMixin:OnShow()
+    -- Addon.db is usually still nil at XML OnLoad time (the same reason the
+    -- position store uses lazy getters), so the persisted state is re-applied
+    -- on the first show.
+    self:SetDetailExpanded(self:IsDetailExpanded())
     Stats:Update()
 end
 
@@ -436,10 +520,7 @@ function Stats:Update()
     local statsFrame = self:GetFrame()
     if not statsFrame then return end
 
-    -- Update Left Page (Current Level Stats)
     self:UpdateLevelStats(statsFrame)
-
-    -- Update Right Page (Session Stats)
     self:UpdateSessionStats(statsFrame)
 end
 
@@ -461,12 +542,9 @@ function Stats:OnTimePlayed(totalTime, levelTime) if isStatsWindowVisible() then
 -- Update Methods
 --------------------------------------------------------------------------------
 
--- Update left page with current level statistics
+-- Update the level facts: the "time to level" hero number plus the detail rows
 function Stats:UpdateLevelStats(statsFrame)
-    if not (statsFrame and statsFrame.LeftPage) then return end
-
-    local leftPage = statsFrame.LeftPage
-    local content = leftPage.Content
+    local content = statsFrame and statsFrame.Fields
     if not content then return end
 
     -- Get current player stats
@@ -542,12 +620,10 @@ function Stats:UpdateLevelStats(statsFrame)
     end
 end
 
--- Update right page with session statistics
+-- Update the session facts: the "XP/hour" hero number, the summary strip and
+-- the session rows in the detail section
 function Stats:UpdateSessionStats(statsFrame)
-    if not (statsFrame and statsFrame.RightPage) then return end
-
-    local rightPage = statsFrame.RightPage
-    local content = rightPage.Content
+    local content = statsFrame and statsFrame.Fields
     if not content then return end
 
     -- Get session data

@@ -3,314 +3,97 @@
 
 	<Script file="Stats.lua"/>
 
-    <!-- Book-Style Stats Frame with Two-Page Layout -->
+    <!--
+        Stats window, single column, ranked by how much the number matters:
+
+          [ XP/hour  551.9k ]   [ Time to level  38m ]   hero numbers, large
+          [ ~~~~ XP/hour histogram ~~~~ ]
+          [ Quest 38% =====|===== Other 62% ]
+          [ Gained 1.20M | Levels 2 | Played 2h11m ]     3-up strip, small
+          [ + Details  (level, XP, progress, rested, quest XP, started) ]
+
+        The frame resizes between COLLAPSED_HEIGHT and EXPANDED_HEIGHT in
+        Stats.lua rather than reserving space for a closed section.
+
+        Every label/value FontString keeps the parentKey it had in the two-page
+        layout; Stats.lua indexes them by that key (see CollectFields) so the
+        update paths address fields by name and not by position.
+    -->
     <Frame name="XPBarEnhancedStatsFrame" parent="UIParent" inherits="BasicFrameTemplateWithInset" hidden="true" mixin="XPBarEnhancedStatsMixin" frameStrata="DIALOG" toplevel="true" enableMouse="true" movable="true" clampedToScreen="true">
-        <Size x="700" y="685"/>
+        <!-- Height is COLLAPSED_HEIGHT in Stats.lua; SetDetailExpanded swaps it -->
+        <Size x="460" y="384"/>
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
         <Frames>
-            <!-- Left Page: Current Level Stats -->
-            <Frame parentKey="LeftPage">
-                <Size x="320" y="420"/>
+            <!-- ==================== Hero numbers ==================== -->
+
+            <Frame parentKey="HeroXPPerHour" enableMouse="false">
+                <Size x="207" y="62"/>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeKey="$parent.InsetBg" relativePoint="TOPLEFT" x="15" y="-40"/>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.InsetBg" relativePoint="TOPLEFT" x="12" y="-12"/>
                 </Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
-                        <!-- Parchment background for left page -->
-                        <Texture parentKey="Background">
-                            <Anchors>
-                                <Anchor point="TOPLEFT" x="-5" y="5"/>
-                                <Anchor point="BOTTOMRIGHT" x="5" y="-5"/>
-                            </Anchors>
-                            <Color r="0.95" g="0.93" b="0.88" a="0.15"/>
+                        <Texture parentKey="Background" setAllPoints="true">
+                            <Color r="0.95" g="0.93" b="0.88" a="0.10"/>
                         </Texture>
                     </Layer>
                     <Layer level="ARTWORK">
-                        <!-- Page Title -->
-                        <FontString parentKey="PageTitle" inherits="GameFontNormalLarge">
+                        <FontString parentKey="XPPerHourLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
                             <Anchors>
-                                <Anchor point="TOP" x="0" y="-10"/>
+                                <Anchor point="TOPLEFT" x="10" y="-7"/>
                             </Anchors>
+                        </FontString>
+                        <FontString parentKey="XPPerHourValue" inherits="GameFontNormalHuge" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="BOTTOMLEFT" x="10" y="8"/>
+                                <Anchor point="RIGHT" x="-10"/>
+                            </Anchors>
+                            <Color r="1" g="1" b="1"/>
                         </FontString>
                     </Layer>
                 </Layers>
-                <Frames>
-                    <!-- Current Level Stats Content -->
-                    <Frame parentKey="Content">
-                        <Size x="300" y="370"/>
-                        <Anchors>
-                            <Anchor point="TOP" relativeKey="$parent.PageTitle" relativePoint="BOTTOM" x="0" y="-15"/>
-                        </Anchors>
-                        <Layers>
-                            <Layer level="ARTWORK">
-                                <!-- Current Level -->
-                                <FontString parentKey="CurrentLevelLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" x="10" y="0"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="CurrentLevelValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" x="-10" y="0"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Current XP -->
-                                <FontString parentKey="CurrentXPLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.CurrentLevelLabel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="CurrentXPValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.CurrentLevelValue" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Max XP -->
-                                <FontString parentKey="MaxXPLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.CurrentXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="MaxXPValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.CurrentXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Progress Percentage -->
-                                <FontString parentKey="ProgressLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.MaxXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="ProgressValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.MaxXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Separator Line -->
-                                <Texture parentKey="Separator1">
-                                    <Size x="280" y="1"/>
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.ProgressLabel" relativePoint="BOTTOMLEFT" x="0" y="-12"/>
-                                    </Anchors>
-                                    <Color r="0.5" g="0.5" b="0.5" a="0.5"/>
-                                </Texture>
-                                
-                                <!-- Remaining XP -->
-                                <FontString parentKey="RemainingXPLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.Separator1" relativePoint="BOTTOMLEFT" x="0" y="-12"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="RemainingXPValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.Separator1" relativePoint="BOTTOMRIGHT" x="0" y="-12"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Rested XP -->
-                                <FontString parentKey="RestedXPLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.RemainingXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="RestedXPValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.RemainingXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Quest XP -->
-                                <FontString parentKey="QuestXPLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.RestedXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="QuestXPValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.RestedXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Separator Line 2 -->
-                                <Texture parentKey="Separator2">
-                                    <Size x="280" y="1"/>
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.QuestXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-12"/>
-                                    </Anchors>
-                                    <Color r="0.5" g="0.5" b="0.5" a="0.5"/>
-                                </Texture>
-                                
-                                <!-- Time on This Level -->
-                                <FontString parentKey="LevelTimeLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.Separator2" relativePoint="BOTTOMLEFT" x="0" y="-12"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="LevelTimeValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.Separator2" relativePoint="BOTTOMRIGHT" x="0" y="-12"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Est. Time to Level -->
-                                <FontString parentKey="TimeToLevelLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.LevelTimeLabel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="TimeToLevelValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.LevelTimeValue" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                            </Layer>
-                        </Layers>
-                    </Frame>
-                </Frames>
-            </Frame>
-            
-            <!-- Center Divider -->
-            <Frame parentKey="CenterDivider">
-                <Size x="2" y="420"/>
-                <Anchors>
-                    <Anchor point="TOP" relativeKey="$parent.InsetBg" relativePoint="TOP" x="0" y="-40"/>
-                </Anchors>
-                <Layers>
-                    <Layer level="ARTWORK">
-                        <Texture>
-                            <Anchors>
-                                <Anchor point="TOPLEFT"/>
-                                <Anchor point="BOTTOMRIGHT"/>
-                            </Anchors>
-                            <Color r="0.3" g="0.3" b="0.3" a="0.5"/>
-                        </Texture>
-                    </Layer>
-                </Layers>
-            </Frame>
-            
-            <!-- Right Page: Current Session Stats -->
-            <Frame parentKey="RightPage">
-                <Size x="320" y="420"/>
-                <Anchors>
-                    <Anchor point="TOPRIGHT" relativeKey="$parent.InsetBg" relativePoint="TOPRIGHT" x="-15" y="-40"/>
-                </Anchors>
-                <Layers>
-                    <Layer level="BACKGROUND">
-                        <!-- Parchment background for right page -->
-                        <Texture parentKey="Background">
-                            <Anchors>
-                                <Anchor point="TOPLEFT" x="-5" y="5"/>
-                                <Anchor point="BOTTOMRIGHT" x="5" y="-5"/>
-                            </Anchors>
-                            <Color r="0.95" g="0.93" b="0.88" a="0.15"/>
-                        </Texture>
-                    </Layer>
-                    <Layer level="ARTWORK">
-                        <!-- Page Title -->
-                        <FontString parentKey="PageTitle" inherits="GameFontNormalLarge">
-                            <Anchors>
-                                <Anchor point="TOP" x="0" y="-10"/>
-                            </Anchors>
-                        </FontString>
-                    </Layer>
-                </Layers>
-                <Frames>
-                    <!-- Session Stats Content -->
-                    <Frame parentKey="Content">
-                        <Size x="300" y="370"/>
-                        <Anchors>
-                            <Anchor point="TOP" relativeKey="$parent.PageTitle" relativePoint="BOTTOM" x="0" y="-15"/>
-                        </Anchors>
-                        <Layers>
-                            <Layer level="ARTWORK">
-                                <!-- Session Duration -->
-                                <FontString parentKey="SessionDurationLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" x="10" y="0"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="SessionDurationValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" x="-10" y="0"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Session Start Time -->
-                                <FontString parentKey="SessionStartLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.SessionDurationLabel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="SessionStartValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.SessionDurationValue" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Separator Line -->
-                                <Texture parentKey="Separator1">
-                                    <Size x="280" y="1"/>
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.SessionStartLabel" relativePoint="BOTTOMLEFT" x="0" y="-12"/>
-                                    </Anchors>
-                                    <Color r="0.5" g="0.5" b="0.5" a="0.5"/>
-                                </Texture>
-                                
-                                <!-- XP Gained This Session -->
-                                <FontString parentKey="SessionXPLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.Separator1" relativePoint="BOTTOMLEFT" x="0" y="-12"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="SessionXPValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.Separator1" relativePoint="BOTTOMRIGHT" x="0" y="-12"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- Levels Gained This Session -->
-                                <FontString parentKey="LevelsGainedLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.SessionXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="LevelsGainedValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.SessionXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                
-                                <!-- XP Per Hour -->
-                                <FontString parentKey="XPPerHourLabel" inherits="GameFontNormalSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeKey="$parent.LevelsGainedLabel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                                <FontString parentKey="XPPerHourValue" inherits="GameFontHighlightSmall">
-                                    <Anchors>
-                                        <Anchor point="TOPRIGHT" relativeKey="$parent.LevelsGainedValue" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
-                                    </Anchors>
-                                </FontString>
-                            </Layer>
-                        </Layers>
-                    </Frame>
-                </Frames>
             </Frame>
 
-            <!-- Session Chart Panel: spans both pages, below them -->
-            <Frame parentKey="ChartPanel">
+            <Frame parentKey="HeroTimeToLevel" enableMouse="false">
+                <Size x="207" y="62"/>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeKey="$parent.LeftPage" relativePoint="BOTTOMLEFT" x="0" y="-14"/>
-                    <Anchor point="TOPRIGHT" relativeKey="$parent.RightPage" relativePoint="BOTTOMRIGHT" x="0" y="-14"/>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.HeroXPPerHour" relativePoint="TOPRIGHT" x="8" y="0"/>
                 </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture parentKey="Background" setAllPoints="true">
+                            <Color r="0.95" g="0.93" b="0.88" a="0.10"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="ARTWORK">
+                        <FontString parentKey="TimeToLevelLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" x="10" y="-7"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="TimeToLevelValue" inherits="GameFontNormalHuge" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="BOTTOMLEFT" x="10" y="8"/>
+                                <Anchor point="RIGHT" x="-10"/>
+                            </Anchors>
+                            <Color r="1" g="1" b="1"/>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+            <!-- ==================== Session chart ====================
+                 Contents unchanged: Stats:RenderSessionChart addresses Title,
+                 PlotMaxLabel, SplitLegend, EmptyLabel, Plot and Split by name. -->
+
+            <Frame parentKey="ChartPanel" enableMouse="false">
                 <Size x="0" y="150"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.HeroXPPerHour" relativePoint="BOTTOMLEFT" x="0" y="-10"/>
+                    <Anchor point="TOPRIGHT" relativeKey="$parent.HeroTimeToLevel" relativePoint="BOTTOMRIGHT" x="0" y="-10"/>
+                </Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
                         <Texture parentKey="Background" setAllPoints="true">
@@ -372,6 +155,230 @@
                         </Layers>
                     </Frame>
                 </Frames>
+            </Frame>
+
+            <!-- ==================== Session summary strip ====================
+                 Three facts on one line, each small: they are context for the
+                 hero numbers, not headlines of their own. -->
+
+            <Frame parentKey="SummaryStrip" enableMouse="false">
+                <Size x="0" y="34"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.ChartPanel" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
+                    <Anchor point="TOPRIGHT" relativeKey="$parent.ChartPanel" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture parentKey="Background" setAllPoints="true">
+                            <Color r="0.95" g="0.93" b="0.88" a="0.07"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="ARTWORK">
+                        <!-- Gained -->
+                        <FontString parentKey="SessionXPLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="LEFT" x="10" y="0"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="SessionXPValue" inherits="GameFontHighlight" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="LEFT" relativeKey="$parent.SessionXPLabel" relativePoint="RIGHT" x="6" y="0"/>
+                            </Anchors>
+                        </FontString>
+
+                        <!-- Levels -->
+                        <FontString parentKey="LevelsGainedLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="LEFT" x="162" y="0"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="LevelsGainedValue" inherits="GameFontHighlight" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="LEFT" relativeKey="$parent.LevelsGainedLabel" relativePoint="RIGHT" x="6" y="0"/>
+                            </Anchors>
+                        </FontString>
+
+                        <!-- Played -->
+                        <FontString parentKey="SessionDurationLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="LEFT" x="278" y="0"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="SessionDurationValue" inherits="GameFontHighlight" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="LEFT" relativeKey="$parent.SessionDurationLabel" relativePoint="RIGHT" x="6" y="0"/>
+                            </Anchors>
+                        </FontString>
+
+                        <Texture parentKey="Divider1">
+                            <Size x="1" y="18"/>
+                            <Anchors>
+                                <Anchor point="LEFT" x="152" y="0"/>
+                            </Anchors>
+                            <Color r="0.5" g="0.5" b="0.5" a="0.4"/>
+                        </Texture>
+                        <Texture parentKey="Divider2">
+                            <Size x="1" y="18"/>
+                            <Anchors>
+                                <Anchor point="LEFT" x="268" y="0"/>
+                            </Anchors>
+                            <Color r="0.5" g="0.5" b="0.5" a="0.4"/>
+                        </Texture>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+            <!-- ==================== Details disclosure ====================
+                 The bookkeeping rows. Collapsed by default: they are what the
+                 old layout gave equal weight to the hero numbers.
+                 The expand marker is a prefix on Title (set in Stats.lua), which
+                 avoids depending on arrow assets. -->
+
+            <Frame parentKey="DetailHeader">
+                <Size x="0" y="22"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.SummaryStrip" relativePoint="BOTTOMLEFT" x="0" y="-8"/>
+                    <Anchor point="TOPRIGHT" relativeKey="$parent.SummaryStrip" relativePoint="BOTTOMRIGHT" x="0" y="-8"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <FontString parentKey="Title" inherits="GameFontNormal" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="LEFT" x="4" y="0"/>
+                            </Anchors>
+                            <Color r="1.0" g="0.82" b="0.0"/>
+                        </FontString>
+                        <Texture parentKey="Divider">
+                            <Size x="0" y="1"/>
+                            <Anchors>
+                                <Anchor point="BOTTOMLEFT" x="4" y="0"/>
+                                <Anchor point="BOTTOMRIGHT" x="-4" y="0"/>
+                            </Anchors>
+                            <Color r="0.5" g="0.5" b="0.5" a="0.5"/>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <!-- The whole header strip is the hit area; the highlight is
+                         the only affordance that it is clickable at all. -->
+                    <Button parentKey="Toggle" setAllPoints="true">
+                        <HighlightTexture setAllPoints="true" alphaMode="ADD">
+                            <Color r="0.4" g="0.4" b="0.4" a="0.25"/>
+                        </HighlightTexture>
+                    </Button>
+                </Frames>
+            </Frame>
+
+            <Frame parentKey="LevelDetail" hidden="true" enableMouse="false">
+                <Size x="0" y="100"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.DetailHeader" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                    <Anchor point="TOPRIGHT" relativeKey="$parent.DetailHeader" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <!-- Left column: where this level stands -->
+                        <FontString parentKey="CurrentLevelLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" x="10" y="0"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="CurrentLevelValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" relativeKey="$parent.CurrentLevelLabel" relativePoint="TOPLEFT" x="200" y="0"/>
+                            </Anchors>
+                        </FontString>
+
+                        <FontString parentKey="CurrentXPLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeKey="$parent.CurrentLevelLabel" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="CurrentXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" relativeKey="$parent.CurrentLevelValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+
+                        <FontString parentKey="MaxXPLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeKey="$parent.CurrentXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="MaxXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" relativeKey="$parent.CurrentXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+
+                        <FontString parentKey="ProgressLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeKey="$parent.MaxXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="ProgressValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" relativeKey="$parent.MaxXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+
+                        <FontString parentKey="RemainingXPLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeKey="$parent.ProgressLabel" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="RemainingXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" relativeKey="$parent.ProgressValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+
+                        <!-- Right column: what is still on the table -->
+                        <FontString parentKey="RestedXPLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" x="228" y="0"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="RestedXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" x="-10" y="0"/>
+                            </Anchors>
+                        </FontString>
+
+                        <FontString parentKey="QuestXPLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeKey="$parent.RestedXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="QuestXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" relativeKey="$parent.RestedXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+
+                        <FontString parentKey="LevelTimeLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeKey="$parent.QuestXPLabel" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="LevelTimeValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" relativeKey="$parent.QuestXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+
+                        <FontString parentKey="SessionStartLabel" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeKey="$parent.LevelTimeLabel" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="SessionStartValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" relativeKey="$parent.LevelTimeValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
             </Frame>
         </Frames>
         <Layers>

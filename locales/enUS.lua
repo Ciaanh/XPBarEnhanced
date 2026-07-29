@@ -287,9 +287,16 @@ L["STATS_CHART_EMPTY"] = "No XP gained yet this session."
 L["STATS_CHART_RATE_FORMAT"] = "%s/h"
 L["STATS_CHART_SPLIT_LEGEND"] = "Quest %d%%  \194\183  Other %d%%"
 
--- Stats window pages and row labels
-L["STATS_PAGE_CURRENT_LEVEL"] = "Current Level"
-L["STATS_PAGE_CURRENT_SESSION"] = "Current Session"
+-- Stats window row labels
+-- The hero cards and the summary strip print their label above or beside a
+-- number, so those three carry no trailing colon; the detail rows keep theirs.
+L["STATS_LABEL_XP_PER_HOUR"] = "XP/hour"
+L["STATS_LABEL_EST_TIME_TO_LEVEL"] = "Time to level"
+L["STATS_LABEL_XP_GAINED"] = "Gained"
+L["STATS_LABEL_LEVELS_GAINED"] = "Levels"
+L["STATS_LABEL_DURATION"] = "Played"
+-- Collapsible section holding the bookkeeping rows
+L["STATS_SECTION_DETAIL"] = "Details"
 L["STATS_LABEL_LEVEL"] = "Level:"
 L["STATS_LABEL_CURRENT_XP"] = "Current XP:"
 L["STATS_LABEL_MAX_XP"] = "Max XP:"
@@ -298,12 +305,7 @@ L["STATS_LABEL_XP_TO_LEVEL"] = "XP to Level:"
 L["STATS_LABEL_RESTED_XP"] = "Rested XP:"
 L["STATS_LABEL_QUEST_XP"] = "Quest XP:"
 L["STATS_LABEL_TIME_ON_LEVEL"] = "Time on Level:"
-L["STATS_LABEL_EST_TIME_TO_LEVEL"] = "Est. Time to Level:"
-L["STATS_LABEL_DURATION"] = "Duration:"
 L["STATS_LABEL_STARTED"] = "Started:"
-L["STATS_LABEL_XP_GAINED"] = "XP Gained:"
-L["STATS_LABEL_LEVELS_GAINED"] = "Levels Gained:"
-L["STATS_LABEL_XP_PER_HOUR"] = "XP/Hour:"
 
 -- Minimap button
 L["MINIMAP_TT_SESSION_XP"] = "Session XP:"
