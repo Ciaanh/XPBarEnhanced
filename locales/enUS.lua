@@ -88,6 +88,9 @@ L["KEY_ALT"] = "Alt"
 L["OPT_UNAVAIL_NO_BAR"] = "— no bar to animate"
 -- %s is a bar style's display name, e.g. "— Circular only".
 L["OPT_UNAVAIL_STYLE_ONLY"] = "— %s only"
+-- Colours belonging to a secondary source that is not the one on screen.
+L["OPT_UNAVAIL_NOT_ACTIVE"] = "— not active"
+L["OPT_COLOR_ACTIVE"] = "(active)"
 
 -- Readout presets: named starting points for the boolean options
 L["OPT_READOUT_PRESET"] = "Readout preset"
@@ -104,6 +107,8 @@ L["OPT_READOUT_PRESET_RESET"] = "Reset to Standard"
 
 -- Collapsible section holding the individual toggles a preset covers
 L["OPT_SECTION_ADVANCED"] = "Advanced"
+-- Collapsible section holding the colours of the secondary sources not in use
+L["OPT_SECTION_OTHERSOURCES"] = "Other secondary sources"
 
 -- Current options in OptionsMetadata
 L["OPT_SHOW_RESTED_OVERLAY"] = "Show rested overlay"

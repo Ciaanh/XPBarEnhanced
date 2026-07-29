@@ -701,6 +701,12 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <!--
+                                        The four secondary-source swatches all declare
+                                        disclosureGroup="othersources", but Options.lua pulls the one
+                                        matching the active secondaryBarSource out of the group, so it
+                                        shows unconditionally while the other three fold in here.
+                                    -->
                                     <Frame parentKey="ColorRow_secondaryReputation" inherits="ConfigColorPickerTemplate">
                                         <KeyValues>
                                             <KeyValue key="configKey" value="secondaryReputation" type="string"/>
@@ -709,6 +715,17 @@
                                             <KeyValue key="layoutIndex" value="50.1" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="othersources" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="OtherSourcesDisclosure" inherits="ConfigDisclosureHeader">
+                                        <KeyValues>
+                                            <KeyValue key="layoutIndex" value="50.15" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="12" type="number"/>
+                                            <KeyValue key="optionTab" value="colors" type="string"/>
+                                            <KeyValue key="disclosureToggle" value="othersources" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -720,6 +737,7 @@
                                             <KeyValue key="layoutIndex" value="50.2" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="othersources" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -731,6 +749,7 @@
                                             <KeyValue key="layoutIndex" value="50.3" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="othersources" type="string"/>
                                         </KeyValues>
                                     </Frame>
 
@@ -742,6 +761,7 @@
                                             <KeyValue key="layoutIndex" value="50.4" type="number"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="topPadding" value="8" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="othersources" type="string"/>
                                         </KeyValues>
                                     </Frame>
 

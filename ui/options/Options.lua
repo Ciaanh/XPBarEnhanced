@@ -69,6 +69,33 @@ local ROW_OWNER_STYLE = {
     terminalUseCustomColors     = "terminal",
 }
 
+-- The Colors tab carries one swatch per secondary-bar source, but only one source
+-- is ever on screen. The active source's swatch stays out in the open; the other
+-- three fold into a disclosure and read as inactive.
+local SECONDARY_COLOR_GROUP = "othersources"
+local SECONDARY_SOURCE_COLOR = {
+    reputation = "secondaryReputation",
+    housing = "secondaryHousing",
+    honor = "secondaryHonor",
+    profession = "secondaryProfession",
+}
+
+-- layoutIndex slots for those four rows. The active source's swatch takes the
+-- slot ahead of the OtherSourcesDisclosure header (50.15) so it never reads as
+-- part of the folded group; the other three keep their relative order behind it.
+local SECONDARY_COLOR_ACTIVE_SLOT = 50.1
+local SECONDARY_COLOR_FOLDED_SLOTS = {50.2, 50.3, 50.4}
+
+-- Initial expanded state per disclosure group; anything unlisted starts collapsed.
+local DISCLOSURE_DEFAULT_OPEN = {
+    -- A player already on a custom readout came for the individual toggles, so
+    -- folding them away would hide what they opened the panel to change.
+    advanced = function()
+        local presets = Addon.ReadoutPresets
+        return (presets and presets:Detect() == presets.CUSTOM) and true or false
+    end,
+}
+
 --- Short display name of a bar style, from the barStyle option list.
 --- Short, not long: "— Circular only" reads better than
 --- "— Circular (Progress ring) only", and it also fits the gallery's status line.
@@ -261,6 +288,13 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
         end
     end
 
+    -- Re-tag the secondary swatches before showing them: which one is active can
+    -- have changed on another tab, and the newly active row is one that was
+    -- folded away still labelled inactive.
+    if tabId == "colors" then
+        self:RefreshSecondaryColorRows()
+    end
+
     -- Show/hide container children by their optionTab attribute
     local container = self.ContentFrame and self.ContentFrame.OptionsContainer
     if not container then return end
@@ -273,7 +307,7 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
             -- (if any) is expanded. Bar style never hides a row — see
             -- RefreshRowAvailability, which enables or disables instead.
             local tabMatch = (childTab == tabId)
-            local disclosureOk = self:IsDisclosureExpanded(child.disclosureGroup)
+            local disclosureOk = self:IsDisclosureExpanded(self:GetEffectiveDisclosureGroup(child))
             child:SetShown(tabMatch and disclosureOk)
         end
     end
@@ -1074,6 +1108,25 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     end
 end
 
+--- The disclosure group a row is in right now, which is usually the static one
+--- declared in XML. The exception is the secondary-source colour swatches: the
+--- one matching the active source is pulled out of the group so it is always
+--- visible, since it is the only one of the four that paints anything on screen.
+---@param child table A container child
+---@return string|nil
+function XPBarEnhancedOptionsMixin:GetEffectiveDisclosureGroup(child)
+    local group = child and child.disclosureGroup
+    if group ~= SECONDARY_COLOR_GROUP then
+        return group
+    end
+
+    local source = Config:GetOptionValue("secondaryBarSource")
+    if child.configKey == SECONDARY_SOURCE_COLOR[source] then
+        return nil
+    end
+    return group
+end
+
 --- True when rows in `group` should be shown. Rows with no group always show.
 ---@param group string|nil
 ---@return boolean
@@ -1114,24 +1167,22 @@ function XPBarEnhancedOptionsMixin:SetDisclosureExpanded(group, expanded)
     end
 end
 
---- Wire the disclosure headers. Collapsed initially unless the player is already
---- on a custom readout, in which case the individual toggles are what they came
---- for and hiding them would be the wrong default.
+--- Wire the disclosure headers. Each group's starting state comes from
+--- DISCLOSURE_DEFAULT_OPEN, so a group can open itself when its contents are what
+--- the player came for.
 function XPBarEnhancedOptionsMixin:SetupDisclosures()
     local container = self.ContentFrame and self.ContentFrame.OptionsContainer
     if not container then
         return
     end
 
-    local presets = Addon.ReadoutPresets
-    local isCustom = presets and presets:Detect() == presets.CUSTOM
-
     self._disclosureExpanded = self._disclosureExpanded or {}
     for _, child in ipairs({container:GetChildren()}) do
         local group = child and child.disclosureToggle
         if group then
             if self._disclosureExpanded[group] == nil then
-                self._disclosureExpanded[group] = isCustom and true or false
+                local defaultOpen = DISCLOSURE_DEFAULT_OPEN[group]
+                self._disclosureExpanded[group] = defaultOpen and defaultOpen() or false
             end
             if child.Toggle then
                 child.Toggle:SetScript("OnClick", function()
@@ -1142,6 +1193,46 @@ function XPBarEnhancedOptionsMixin:SetupDisclosures()
     end
 
     self:RefreshDisclosureHeaders()
+end
+
+--- Tag the secondary-source colour swatch that is actually painting something and
+--- mark the other three inactive. Only one secondary source is on screen at a
+--- time, so three of the four swatches are always guesswork otherwise.
+function XPBarEnhancedOptionsMixin:RefreshSecondaryColorRows()
+    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
+    local detail = Config.optionDetails and Config.optionDetails.secondaryBarSource
+    if not container or not detail or not detail.options then
+        return
+    end
+
+    local activeKey = SECONDARY_SOURCE_COLOR[Config:GetOptionValue("secondaryBarSource")]
+    local foldedIndex = 0
+
+    -- Ordered by the source dropdown rather than a second list here, so a fifth
+    -- secondary source needs only its own colour key and layout slot.
+    for _, option in ipairs(detail.options) do
+        local colorKey = SECONDARY_SOURCE_COLOR[option.value]
+        local row = colorKey and container["ColorRow_" .. colorKey]
+        if row then
+            local isActive = (colorKey == activeKey)
+            -- Tagged, folded away, but still editable: unlike a style-scoped row,
+            -- an inactive source's colour is a setting that works — it just is not
+            -- on screen yet. Disabling it would remove the ability to set a colour
+            -- before switching to that source.
+            self:SetRowAvailability(
+                colorKey,
+                true,
+                isActive and ResolveLocale("OPT_COLOR_ACTIVE") or ResolveLocale("OPT_UNAVAIL_NOT_ACTIVE")
+            )
+
+            if isActive then
+                row.layoutIndex = SECONDARY_COLOR_ACTIVE_SLOT
+            else
+                foldedIndex = foldedIndex + 1
+                row.layoutIndex = SECONDARY_COLOR_FOLDED_SLOTS[foldedIndex] or row.layoutIndex
+            end
+        end
+    end
 end
 
 --- Build the bar-style swatch gallery that replaced the barStyle dropdown.
@@ -1253,25 +1344,26 @@ end
 
 --- Enable or disable one option row, keeping it visible either way.
 --- Rows the active style cannot use are disabled and their label is muted with a
---- trailing reason rather than hidden, so the panel's shape stays constant across
+--- trailing note rather than hidden, so the panel's shape stays constant across
 --- styles and the player learns which style owns the feature.
---- The reason is appended to the row's own Label so this works for every row
+--- The note is appended to the row's own Label so this works for every row
 --- template, including the color rows that do not inherit ConfigRowBase.
----@param key string Config key; the row frame is OptionsContainer["Row_" .. key]
+---@param key string Config key; the row is Row_<key> or ColorRow_<key>
 ---@param available boolean
----@param reason string|nil Trailing note shown when unavailable
-function XPBarEnhancedOptionsMixin:SetRowAvailability(key, available, reason)
+---@param note string|nil Trailing note; shown whether or not the row is available
+function XPBarEnhancedOptionsMixin:SetRowAvailability(key, available, note)
     local container = self.ContentFrame and self.ContentFrame.OptionsContainer
-    local row = container and container["Row_" .. key]
+    local row = container and (container["Row_" .. key] or container["ColorRow_" .. key])
 
     local label = row and row.Label
     if label and label.SetText then
-        local detail = Config.optionDetails and Config.optionDetails[key]
+        local detail = (Config.optionDetails and Config.optionDetails[key])
+            or (Config.colorOptionByKey and Config.colorOptionByKey[key])
         local base = (detail and detail.label) or label.__xpbeBaseText or label:GetText() or ""
         -- Remember the untagged text: GetText() would return the tagged version
-        -- on the next call and the reason would accumulate.
+        -- on the next call and the note would accumulate.
         label.__xpbeBaseText = base
-        label:SetText(available and base or (base .. "   " .. (reason or "")))
+        label:SetText(note and (base .. "   " .. note) or base)
         if label.SetFontObject then
             label:SetFontObject(available and "GameFontHighlight" or "GameFontDisable")
         end
@@ -1286,8 +1378,23 @@ function XPBarEnhancedOptionsMixin:SetRowAvailability(key, available, reason)
     if widget and widget.SetEnabled then
         widget:SetEnabled(available)
     end
-    if widget and widget.SetAlpha then
-        widget:SetAlpha(available and 1 or 0.5)
+
+    -- Fade everything the row draws to the right of its label, not just the
+    -- control: a full-brightness colour preview beside a greyed label reads as
+    -- the row still being in effect.
+    -- Built by assignment rather than as a literal: a nil in the middle of a
+    -- table constructor truncates ipairs.
+    local parts = {}
+    parts[#parts + 1] = widget
+    for _, name in ipairs({"Description", "ValueText", "StatusPreview", "TexturePreview"}) do
+        parts[#parts + 1] = row and row[name]
+    end
+
+    local alpha = available and 1 or 0.5
+    for _, part in ipairs(parts) do
+        if part.SetAlpha then
+            part:SetAlpha(alpha)
+        end
     end
 end
 
@@ -1354,6 +1461,7 @@ function XPBarEnhancedOptionsMixin:Refresh()
     self:RefreshRowAvailability(barStyle)
 
     self:RefreshStyleGallery(barStyle)
+    self:RefreshSecondaryColorRows()
     self:RefreshPresetRow()
 
     -- Refresh dropdowns
