@@ -108,15 +108,14 @@ local function ShowTooltip()
         local TimeCalc = Addon.TimeCalculations
         local duration = TimeCalc and TimeCalc.SessionDuration(session.sessionStart) or 0
 
-        if gainedXP > 0 then
-            GameTooltip:AddLine(" ")
-            GameTooltip:AddDoubleLine(L["MINIMAP_TT_SESSION_XP"], tostring(gainedXP), 0.8, 0.8, 0.8, 1, 1, 1)
+        -- Both data rows are unconditional: a tooltip that changes height at 0 XP
+        -- is harder to read than one that reports 0.
+        local xpStr = Addon.TextFormatter:FormatNumber(gainedXP, GetOptionValue("abbreviateNumbers", true))
+        local durationStr = TimeCalc and TimeCalc.FormatSmart(duration) or (duration .. "s")
 
-            if duration > 0 then
-                local durationStr = TimeCalc and TimeCalc.FormatSmart(duration) or (duration .. "s")
-                GameTooltip:AddDoubleLine(L["MINIMAP_TT_SESSION_TIME"], durationStr, 0.8, 0.8, 0.8, 1, 1, 1)
-            end
-        end
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddDoubleLine(L["MINIMAP_TT_SESSION_XP"], xpStr, 0.8, 0.8, 0.8, 1, 1, 1)
+        GameTooltip:AddDoubleLine(L["MINIMAP_TT_SESSION_TIME"], durationStr, 0.8, 0.8, 0.8, 1, 1, 1)
     end
 
     -- Instructions
