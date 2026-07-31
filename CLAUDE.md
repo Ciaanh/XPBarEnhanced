@@ -8,11 +8,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```powershell
 ./make-release.ps1
 ```
-Reads version from `XPBarEnhanced.toc`, stages addon files into an `XPBarEnhanced/` directory, and produces `.build/XPBarEnhanced-v<version>.zip`. There are no automated tests or lint steps — validation is manual, in-game. If a Lua 5.1 toolchain is available, run `luac -p <file>` on every touched Lua file before considering a change done (WoW runs Lua 5.1).
+Reads version from `XPBarEnhanced.toc`, stages addon files into an `XPBarEnhanced/` directory, and produces `.build/XPBarEnhanced-v<version>.zip`. There are no automated tests or lint steps — behavioural validation is manual, in-game.
+
+**The mechanical gate is not optional and it is not conditional.** Lua 5.1.5 is installed at `C:\Program Files (x86)\Lua\5.1\` with both `lua.exe` and `luac.exe` on PATH, so run `luac -p <file>` on every touched Lua file before considering a change done. Never syntax-check with `lua5.4` — 5.4 accepts syntax the 5.1 client rejects, so a 5.4 pass is false confidence.
+
+The workspace harness at `d:\Dev\WoW\_Workspace\tools\harness.ps1` wraps this and adds the check no manual command can do — walking the TOC load graph to catch a file that is on disk but never loaded:
+
+```powershell
+./tools/harness.ps1 check   -Addon XPBarEnhanced   # load graph + XML well-formedness + luac -p over every file
+./tools/harness.ps1 version -Addon XPBarEnhanced   # the four version locations below must agree
+```
+
+Since this addon has no test suite, `check` is the only automated verification that runs anywhere outside a release tag.
 
 **Publish:** pushing a `v*` tag triggers `.github/workflows/release.yml` (BigWigs packager), which packages per `.pkgmeta` and publishes to CurseForge, WoWInterface, and GitHub Releases (project IDs come from the TOC; changelog from `CHANGELOG.md`; requires the `CF_API_KEY`/`WOWI_API_TOKEN` repo secrets).
 
 Feature/style proposals and their impact studies live in `ROADMAP.md`.
+
+**The Sigil style's 30 textures are generated, not hand-drawn.** `assets/raw/generate_sigil.py` (Python + Pillow) writes every `sigil-*.tga` into `assets/`:
+
+```powershell
+python assets/raw/generate_sigil.py --preview   # --preview also writes contact sheets to assets/raw/
+```
+
+Edit the script, never the TGAs — a hand-edit is silently reverted by the next run. `assets/raw` and `refs` are excluded from the package by both `.pkgmeta` and `make-release.ps1`, so the script ships to neither CurseForge nor the zip. Everything it draws is composed from primitives, which is also the licensing answer: no Blizzard or third-party art is traced or derived. The other assets (`orb_*`, `border`, `center`, `glow`, `tick*`, `xp-bar`) predate it and are still hand-authored, with their sources as `.pdn`/`.xcf` in `assets/raw/`.
 
 **Version changes must stay consistent across all four locations:**
 1. `XPBarEnhanced.toc` (`## Version:`)
@@ -40,11 +59,13 @@ No new globals. Shared state lives under `Addon.*` (e.g., `Addon.Session`, `Addo
 ```
 WoW Events
     → core/EventRouter.lua      (central WoW event registration — only place to register WoW events)
-    → Domain handlers           (Session, ReputationSession, HousingSession, QuestXP)
+    → Domain handlers           (Session, ReputationSession, HousingSession, HonorSession,
+                                 ProfessionSession, QuestXP, GoalTracker)
     → core/EventBus.lua         (internal pub/sub — XPBAR_BROADCAST_UPDATE, REPUTATION_BROADCAST_UPDATE,
                                  HOUSING_BROADCAST_UPDATE, QUESTS_CACHE_INVALIDATED/REBUILT,
                                  CONFIG_UPDATED, COLORS_UPDATED, PROFILE_CHANGED/PROFILES_UPDATED)
-    → UI subscribers            (BarManager, options panel, stats window)
+    → UI subscribers            (BarManager, SecondaryBarManager, options panel, stats window,
+                                 ui/DataBrokerFeed.lua)
 ```
 
 Bars repaint from the domain broadcasts (`XPBAR/REPUTATION/HOUSING_BROADCAST_UPDATE`) and `CONFIG_UPDATED`. `COLORS_UPDATED` only drives the options-panel color swatches — to repaint bars after a color change, also emit the domain updates (see `Colors:NotifyColorsChanged`).
@@ -85,7 +106,7 @@ Storage in `XPBarEnhancedDB`: options are global with optional named profiles la
 
 ### Style System
 
-Seven bar styles: `flat`, `classic`, `vertical`, `circular`, `minimap_ring`, `terminal`, `none`.
+Eight bar styles: `flat`, `classic`, `vertical`, `circular`, `minimap_ring`, `terminal`, `orb`, plus `none`.
 
 `StyleBuilder` composes mixins (LayoutMixin, PaintMixin, DisplayMixin, TextMixin, InteractionMixin, TooltipMixin, PositionMixin, AnimationManager) into registered style objects. `BarManager` switches styles via `SetStyle(styleName)` — frames are cached per style and hidden/reused, never destroyed (WoW frames cannot be garbage-collected). `OnShow`/`OnHide` in `BaseMixin` own the EventBus subscription lifecycle. Secondary bars mirror this via `SecondaryBarManager`.
 
@@ -96,6 +117,10 @@ Each style declares **capabilities** (`statusBar`, `overlays`, `textOnBar`, `bar
 - `Session` — XP gained, time played, levels, quest XP breakdown (with 0.5s cache TTL)
 - `ReputationSession` — watched faction/companion data (wrap-aware gains across renown levels and paragon cycles)
 - `HousingSession` — tracked-house favor progress (favor is cumulative across house levels; only credit deltas from the tracked house's GUID)
+- `HonorSession` — honor progress and honor-level gains
+- `ProfessionSession` — tracked-profession skill progress
+- `GoalTracker` — user-set goals evaluated against the sessions above
+- The four secondary-bar sources are Reputation / Housing Favor / Honor / Profession — `SecondaryBarManager` picks between them.
 - All persist per character in `XPBarEnhancedDB` (via the `Database` getters). Reset semantics: initial login always starts a fresh session; `/reload` resets only when the `resetOnReload` option is enabled.
 - Level-boundary accounting is subtle: `PLAYER_LEVEL_UP` and `PLAYER_XP_UPDATE` can arrive in either order and `UnitLevel`/`UnitXP` can lag the event. `Session:OnLevelUp` credits the old-level remainder only when `session.lastXP > UnitXP("player")` (unambiguous stale baseline) — preserve this guard when touching XP accounting, or gains get dropped or double-counted.
 

@@ -1,0 +1,75 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\Blizzard_SharedXML\UI.xsd">
+
+	<!-- XP Bar Enhanced Sigil Secondary Bar Template -->
+	<!-- Companion halo ring for the secondary source, label centred inside.
+	     Never wears tier art: tier art means XP, and this bar never tracks it. -->
+
+	<Script file="SigilSecondaryBarStyle.lua"/>
+
+	<Frame name="SigilReputationBarTemplate" virtual="true" mixin="XPBarSigilReputationMixin" frameStrata="MEDIUM" fixedFrameStrata="true" enableMouse="true">
+		<Size x="70" y="70"/>
+		<Frames>
+			<!-- Cavity disc behind the fill -->
+			<Frame parentKey="Cavity" setAllPoints="true">
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture parentKey="Background" file="Interface\Buttons\WHITE8X8" setAllPoints="true">
+							<Color r="0.06" g="0.06" b="0.09" a="0.92"/>
+						</Texture>
+						<MaskTexture parentKey="CircleMask" file="Interface\CharacterFrame\TempPortraitAlphaMask" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE" setAllPoints="true">
+							<MaskedTextures>
+								<MaskedTexture childKey="Background"/>
+							</MaskedTextures>
+						</MaskTexture>
+					</Layer>
+				</Layers>
+			</Frame>
+
+			<!-- Fill StatusBar overlapping the cavity -->
+			<StatusBar parentKey="Bar" minValue="0" maxValue="1" defaultValue="0" orientation="VERTICAL" setAllPoints="true">
+				<BarTexture file="Interface\Buttons\WHITE8X8"/>
+			</StatusBar>
+
+			<!-- Halo ring above the fill, tinted to the source colour at render -->
+			<Frame parentKey="RingOverlay">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.Cavity" relativePoint="TOPLEFT"/>
+					<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Cavity" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+				<Layers>
+					<Layer level="BORDER">
+						<Texture parentKey="Halo" file="Interface\AddOns\XPBarEnhanced\assets\border" alphaMode="BLEND" setAllPoints="true"/>
+					</Layer>
+				</Layers>
+			</Frame>
+
+			<!-- Compact label centred inside the ring -->
+			<Frame parentKey="LabelContainer" frameStrata="MEDIUM" setAllPoints="true">
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString parentKey="Label" inherits="GameFontNormalSmall" justifyH="CENTER">
+							<Anchors>
+								<Anchor point="CENTER" x="0" y="0"/>
+							</Anchors>
+							<Shadow>
+								<Offset x="1" y="-1"/>
+								<Color r="0" g="0" b="0" a="0.8"/>
+							</Shadow>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnLoad method="OnLoad"/>
+			<OnShow method="OnShow"/>
+			<OnHide method="OnHide"/>
+			<OnEnter method="OnEnter"/>
+			<OnLeave method="OnLeave"/>
+			<OnMouseUp method="OnMouseUp"/>
+			<OnDragStart method="OnDragStart"/>
+			<OnDragStop method="OnDragStop"/>
+		</Scripts>
+	</Frame>
+</Ui>

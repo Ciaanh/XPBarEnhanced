@@ -37,6 +37,9 @@ local TEX_RING_BORDER = "Interface\\AddOns\\XPBarEnhanced\\assets\\border"
 local TEX_RING_CENTER = "Interface\\AddOns\\XPBarEnhanced\\assets\\center"
 local TEX_ORB_RING = "Interface\\AddOns\\XPBarEnhanced\\assets\\orb_ring"
 local TEX_ORB_GLASS = "Interface\\AddOns\\XPBarEnhanced\\assets\\orb_glass"
+local TEX_SIGIL_CASING = "Interface\\AddOns\\XPBarEnhanced\\assets\\sigil-casing-3"
+-- Suffixed with the lower-cased class token, matching SigilSkins:GetCrestTexture.
+local TEX_SIGIL_CREST = "Interface\\AddOns\\XPBarEnhanced\\assets\\sigil-crest-"
 local TEX_CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local TEX_MINIMAP_BG = "Interface\\Minimap\\UI-Minimap-Background"
 
@@ -260,6 +263,43 @@ function Builders.orb(canvas)
     local ring = Add(canvas, "OVERLAY", TEX_ORB_RING, size + 6, size + 6)
     ring:SetPoint("CENTER")
     return {fill}
+end
+
+--- Sigil: the orb's masked vertical fill inside the flagship's own tier-3
+--- casing, with the player's class crest below the circle.
+---
+--- Drawn from the shipped casing and crest TGAs rather than approximated, so
+--- the swatch is the real art at small size. Tier 3 because it shows the
+--- ornament without the tier-4 crown, which does not survive the downscale.
+function Builders.sigil(canvas)
+    local size = 34
+
+    local shell = Add(canvas, "BACKGROUND", TEX_SOLID, size, size)
+    shell:SetPoint("CENTER", canvas, "CENTER", 0, 4)
+    shell:SetVertexColor(0.06, 0.06, 0.09, 0.92)
+
+    local fill = Add(canvas, "ARTWORK", TEX_SOLID, size, size * FILL_RATIO)
+    fill:SetPoint("BOTTOM", shell, "BOTTOM")
+
+    -- One mask over the full square clips shell and partial fill to the same
+    -- circle, the same shape mechanism SigilBarTemplate uses.
+    local mask = canvas:CreateMaskTexture()
+    mask:SetTexture(TEX_CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mask:SetSize(size, size)
+    mask:SetPoint("CENTER", shell, "CENTER")
+    shell:AddMaskTexture(mask)
+    fill:AddMaskTexture(mask)
+
+    local casing = Add(canvas, "OVERLAY", TEX_SIGIL_CASING, size + 8, size + 8)
+    casing:SetPoint("CENTER", shell, "CENTER")
+
+    -- The crest breaks the circle at 6 o'clock. It is what makes Sigil read as
+    -- different from Orb at swatch size, so it is worth the extra texture.
+    local _, classToken = UnitClass("player")
+    local crest = Add(canvas, "OVERLAY", TEX_SIGIL_CREST .. string.lower(classToken or "warrior"), 13, 13)
+    crest:SetPoint("CENTER", shell, "BOTTOM", 0, 1)
+
+    return {fill, casing, crest}
 end
 
 -------------------------------------------------------------------

@@ -2,11 +2,11 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail only** · Interface 120007 · Version 1.2.0
+**Retail only** · Interface 120007 · Version 1.3.0
 
 ## Features
 
-- **Multiple Bar Styles** — None (Blizzard default), Classic, Flat, Vertical, Circular, Minimap Ring, Terminal, and Orb
+- **Multiple Bar Styles** — None (Blizzard default), Classic, Flat, Vertical, Circular, Minimap Ring, Terminal, Orb, and Sigil
 - **Quest XP Overlay** — See pending and completed quest XP directly on the bar
 - **Session Tracking** — Track XP gained, time played, levels gained, and XP/hour rate
 - **Session Breakdown & Rate Smoothing** — Session stats include quest XP vs other XP totals, with a rolling recent XP/hour rate for faster responsiveness
@@ -35,6 +35,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | **Minimap Ring** | XP ring anchored around the minimap with optional button collection |
 | **Terminal** | ASCII-style retro bar with phosphor-green progress display |
 | **Orb** | Diablo-style filling sphere with glass highlight and metallic rim, plus a companion orb for the secondary source |
+| **Sigil** | Class ring that advances through four tiers as you approach the level cap, tinted with your class colour, with a companion ring for the secondary source |
 
 ## Installation
 
@@ -50,7 +51,7 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | `/xpbe options` | Open the options panel |
 | `/xpbe stats` | Toggle the statistics window |
 | `/xpbe changelog` | Show the update changelog |
-| `/xpbe style <none\|classic\|flat\|vertical\|circular\|minimap_ring\|terminal\|orb>` | Set the active bar style |
+| `/xpbe style <none\|classic\|flat\|vertical\|circular\|minimap_ring\|terminal\|orb\|sigil>` | Set the active bar style |
 | `/xpbe profile` | Show current profile and list available profiles |
 | `/xpbe profile global` | Switch to the global shared profile |
 | `/xpbe profile use <name>` | Switch to a named profile |
@@ -59,7 +60,8 @@ A World of Warcraft addon that replaces and enhances the default experience bar 
 | `/xpbe profile delete [name]` | Delete a profile |
 | `/xpbe reps` | Export all faction IDs |
 | `/xpbe debugevents [on\|off\|show\|reset]` | Toggle and inspect EventBus emit counters |
-| `/xpbe test <celebration\|milestone>` | Preview the level-up celebration or a progress notification |
+| `/xpbe test <celebration\|milestone\|tier>` | Preview the level-up celebration, a progress notification, or the Sigil tier ascend |
+| `/xpbe sigil debug` | Print the Sigil tier/skin/accent resolution ladder |
 | `/xpbe reset` | Reset all settings |
 | `/xpbe resetstats` | Reset session statistics |
 | `/xpbe resetcolors` | Reset colors to defaults |

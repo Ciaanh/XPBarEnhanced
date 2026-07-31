@@ -8,6 +8,19 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.3.0",
+        notes = {
+            "New Sigil bar style: a class ring that advances through four tiers as you approach the level cap, from a plain band to a crowned frame, with a per-class rune band and class crest tinted in your class colour, plus a companion ring for the secondary bar.",
+            "Five Sigil options under Visual: skin, size, tier mode, pinned tier, and class-colour tint.",
+            "Time to level on the Circular and Vertical styles now updates while you stand still, instead of freezing until your next XP gain.",
+            "The Circular ring now repaints only the segments that actually changed, cutting a large amount of per-frame work at high segment counts.",
+            "Fixed XP being mis-credited to your session: two independent trackers computed the gain and could disagree on the same event. There is now one.",
+            "Fixed a whole level of XP going missing when crossing between two levels that share the same XP requirement.",
+            "Fixed XP/hour reading in the millions during a session's first seconds.",
+            "New /xpbe sigil debug and /xpbe test tier commands.",
+        },
+    },
+    {
         version = "1.2.0",
         notes = {
             "New readout presets: Minimal, Standard and Leveller set every text and overlay toggle in one click. The individual toggles moved under a collapsed Advanced section.",

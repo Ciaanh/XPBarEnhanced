@@ -14,7 +14,7 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFoptions|r - Open options panel")
     print("  /xpbe |cFFFFFFFFstats|r - Toggle statistics window")
     print("  /xpbe |cFFFFFFFFchangelog|r - Show the update changelog")
-    print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|terminal|orb>|r - Change bar style")
+    print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|terminal|orb|sigil>|r - Change bar style")
     print("  /xpbe |cFFFFFFFFprofile|r - Show current profile and available profiles")
     print("  /xpbe |cFFFFFFFFprofile global|r - Use global shared settings")
     print("  /xpbe |cFFFFFFFFprofile use <name>|r - Switch to a named profile")
@@ -25,6 +25,8 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFdebugevents [on|off|show|reset]|r - Toggle/show/reset EventBus counters")
     print("  /xpbe |cFFFFFFFFtest celebration|r - Preview the level-up celebration (no real level-up)")
     print("  /xpbe |cFFFFFFFFtest milestone|r - Preview a level-progress notification (no real milestone)")
+    print("  /xpbe |cFFFFFFFFtest tier|r - Preview the Sigil tier-ascend animation (no real tier change)")
+    print("  /xpbe |cFFFFFFFFsigil debug|r - Print the Sigil tier/skin/accent resolution ladder")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -297,6 +299,56 @@ local function handleProfile(arg)
     print("Usage: /xpbe profile [global|use <name>|new <name>|rename <new name>|delete [name]]")
 end
 
+-- Sigil resolver inspection. The resolver is pure data with no widget calls, so
+-- this prints exactly what the style will paint -- and it is Phase 1's own
+-- acceptance mechanism, usable before any art or any frame exists.
+local function handleSigil(arg)
+    arg = string.lower(arg or "")
+
+    local Skins = Addon.SigilSkins
+    if not Skins or not Skins.Resolve then
+        print("|cFFFF0000XP Bar Enhanced:|r Sigil resolver unavailable.")
+        return
+    end
+
+    if arg ~= "debug" then
+        print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe sigil debug")
+        return
+    end
+
+    local _, classToken = UnitClass("player")
+    local skinId = Addon.Config and Addon.Config.GetOptionValue
+        and Addon.Config:GetOptionValue("sigilSkin") or "sigil"
+
+    print("|cff33ff99XP Bar Enhanced|r Sigil resolution")
+    print(string.format("  class %s (family %s), configured skin %s",
+        tostring(classToken), tostring(Skins:GetFamily(classToken)), tostring(skinId)))
+
+    local function describe(label, level, cap, isXPMode)
+        local tier, skin, layer, accent = Skins:Resolve(level, cap, skinId, classToken, isXPMode)
+        print(string.format(
+            "  %-18s tier %d  skin %-6s  layer %s  accent %.2f/%.2f/%.2f",
+            label, tier, tostring(skin and skin.id),
+            layer and "yes" or "|cFFFF0000none|r",
+            accent.r, accent.g, accent.b))
+    end
+
+    for _, cap in ipairs({70, 80}) do
+        print(string.format("  |cFFFFFFFFcap %d|r", cap))
+        for _, level in ipairs({1, 19, 20, 43, 44, 67, 68, 80}) do
+            describe("level " .. level, level, cap, true)
+        end
+    end
+
+    print("  |cFFFFFFFFedge cases|r")
+    describe("maxLevel 0", 40, 0, true)
+    describe("not XP mode", 40, 80, false)
+    describe("unknown skin", 40, 80, true)
+    local tier, skin = Skins:Resolve(40, 80, "no-such-skin", "NOT_A_CLASS", true)
+    print(string.format("  %-18s tier %d  skin %s (no error)",
+        "unknown class", tier, tostring(skin and skin.id)))
+end
+
 -- Preview-only triggers for promo screenshots/GIFs: fire the visual effect
 -- directly on the current bar/session state without mutating real XP data
 -- or session totals.
@@ -327,9 +379,20 @@ local function handleTest(arg)
             print("|cFFFF0000XP Bar Enhanced:|r Milestone tracker unavailable.")
         end
         return
+    elseif arg == "tier" then
+        local manager = Addon.BarManager
+        local bar = manager and manager.GetCurrentFrame and manager:GetCurrentFrame()
+        if not bar or not bar.PreviewTierAscend then
+            print("|cFFFF0000XP Bar Enhanced:|r Tier ascend is a Sigil effect; switch with /xpbe style sigil.")
+        elseif bar:PreviewTierAscend() then
+            print("|cff33ff99XP Bar Enhanced:|r Tier ascend preview triggered.")
+        else
+            print("|cFFFF0000XP Bar Enhanced:|r The Sigil bar is not visible right now.")
+        end
+        return
     end
 
-    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe test <celebration|milestone>")
+    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe test <celebration|milestone|tier>")
 end
 
 local function handleSlashCommand(message)
@@ -360,6 +423,8 @@ local function handleSlashCommand(message)
         handleDebugEvents(arg)
     elseif command == "test" then
         handleTest(arg)
+    elseif command == "sigil" then
+        handleSigil(arg)
     else
         printUnknown(command)
     end

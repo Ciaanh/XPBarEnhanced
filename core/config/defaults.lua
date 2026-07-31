@@ -19,6 +19,14 @@ local defaults = {
     circularUseTexture = true,
     circularScaleCenterText = false,
     circularSecondaryFullCircle = false,
+    -- Sigil style. sigilSkin has a single selectable value at launch (halo is
+    -- internal and never offered), so the options row for it stays hidden until
+    -- a second selectable skin exists.
+    sigilSkin = "sigil",
+    sigilSize = "medium",
+    sigilTierMode = "auto",
+    sigilPinnedTier = 1,
+    sigilUseClassColor = true,
     minimapRingPadding = 0,
     minimapRingSegments = 100,
     minimapRingCollectButtons = false,
