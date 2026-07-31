@@ -34,6 +34,17 @@ local Utils = Addon.Utils
 local timePlayedTicker
 local PENDING_QUEST_TURNIN_WINDOW_SECONDS = 3
 
+-- How long a recorded gain stays consumable by ContextBuilder. OnQuestTurnedIn's
+-- delayed OnXPUpdate(true) records a gain whose broadcast is suppressed, so a
+-- record can outlive the event that produced it; without this bound that gain
+-- resurfaces as a spurious flash on the next consuming build, which may be a
+-- style switch or a colour change minutes later.
+local LAST_GAIN_MAX_AGE_SECONDS = 2
+
+-- Cap on the persisted gain history, and the block size it is trimmed by.
+local GAINS_HISTORY_CAP = 500
+local RECENT_GAINS_CAP = 20
+
 local function PurgeExpiredPendingQuestTurnIns(list, now)
     local i = 1
     while i <= #list do
@@ -120,6 +131,140 @@ local function resetSessionProgress(session)
     session.otherXP = 0
 end
 
+-- Number of entries dropped in one go when a history list overflows its cap.
+local HISTORY_TRIM_BLOCK = 50
+
+--- Trim a history list back under its cap, a block at a time.
+--- `table.remove(list, 1)` is O(n) and used to run on every single gain once the
+--- list reached its cap. Trimming in blocks pays that cost once per 50 gains
+--- instead. Deliberately not a ring buffer: `gainsHistory` is persisted to
+--- SavedVariables, so a head index would need a migration for existing saved
+--- arrays while block trimming needs none.
+---@param list table Array of history entries
+---@param cap number Maximum length before trimming
+local function trimHistory(list, cap)
+    local count = #list
+    local overflow = count - cap
+    if overflow <= 0 then
+        return
+    end
+
+    local removeCount = math.max(overflow, HISTORY_TRIM_BLOCK)
+    if removeCount > count then
+        removeCount = count
+    end
+
+    -- One compaction pass, rather than removeCount separate O(n) removals.
+    for i = 1, count - removeCount do
+        list[i] = list[i + removeCount]
+    end
+    for i = count - removeCount + 1, count do
+        list[i] = nil
+    end
+end
+
+--- Credit an XP gain to the session: totals, the legacy alias, the source split
+--- and the histories.
+---
+--- This is the single writer of `session.sessionXP`. That field is a
+--- SavedVariables-compatibility alias of `gainedXP` and used to be assigned in
+--- four separate places -- four chances for the two to drift apart.
+---@param session SessionData
+---@param amount number XP to credit; non-positive amounts are ignored
+---@param source string "quest" or "other"
+---@param level number|nil Level stamped on the history entry
+---@param trackRecent boolean Also append to the sliding recent-gains window
+---@return table|nil entry The recorded history entry, or nil if nothing was credited
+local function creditGain(session, amount, source, level, trackRecent)
+    if not session or not amount or amount <= 0 then
+        return nil
+    end
+
+    session.gainedXP = (session.gainedXP or 0) + amount
+    session.sessionXP = session.gainedXP
+
+    if source == "quest" then
+        session.questXP = (session.questXP or 0) + amount
+    else
+        session.otherXP = (session.otherXP or 0) + amount
+    end
+
+    local entry = {
+        timestamp = time(),
+        amount = amount,
+        source = source,
+        level = level or UnitLevel("player") or 1,
+    }
+
+    session.gainsHistory = session.gainsHistory or {}
+    table.insert(session.gainsHistory, entry)
+    trimHistory(session.gainsHistory, GAINS_HISTORY_CAP)
+
+    -- The level-up remainder path deliberately passes false here, preserving the
+    -- pre-existing behaviour that the sliding window tracks only ordinary gains.
+    if trackRecent then
+        session.recentGains = session.recentGains or {}
+        table.insert(session.recentGains, entry)
+        trimHistory(session.recentGains, RECENT_GAINS_CAP)
+    end
+
+    return entry
+end
+
+-------------------------------------------------------------------
+-- XP DELTA HANDOFF
+-- One tracker owns the XP delta. ContextBuilder used to keep a second, private
+-- baseline advanced on a different set of events and fed to ComputeGain with a
+-- different arity, so the two could take different branches of the same function
+-- on the same event -- and context.xpGained, which decides the gain flash, came
+-- from the private one.
+-------------------------------------------------------------------
+
+--- Record the gain just credited, for one-shot consumption by ContextBuilder.
+--- Module-scoped, never written into the session table: `GetCurrent` returns
+--- per-character SavedVariables and preserves unknown fields, so a record parked
+--- there would survive logout. This state's lifetime is the UI session.
+---@param gained number
+---@param preLevelXP number XP at the previous baseline
+---@param preLevelMax number xpMax at the previous baseline
+---@param didLevelUp boolean
+function Session:_StoreLastGain(gained, preLevelXP, preLevelMax, didLevelUp)
+    self._lastGain = {
+        gained = gained or 0,
+        preLevelXP = preLevelXP or 0,
+        preLevelMax = preLevelMax or 0,
+        didLevelUp = didLevelUp or false,
+        at = time(),
+    }
+end
+
+--- The gain credited by the most recent OnXPUpdate/OnLevelUp, consumed once.
+--- Clearing on read is what stops a second consumer double-counting it.
+---
+--- Nothing pending returns `0` against Session's own current baseline, never nil:
+--- a consuming build with no XP event behind it is routine, since
+--- `XPBAR:BROADCAST_UPDATE` is a consuming event and both `BarManager:SetStyle`
+--- and `Colors:NotifyColorsChanged` emit it. Returning nil there would produce
+--- `xpBefore = 0` contexts and a bar that renders briefly empty on a style switch.
+---@return number gained
+---@return number preLevelXP
+---@return number preLevelMax
+---@return boolean didLevelUp
+function Session:ConsumeLastGain()
+    local session = self:GetCurrent()
+    local baselineXP = (session and session.lastXP) or UnitXP("player") or 0
+    local baselineMax = (session and session.maxXP) or UnitXPMax("player") or 0
+
+    local pending = self._lastGain
+    self._lastGain = nil
+
+    if not pending or (time() - (pending.at or 0)) > LAST_GAIN_MAX_AGE_SECONDS then
+        return 0, baselineXP, baselineMax, false
+    end
+
+    return pending.gained, pending.preLevelXP, pending.preLevelMax, pending.didLevelUp
+end
+
 -------------------------------------------------------------------
 -- SESSION MANAGEMENT
 -------------------------------------------------------------------
@@ -174,6 +319,12 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
         session.maxXP = UnitXPMax("player")
         session.lastLevel = UnitLevel("player") or 1
         self._pendingQuestTurnIns = {}
+        -- Belt-and-braces. Both already die with the UI session because they live
+        -- on the module rather than in the SavedVariables-backed session table,
+        -- but the rebaseline invalidates them either way: a boundary or gain
+        -- recorded against the old baseline means nothing against this one.
+        self._pendingLevelBoundary = nil
+        self._lastGain = nil
     end
 
     updateSessionAccumTime(session)
@@ -202,9 +353,39 @@ function Session:OnXPUpdate(suppressBroadcast)
 
     -- Use centralized XPCalculations module for XP gain computation
     local XPCalc = Addon.XPCalculations
-    local gained, didLevelUp = XPCalc.ComputeGain(currentXP, maxXP, lastXP, lastMax, lastLevel, currentLevel)
-    session.gainedXP = (session.gainedXP or 0) + gained
-    session.sessionXP = session.gainedXP
+    local gained, didLevelUp, ambiguousDecrease =
+        XPCalc.ComputeGain(currentXP, maxXP, lastXP, lastMax, lastLevel, currentLevel)
+
+    if ambiguousDecrease then
+        -- XP fell with neither the level nor the xpMax moving. The likely cause is
+        -- a boundary between two levels that share an xpMax, arriving before
+        -- UnitLevel caught up -- but a data reset looks identical from here, so
+        -- credit nothing yet and park the boundary for PLAYER_LEVEL_UP to confirm.
+        --
+        -- newXP has to be captured: the true gain across the boundary is
+        -- (lastMax - lastXP) + currentXP, the old level's remainder *plus* the
+        -- progress already made into the new level, and the rebaseline below is
+        -- about to bury that progress under the new baseline.
+        local previous = self._pendingLevelBoundary
+        self._pendingLevelBoundary = {
+            lastXP = lastXP,
+            lastMax = lastMax,
+            newXP = currentXP,
+            at = time(),
+            -- Multi-level jump before PLAYER_LEVEL_UP consumed the first boundary:
+            -- fold the older one in rather than overwriting it, which would drop
+            -- its remainder silently. Per-level PLAYER_LEVEL_UP accounting is the
+            -- documented primary path here, so this is genuinely an edge case.
+            carried = previous
+                and ((previous.lastMax - previous.lastXP) + previous.newXP + (previous.carried or 0))
+                or nil,
+        }
+    elseif gained > 0 then
+        -- A normally-credited gain proves no boundary is outstanding. Clearing
+        -- here stops a stale flag crediting a phantom remainder at the next ding.
+        self._pendingLevelBoundary = nil
+    end
+
     session.lastXP = currentXP
     session.maxXP = maxXP
     session.lastLevel = currentLevel
@@ -214,30 +395,12 @@ function Session:OnXPUpdate(suppressBroadcast)
     -- Track gain source and record in history
     if gained > 0 then
         local source = self:_ConsumePendingQuestTurnInForXPGain() and "quest" or "other"
-
-        local entry = {
-            timestamp = time(),
-            amount = gained,
-            source = source,
-            level = UnitLevel("player") or 1,
-        }
-
-        table.insert(session.gainsHistory, entry)
-        if #session.gainsHistory > 500 then
-            table.remove(session.gainsHistory, 1)
-        end
-
-        table.insert(session.recentGains, entry)
-        if #session.recentGains > 20 then
-            table.remove(session.recentGains, 1)
-        end
-
-        if source == "quest" then
-            session.questXP = (session.questXP or 0) + gained
-        else
-            session.otherXP = (session.otherXP or 0) + gained
-        end
+        creditGain(session, gained, source, currentLevel, true)
     end
+
+    -- Hand the delta to ContextBuilder. Must precede the broadcast below, which is
+    -- what consumes it.
+    self:_StoreLastGain(gained, lastXP, lastMax, didLevelUp)
 
     -- Session is the single source of XP events; broadcast to all registered bars
     if not suppressBroadcast and Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
@@ -261,41 +424,58 @@ function Session:OnLevelUp(level)
         currentLevel = 1
     end
 
-    -- Credit the remainder of the previous level only when the stored baseline
-    -- still holds pre-level data. `lastXP > current XP` is an unambiguous sign
-    -- we crossed a boundary the XP-update path has not yet rebaselined; when
-    -- PLAYER_XP_UPDATE already handled the crossing it left lastXP == current
-    -- XP, so this is skipped and no XP is double-counted.
+    -- Credit the remainder of the previous level. There are two entry conditions
+    -- and they are mutually exclusive by construction:
+    --
+    --   1. A pending ambiguous boundary parked by OnXPUpdate. When it is set,
+    --      OnXPUpdate has already rebaselined lastXP to the new level's progress,
+    --      so the `lastXP > unitXP` guard below is false and cannot also fire.
+    --   2. `lastXP > current XP` -- an unambiguous stale baseline, meaning we
+    --      crossed a boundary the XP-update path has not yet rebaselined. When
+    --      PLAYER_XP_UPDATE already handled the crossing it left lastXP == current
+    --      XP, so this is skipped and no XP is double-counted.
+    --
+    -- Checking the flag first is what preserves the no-double-count invariant:
+    -- the flag path must never fall through into the guard path.
     local unitXP = UnitXP("player") or 0
     local unitMax = UnitXPMax("player") or 0
-    if session.lastXP and session.maxXP and session.lastXP > unitXP then
-        local remainder = session.maxXP - session.lastXP
-        if remainder > 0 then
-            local source = self:_ConsumePendingQuestTurnInForXPGain() and "quest" or "other"
-            session.gainedXP = (session.gainedXP or 0) + remainder
-            session.sessionXP = session.gainedXP
-            if source == "quest" then
-                session.questXP = (session.questXP or 0) + remainder
-            else
-                session.otherXP = (session.otherXP or 0) + remainder
-            end
-            -- Record in history like OnXPUpdate so charts/rates stay consistent
-            session.gainsHistory = session.gainsHistory or {}
-            table.insert(session.gainsHistory, {
-                timestamp = time(),
-                amount = remainder,
-                source = source,
-                level = currentLevel,
-            })
-            if #session.gainsHistory > 500 then
-                table.remove(session.gainsHistory, 1)
-            end
-        end
+
+    -- Captured before either branch mutates them; these describe the level just
+    -- left and drive the level-up animation's first phase.
+    local preLevelXP = session.lastXP or 0
+    local preLevelMax = session.maxXP or unitMax
+
+    local pending = self._pendingLevelBoundary
+    local creditedXP = 0
+
+    if pending then
+        -- The ambiguous decrease was a real boundary after all. Credit the old
+        -- level's remainder *plus* the progress into the new level that OnXPUpdate
+        -- buried when it rebaselined.
+        creditedXP = (pending.lastMax - pending.lastXP) + pending.newXP + (pending.carried or 0)
+        preLevelXP = pending.lastXP
+        preLevelMax = pending.lastMax
+        self._pendingLevelBoundary = nil
+
+        -- Deliberately no `session.lastXP = 0` rebaseline on this path. OnXPUpdate
+        -- already set lastXP to the new level's progress and the credit above
+        -- accounts for exactly that progress; zeroing it here would credit the
+        -- same XP a second time at the next PLAYER_XP_UPDATE.
+    elseif session.lastXP and session.maxXP and session.lastXP > unitXP then
+        creditedXP = session.maxXP - session.lastXP
         -- Rebaseline to the start of the new level so the next PLAYER_XP_UPDATE
         -- credits new-level progress as an ordinary same-level gain.
         session.lastXP = 0
         session.maxXP = unitMax
     end
+
+    if creditedXP > 0 then
+        local source = self:_ConsumePendingQuestTurnInForXPGain() and "quest" or "other"
+        creditGain(session, creditedXP, source, currentLevel, false)
+    end
+
+    -- Hand the delta to ContextBuilder ahead of this function's broadcast.
+    self:_StoreLastGain(creditedXP, preLevelXP, preLevelMax, true)
 
     -- Track levels gained this session
     session.levelsGained = (session.levelsGained or 0) + 1
@@ -572,15 +752,31 @@ function Session:GetXPPerHour()
         return math.floor((gainedXP / duration) * 3600)
     end
 
-    -- Fallback: estimate from realLevelTime if available
+    -- Then the sliding window of recent gains. It is a real measurement, so it
+    -- beats the level-time estimate below in the two windows where the session
+    -- path declines: a session's first 10 seconds, and a session that has
+    -- recorded no gains at all.
+    if self.GetRecentXPPerHour then
+        local recent = self:GetRecentXPPerHour()
+        if recent and recent > 0 then
+            return recent
+        end
+    end
+
+    -- Last resort: estimate from realLevelTime.
     if session.realLevelTime and session.realLevelTime > 0 then
         local levelTime = session.realLevelTime
         if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
             local elapsed = time() - session.lastTimePlayedRequest
             levelTime = levelTime + elapsed
         end
+        -- Floor the divisor. This path divides a whole level's XP by the time
+        -- played at that level, and a handful of seconds there yields a
+        -- millions-per-hour reading -- which the circular centre ETA is derived
+        -- from, so the spike is visible, not just internal.
+        levelTime = math.max(60, levelTime)
         local currentXP = UnitXP("player") or 0
-        if levelTime > 0 and currentXP > 0 then
+        if currentXP > 0 then
             return math.floor((currentXP / levelTime) * 3600)
         end
     end

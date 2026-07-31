@@ -156,7 +156,12 @@ function BaseMixin:OnShow()
 		self._textRefreshTicker:Cancel()
 	end
 	self._textRefreshTicker = C_Timer.NewTicker(2.5, function()
-		if self and self:IsShown() and self:HasCapability("textBelowBar") then
+		-- "timeReadout" covers styles whose time-derived readout lives on the bar
+		-- rather than below it (circular/vertical time-to-level). Both this gate
+		-- and the synchronous one in UpdateAllText must test the same pair, or the
+		-- on-show refresh and the ticker disagree about whether the row exists.
+		if self and self:IsShown()
+			and (self:HasCapability("textBelowBar") or self:HasCapability("timeReadout")) then
 			local context
 			if XPBarContextBuilder and XPBarContextBuilder.BuildTextRefreshContext then
 				context = XPBarContextBuilder.BuildTextRefreshContext("TEXT_TICK")
@@ -350,7 +355,8 @@ function BaseMixin:UpdateAllText(context)
 		if self.UpdatePercentText then self:UpdatePercentText(context) end
 		if self.UpdateLevelText then self:UpdateLevelText(context) end
 	end
-	if self:HasCapability("textBelowBar") then
+	-- Mirrors the ticker gate in OnShow -- see the note there.
+	if self:HasCapability("textBelowBar") or self:HasCapability("timeReadout") then
 		if self.UpdateSessionText then self:UpdateSessionText(context) end
 		if self.UpdateRateText then self:UpdateRateText(context) end
 	end

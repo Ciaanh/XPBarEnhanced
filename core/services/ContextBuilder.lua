@@ -273,22 +273,13 @@ function ContextBuilder.MakeImmutable(eventData, coreData)
 	return wrapper
 end
 
--- Compute XP gained since last snapshot (handles level-up wrap-around)
-function ContextBuilder.ComputeXPGained(currentXP, xpMax)
-	local lastXP = ContextBuilder._lastXP or currentXP
-	local lastMax = ContextBuilder._lastMaxXP or xpMax
-
-	local XPCalc = XPBarEnhanced.XPCalculations
-	local xpGained, didLevelUp = XPCalc.ComputeGain(currentXP, xpMax, lastXP, lastMax)
-
-	local preLevelXP = lastXP
-	local preLevelMax = lastMax
-
-	ContextBuilder._lastXP = currentXP
-	ContextBuilder._lastMaxXP = xpMax
-
-	return xpGained, preLevelXP, preLevelMax, didLevelUp
-end
+-- ContextBuilder.ComputeXPGained and the ContextBuilder._lastXP / ._lastMaxXP
+-- baseline it advanced are gone. They were a second XP delta tracker running
+-- alongside Session's: advanced on a different set of events, and passed to
+-- XPCalc.ComputeGain with a different arity (no level snapshots), so the two
+-- could take different branches of the same function on the same event. Since
+-- context.xpGained is what decides the gain flash, they disagreed visibly.
+-- Session:ConsumeLastGain is now the single source; see BuildContext below.
 
 -- Update session tracking with a gain and return session snapshot
 function ContextBuilder.UpdateSessionWithGain(xpGained)
@@ -383,10 +374,11 @@ end
 -- Events that should consume (advance) the XP delta tracker.
 -- EventBus broadcasts ("XPBAR:BROADCAST_UPDATE") are the primary delivery
 -- path when Session drives all XP events, so they must also consume the delta.
+-- PLAYER_ENTERING_WORLD is deliberately absent: no BuildContext caller passes it,
+-- so the entry was dead. Session's own login rebaseline covers that moment.
 local XP_CONSUMING_EVENTS = {
 	["PLAYER_XP_UPDATE"] = true,
 	["PLAYER_LEVEL_UP"] = true,
-	["PLAYER_ENTERING_WORLD"] = true,
 	["XPBAR:BROADCAST_UPDATE"] = true,
 }
 
@@ -405,14 +397,21 @@ function XPBarContextBuilder.BuildContext(event, ...)
 
 	local shouldConsumeXP = XP_CONSUMING_EVENTS[event] == true
 
+	local Session = Addon and Addon.Session
+
 	local xpGained, preLevelXP, preLevelMax, didLevelUp
-	if shouldConsumeXP then
-		xpGained, preLevelXP, preLevelMax, didLevelUp = ContextBuilder.ComputeXPGained(coreState.currentXP, coreState.xpMax)
+	if shouldConsumeXP and Session and Session.ConsumeLastGain then
+		-- One-shot: Session cleared the record on read, so a second build of the
+		-- same event cannot double-count it into a second flash.
+		xpGained, preLevelXP, preLevelMax, didLevelUp = Session:ConsumeLastGain()
 	else
+		-- Non-XP events must report no gain, but they still need a sane baseline
+		-- for the pre-level fields -- read Session's, which is now the only one.
 		xpGained = 0
-		preLevelXP = ContextBuilder._lastXP or coreState.currentXP
-		preLevelMax = ContextBuilder._lastMaxXP or coreState.xpMax
 		didLevelUp = false
+		local session = Session and Session.GetCurrent and Session:GetCurrent()
+		preLevelXP = (session and session.lastXP) or coreState.currentXP
+		preLevelMax = (session and session.maxXP) or coreState.xpMax
 	end
 
 	local sessionStart, sessionXP, sessionDuration, xpPerHour = ContextBuilder.UpdateSessionWithGain(xpGained)
@@ -452,8 +451,8 @@ function XPBarContextBuilder.BuildContext(event, ...)
 		local level = args[1] or coreState.level
 		eventContext.level = level
 		eventContext.previousLevel = (level and level - 1) or (coreState.level and coreState.level - 1)
-		-- Allow level-up animation flags to propagate from ComputeXPGained() above.
-		-- Only set hasLeveledUp/shouldAnimate if ComputeXPGained did not already detect it
+		-- Allow level-up animation flags to propagate from ConsumeLastGain() above.
+		-- Only set hasLeveledUp/shouldAnimate if the consumed gain did not already say so
 		-- (handles the case where PLAYER_LEVEL_UP fires before PLAYER_XP_UPDATE).
 		if not eventContext.hasLeveledUp then
 			eventContext.hasLeveledUp = true
@@ -516,8 +515,10 @@ end
 -------------------------------------------------------------------
 
 function ContextBuilder.Initialize()
-	-- UnitXP may return nil/0 before PLAYER_LOGIN fires; keep _lastXP nil in that
-	-- case so ComputeXPGained defaults it to currentXP (zero gain on first event).
+	-- No XP baseline is seeded here any more. Session owns the only one, and its
+	-- OnEnteringWorld rebaseline handles the login case -- including the moment
+	-- before PLAYER_LOGIN when UnitXP still returns nil/0. Re-seeding a private
+	-- copy here would leave dead state that reads as authoritative.
 	ContextBuilder._contextCache = {}
 	ContextBuilder._contextCacheFlushPending = false
 	ContextBuilder._debugStats = {
@@ -527,11 +528,6 @@ function ContextBuilder.Initialize()
 		textHits = 0,
 		lastLogAt = 0,
 	}
-	local xp = UnitXP("player")
-	if xp and xp > 0 then
-		ContextBuilder._lastXP = xp
-		ContextBuilder._lastMaxXP = UnitXPMax("player") or 1
-	end
 end
 
 function ContextBuilder.ResetSession()
@@ -544,8 +540,7 @@ function ContextBuilder.ResetSession()
 		textHits = 0,
 		lastLogAt = 0,
 	}
-	ContextBuilder._lastXP = UnitXP("player") or 0
-	ContextBuilder._lastMaxXP = UnitXPMax("player") or 1
+	-- Session's baseline is reset by Session:OnEnteringWorld / resetSessionProgress.
 end
 
 -------------------------------------------------------------------

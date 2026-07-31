@@ -323,6 +323,9 @@ local DefaultConfig = {
     style = {},
     capabilities = {
         textBelowBar = false,
+        -- Same shape as circular: RateText lives on the bar, not below it, and
+        -- shows time-to-level, so it needs the periodic tick to stay honest.
+        timeReadout  = true,
     }
 }
 

@@ -20,9 +20,11 @@ local XPCalc = Addon.XPCalculations
 ---@param currentLevel number|nil Current player level (optional)
 ---@return number xpGained Amount of XP gained
 ---@return boolean didLevelUp Whether a level-up occurred
+---@return boolean ambiguousDecrease XP fell with no level change and no xpMax change
 function XPCalc.ComputeGain(currentXP, currentMax, lastXP, lastMax, lastLevel, currentLevel)
     local xpGained = 0
     local didLevelUp = false
+    local ambiguousDecrease = false
 
     if lastLevel and currentLevel and currentLevel > lastLevel then
         -- Level-up detected from level snapshots (works even when consecutive
@@ -41,12 +43,22 @@ function XPCalc.ComputeGain(currentXP, currentMax, lastXP, lastMax, lastLevel, c
         -- Normal XP gain (same level)
         xpGained = currentXP - lastXP
     else
-        -- Edge case: currentXP < lastXP but xpMax same (shouldn't happen normally)
-        -- Could be a data reset or edge case - treat as no gain
+        -- currentXP < lastXP, xpMax unchanged, level snapshots unchanged. Two
+        -- causes are indistinguishable from here:
+        --   (a) a level boundary where PLAYER_XP_UPDATE beat UnitLevel and the two
+        --       consecutive levels happen to share an xpMax -- a whole level's
+        --       remainder is at stake; or
+        --   (b) a genuine data reset, where treating it as a wrap would invent
+        --       (lastMax - lastXP) + currentXP of XP that was never earned.
+        -- Credit nothing here and report the ambiguity. Session resolves it by
+        -- waiting to see whether PLAYER_LEVEL_UP follows.
         xpGained = 0
+        ambiguousDecrease = true
     end
 
-    return xpGained, didLevelUp
+    -- Third value is additive: existing two-value call sites are unaffected
+    -- because Lua discards extra returns.
+    return xpGained, didLevelUp, ambiguousDecrease
 end
 
 --- Compute XP remaining to reach next level

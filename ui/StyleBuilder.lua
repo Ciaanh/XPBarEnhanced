@@ -41,6 +41,11 @@ XPBarStyleBuilder.Capabilities = {
 	textOnBar      = "textOnBar",       -- has LevelText/XPText/PercentText
 	textBelowBar   = "textBelowBar",    -- has RateText/SessionText/QuestSummaryText
 	barColors      = "barColors",       -- responds to user color changes
+	-- Wants the 2.5s periodic text refresh even though its readout is not the
+	-- below-bar row: a style whose *on-bar* text shows a time-derived value
+	-- (time-to-level, XP/hour) needs the tick or the value freezes whenever the
+	-- player is not gaining XP, which is exactly when an ETA gets read.
+	timeReadout    = "timeReadout",
 }
 
 -- Default capabilities for standard horizontal bars
@@ -51,6 +56,9 @@ local DEFAULT_CAPABILITIES = {
 	textOnBar      = true,
 	textBelowBar   = true,
 	barColors      = true,
+	-- Deliberately false: defaulting this true would hand every existing style a
+	-- 2.5s refresh it never asked for. Styles that need it opt in explicitly.
+	timeReadout    = false,
 }
 
 -------------------------------------------------------------------

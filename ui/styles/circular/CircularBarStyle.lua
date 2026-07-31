@@ -104,7 +104,7 @@ function CircularBarStyleTemplate:GetCircularScale()
 end
 
 --- Get the configured number of segments to display (from saved settings)
--- @return number: Number of segments to display (clamped to 20-100)
+-- @return number: Number of segments to display (clamped to 25-100)
 function CircularBarStyleTemplate:GetDisplaySegmentCount()
     local count = DEFAULT_SEGMENTS
     local saved = Config and Config.GetOptionValue and Config:GetOptionValue("circularSegments")
@@ -129,7 +129,7 @@ end
 function CircularBarStyleTemplate:GetSegmentWidth(displayCount)
     -- Scale width inversely with segment count
     -- At 100 segments: base width (5px)
-    -- At 20 segments: 5x wider (25px)
+    -- At 25 segments (the floor GetDisplaySegmentCount clamps to): 4x wider (20px)
     local baseWidth = CIRCULAR_BAR_STYLE.SEGMENT_WIDTH_PX
     local scaleFactor = REFERENCE_SEGMENT_COUNT / displayCount
     return baseWidth * scaleFactor
@@ -177,6 +177,14 @@ end
 
 --- Reposition segments based on current config (called on config change)
 function CircularBarStyleTemplate:RepositionSegments()
+    -- Reset the paint diff here rather than at the call sites: this is the one
+    -- place segment geometry, texture and visibility change, and resetting inside
+    -- it means all five existing callers (OnLoad, the four option handlers, the
+    -- profile-change path) and any future one force a full repaint for free.
+    self._prevSegmentTypes = nil
+    self._prevOverlayAlpha = nil
+    self._prevSegmentCount = nil
+
     local displayCount = self:GetDisplaySegmentCount()
     local clockwise = -1
     local scale = self:GetCircularScale()
@@ -399,14 +407,24 @@ function CircularBarStyleTemplate:SetArcProgress(progress, context, overlayAlpha
         end
     end
 
-    -- Apply colors
+    -- Apply colors (totalSegments is resolved once here and passed down --
+    -- GetDisplaySegmentCount is a full profile-chain read and can even write on a
+    -- migration path, so it must not be called twice per frame)
     local hasRestedXP = context.hasRestedXP == true
-    self:UpdateSegmentColors(hasRestedXP, overlayAlpha)
+    self:UpdateSegmentColors(hasRestedXP, overlayAlpha, totalSegments)
 end
 
---- Apply colors to segments based on their type
+--- Build (or reuse) the segment colour table for the current render.
+--- The four Colors:Get / GetXPBarColor lookups and the table allocation used to
+--- be paid on every animation frame. The table is invalidated at RenderBar entry
+--- and keyed on hasRestedXP, so a rested flip mid-animation still recolours.
 -- @param hasRestedXP boolean: Whether player has rested XP available
-function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha)
+-- @return table: Colour table consumed by ApplySegmentTypeColor
+function CircularBarStyleTemplate:GetRenderColors(hasRestedXP)
+    if self._renderColors and self._renderColorsRested == hasRestedXP then
+        return self._renderColors
+    end
+
     local Colors = XPBarEnhanced.Colors
     local shared = GetSharedStyleHelpers()
     local currentXPColor = nil
@@ -417,28 +435,73 @@ function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha)
         local key = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
         currentXPColor = Colors:Get(key)
     end
-    local colors = {
+
+    self._renderColors = {
         currentXP = currentXPColor,
         rested = Colors:Get(Colors.Key.Rested),
         questComplete = Colors:Get(Colors.Key.QuestComplete),
         questIncomplete = Colors:Get(Colors.Key.QuestIncomplete),
     }
+    self._renderColorsRested = hasRestedXP
+
+    -- Fresh colours invalidate the paint diff: every visible segment needs
+    -- rewriting even where its type is unchanged.
+    self._prevSegmentTypes = nil
+
+    return self._renderColors
+end
+
+--- Apply colors to segments, touching only those whose paint actually changed.
+--- At 100 segments the old unconditional loop cost 100 SetVertexColor + 100 Show
+--- per animation frame; a typical frame changes 1-3 segments.
+-- @param hasRestedXP boolean: Whether player has rested XP available
+-- @param overlayAlpha number|nil: Alpha multiplier for overlay segments
+-- @param totalSegments number|nil: Visible segment count, resolved by the caller
+function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha, totalSegments)
+    local shared = GetSharedStyleHelpers()
+    local colors = self:GetRenderColors(hasRestedXP)
 
     overlayAlpha = overlayAlpha or 1.0
-    local totalSegments = self:GetDisplaySegmentCount()
+    totalSegments = totalSegments or self:GetDisplaySegmentCount()
 
+    -- Full-repaint conditions. overlayAlpha multiplies into every segment's
+    -- colour, so an animating alpha invalidates the diff wholesale; a changed
+    -- count means the previous snapshot describes a different ring.
+    local prev = self._prevSegmentTypes
+    if prev and (self._prevOverlayAlpha ~= overlayAlpha or self._prevSegmentCount ~= totalSegments) then
+        prev = nil
+    end
+
+    local types = self.segmentTypes
     for i = 1, totalSegments do
-        local segment = self.segments[i]
-        if segment then
-            if shared and shared.ApplySegmentTypeColor then
-                shared.ApplySegmentTypeColor(segment, self.segmentTypes[i], colors, EMPTY_SEGMENT_COLOR, overlayAlpha)
-            else
-                local fallback = colors.currentXP or EMPTY_SEGMENT_COLOR
-                segment:SetVertexColor(fallback.r, fallback.g, fallback.b, (fallback.a or 1) * overlayAlpha)
+        local segType = types[i]
+        if not prev or prev[i] ~= segType then
+            local segment = self.segments[i]
+            if segment then
+                if shared and shared.ApplySegmentTypeColor then
+                    shared.ApplySegmentTypeColor(segment, segType, colors, EMPTY_SEGMENT_COLOR, overlayAlpha)
+                else
+                    local fallback = colors.currentXP or EMPTY_SEGMENT_COLOR
+                    segment:SetVertexColor(fallback.r, fallback.g, fallback.b, (fallback.a or 1) * overlayAlpha)
+                end
             end
-            segment:Show()
         end
     end
+
+    -- No Show() here. Visibility belongs to RepositionSegments, which runs from
+    -- OnLoad, the four option handlers and the profile-change path -- never
+    -- mid-animation -- and which resets this snapshot so the next frame repaints
+    -- in full.
+    local snapshot = prev
+    if not snapshot then
+        snapshot = self._prevSegmentTypes or {}
+        self._prevSegmentTypes = snapshot
+    end
+    for i = 1, totalSegments do
+        snapshot[i] = types[i]
+    end
+    self._prevOverlayAlpha = overlayAlpha
+    self._prevSegmentCount = totalSegments
 end
 
 -------------------------------------------------------------------
@@ -455,6 +518,13 @@ function CircularBarStyleTemplate:RenderBar(context)
     end
 
     self._lastLevel = context.level
+
+    -- Invalidate the per-render colour cache. Bars do not subscribe to
+    -- COLORS_UPDATED -- every colour-change path (options swatch, profile switch,
+    -- Colors:NotifyColorsChanged) reaches the bar as a domain broadcast that ends
+    -- here, so rebuilding at RenderBar entry makes all of them correct by
+    -- construction, and the animation frames that follow reuse the one table.
+    self._renderColors = nil
 
     -- Calculate target ratio (use currentXP as canonical field)
     local targetRatio = self:CalculateTargetRatio(context)
@@ -610,9 +680,16 @@ function CircularBarStyleTemplate:UpdatePercentText(context)
         local decimals = (context and context.percentDecimals) or
             (Addon and Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("percentDecimals")) or 1
 
-        -- Use simple percent formatting (no quest additions)
+        -- Use simple percent formatting (no quest additions).
+        -- string.format + SetText ran every animation frame while the rounded
+        -- value only changes a handful of times across a fill; cache and compare.
+        -- Safe because this override is the only writer of circular's PercentText.
         local percent = (maxv > 0) and (current / maxv * 100) or 0
-        self.PercentText:SetText(string.format("%." .. decimals .. "f%%", percent))
+        local text = string.format("%." .. decimals .. "f%%", percent)
+        if text ~= self._lastPercentText then
+            self._lastPercentText = text
+            self.PercentText:SetText(text)
+        end
     end
 end
 
@@ -939,6 +1016,10 @@ local DefaultConfig = {
         overlays       = false,
         exhaustionTick = false,
         textBelowBar   = false,
+        -- No below-bar row, but UpdateRateText is overridden to show time-to-level
+        -- as the third centre row. Without this the ETA only moved when an XP event
+        -- arrived, so it froze precisely while the player was standing still.
+        timeReadout    = true,
     }
 }
 
