@@ -9,12 +9,56 @@ local function printUnknown(command)
     print("|cff33ff99XP Bar Enhanced|r - Use /xpbe help for commands")
 end
 
+--- The selectable bar styles, in the order the options panel offers them.
+---
+--- Read from the barStyle option's own definition -- the same table the style
+--- gallery builds its swatches from -- rather than spelled out again here. The
+--- list used to be hand-written in three places (the help line, the usage line
+--- and the validator) and they had already drifted apart: a style present in
+--- the gallery was rejected by the command that claimed to accept it.
+---@return string[]
+local function StyleKeys()
+    local detail = Addon.Config and Addon.Config.GetOptionDetail
+        and Addon.Config:GetOptionDetail("barStyle")
+    local keys = {}
+    for _, option in ipairs(detail and detail.options or {}) do
+        keys[#keys + 1] = option.value
+    end
+    return keys
+end
+
+---@param separator string
+---@return string styles Joined list, or a usable placeholder if metadata is absent
+local function StyleList(separator)
+    local keys = StyleKeys()
+    if #keys == 0 then
+        return "style"
+    end
+    return table.concat(keys, separator)
+end
+
+--- Accept exactly what the bar can actually put on screen.
+---
+--- Deferring to BarManager rather than to the list above means the command can
+--- never accept a style that would then fail to render, nor reject one that
+--- would have worked: ResolveStyleKey returns its argument unchanged precisely
+--- when the style has both a template and a registered mixin.
+---@param style string
+---@return boolean
+local function IsValidStyle(style)
+    local manager = Addon.BarManager
+    if not (manager and manager.ResolveStyleKey) then
+        return false
+    end
+    return manager:ResolveStyleKey(style) == style
+end
+
 local function showHelp()
     print("|cff33ff99XP Bar Enhanced|r Commands:")
     print("  /xpbe |cFFFFFFFFoptions|r - Open options panel")
     print("  /xpbe |cFFFFFFFFstats|r - Toggle statistics window")
     print("  /xpbe |cFFFFFFFFchangelog|r - Show the update changelog")
-    print("  /xpbe |cFFFFFFFFstyle <none|classic|flat|vertical|circular|minimap_ring|terminal|orb>|r - Change bar style")
+    print("  /xpbe |cFFFFFFFFstyle <" .. StyleList("|") .. ">|r - Change bar style")
     print("  /xpbe |cFFFFFFFFprofile|r - Show current profile and available profiles")
     print("  /xpbe |cFFFFFFFFprofile global|r - Use global shared settings")
     print("  /xpbe |cFFFFFFFFprofile use <name>|r - Switch to a named profile")
@@ -95,10 +139,10 @@ local function handleStyle(style)
             currentStyle = Addon.db.barStyle or "classic"
         end
         print("|cFF00FF00XP Bar Enhanced:|r Current bar style: " .. currentStyle)
-        print("Usage: /xpbe style <none|classic|flat|vertical|circular|minimap_ring|terminal|orb>")
+        print("Usage: /xpbe style <" .. StyleList("|") .. ">")
         return
     end
-    if style == "none" or style == "classic" or style == "flat" or style == "vertical" or style == "circular" or style == "minimap_ring" or style == "terminal" or style == "orb" then
+    if IsValidStyle(style) then
         if Addon.Config and Addon.Config.SetOptionKey then
             Addon.Config:SetOptionKey("barStyle", style)
             print("|cFF00FF00XP Bar Enhanced:|r Bar style set to: " .. style)
@@ -106,7 +150,7 @@ local function handleStyle(style)
             print("|cFFFF0000XP Bar Enhanced:|r Config module not available")
         end
     else
-        print("|cFFFF0000XP Bar Enhanced:|r Invalid style. Use: none, classic, flat, vertical, circular, minimap_ring, terminal, orb")
+        print("|cFFFF0000XP Bar Enhanced:|r Invalid style. Use: " .. StyleList(", "))
     end
 end
 

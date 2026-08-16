@@ -35,6 +35,8 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - The Stats window showed the session XP total twice, as "XP Gained" and "Total XP", one separator apart.
 - The session XP total and its legacy `sessionXP` alias were assigned in four separate places, which is four chances for them to drift; both now have exactly one writer.
 - The style gallery now sizes its swatch grid *and* the row the options panel stacks from, so a future style that needs a third row of swatches cannot paint over the option rows below it.
+- **`/xpbe style` listed and accepted a hand-written set of styles** that had already fallen out of step with the styles the options panel offers, so the command could advertise a style it then rejected. The list and the validation both come from the bar styles themselves now.
+- The published package no longer carries `.github` and `.claude` — roughly 990 KB of development tooling, larger than the addon itself, that `.pkgmeta` never excluded.
 
 ## [1.1.8] - 2026-07-16
 

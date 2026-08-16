@@ -631,7 +631,13 @@ function Config:ShowHelp()
     print("     Customize colors and features from the options panel.")
     print("  |cFFFFD700/xpbe reset|r - Reset all settings to defaults")
     print("  |cFFFFD700/xpbe resetstats|r - Clear all tracked statistics")
-    print("  |cFFFFD700/xpbe style <none|classic|flat|vertical|circular|minimap_ring|terminal|orb>|r - Change bar style")
+    -- Built from the barStyle option's own values rather than spelled out, so
+    -- this line cannot drift from the styles the panel actually offers.
+    local styleKeys = {}
+    for _, option in ipairs(self:GetOptionDetail("barStyle") and self:GetOptionDetail("barStyle").options or {}) do
+        styleKeys[#styleKeys + 1] = option.value
+    end
+    print("  |cFFFFD700/xpbe style <" .. (#styleKeys > 0 and table.concat(styleKeys, "|") or "style") .. ">|r - Change bar style")
 end
 
 function Config:Reset()

@@ -5,6 +5,13 @@ manual-changelog: CHANGELOG.md
 
 # Keep in sync with make-release.ps1's whitelist: ship only the TOC/lua,
 # LICENSE, README, core/fonts/libs/locales/ui, and assets root files.
+#
+# The two mechanisms are opposites -- this is a blacklist, make-release.ps1 is a
+# whitelist -- so anything added at the top level is shipped by this file by
+# default and dropped by that one. Everything the whitelist omits is therefore
+# listed here explicitly, including the dot-directories: .github alone is ~990 KB
+# of agent and API-reference markdown, larger than the addon it would ride along
+# with, and .claude/settings.local.json is local editor state.
 ignore:
     - refs
     - .build
@@ -14,3 +21,6 @@ ignore:
     - CLAUDE.md
     - CHANGELOG.md
     - make-release.ps1
+    - .github
+    - .claude
+    - .gitignore
