@@ -15,6 +15,7 @@ Changelog.entries = {
             "Fixed XP being mis-credited to your session: two independent trackers computed the gain and could disagree on the same event. There is now one.",
             "Fixed a whole level of XP going missing when crossing between two levels that share the same XP requirement.",
             "Fixed XP/hour reading in the millions during a session's first seconds.",
+            "Fixed the addon failing to load entirely when your saved bar style no longer exists in the installed version. Unknown styles now fall back to the default instead of erroring.",
         },
     },
     {

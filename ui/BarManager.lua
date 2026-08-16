@@ -42,14 +42,78 @@ function BarManager:IsCustomStyle(style)
     return style and StyleTemplateNameMap[style] ~= nil
 end
 
+-- True if this build can actually put the style on screen. "none" always can --
+-- it is Blizzard's own bar, and no frame of ours is built. Anything else needs
+-- BOTH an XML template in the map above AND a mixin registered by that style's
+-- own file: a template with no mixin means the style's Lua failed to load, which
+-- is exactly as unrenderable as a key we have never heard of.
+local function IsRenderableStyle(style)
+    if type(style) ~= "string" then
+        return false
+    end
+    if style == "none" then
+        return true
+    end
+    if not StyleTemplateNameMap[style] then
+        return false
+    end
+    return (StyleBuilder and StyleBuilder.GetStyleMixin and StyleBuilder:GetStyleMixin(style)) ~= nil
+end
+
+--- Reduce any stored style key to one this build can render.
+---
+--- Saved variables outlive the code that wrote them: a style removed from the
+--- build, a profile written by a newer version, or an interrupted update all
+--- leave a key behind that no longer resolves. Unsanitized, such a key reached
+--- CreateFrameForStyle and raised a hard error during login, which takes the
+--- whole addon down -- not just the bar -- for a value the player cannot see or
+--- edit without a working options panel. Falling back costs one style
+--- preference; erroring costs the addon.
+---@param style any Candidate key, from saved variables, a profile, or a command
+---@return string style A key that is safe to hand to SetStyle
+function BarManager:ResolveStyleKey(style)
+    if IsRenderableStyle(style) then
+        return style
+    end
+
+    local fallback = (Addon.defaults and Addon.defaults.barStyle) or "classic"
+    if IsRenderableStyle(fallback) then
+        return fallback
+    end
+
+    -- The default itself is unrenderable, so the style layer is broken rather
+    -- than the saved value. Blizzard's bar needs nothing from us and is always
+    -- available, so the player keeps an XP bar either way.
+    return "none"
+end
+
 function BarManager:Initialize()
     local defaultStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
-    local style = GetOptionValue("barStyle", defaultStyle)
+    local configuredStyle = GetOptionValue("barStyle", defaultStyle)
+    local style = self:ResolveStyleKey(configuredStyle)
 
     -- Install hooks before SetStyle so they are in place when bars are hidden
     self:InstallBlizzardBarHooks()
 
     self:SetStyle(style)
+
+    -- Repair the stored value once the bar is up, so everything else that reads
+    -- barStyle agrees with what is on screen: the secondary bar derives its own
+    -- style from it, the options dropdown selects from it, and the max-level
+    -- repurpose predicate tests it. Left unrepaired the player gets a working
+    -- primary bar, no secondary bar, and a blank style dropdown.
+    --
+    -- Deliberately after SetStyle, not before: SetOptionKey re-enters SetStyle
+    -- through ApplyOptionSideEffects, and by this point that call sees its own
+    -- style already current and early-returns. Doing it first would recurse.
+    if style ~= configuredStyle then
+        print(string.format(
+            "|cFFFF0000XP Bar Enhanced:|r bar style '%s' is not available in this version — switched to '%s'.",
+            tostring(configuredStyle), style))
+        if Addon.Config and Addon.Config.SetOptionKey then
+            Addon.Config:SetOptionKey("barStyle", style)
+        end
+    end
 
     -- Ensure lock state is applied at startup
     if Addon.db == nil then
@@ -269,9 +333,14 @@ function BarManager:SetStyle(nextStyle)
     self.barFrames = self.barFrames or {}
 
     local previousStyle = self.currentStyle
-    if not nextStyle or type(nextStyle) ~= "string" then
-        nextStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
-    end
+
+    -- Every path into the manager funnels through here -- login, /xpbe style, a
+    -- config change, a profile switch, the max-level repurpose re-drive -- so
+    -- this is the one place a key has to be made safe. Non-fatal by design: a
+    -- profile carrying a style this build does not have renders the default
+    -- instead of erroring. Only Initialize writes the correction back, because
+    -- SetOptionKey would re-enter this function.
+    nextStyle = self:ResolveStyleKey(nextStyle)
 
     -- XP-disabled and max-level modes normally use Blizzard's default bar,
     -- unless the max-level "primary shows secondary source" mode is active —
@@ -322,7 +391,11 @@ function BarManager:SetStyle(nextStyle)
         local templateName = StyleTemplateNameMap[nextStyle]
         local mixin = StyleBuilder:GetStyleMixin(nextStyle)
         if not mixin then
-            error("BarManager:SetStyle: Unknown style key: " .. tostring(nextStyle))
+            -- Unreachable: ResolveStyleKey above rejects any key without a
+            -- registered mixin. Kept as an invariant check, so a future path
+            -- that bypasses the funnel fails loudly here instead of silently
+            -- building a frame with no behaviour attached.
+            error("BarManager:SetStyle: style passed sanitization but has no mixin: " .. tostring(nextStyle))
         end
 
         local frame = StyleBuilder:CreateFrameForStyle(nextStyle, mixin.__xpbar_config or {}, templateName)

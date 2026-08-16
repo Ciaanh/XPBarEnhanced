@@ -18,6 +18,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - **XP/hour could read in the millions in a session's first seconds.** The fallback divided a whole level's XP by the time played at that level with no floor, so a few seconds produced an absurd rate — and the Circular centre ETA is derived from it. The sliding window of recent gains is now preferred whenever it has data, and the fallback divisor is floored at 60 seconds.
 - The session XP total and its legacy `sessionXP` alias were assigned in four separate places, which is four chances for them to drift; both now have exactly one writer.
 - The style gallery now sizes its swatch grid *and* the row the options panel stacks from, so a future style that needs a third row of swatches cannot paint over the option rows below it.
+- **A saved bar style that no longer exists took the whole addon down at login.** The stored key went straight from saved variables to frame creation, and an unrecognised one raised a hard Lua error — so a style dropped from a build, a profile written by a newer version, or an interrupted update cost you every feature of the addon, not just your bar, with no working options panel to fix it from. Unknown keys now fall back to the default style, say so once in chat, and repair the stored value so the secondary bar and the options panel agree with what is on screen.
 
 ## [1.2.0] - 2026-07-29
 
