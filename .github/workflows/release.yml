@@ -3,8 +3,8 @@
 #
 # Project IDs are read from the TOC (X-Curse-Project-ID, X-WoWI-ID); the game
 # version comes from `## Interface:`; package contents from .pkgmeta; the
-# changelog is the tagged version's section of CHANGELOG.md (trimmed below —
-# the packager would otherwise upload the whole file).
+# changelog is every CHANGELOG.md section added since the previous tag (trimmed
+# below — the packager would otherwise upload the whole file).
 #
 # Required repository secrets (Settings > Secrets and variables > Actions):
 #   CF_API_KEY      — https://authors.curseforge.com/account/api-tokens
@@ -30,18 +30,51 @@ jobs:
 
       # .pkgmeta's manual-changelog points at CHANGELOG.md, and the packager
       # uploads that file verbatim as the release notes on all three targets.
-      # Trim the checkout's copy to just the tagged version's section, and
-      # fail the release if the topmost section doesn't match the tag (i.e.
+      # Trim the checkout's copy to everything added since the previous tag,
+      # and fail the release if the topmost section doesn't match the tag (i.e.
       # the changelog was not bumped before tagging).
-      - name: Trim changelog to the tagged version's section
+      #
+      # Every section since the previous TAG, not just the tagged version's:
+      # a version that is bumped but never tagged still ships its code in the
+      # next release, so publishing one section would silently drop its notes.
+      # That is not hypothetical -- 1.2.0 was bumped, never tagged, and rode
+      # out inside 1.3.0. The in-game popup already spans skipped versions
+      # this way (Changelog.lua's CollectEntriesThrough); this makes the
+      # published notes agree with it.
+      - name: Trim changelog to everything since the previous release
         run: |
           version="${GITHUB_REF_NAME#v}"
-          awk '/^## \[/{ if (found) exit; if ($0 !~ /\[Unreleased\]/) found=1 } found' CHANGELOG.md > release-changelog.md
+
+          # Nearest release tag reachable from this tag's parent. Empty on the
+          # first ever release, where publishing the whole file is correct.
+          prev="$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
+          prev="${prev#v}"
+
+          # "## []" when prev is empty, which matches no real heading, so the
+          # loop runs to EOF and every section is published.
+          awk -v stop="## [$prev]" '
+            /^## \[/ {
+              if (found && index($0, stop) == 1) exit
+              if ($0 !~ /\[Unreleased\]/) found = 1
+            }
+            found
+          ' CHANGELOG.md > release-changelog.md
+
           if ! grep -qF "## [$version]" release-changelog.md; then
             echo "::error::CHANGELOG.md topmost released section does not match tag $GITHUB_REF_NAME"
             cat release-changelog.md
             exit 1
           fi
+
+          # A previous tag with no section of its own means the boundary was
+          # never found and the whole file was published. Loud, but not worth
+          # failing a release over.
+          if [ -n "$prev" ] && ! grep -qF "## [$prev]" CHANGELOG.md; then
+            echo "::warning::previous release v$prev has no CHANGELOG.md section; published notes cover the whole file"
+          fi
+
+          echo "Publishing notes since ${prev:-<first release>}:"
+          grep -E '^## \[' release-changelog.md
           mv release-changelog.md CHANGELOG.md
 
       - name: Package and publish

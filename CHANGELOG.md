@@ -8,6 +8,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Changed
 
+- **Updated for Patch 12.1** — interface bumped from `120007` to `120100`, so the addon no longer reports as out of date.
 - **Time-to-level on the Circular and Vertical styles now updates while you stand still.** Both show the ETA as an on-bar row rather than below the bar, and the 2.5s refresh only ran for styles with a below-bar row — so the one number you read when you are *not* gaining XP was the one that froze. A new `timeReadout` capability drives the refresh; no other style gained a timer.
 - **The Circular ring repaints only the segments that changed.** At 100 segments a steady animation was issuing 100 `SetVertexColor` plus 100 `Show` calls per frame, rebuilding a four-entry colour table from four option/colour lookups per frame, and resolving the segment count twice per frame through the full profile chain. The fill advances identically; the widget traffic does not.
 
