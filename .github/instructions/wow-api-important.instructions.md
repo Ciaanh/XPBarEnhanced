@@ -6,7 +6,7 @@ applyTo: "**/*.lua,**/*.xml,**/*.toc"
 
 # Patch 12.0.0 (Midnight) — Critical API Changes
 
-> **Interface baseline: `120001+` (this repo currently uses `120005`)**
+> **Interface baseline: `120001+` (this repo currently uses `120100`)**
 > These changes are ACTIVE in pre-patch (12.0.0) and Midnight launch (12.0.1).
 > Prior API knowledge from 11.x and earlier **does not apply** for the systems listed below.
 
