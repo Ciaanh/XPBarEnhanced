@@ -4,24 +4,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
-## [1.3.0] - 2026-08-16
-
-### Changed
-
-- **Updated for Patch 12.1** — interface bumped from `120007` to `120100`, so the addon no longer reports as out of date.
-- **Time-to-level on the Circular and Vertical styles now updates while you stand still.** Both show the ETA as an on-bar row rather than below the bar, and the 2.5s refresh only ran for styles with a below-bar row — so the one number you read when you are *not* gaining XP was the one that froze. A new `timeReadout` capability drives the refresh; no other style gained a timer.
-- **The Circular ring repaints only the segments that changed.** At 100 segments a steady animation was issuing 100 `SetVertexColor` plus 100 `Show` calls per frame, rebuilding a four-entry colour table from four option/colour lookups per frame, and resolving the segment count twice per frame through the full profile chain. The fill advances identically; the widget traffic does not.
-
-### Fixed
-
-- **XP could be credited to your session twice, or not at all, because two independent trackers computed the gain.** `ContextBuilder` kept its own XP baseline alongside `Session`'s, advanced on a different set of events and fed to the shared calculation with different arguments, so the two could take different branches on the same event — and the gain flash followed the wrong one. `Session` now owns the single baseline and hands the delta over once.
-- **Crossing a level boundary between two levels that share the same XP requirement dropped a whole level of XP.** When `PLAYER_XP_UPDATE` arrived before `UnitLevel` caught up, the crossing was indistinguishable from a data reset and was credited as zero, and the rebaseline that followed meant `PLAYER_LEVEL_UP` no longer credited the remainder either. The ambiguous case is now parked and resolved when the level-up confirms it, crediting the old level's remainder *and* the progress already made into the new level. A genuine data reset still credits nothing.
-- **XP/hour could read in the millions in a session's first seconds.** The fallback divided a whole level's XP by the time played at that level with no floor, so a few seconds produced an absurd rate — and the Circular centre ETA is derived from it. The sliding window of recent gains is now preferred whenever it has data, and the fallback divisor is floored at 60 seconds.
-- The session XP total and its legacy `sessionXP` alias were assigned in four separate places, which is four chances for them to drift; both now have exactly one writer.
-- The style gallery now sizes its swatch grid *and* the row the options panel stacks from, so a future style that needs a third row of swatches cannot paint over the option rows below it.
-- **A saved bar style that no longer exists took the whole addon down at login.** The stored key went straight from saved variables to frame creation, and an unrecognised one raised a hard Lua error — so a style dropped from a build, a profile written by a newer version, or an interrupted update cost you every feature of the addon, not just your bar, with no working options panel to fix it from. Unknown keys now fall back to the default style, say so once in chat, and repair the stored value so the secondary bar and the options panel agree with what is on screen.
-
-## [1.2.0] - 2026-07-29
+## [1.2.0] - 2026-08-16
 
 ### Added
 
@@ -30,19 +13,28 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Changed
 
+- **Updated for Patch 12.1** — interface bumped from `120007` to `120100`, so the addon no longer reports as out of date.
 - **Individual text toggles** now live under a collapsed **Advanced** section, so the presets come first. Advanced opens automatically when the preset is Custom.
 - **Options rows no longer appear and disappear** when you switch bar style. Rows the active style ignores stay in place, disabled, with the reason beside them ("— Circular only"), so the panel keeps a constant height and you can see what each style offers.
 - **Level-up celebration works on every bar style.** It previously anchored to a StatusBar, so it was invisible on Circular, Minimap Ring and Terminal; it now anchors to the bar and is clipped to the ring shape on the round styles.
 - **Colors tab leads with the secondary-source colour actually in use**, tagged "(active)". The other three fold into an "Other secondary sources" section and stay editable, so you can set a colour before switching to that source.
 - **Stats window rebuilt around the two numbers you open it for.** XP/hour and time to level are now large hero figures; session totals sit on one compact strip; the level bookkeeping rows collapse into a **Details** section. The window is 384px tall instead of 685.
+- **Time-to-level on the Circular and Vertical styles now updates while you stand still.** Both show the ETA as an on-bar row rather than below the bar, and the 2.5s refresh only ran for styles with a below-bar row — so the one number you read when you are *not* gaining XP was the one that froze. A new `timeReadout` capability drives the refresh; no other style gained a timer.
 - **Minimap tooltip keeps a fixed shape** — the XP and time rows stay present reading `0` at the start of a session instead of vanishing and changing the tooltip's height — and its XP number is now formatted like the rest of the UI.
 - The LibDataBroker feed honours the number-abbreviation option instead of always abbreviating.
+- **The Circular ring repaints only the segments that changed.** At 100 segments a steady animation was issuing 100 `SetVertexColor` plus 100 `Show` calls per frame, rebuilding a four-entry colour table from four option/colour lookups per frame, and resolving the segment count twice per frame through the full profile chain. The fill advances identically; the widget traffic does not.
 
 ### Fixed
 
+- **XP could be credited to your session twice, or not at all, because two independent trackers computed the gain.** `ContextBuilder` kept its own XP baseline alongside `Session`'s, advanced on a different set of events and fed to the shared calculation with different arguments, so the two could take different branches on the same event — and the gain flash followed the wrong one. `Session` now owns the single baseline and hands the delta over once.
+- **Crossing a level boundary between two levels that share the same XP requirement dropped a whole level of XP.** When `PLAYER_XP_UPDATE` arrived before `UnitLevel` caught up, the crossing was indistinguishable from a data reset and was credited as zero, and the rebaseline that followed meant `PLAYER_LEVEL_UP` no longer credited the remainder either. The ambiguous case is now parked and resolved when the level-up confirms it, crediting the old level's remainder *and* the progress already made into the new level. A genuine data reset still credits nothing.
+- **XP/hour could read in the millions in a session's first seconds.** The fallback divided a whole level's XP by the time played at that level with no floor, so a few seconds produced an absurd rate — and the Circular centre ETA is derived from it. The sliding window of recent gains is now preferred whenever it has data, and the fallback divisor is floored at 60 seconds.
 - **The Circular style's ring border and centre disc never rendered.** Both were requested as `.png` while the shipped art is `.tga`; WoW silently draws nothing for an explicit wrong extension. Present since the first release.
+- **A saved bar style that no longer exists took the whole addon down at login.** The stored key went straight from saved variables to frame creation, and an unrecognised one raised a hard Lua error — so a style dropped from a build, a profile written by a newer version, or an interrupted update cost you every feature of the addon, not just your bar, with no working options panel to fix it from. Unknown keys now fall back to the default style, say so once in chat, and repair the stored value so the secondary bar and the options panel agree with what is on screen.
 - The XP gain flash tinted itself with the rested *overlay* colour while every other rested-aware fill path uses the rested *fill* colour, so the flash disagreed with the bar it flashed over.
 - The Stats window showed the session XP total twice, as "XP Gained" and "Total XP", one separator apart.
+- The session XP total and its legacy `sessionXP` alias were assigned in four separate places, which is four chances for them to drift; both now have exactly one writer.
+- The style gallery now sizes its swatch grid *and* the row the options panel stacks from, so a future style that needs a third row of swatches cannot paint over the option rows below it.
 
 ## [1.1.8] - 2026-07-16
 

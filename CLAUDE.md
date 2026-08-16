@@ -27,7 +27,9 @@ Feature/style proposals and their impact studies live in `ROADMAP.md`.
 
 Assets (`orb_*`, `border`, `center`, `glow`, `tick*`, `xp-bar`) are hand-authored, with their sources as `.pdn`/`.xcf` in `assets/raw/`. `assets/raw` and `refs` are excluded from the package by both `.pkgmeta` and `make-release.ps1`, so sources ship to neither CurseForge nor the zip.
 
-**This branch (`release/1.3.0-no-sigil`) does not carry the Sigil style.** It was cut from `feat/options-honesty` and had `ui/styles/sigil/`, its 43 generated TGAs and `assets/raw/generate_sigil.py` removed, so 1.3.0 ships the XP-accounting and Circular work without the style. Sigil development continues on `feat/options-honesty`; do not re-add it here — merge or re-cut instead.
+**This branch (`release/1.2.0`) does not carry the Sigil style.** It was cut from `feat/options-honesty` and had `ui/styles/sigil/`, its 43 generated TGAs and `assets/raw/generate_sigil.py` removed. Sigil development continues on `feat/options-honesty`; do not re-add it here — merge or re-cut instead.
+
+**Version numbering:** 1.2.0 was bumped on 2026-07-29 and never tagged, so its code has been sitting unreleased. This branch ships it *and* the work that followed as a single **1.2.0**, and reserves **1.3.0** for the Sigil release — so the version that introduces the style is the version named after it. Consequence for `feat/options-honesty`: its `[1.3.0]` changelog section still lists the non-Sigil items that ship here as 1.2.0, and they must be dropped from it when Sigil is released.
 
 **Version changes must stay consistent across all four locations:**
 1. `XPBarEnhanced.toc` (`## Version:`)

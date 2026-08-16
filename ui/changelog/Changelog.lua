@@ -8,27 +8,23 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
-        version = "1.3.0",
-        notes = {
-            "Time to level on the Circular and Vertical styles now updates while you stand still, instead of freezing until your next XP gain.",
-            "The Circular ring now repaints only the segments that actually changed, cutting a large amount of per-frame work at high segment counts.",
-            "Fixed XP being mis-credited to your session: two independent trackers computed the gain and could disagree on the same event. There is now one.",
-            "Fixed a whole level of XP going missing when crossing between two levels that share the same XP requirement.",
-            "Fixed XP/hour reading in the millions during a session's first seconds.",
-            "Fixed the addon failing to load entirely when your saved bar style no longer exists in the installed version. Unknown styles now fall back to the default instead of erroring.",
-        },
-    },
-    {
         version = "1.2.0",
         notes = {
+            "Updated for Patch 12.1.",
             "New readout presets: Minimal, Standard and Leveller set every text and overlay toggle in one click. The individual toggles moved under a collapsed Advanced section.",
             "Bar styles are now picked from a gallery of labelled previews instead of a text dropdown.",
             "Options rows no longer vanish when you switch bar style: rows the style ignores stay put, disabled, with the reason beside them.",
             "Level-up celebration now works on the Circular, Minimap Ring and Terminal styles, where it was previously invisible.",
             "The Colors tab now leads with the secondary-source colour actually in use; the other three fold away but stay editable.",
             "Stats window rebuilt: XP/hour and time to level are now large hero numbers, the bookkeeping rows collapse into a Details section, and the window is half its old height.",
+            "Time to level on the Circular and Vertical styles now updates while you stand still, instead of freezing until your next XP gain.",
             "The minimap tooltip keeps the same shape at the start of a session and formats its XP number like the rest of the UI.",
+            "The Circular ring now repaints only the segments that actually changed, cutting a large amount of per-frame work at high segment counts.",
+            "Fixed XP being mis-credited to your session: two independent trackers computed the gain and could disagree on the same event. There is now one.",
+            "Fixed a whole level of XP going missing when crossing between two levels that share the same XP requirement.",
+            "Fixed XP/hour reading in the millions during a session's first seconds.",
             "Fixed the Circular style's ring border and centre disc, which never rendered because the art was requested with the wrong file extension.",
+            "Fixed the addon failing to load entirely when your saved bar style no longer exists in the installed version. Unknown styles now fall back to the default instead of erroring.",
             "Fixed the XP gain flash using the rested overlay colour instead of the bar's rested fill colour.",
             "Removed the duplicate session XP row in the Stats window.",
         },
