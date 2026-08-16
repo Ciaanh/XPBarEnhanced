@@ -37,10 +37,6 @@ local TEX_RING_BORDER = "Interface\\AddOns\\XPBarEnhanced\\assets\\border"
 local TEX_RING_CENTER = "Interface\\AddOns\\XPBarEnhanced\\assets\\center"
 local TEX_ORB_RING = "Interface\\AddOns\\XPBarEnhanced\\assets\\orb_ring"
 local TEX_ORB_GLASS = "Interface\\AddOns\\XPBarEnhanced\\assets\\orb_glass"
-local TEX_SIGIL_CASING = "Interface\\AddOns\\XPBarEnhanced\\assets\\sigil-casing-3"
-local TEX_SIGIL_FILL = "Interface\\AddOns\\XPBarEnhanced\\assets\\sigil-fill"
--- Suffixed with the lower-cased class token, matching SigilSkins:GetCrestTexture.
-local TEX_SIGIL_CREST = "Interface\\AddOns\\XPBarEnhanced\\assets\\sigil-crest-"
 local TEX_CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local TEX_MINIMAP_BG = "Interface\\Minimap\\UI-Minimap-Background"
 
@@ -266,70 +262,13 @@ function Builders.orb(canvas)
     return {fill}
 end
 
---- Sigil: a clockwise arc swept inside the flagship's own tier-3 casing, with
---- the player's class crest below the circle (Amendment A: the fill is an arc).
----
---- Drawn from the shipped casing, fill-annulus and crest TGAs rather than
---- approximated, so the swatch is the real art at small size. Tier 3 because it
---- shows the ornament without the tier-4 crown, which does not survive the
---- downscale. The arc is a paused reversed Cooldown at FILL_RATIO — the same
---- mechanism the live bar uses, origin at the crest.
-function Builders.sigil(canvas)
-    local size = 34
-
-    local shell = Add(canvas, "BACKGROUND", TEX_SOLID, size, size)
-    shell:SetPoint("CENTER", canvas, "CENTER", 0, 4)
-    shell:SetVertexColor(0.06, 0.06, 0.09, 0.92)
-
-    local mask = canvas:CreateMaskTexture()
-    mask:SetTexture(TEX_CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    mask:SetSize(size, size)
-    mask:SetPoint("CENTER", shell, "CENTER")
-    shell:AddMaskTexture(mask)
-
-    local arc = CreateFrame("Cooldown", nil, canvas, "CooldownFrameTemplate")
-    arc:SetSize(size, size)
-    arc:SetPoint("CENTER", shell, "CENTER")
-    arc:EnableMouse(false)
-    arc:SetReverse(true)
-    arc:SetSwipeTexture(TEX_SIGIL_FILL)
-    arc:SetDrawEdge(false)
-    arc:SetDrawBling(false)
-    arc:SetHideCountdownNumbers(true)
-    if arc.SetRotation then
-        arc:SetRotation(math.pi)
-    end
-    arc:SetCooldown(GetTime() - FILL_RATIO * 100, 100)
-    arc:Pause()
-
-    -- Themed tier-3 casing for the player's own family when resolvable, so
-    -- the swatch previews the frame the player will actually get.
-    local casingTex = TEX_SIGIL_CASING
-    local skins = XPBarEnhanced and XPBarEnhanced.SigilSkins
-    local _, swatchClass = UnitClass("player")
-    if skins and skins.GetFamily and skins:GetFamily(swatchClass) then
-        casingTex = "Interface\AddOns\XPBarEnhanced\assets\sigil-casing-"
-            .. skins:GetFamily(swatchClass) .. "-3"
-    end
-    local casing = Add(canvas, "OVERLAY", casingTex, size + 8, size + 8)
-    casing:SetPoint("CENTER", shell, "CENTER")
-
-    -- The crest breaks the circle at 6 o'clock. It is what makes Sigil read as
-    -- different from Orb at swatch size, so it is worth the extra texture.
-    local _, classToken = UnitClass("player")
-    local crest = Add(canvas, "OVERLAY", TEX_SIGIL_CREST .. string.lower(classToken or "warrior"), 13, 13)
-    crest:SetPoint("CENTER", shell, "BOTTOM", 0, 1)
-
-    return {arc, casing, crest}
-end
-
 -------------------------------------------------------------------
 -- SWATCHES
 -------------------------------------------------------------------
 
 ---Draw a style's miniature once and remember what to recolour later.
----Entries are textures (SetVertexColor) or the sigil arc, a Cooldown frame
----whose tint goes through SetSwipeColor instead.
+---Entries are usually textures (SetVertexColor); a Cooldown-based element is
+---tinted through SetSwipeColor instead.
 local function RepaintSwatch(swatch)
     if not swatch.__fills then
         return
@@ -410,10 +349,10 @@ function StyleGallery:Build(row, onSelect)
 
     row.__swatches = swatches
 
-    -- Grow the grid AND the row when a third swatch row appears. The template
-    -- declares a fixed two-row height (ConfigStyleGalleryTemplate, y=198), and
-    -- the options rows stack by layoutIndex from the ROW's height — growing
-    -- only the grid painted the ninth swatch over the rows below it.
+    -- Size the grid AND the row from the swatch count. The template declares a
+    -- fixed two-row height (ConfigStyleGalleryTemplate, y=198) and the options
+    -- rows stack by layoutIndex from the ROW's height, so a grid that outgrows
+    -- the template without the row growing too paints over the rows below it.
     local rows = math.ceil(#options / COLUMNS)
     local gridHeight = (rows * CELL_HEIGHT) + ((rows - 1) * CELL_GAP_Y)
     local headerBand = row:GetHeight() - row.Grid:GetHeight() -- label strip above the grid

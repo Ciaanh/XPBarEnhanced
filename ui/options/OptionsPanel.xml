@@ -279,57 +279,6 @@
                                         </KeyValues>
                                     </Frame>
 
-                                    <!-- ==================== Sigil Bar ==================== -->
-
-                                    <!-- Row_sigilSkin is hidden by Options:RefreshRowAvailability while
-                                         the flagship is the only selectable skin. It appears with no
-                                         other change once a second one exists. -->
-                                    <Frame parentKey="Row_sigilSkin" inherits="ConfigDropdownTemplate">
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="sigilSkin" type="string"/>
-                                            <KeyValue key="layoutIndex" value="19.1" type="number"/>
-                                            <KeyValue key="expand" value="true" type="boolean"/>
-                                            <KeyValue key="topPadding" value="20" type="number"/>
-                                            <KeyValue key="optionTab" value="visual" type="string"/>
-                                        </KeyValues>
-                                    </Frame>
-
-                                    <Frame parentKey="Row_sigilSize" inherits="ConfigDropdownTemplate">
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="sigilSize" type="string"/>
-                                            <KeyValue key="layoutIndex" value="19.2" type="number"/>
-                                            <KeyValue key="expand" value="true" type="boolean"/>
-                                            <KeyValue key="topPadding" value="20" type="number"/>
-                                            <KeyValue key="optionTab" value="visual" type="string"/>
-                                        </KeyValues>
-                                    </Frame>
-
-                                    <Frame parentKey="Row_sigilTierMode" inherits="ConfigDropdownTemplate">
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="sigilTierMode" type="string"/>
-                                            <KeyValue key="layoutIndex" value="19.3" type="number"/>
-                                            <KeyValue key="expand" value="true" type="boolean"/>
-                                            <KeyValue key="optionTab" value="visual" type="string"/>
-                                        </KeyValues>
-                                    </Frame>
-
-                                    <Frame parentKey="Row_sigilPinnedTier" inherits="ConfigSliderTemplate">
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="sigilPinnedTier" type="string"/>
-                                            <KeyValue key="layoutIndex" value="19.4" type="number"/>
-                                            <KeyValue key="expand" value="true" type="boolean"/>
-                                            <KeyValue key="optionTab" value="visual" type="string"/>
-                                        </KeyValues>
-                                    </Frame>
-
-                                    <Frame parentKey="Row_sigilUseClassColor" inherits="ConfigCheckboxTemplate">
-                                        <KeyValues>
-                                            <KeyValue key="configKey" value="sigilUseClassColor" type="string"/>
-                                            <KeyValue key="layoutIndex" value="19.5" type="number"/>
-                                            <KeyValue key="expand" value="true" type="boolean"/>
-                                            <KeyValue key="optionTab" value="visual" type="string"/>
-                                        </KeyValues>
-                                    </Frame>
 
                                     <!-- ==================== Overlay / Display Features ==================== -->
 

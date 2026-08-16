@@ -25,13 +25,9 @@ Since this addon has no test suite, `check` is the only automated verification t
 
 Feature/style proposals and their impact studies live in `ROADMAP.md`.
 
-**The Sigil style's 43 textures are generated, not hand-drawn.** `assets/raw/generate_sigil.py` (Python + Pillow) writes every `sigil-*.tga` into `assets/`:
+Assets (`orb_*`, `border`, `center`, `glow`, `tick*`, `xp-bar`) are hand-authored, with their sources as `.pdn`/`.xcf` in `assets/raw/`. `assets/raw` and `refs` are excluded from the package by both `.pkgmeta` and `make-release.ps1`, so sources ship to neither CurseForge nor the zip.
 
-```powershell
-python assets/raw/generate_sigil.py --preview   # --preview also writes contact sheets to assets/raw/
-```
-
-Edit the script, never the TGAs — a hand-edit is silently reverted by the next run. `assets/raw` and `refs` are excluded from the package by both `.pkgmeta` and `make-release.ps1`, so the script ships to neither CurseForge nor the zip. Everything it draws is composed from primitives, which is also the licensing answer: no Blizzard or third-party art is traced or derived. The other assets (`orb_*`, `border`, `center`, `glow`, `tick*`, `xp-bar`) predate it and are still hand-authored, with their sources as `.pdn`/`.xcf` in `assets/raw/`.
+**This branch (`release/1.3.0-no-sigil`) does not carry the Sigil style.** It was cut from `feat/options-honesty` and had `ui/styles/sigil/`, its 43 generated TGAs and `assets/raw/generate_sigil.py` removed, so 1.3.0 ships the XP-accounting and Circular work without the style. Sigil development continues on `feat/options-honesty`; do not re-add it here — merge or re-cut instead.
 
 **Version changes must stay consistent across all four locations:**
 1. `XPBarEnhanced.toc` (`## Version:`)

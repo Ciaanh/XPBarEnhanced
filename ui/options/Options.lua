@@ -67,26 +67,7 @@ local ROW_OWNER_STYLE = {
     minimapRingSegmentHeight    = "minimap_ring",
     minimapArcStartExpanded     = "minimap_ring",
     terminalUseCustomColors     = "terminal",
-    sigilSkin                   = "sigil",
-    sigilSize                   = "sigil",
-    sigilTierMode               = "sigil",
-    sigilPinnedTier             = "sigil",
-    sigilUseClassColor          = "sigil",
 }
-
--- Rows suppressed entirely rather than disabled, because there is nothing to
--- choose. sigilSkin offers exactly one value while halo is the only other skin
--- and halo is internal, so the dropdown would be a control with a single item.
--- Once a second selectable skin exists this returns false and the row appears
--- with no other change.
-local function IsRowSuppressed(key)
-    if key ~= "sigilSkin" then
-        return false
-    end
-    local skins = Addon.SigilSkins
-    local selectable = skins and skins.GetSelectable and skins:GetSelectable()
-    return not selectable or #selectable < 2
-end
 
 -- The Colors tab carries one swatch per secondary-bar source, but only one source
 -- is ever on screen. The active source's swatch stays out in the open; the other
@@ -1433,21 +1414,6 @@ function XPBarEnhancedOptionsMixin:RefreshRowAvailability(barStyle)
             not available and string.format(ResolveLocale("OPT_UNAVAIL_STYLE_ONLY"), GetStyleLabel(ownerStyle)) or nil
         )
     end
-
-    -- sigilPinnedTier only means anything while the tier mode is pinned. This is
-    -- a dependency on another option rather than on the style, so it applies on
-    -- top of the ROW_OWNER_STYLE pass above and must run after it.
-    if barStyle == "sigil" and Config:GetOptionValue("sigilTierMode") ~= "pinned" then
-        self:SetRowAvailability("sigilPinnedTier", false, ResolveLocale("OPT_UNAVAIL_TIER_AUTO"))
-    end
-
-    -- A one-item dropdown is a control with nothing to choose, so this row is
-    -- hidden outright rather than disabled -- the only row in the panel that is.
-    local container = self.ContentFrame and self.ContentFrame.OptionsContainer
-    local skinRow = container and container.Row_sigilSkin
-    if skinRow and skinRow.SetShown then
-        skinRow:SetShown(not IsRowSuppressed("sigilSkin"))
-    end
 end
 
 function XPBarEnhancedOptionsMixin:Refresh()
@@ -1753,36 +1719,6 @@ function Options:OnOptionChanged(key)
             local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
             if secondaryBar and secondaryBar.QueueReposition then
                 secondaryBar:QueueReposition()
-            end
-        end
-    elseif key == "sigilSize" then
-        -- Resize the ring, re-anchor every element that tracks it, and re-place
-        -- the halo pool. ApplySizePreset also clears the skin cache token, so the
-        -- Refresh that follows repaints at the new geometry.
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.ApplySizePreset then
-                bar:ApplySizePreset()
-                if bar.ApplySkin then
-                    bar:ApplySkin()
-                end
-            end
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-            if secondaryBar and secondaryBar.QueueReposition then
-                secondaryBar:QueueReposition()
-            end
-        end
-    elseif key == "sigilSkin" or key == "sigilTierMode" or key == "sigilPinnedTier"
-        or key == "sigilUseClassColor" then
-        -- Repaint only: geometry is unchanged, so no resize and no reposition.
-        -- ApplySkin() is called bare here, with no context, which is correct at
-        -- this moment because no render is in flight.
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.ApplySkin then
-                bar:ApplySkin()
             end
         end
     elseif key == "terminalUseCustomColors" then

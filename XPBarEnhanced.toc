@@ -92,12 +92,6 @@ ui\SecondaryBarManager.lua
 ui\styles\SharedStyleHelpers.lua
 ui\styles\SecondaryBarStyleHelpers.lua
 
-# Sigil skin data. Pure data, no widget calls and no frame references, so it
-# loads with the helpers rather than with its style. It has to precede
-# OptionMetadata.lua below, which builds the sigilSkin dropdown from
-# SigilSkins:GetSelectable(), as well as SigilBarTemplate.xml further down.
-ui\styles\sigil\SigilSkins.lua
-
 #  Frames
 ui\options\OptionsPanelTemplates.xml
 ui\options\OptionMetadata.lua
@@ -123,5 +117,3 @@ ui\styles\minimap_ring\MinimapRingBarTemplate.xml
 ui\styles\minimap_ring\MinimapArcSecondaryBarTemplate.xml
 ui\styles\terminal\TerminalBarTemplate.xml
 ui\styles\terminal\TerminalSecondaryBarTemplate.xml
-ui\styles\sigil\SigilBarTemplate.xml
-ui\styles\sigil\SigilSecondaryBarTemplate.xml

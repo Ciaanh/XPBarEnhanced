@@ -63,18 +63,9 @@ local PRESET_KEYS = {
     "terminalUseCustomColors",
 }
 
--- Deliberately NOT preset keys, recorded here because this list is enumerated
--- and silence would read as an oversight:
---
---   sigilUseClassColor  the only boolean among the Sigil keys. It is an
---                       appearance choice for one style, not a readout, so
---                       folding it in would mean every preset switch silently
---                       reset a player's class-colour preference.
---   sigilSkin / sigilSize / sigilTierMode / sigilPinnedTier
---                       enum and integer, so out of scope by type as well:
---                       PRESET_KEYS is every boolean scalar in defaults.lua.
---
--- Presets decide what the bar SAYS. These decide what one style LOOKS like.
+-- PRESET_KEYS is every boolean scalar in defaults.lua. Enum and integer options
+-- are out of scope by type: presets decide what the bar SAYS, not what one
+-- style LOOKS like.
 
 -- The 22 non-readout keys, pinned to their defaults.lua values.
 local SHARED = {

@@ -37,7 +37,6 @@ local optionDetails = {
             {value = "minimap_ring", label = Addon.L["OPT_BAR_STYLE_MINIMAP_RING"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_MINIMAP_RING"]},
             {value = "terminal", label = Addon.L["OPT_BAR_STYLE_TERMINAL"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_TERMINAL"]},
             {value = "orb", label = Addon.L["OPT_BAR_STYLE_ORB"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_ORB"]},
-            {value = "sigil", label = Addon.L["OPT_BAR_STYLE_SIGIL"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_SIGIL"]},
         },
         commandKeys = {"style", "mode", "barstyle"}
     },
@@ -308,64 +307,6 @@ local optionDetails = {
         description = Addon.L["OPT_CIRCULAR_SECONDARY_FULL_CIRCLE_DESC"],
         commandKeys = {"secondaryfullcircle", "circlefull"}
     },
-    -- Sigil. Populated from SigilSkins:GetSelectable(), which never lists the
-    -- internal halo fallback -- so there is exactly one value at launch and
-    -- Options.lua hides the row until a second selectable skin exists.
-    sigilSkin = {
-        key = "sigilSkin",
-        type = "dropdown",
-        label = Addon.L["OPT_SIGIL_SKIN"],
-        description = Addon.L["OPT_SIGIL_SKIN_DESC"],
-        options = (function()
-            local skins = Addon.SigilSkins
-            if skins and skins.GetSelectable then
-                return skins:GetSelectable()
-            end
-            return {{value = "sigil", label = Addon.L["SKIN_SIGIL"]}}
-        end)(),
-        commandKeys = {"sigilskin"}
-    },
-    sigilSize = {
-        key = "sigilSize",
-        type = "dropdown",
-        label = Addon.L["OPT_SIGIL_SIZE"],
-        description = Addon.L["OPT_SIGIL_SIZE_DESC"],
-        options = {
-            {value = "small", label = Addon.L["OPT_SIGIL_SIZE_SMALL"]},
-            {value = "medium", label = Addon.L["OPT_SIGIL_SIZE_MEDIUM"]},
-            {value = "large", label = Addon.L["OPT_SIGIL_SIZE_LARGE"]},
-            {value = "huge", label = Addon.L["OPT_SIGIL_SIZE_HUGE"]}
-        },
-        commandKeys = {"sigilsize"}
-    },
-    sigilTierMode = {
-        key = "sigilTierMode",
-        type = "dropdown",
-        label = Addon.L["OPT_SIGIL_TIER_MODE"],
-        description = Addon.L["OPT_SIGIL_TIER_MODE_DESC"],
-        options = {
-            {value = "auto", label = Addon.L["OPT_SIGIL_TIER_MODE_AUTO"]},
-            {value = "pinned", label = Addon.L["OPT_SIGIL_TIER_MODE_PINNED"]}
-        },
-        commandKeys = {"sigiltier", "sigiltiermode"}
-    },
-    sigilPinnedTier = {
-        key = "sigilPinnedTier",
-        type = "slider",
-        label = Addon.L["OPT_SIGIL_PINNED_TIER"],
-        description = Addon.L["OPT_SIGIL_PINNED_TIER_DESC"],
-        min = 1,
-        max = 4,
-        step = 1,
-        format = "%.0f",
-        commandKeys = {"sigilpinnedtier"}
-    },
-    sigilUseClassColor = {
-        key = "sigilUseClassColor",
-        label = Addon.L["OPT_SIGIL_USE_CLASS_COLOR"],
-        description = Addon.L["OPT_SIGIL_USE_CLASS_COLOR_DESC"],
-        commandKeys = {"sigilclasscolor"}
-    },
     minimapRingPadding = {
         key = "minimapRingPadding",
         type = "slider",
@@ -472,11 +413,6 @@ local optionOrder = {
     "circularSecondaryFullCircle",
     -- optionOrder is a separate list from the definitions above: a key defined
     -- but not ordered here simply does not render.
-    "sigilSkin",
-    "sigilSize",
-    "sigilTierMode",
-    "sigilPinnedTier",
-    "sigilUseClassColor",
     "minimapRingPadding",
     "minimapRingSegments",
     "minimapRingCollectButtons",

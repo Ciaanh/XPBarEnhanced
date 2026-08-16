@@ -31,7 +31,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 ### 3. Sigil style — tiered class ring
 | | |
 |---|---|
-| **Status** | implemented (2026-08-01) as `ui/styles/sigil/` + 43 generated TGA, pending in-game validation |
+| **Status** | implemented on `feat/options-honesty` (2026-08-01) as `ui/styles/sigil/` + 43 generated TGA, pending in-game validation. **Not on this branch** — `release/1.3.0-no-sigil` was cut on 2026-08-16 to ship the rest of 1.3.0 while the style is still unvalidated, so every Sigil file, asset and option was removed here. This study is kept as the design record; the code lives on `feat/options-honesty` |
 | **Impact** | High — the only style whose appearance is earned rather than configured; the tier crossing is a visible reward for levelling |
 | **Effort** | Medium |
 | **Reuse** | The orb's circle `MaskTexture` for the silhouette and an alpha-0 VERTICAL StatusBar as the data carrier (the terminal style's trick), so animation, flash, colours, tooltips and max-level repurpose all arrive from the mixins unchanged — but progress renders as a **clockwise arc**: paused reversed `Cooldown` swipes over a generated annulus, origin at the crest, one widget call per animation frame (amended 2026-08-15; the first cut's orb-style liquid fill misread the League reference, which fills radially around the crest). Overlays reuse the orb's cumulative-extent layering as stacked arcs. Tier art swaps textures on the one cached frame — no frame per skin, no frame per tier |
@@ -151,7 +151,7 @@ Status values: `proposed` → `studying` → `planned` → `in progress` → `do
 
 New styles limited to **orb** and **data-text/LDB**; "bubbles" is reframed as an option of the classic style; edge strip rejected. Custom fonts, warband overview, localization, and profile import/export remain proposed (not scheduled).
 
-**Superseded 2026-08-01:** **sigil** was added as a third style after that decision. It was taken on because it reuses the orb's shape mechanism wholesale rather than introducing a new render path, and because its tier progression is the only appearance in the addon that is earned rather than configured. The rest of the 2026-07-08 decision stands.
+**Superseded 2026-08-01:** **sigil** was added as a third style after that decision. It was taken on because it reuses the orb's shape mechanism wholesale rather than introducing a new render path, and because its tier progression is the only appearance in the addon that is earned rather than configured. The rest of the 2026-07-08 decision stands. **Not on this branch** — see the Sigil study above; `release/1.3.0-no-sigil` ships the two-style set unchanged.
 
 ## Design note — repurpose the primary bar for the secondary source at max level
 
