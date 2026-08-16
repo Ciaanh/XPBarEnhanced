@@ -25,7 +25,7 @@ Since this addon has no test suite, `check` is the only automated verification t
 
 Feature/style proposals and their impact studies live in `ROADMAP.md`.
 
-**The Sigil style's 30 textures are generated, not hand-drawn.** `assets/raw/generate_sigil.py` (Python + Pillow) writes every `sigil-*.tga` into `assets/`:
+**The Sigil style's 43 textures are generated, not hand-drawn.** `assets/raw/generate_sigil.py` (Python + Pillow) writes every `sigil-*.tga` into `assets/`:
 
 ```powershell
 python assets/raw/generate_sigil.py --preview   # --preview also writes contact sheets to assets/raw/
@@ -41,7 +41,7 @@ Edit the script, never the TGAs — a hand-edit is silently reverted by the next
 
 ## Target Platform
 
-WoW Retail only — interface `120007` (Patch 12.0.7). All API usage must comply with Patch 12.0.0 constraints (see "WoW API Constraints" below).
+WoW Retail only — interface `120100` (Patch 12.1). All API usage must comply with Patch 12.0.0 constraints (see "WoW API Constraints" below).
 
 ## Architecture Overview
 

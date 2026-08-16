@@ -75,10 +75,11 @@ SigilSkins.skins = {
         },
     },
 
-    -- Flagship: shipped greyscale TGA, tinted at runtime. The casing and rune
-    -- band are class-agnostic; only the crest carries the class. `casing` and
-    -- `band` are sparse by design -- Resolve walks down -- so the art can land
-    -- one tier at a time without a code change or a config migration.
+    -- Flagship: shipped greyscale TGA, tinted at runtime. The casing is
+    -- class-agnostic; only the crest carries the class. `casing` is sparse by
+    -- design -- Resolve walks down -- so the art can land one tier at a time
+    -- without a code change or a config migration. The per-class rune band was
+    -- removed 2026-08-16; the tier signal is the casing alone.
     sigil = {
         id = "sigil",
         label = (L and L["SKIN_SIGIL"]) or "Sigil",
@@ -93,9 +94,11 @@ SigilSkins.skins = {
             [3] = ART .. "sigil-casing-3",
             [4] = ART .. "sigil-casing-4",
         },
-        -- %s = lower-cased class token; the tier picks a quarter of the 2x2
-        -- atlas via SetTexCoord, so a tier change costs no texture swap.
-        bandTexture = ART .. "sigil-runes-%s",
+        -- Themed casing per class FAMILY (2026-08-16): first %s = family,
+        -- %d = tier. The plain `casing` table stays as the fallback for an
+        -- unknown class token, so the frame never fails to draw.
+        familyCasingTexture = ART .. "sigil-casing-%s-%d",
+        -- %s = lower-cased class token.
         crestTexture = ART .. "sigil-crest-%s",
     },
 }
@@ -228,9 +231,9 @@ end
 --- The single entry point: resolve everything the style needs to paint itself.
 ---
 --- Never errors. An unknown class token yields a nil family -- the casing is
---- class-agnostic, so the ring still draws, just with no crest and no rune
---- strip. An unknown skin id falls back to the flagship, which in turn falls
---- back to halo while its art table is empty.
+--- class-agnostic, so the ring still draws, just with no crest. An unknown
+--- skin id falls back to the flagship, which in turn falls back to halo while
+--- its art table is empty.
 ---@param level number|nil
 ---@param maxLevel number|nil
 ---@param skinId string|nil
@@ -266,17 +269,6 @@ function SigilSkins:Resolve(level, maxLevel, skinId, classToken, isXPMode)
     return resolvedTier or tier, skin, layer, self:ResolveAccent(skin, classToken)
 end
 
---- Texture path for a class rune strip, or nil when the skin/class has none.
----@param skin table|nil
----@param classToken string|nil
----@return string|nil path
-function SigilSkins:GetBandTexture(skin, classToken)
-    if not skin or not skin.bandTexture or not self:GetFamily(classToken) then
-        return nil
-    end
-    return string.format(skin.bandTexture, string.lower(classToken))
-end
-
 --- Texture path for a class crest, or nil when the skin/class has none.
 ---@param skin table|nil
 ---@param classToken string|nil
@@ -288,26 +280,18 @@ function SigilSkins:GetCrestTexture(skin, classToken)
     return string.format(skin.crestTexture, string.lower(classToken))
 end
 
---- TexCoord quarter of a rune strip for a tier. One file holds all four tiers,
---- so a tier change is a coordinate change rather than a texture swap.
----
---- The atlas is a 2x2 GRID, not four stacked bands. SkinBand is drawn into the
---- square ring region (ApplySizePreset sizes it ring x ring), and the band art
---- is a ring ornament, so the source rect has to be square too -- slicing the
---- file into four full-width strips would squash every glyph 4:1.
----
----   +----+----+
----   | 1  | 2  |
----   +----+----+
----   | 3  | 4  |
----   +----+----+
----
+--- Themed casing texture for a class family and tier, or nil when the skin has
+--- no family theming or the class token resolves to no family -- the caller
+--- falls back to the neutral casing the layer already carries.
+---@param skin table|nil
 ---@param tier number
----@return number left, number right, number top, number bottom
-function SigilSkins:GetBandTexCoord(tier)
+---@param classToken string|nil
+---@return string|nil path
+function SigilSkins:GetCasingTexture(skin, tier, classToken)
+    local family = self:GetFamily(classToken)
+    if not skin or not skin.familyCasingTexture or not family then
+        return nil
+    end
     local index = math.max(1, math.min(self.MAX_TIER, tonumber(tier) or 1))
-    local zeroBased = index - 1
-    local column = zeroBased % 2
-    local row = math.floor(zeroBased / 2)
-    return column * 0.5, (column + 1) * 0.5, row * 0.5, (row + 1) * 0.5
+    return string.format(skin.familyCasingTexture, family, index)
 end

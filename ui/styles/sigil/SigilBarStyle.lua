@@ -1,7 +1,13 @@
 -- XP Bar Enhanced - Sigil Style
--- A tiered class ring. The shape mechanism is the orb's -- one VERTICAL
--- StatusBar clipped by a circular MaskTexture -- so animation, flash, colours,
--- tooltips and the max-level repurpose all arrive from the mixins unchanged.
+-- A tiered class ring. Progress is a clockwise ARC: paused Cooldown frames
+-- sweep an annulus channel from the crest's left edge around to its right,
+-- the crest plate covering the seam (Amendment A -- the League reference fills
+-- radially, and the first release's orb-style liquid fill misread it). The
+-- StatusBar survives as an alpha-0 data carrier so animation, flash, colours,
+-- tooltips and the max-level repurpose still arrive from the mixins unchanged;
+-- the terminal style ships the same trick. The overlay arcs reuse the orb's
+-- cumulative-extent layering -- each band is a full sweep from zero, drawn
+-- underneath the layers above it, so only its sliver shows.
 -- What Sigil adds on top is three repaintable skin layers driven by SigilSkins.
 
 -------------------------------------------------------------------
@@ -47,6 +53,20 @@ local TEXT_ROWS = {
     {key = "PercentText", y = -4},
     {key = "RateText", y = -22},
 }
+
+-- The XP arc. sigil-fill is the annulus the swipe reveals; the recessed track
+-- under it is declared in XML. ARC_ROTATION puts the sweep origin at 6 o'clock
+-- (the crest), and the crest plate covers the start/end seam, so no arc-span
+-- math is needed. Direction note: the reversed swipe is expected to grow
+-- clockwise, matching every native cooldown wipe -- if in-game validation shows
+-- otherwise, this constant and the layering are the only things to revisit.
+local TEX_ARC_FILL = "Interface\\AddOns\\XPBarEnhanced\\assets\\sigil-fill"
+local ARC_ROTATION = math.pi
+local ARC_DURATION = 100 -- arbitrary; the paused fraction is what displays
+
+-- Bottom-up draw order. Each arc sweeps its CUMULATIVE fraction from zero and
+-- the layers above cover the shared prefix, so only each band's sliver shows.
+local ARC_LAYERS = {"ArcRested", "ArcQuestIncomplete", "ArcQuestComplete", "ArcFill"}
 
 -- Halo geometry, as fractions of the ring diameter.
 local HALO_ARC_RADII = {0.43, 0.37, 0.31}
@@ -134,6 +154,7 @@ function SigilBarStyleTemplate:ApplySizePreset()
 
     sizeToRing(self.Cavity)
     sizeToRing(self.CircleMask)
+    sizeToRing(self.ArcTrack)
     sizeToRing(self.GainFlash)
 
     if self.StatusBar then
@@ -142,7 +163,17 @@ function SigilBarStyleTemplate:ApplySizePreset()
         self.StatusBar:SetPoint("TOP", self, "TOP", 0, 0)
     end
 
-    sizeToRing(self.SkinBand)
+    -- The arc Cooldowns track the ring square exactly like the textures do.
+    self:EnsureArcFrames()
+    for _, key in ipairs(ARC_LAYERS) do
+        local arc = self[key]
+        if arc then
+            arc:SetSize(ring, ring)
+            arc:ClearAllPoints()
+            arc:SetPoint("TOP", self, "TOP", 0, 0)
+        end
+    end
+
     sizeToRing(self.SkinFrame)
 
     if self.Crest then
@@ -185,6 +216,60 @@ function SigilBarStyleTemplate:UpdateCenterTextScale()
 end
 
 -------------------------------------------------------------------
+-- ARC FRAMES
+-- One paused Cooldown per band. Created once, configured once; per-frame work
+-- while animating is a single SetCooldown+Pause on the fill arc.
+-------------------------------------------------------------------
+
+--- Create (once) the four arc Cooldown frames, bottom-up so frame levels give
+--- the cumulative-extent layering its draw order. Idempotent.
+function SigilBarStyleTemplate:EnsureArcFrames()
+    if self.ArcFill then
+        return
+    end
+
+    local baseLevel = (self.StatusBar and self.StatusBar:GetFrameLevel() or self:GetFrameLevel()) + 1
+
+    for index, key in ipairs(ARC_LAYERS) do
+        local arc = CreateFrame("Cooldown", nil, self, "CooldownFrameTemplate")
+        arc:SetFrameLevel(baseLevel + index)
+        arc:EnableMouse(false)
+        arc:SetReverse(true)
+        arc:SetSwipeTexture(TEX_ARC_FILL)
+        arc:SetDrawEdge(false)
+        arc:SetDrawBling(false)
+        arc:SetHideCountdownNumbers(true)
+        -- Sweep origin at 6 o'clock -- the crest -- so the arc emerges at its
+        -- left edge and completes at its right, the plate covering the seam.
+        if arc.SetRotation then
+            arc:SetRotation(ARC_ROTATION)
+        end
+        self[key] = arc
+    end
+end
+
+--- Freeze an arc at a fraction of the full sweep. The standard paused-cooldown
+--- idiom: elapsed/duration is the displayed fraction, and Pause holds it.
+---@param arc table|nil The Cooldown frame
+---@param fraction number Progress in [0, 1]
+function SigilBarStyleTemplate:SetArcProgress(arc, fraction)
+    if not arc then
+        return
+    end
+
+    fraction = math.min(math.max(fraction or 0, 0), 1)
+    if fraction <= 0.0001 then
+        arc:Clear()
+        arc:Hide()
+        return
+    end
+
+    arc:Show()
+    arc:SetCooldown(GetTime() - fraction * ARC_DURATION, ARC_DURATION)
+    arc:Pause()
+end
+
+-------------------------------------------------------------------
 -- INITIALIZATION
 -------------------------------------------------------------------
 
@@ -196,41 +281,27 @@ function SigilBarStyleTemplate:OnLoad()
         self.LevelText = self.LevelText or container.LevelText
         self.PercentText = self.PercentText or container.PercentText
         self.RateText = self.RateText or container.RateText
-        self.SkinBand = self.SkinBand or container.SkinBand
         self.SkinFrame = self.SkinFrame or container.SkinFrame
         self.Crest = self.Crest or container.Crest
     end
 
     self:ApplySizePreset()
 
-    -- Clip the fill, the flash and both quest overlays to the ring. All of them,
-    -- or one element pulses as a square over a round bar. The fill texture only
-    -- exists at runtime, so its mask is attached here rather than in XML.
+    -- The StatusBar is a data carrier only: the mixins keep reading and writing
+    -- its value, but the arc frames render the visual. Hide it at FRAME level,
+    -- exactly as the terminal style does -- texture-level SetAlpha(0) does not
+    -- survive, because SetStatusBarColor writes the fill texture's vertex alpha
+    -- back to 1 on every recolour (this shipped as a visible bug: the old
+    -- liquid fill resurrected as an unmasked square behind the ring).
     if self.StatusBar then
+        self.StatusBar:SetAlpha(0)
+
         local fillMask = self.StatusBar:CreateMaskTexture()
         fillMask:SetTexture(CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
         fillMask:SetAllPoints(self.StatusBar)
+        -- Kept for the celebration glow (GetCelebrationMask) and the ascend
+        -- flash, both of which are runtime-created and still need round clipping.
         self._fillMask = fillMask
-
-        local fillTexture = self.StatusBar.GetStatusBarTexture and self.StatusBar:GetStatusBarTexture()
-        if fillTexture and fillTexture.AddMaskTexture then
-            fillTexture:AddMaskTexture(fillMask)
-        end
-        if self.GainFlash and self.GainFlash.AddMaskTexture then
-            self.GainFlash:AddMaskTexture(fillMask)
-        end
-        for _, key in ipairs({"QuestOverlayComplete", "QuestOverlayIncomplete"}) do
-            local overlay = self.StatusBar[key]
-            if overlay and overlay.AddMaskTexture then
-                overlay:AddMaskTexture(fillMask)
-            end
-        end
-    end
-
-    -- The rested extent lives on the root frame, under the fill; clip it with
-    -- the root circle mask declared in XML.
-    if self.RestedOverlay and self.CircleMask and self.RestedOverlay.AddMaskTexture then
-        self.RestedOverlay:AddMaskTexture(self.CircleMask)
     end
 
     self:ApplySkin()
@@ -351,76 +422,52 @@ end
 -- PAINT
 -------------------------------------------------------------------
 
---- Procedural band: concentric arcs, outer ticks, and a bloom, all driven by
---- numbers from the layer table so a tier reads as geometry rather than art.
-function SigilBarStyleTemplate:PaintBand(skin, layer, accent, tier)
-    if not skin or not layer then
+--- Procedural band for the HALO skin only: concentric arcs, outer ticks, and a
+--- bloom, all driven by the layer table. The flagship paints no band at all --
+--- the per-class rune band was removed 2026-08-16 (two rings of repeated marks
+--- read as noise, and the reference carries tier escalation on the frame
+--- itself), so on the flagship this only retires whatever the halo left behind.
+function SigilBarStyleTemplate:PaintBand(skin, layer, accent)
+    if not skin or not layer or not skin.procedural then
         self:HideHalo()
-        if self.SkinBand then self.SkinBand:Hide() end
         return
     end
 
-    if skin.procedural then
-        if self.SkinBand then self.SkinBand:Hide() end
-        self:EnsureHaloPool()
+    self:EnsureHaloPool()
 
-        local arcs = layer.arcs or 0
-        for i, arc in ipairs(self._haloArcs) do
-            if i <= arcs then
-                arc:SetVertexColor(accent.r, accent.g, accent.b, HALO_ARC_ALPHAS[i] or 0.4)
-                arc:Show()
-            else
-                arc:Hide()
-            end
+    local arcs = layer.arcs or 0
+    for i, arc in ipairs(self._haloArcs) do
+        if i <= arcs then
+            arc:SetVertexColor(accent.r, accent.g, accent.b, HALO_ARC_ALPHAS[i] or 0.4)
+            arc:Show()
+        else
+            arc:Hide()
         end
+    end
 
-        local ticks = layer.ticks or 0
-        for i, tick in ipairs(self._haloTicks) do
-            if i <= ticks then
-                tick:SetVertexColor(accent.r, accent.g, accent.b, 0.85)
-                tick:Show()
-            else
-                tick:Hide()
-            end
+    local ticks = layer.ticks or 0
+    for i, tick in ipairs(self._haloTicks) do
+        if i <= ticks then
+            tick:SetVertexColor(accent.r, accent.g, accent.b, 0.85)
+            tick:Show()
+        else
+            tick:Hide()
         end
+    end
 
-        if self._haloBloom then
-            local bloom = layer.bloom
-            if bloom and bloom > 0 then
-                self._haloBloom:SetVertexColor(accent.r, accent.g, accent.b, bloom)
-                self._haloBloom:Show()
-            else
-                self._haloBloom:Hide()
-            end
+    if self._haloBloom then
+        local bloom = layer.bloom
+        if bloom and bloom > 0 then
+            self._haloBloom:SetVertexColor(accent.r, accent.g, accent.b, bloom)
+            self._haloBloom:Show()
+        else
+            self._haloBloom:Hide()
         end
-        return
     end
-
-    -- Flagship: one rune strip per class, the tier picking a quarter of it via
-    -- SetTexCoord. A tier change is a coordinate change, not a texture swap.
-    self:HideHalo()
-    if not self.SkinBand then
-        return
-    end
-
-    local Skins = GetSkins()
-    local _, classToken = UnitClass("player")
-    local path = Skins and Skins:GetBandTexture(skin, classToken)
-    if not path then
-        self.SkinBand:Hide()
-        return
-    end
-
-    self.SkinBand:SetTexture(path)
-    if self.SkinBand.SetTexCoord and Skins.GetBandTexCoord then
-        self.SkinBand:SetTexCoord(Skins:GetBandTexCoord(tier))
-    end
-    self.SkinBand:SetVertexColor(accent.r, accent.g, accent.b, 1)
-    self.SkinBand:Show()
 end
 
 --- The casing. Procedural skins have none: their arcs are the frame.
-function SigilBarStyleTemplate:PaintFrame(skin, layer, accent)
+function SigilBarStyleTemplate:PaintFrame(skin, layer, accent, tier, classToken)
     if not self.SkinFrame then
         return
     end
@@ -430,7 +477,13 @@ function SigilBarStyleTemplate:PaintFrame(skin, layer, accent)
         return
     end
 
-    self.SkinFrame:SetTexture(layer.texture)
+    -- Family-themed casing when the class resolves to one (2026-08-16); the
+    -- neutral casing the layer carries is the fallback, so an unknown class
+    -- token still draws a frame.
+    local Skins = GetSkins()
+    local themed = Skins and Skins.GetCasingTexture
+        and Skins:GetCasingTexture(skin, tier, classToken)
+    self.SkinFrame:SetTexture(themed or layer.texture)
     self.SkinFrame:SetVertexColor(accent.r, accent.g, accent.b, 1)
     self.SkinFrame:Show()
 end
@@ -475,7 +528,7 @@ function SigilBarStyleTemplate:IsXPMode(context)
     return true
 end
 
---- Repaint SkinBand / SkinFrame / Crest for the current (class, tier, skin).
+--- Repaint SkinFrame / Crest (and the halo pool) for the current (class, tier, skin).
 --- Cheap and idempotent: safe from OnLoad, from an options live-apply, and from
 --- the render path.
 ---@param context table|nil
@@ -499,8 +552,8 @@ function SigilBarStyleTemplate:ApplySkin(context)
     self._skinMode = self:IsXPMode(context) and "xp" or "halo"
     self._accent = accent
 
-    self:PaintBand(skin, layer, accent, tier)
-    self:PaintFrame(skin, layer, accent)
+    self:PaintBand(skin, layer, accent)
+    self:PaintFrame(skin, layer, accent, tier, classToken)
     self:PaintCrest(skin, accent)
 end
 
@@ -542,6 +595,50 @@ end
 --- re-drives SetStyle to a broadcast, which lands here). A watched faction whose
 --- data loads seconds after login flips _secondaryMode on a later broadcast, and
 --- this check is what catches it.
+-------------------------------------------------------------------
+-- FILL DRIVER
+-- UpdateGainedBar is the single per-frame fill path -- DisplayMixin's static
+-- render and AnimationBase:AnimateBarPosition both come through here -- so
+-- driving the arc from it covers events and animation ticks alike.
+-------------------------------------------------------------------
+
+function SigilBarStyleTemplate:UpdateGainedBar(currentRatio, context)
+    if self.StatusBar and currentRatio then
+        -- Data carrier only; the texture is alpha-0.
+        self.StatusBar:SetValue(currentRatio)
+    end
+    if self.SetCurrentRatio then
+        self:SetCurrentRatio(currentRatio)
+    end
+
+    self:SetArcProgress(self.ArcFill, currentRatio)
+
+    if self.UpdateBarColors then
+        self:UpdateBarColors(context)
+    end
+end
+
+--- Tint the fill arc with the same colour selection PaintMixin applies to a
+--- visible StatusBar: the max-level secondary colour when repurposed, else the
+--- rested-aware XP colour. Deliberately does NOT call the PaintMixin base --
+--- the carrier bar is hidden at frame level and needs no tint, and terminal
+--- stubs its UpdateBarColors for the same reason.
+function SigilBarStyleTemplate:UpdateBarColors(context)
+    if not self.ArcFill then
+        return
+    end
+
+    local color = context and context._secondaryColor
+    if not color then
+        local hasRestedXP = context and (context.hasRestedXP or (context.restedXP and context.restedXP > 0))
+        local colorKey = hasRestedXP and Addon.Colors.Key.XpBarRested or Addon.Colors.Key.XpBar
+        color = Addon.Colors:Get(colorKey)
+    end
+    if color then
+        self.ArcFill:SetSwipeColor(color.r, color.g, color.b, color.a or 1)
+    end
+end
+
 function SigilBarStyleTemplate:RenderBar(context)
     if not context then
         error("RenderBar requires an explicit immutable context")
@@ -783,11 +880,9 @@ end
 --- Centre text is the ring's primary display, so it is not gated by Blizzard's
 --- xpBarText CVar.
 ---
---- At the SMALL preset the rune band eats the radius the readout needs and the
---- level and percentage will not both fit, so the percentage row is suppressed
---- there. This is the resolution of the size/band conflict: the alternative --
---- moving the band to the outermost layer -- would change the layer stack and
---- the art brief for every casing.
+--- At the SMALL preset the channel assembly (whose inner rim reaches radius
+--- 0.23 of the ring) eats the radius the readout needs and the level and
+--- percentage will not both fit, so the percentage row is suppressed there.
 function SigilBarStyleTemplate:UpdateTextVisibility(context)
     local isSmall = (self._sigilSizeKey == "small")
 
@@ -803,21 +898,27 @@ function SigilBarStyleTemplate:UpdateTextVisibility(context)
 end
 
 -------------------------------------------------------------------
--- OVERLAY LAYOUTS (vertical bands clipped to the ring)
--- Same math as the orb, with one difference that matters: heights come from
--- GetRingSize(), never from self:GetHeight(), because the frame is taller than
--- the ring by the crest overhang.
+-- OVERLAY LAYOUTS (cumulative arcs)
+-- The orb's totalRatio layering transplanted radially: every band is a full
+-- sweep from zero, drawn UNDER the layers above it (ARC_LAYERS order), so only
+-- the band's own sliver shows. The predicates -- which flags gate which band,
+-- the clamps against remaining XP, the 0.01 floor -- are byte-for-byte the
+-- vertical implementation's; only the geometry changed. Overlay arcs are set
+-- per render, not per animation frame, so during a gain the fill sweeps to
+-- meet them -- the same behaviour the vertical bands had.
+--
+-- Colours are applied here rather than through PaintMixin's texture-based
+-- Update*BarColor methods, which no-op now that the overlay textures are gone.
 -------------------------------------------------------------------
 
-function SigilBarStyleTemplate:UpdateQuestCompleteBarLayout(context, overlayName)
-    overlayName = overlayName or "QuestOverlayComplete"
-    local overlay = self.StatusBar and self.StatusBar[overlayName]
-    if not overlay then
+function SigilBarStyleTemplate:UpdateQuestCompleteBarLayout(context)
+    local arc = self.ArcQuestComplete
+    if not arc then
         return
     end
 
     local completeXP = context.completeQuestXP or 0
-    local visible = false
+    local fraction = 0
 
     if context.showQuestXP and context.showCompleteQuestOverlay and completeXP > 0 then
         local currentXP = context.currentXP or 0
@@ -826,69 +927,57 @@ function SigilBarStyleTemplate:UpdateQuestCompleteBarLayout(context, overlayName
         local ratio = math.min(completeXP, remainingXP) / maxXP
 
         if ratio >= 0.01 then
-            local barHeight = self:GetRingSize()
-            local yOffset = barHeight * (currentXP / maxXP)
-
-            overlay:ClearAllPoints()
-            overlay:SetPoint("BOTTOMLEFT", self.StatusBar, "BOTTOMLEFT", 0, yOffset)
-            overlay:SetPoint("BOTTOMRIGHT", self.StatusBar, "BOTTOMRIGHT", 0, yOffset)
-            overlay:SetHeight(math.max(1, barHeight * ratio))
-            visible = true
+            fraction = math.min((currentXP / maxXP) + ratio, 1.0)
         end
     end
 
-    overlay:SetShown(visible)
+    local color = Addon.Colors:Get(Addon.Colors.Key.QuestComplete)
+    arc:SetSwipeColor(color.r, color.g, color.b, color.a or 1)
+    self:SetArcProgress(arc, fraction)
 end
 
-function SigilBarStyleTemplate:UpdateQuestIncompleteBarLayout(context, overlayName)
-    overlayName = overlayName or "QuestOverlayIncomplete"
-    local overlay = self.StatusBar and self.StatusBar[overlayName]
-    if not overlay then
+function SigilBarStyleTemplate:UpdateQuestIncompleteBarLayout(context)
+    local arc = self.ArcQuestIncomplete
+    if not arc then
         return
     end
 
     local completeQuestXP = context.completeQuestXP or 0
     local incompleteQuestXP = context.incompleteQuestXP or 0
     local showComplete = context.showCompleteQuestOverlay
-    local visible = false
+    local fraction = 0
 
     if context.showQuestXP and context.showIncompleteQuestOverlay and incompleteQuestXP > 0 then
         local currentXP = context.currentXP or 0
         local maxXP = context.xpMax or 1
         local remainingXP = math.max(0, maxXP - currentXP)
 
+        local startXP = currentXP
         if showComplete and completeQuestXP > 0 then
+            startXP = startXP + math.min(completeQuestXP, remainingXP)
             remainingXP = math.max(0, remainingXP - completeQuestXP)
         end
 
         local ratio = math.min(incompleteQuestXP, remainingXP) / maxXP
 
         if ratio >= 0.01 then
-            local barHeight = self:GetRingSize()
-            local startXP = currentXP
-            if showComplete and completeQuestXP > 0 then
-                startXP = startXP + completeQuestXP
-            end
-            local yOffset = barHeight * (startXP / maxXP)
-
-            overlay:ClearAllPoints()
-            overlay:SetPoint("BOTTOMLEFT", self.StatusBar, "BOTTOMLEFT", 0, yOffset)
-            overlay:SetPoint("BOTTOMRIGHT", self.StatusBar, "BOTTOMRIGHT", 0, yOffset)
-            overlay:SetHeight(math.max(1, barHeight * ratio))
-            visible = true
+            fraction = math.min((startXP / maxXP) + ratio, 1.0)
         end
     end
 
-    overlay:SetShown(visible)
+    local color = Addon.Colors:Get(Addon.Colors.Key.QuestIncomplete)
+    arc:SetSwipeColor(color.r, color.g, color.b, color.a or 1)
+    self:SetArcProgress(arc, fraction)
 end
 
 function SigilBarStyleTemplate:UpdateRestedBarLayout(context)
-    if not self.RestedOverlay then
+    local arc = self.ArcRested
+    if not arc then
         return
     end
 
     local restedXP = context.restedXP or 0
-    local visible = false
+    local fraction = 0
 
     if Addon.ConfigHelper.GetShowRestedOverlay(context) and restedXP > 0 then
         local currentXP = context.currentXP or 0
@@ -911,16 +1000,13 @@ function SigilBarStyleTemplate:UpdateRestedBarLayout(context)
         local totalRatio = math.min((currentXP + questOffset + restedXPClamped) / maxXP, 1.0)
 
         if totalRatio >= 0.01 then
-            local barHeight = self:GetRingSize()
-            self.RestedOverlay:ClearAllPoints()
-            self.RestedOverlay:SetPoint("BOTTOMLEFT", self.StatusBar, "BOTTOMLEFT", 0, 0)
-            self.RestedOverlay:SetPoint("BOTTOMRIGHT", self.StatusBar, "BOTTOMRIGHT", 0, 0)
-            self.RestedOverlay:SetHeight(math.max(1, barHeight * totalRatio))
-            visible = true
+            fraction = totalRatio
         end
     end
 
-    self.RestedOverlay:SetShown(visible)
+    local color = Addon.Colors:Get(Addon.Colors.Key.Rested)
+    arc:SetSwipeColor(color.r, color.g, color.b, color.a or 1)
+    self:SetArcProgress(arc, fraction)
 end
 
 -------------------------------------------------------------------
@@ -937,6 +1023,9 @@ local DefaultConfig = {
     position = {mode = "DRAGGABLE", positionKey = "SigilBar"},
     style = {},
     capabilities = {
+        -- The StatusBar is an alpha-0 data carrier (the terminal declaration);
+        -- the visible fill is the arc, driven by this style's UpdateGainedBar.
+        statusBar = false,
         exhaustionTick = false,
         textBelowBar = false,
         -- The centre ETA is a time-derived readout on the bar, so it needs the

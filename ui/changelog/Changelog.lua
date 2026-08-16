@@ -10,7 +10,7 @@ Changelog.entries = {
     {
         version = "1.3.0",
         notes = {
-            "New Sigil bar style: a class ring that advances through four tiers as you approach the level cap, from a plain band to a crowned frame, with a per-class rune band and class crest tinted in your class colour, plus a companion ring for the secondary bar.",
+            "New Sigil bar style: a class ring that advances through four tiers as you approach the level cap, from a plain band to a crowned frame. The frame's metalwork is themed to your class family, the crest is a round medallion carrying your class's iconic motif, and a companion ring tracks the secondary bar. XP fills as a clockwise arc set into the frame itself, between its outer band and inner rim, emerging at the crest's left edge and completing at its right.",
             "Five Sigil options under Visual: skin, size, tier mode, pinned tier, and class-colour tint.",
             "Time to level on the Circular and Vertical styles now updates while you stand still, instead of freezing until your next XP gain.",
             "The Circular ring now repaints only the segments that actually changed, cutting a large amount of per-frame work at high segment counts.",

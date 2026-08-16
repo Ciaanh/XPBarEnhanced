@@ -2,8 +2,12 @@
 ..\..\Blizzard_SharedXML\UI.xsd">
 
 	<!-- XP Bar Enhanced Sigil Template -->
-	<!-- A tiered class ring: a VERTICAL StatusBar clipped by one circular mask,
-	     the orb's shape mechanism, plus three repaintable skin layers. -->
+	<!-- A tiered class ring. Progress is a clockwise ARC swept around an annulus
+	     channel by paused Cooldown frames (created in SigilBarStyle.lua), per the
+	     League-reference read: the arc emerges left of the crest and completes at
+	     its right, the crest plate covering the seam. The StatusBar survives only
+	     as an alpha-0 data carrier for the mixins (the terminal style's trick);
+	     the three repaintable skin layers are unchanged. -->
 
 	<!-- The frame is TALLER than the ring. The class crest seats at 6 o'clock,
 	     outside the circle's silhouette, so the frame has to include it for the
@@ -37,13 +41,20 @@
 				</MaskTexture>
 			</Layer>
 			<Layer level="BORDER">
-				<!-- Rested extent: under the fill, because parent layers render
-				     below child frames and the StatusBar is a child frame. -->
-				<Texture parentKey="RestedOverlay" hidden="true" file="Interface\Buttons\WHITE8X8"/>
+				<!-- The recessed groove the XP arc runs in. Static: the arc
+				     Cooldown frames sweep over it, so an empty channel still
+				     shows the reader where progress will go. -->
+				<Texture parentKey="ArcTrack" file="Interface\AddOns\XPBarEnhanced\assets\sigil-track" alphaMode="BLEND">
+					<Size x="128" y="128"/>
+					<Anchors>
+						<Anchor point="TOP"/>
+					</Anchors>
+				</Texture>
 			</Layer>
 			<Layer level="OVERLAY" textureSubLevel="2">
-				<!-- Gain flash, clipped at runtime with the fill mask -->
-				<Texture parentKey="GainFlash" hidden="true" alphaMode="BLEND" file="Interface\Buttons\WHITE8X8">
+				<!-- Gain flash. The annulus texture, so the flash pulses the arc
+				     channel rather than the whole disc. -->
+				<Texture parentKey="GainFlash" hidden="true" alphaMode="BLEND" file="Interface\AddOns\XPBarEnhanced\assets\sigil-fill">
 					<Size x="128" y="128"/>
 					<Anchors>
 						<Anchor point="TOP"/>
@@ -53,19 +64,14 @@
 			</Layer>
 		</Layers>
 		<Frames>
-			<!-- XP StatusBar. Vertical fill, masked in OnLoad. -->
+			<!-- Alpha-0 data carrier: the mixins read and write StatusBar values,
+			     and the arc frames render the visual. Its fill texture is hidden
+			     in OnLoad; quest/rested visuals are arc layers created there too. -->
 			<StatusBar parentKey="StatusBar" minValue="0" maxValue="1" defaultValue="0" orientation="VERTICAL">
 				<Size x="128" y="128"/>
 				<Anchors>
 					<Anchor point="TOP"/>
 				</Anchors>
-				<Layers>
-					<Layer level="ARTWORK" textureSubLevel="2">
-						<!-- Quest overlays above the fill, masked in OnLoad -->
-						<Texture parentKey="QuestOverlayComplete" hidden="true" file="Interface\Buttons\WHITE8X8"/>
-						<Texture parentKey="QuestOverlayIncomplete" hidden="true" file="Interface\Buttons\WHITE8X8"/>
-					</Layer>
-				</Layers>
 				<BarTexture file="Interface\Buttons\WHITE8X8"/>
 			</StatusBar>
 
@@ -80,18 +86,11 @@
 			     to the RING centre by ApplySizePreset, not to the taller frame. -->
 			<Frame parentKey="OverlayFrameTextContainer" frameStrata="MEDIUM" setAllPoints="true">
 				<Layers>
-					<!-- Tier ornament. The only layer a tier change touches on the
-					     flagship skin; the procedural halo draws its arcs, ticks
-					     and bloom into pooled textures created alongside it. -->
-					<Layer level="BACKGROUND">
-						<Texture parentKey="SkinBand" hidden="true" alphaMode="BLEND">
-							<Size x="128" y="128"/>
-							<Anchors>
-								<Anchor point="TOP"/>
-							</Anchors>
-						</Texture>
-					</Layer>
-					<!-- The casing itself, tinted by the class accent -->
+					<!-- The casing carries the tier signal alone (the per-class
+					     rune band was removed 2026-08-16: repeated marks read
+					     as noise, and the reference escalates the frame itself).
+					     The procedural halo draws its arcs, ticks and bloom into
+					     pooled textures created at runtime on this container. -->
 					<Layer level="BORDER">
 						<Texture parentKey="SkinFrame" hidden="true" alphaMode="BLEND">
 							<Size x="128" y="128"/>

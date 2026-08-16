@@ -4,12 +4,42 @@
     python assets/raw/generate_sigil.py            # writes into assets/
     python assets/raw/generate_sigil.py --preview  # also writes a PNG contact sheet
 
-Produces 30 files, all greyscale-with-alpha and tinted at runtime by
+Produces 43 files, all greyscale-with-alpha and tinted at runtime by
 ui/styles/sigil/SigilBarStyle.lua:
 
-    sigil-casing-{1..4}.tga     256x256   the ring itself, one per tier
-    sigil-runes-<class>.tga     512x512   2x2 atlas, one 256x256 quarter per tier
-    sigil-crest-<class>.tga      64x64    the class mark at 6 o'clock
+    sigil-casing-{1..4}.tga            256x256  neutral frame (fallback for
+                                                unknown class tokens + gallery)
+    sigil-casing-<family>-{1..4}.tga   256x256  themed frame, six families:
+                                                arcane / sacred / wild /
+                                                martial / umbral / draconic
+    sigil-crest-<class>.tga             64x64   the class mark at 6 o'clock,
+                                                a round medallion (the official
+                                                crests' format) with the class's
+                                                iconic motif drawn from
+                                                primitives
+    sigil-fill.tga              256x256   the XP arc annulus, revealed by a
+                                          Cooldown swipe (Amendment A: the fill
+                                          is an arc, not a liquid)
+    sigil-track.tga             256x256   the recessed groove the arc runs in,
+                                          so an empty channel is still legible
+
+The per-class rune bands were removed 2026-08-16: two concentric rings of
+repeated marks read as noise, not ornament, and the tier signal belongs to the
+casing alone -- the reference (League level borders) carries escalation with
+pointed metalwork and layered rims, never with dots. The XP channel moved
+outward in the same pass, to sit directly against the casing's inner edge,
+because a progress arc at centre-adjacent radii read as text decoration rather
+than as THE bar.
+
+Later the same day the casings became PER-FAMILY THEMED (the reference sets are
+themed borders, not recolours): each of the six class families gets its own
+ornament vocabulary -- fitting shape, finial shape, filigree style -- on the
+shared two-rim skeleton, so a Mage's frame and a Warrior's frame differ in
+metalwork, not just tint. The crests moved to a uniform round-medallion format
+in the same pass, which is the official class crests' construction; each
+carries the class's ICONIC MOTIF (crossed swords, warhammer, drawn bow, ...)
+drawn fresh from primitives. Concepts and motifs, never Blizzard's artwork:
+nothing is traced, copied, or derived from shipped art.
 
 WHY THIS IS A SCRIPT AND NOT A .PDN
     The art is parametric: four tiers are the same ring with escalating
@@ -32,13 +62,13 @@ FORMAT
     PaintCrest call SetVertexColor with the class accent, which multiplies.
 
 CONVENTIONS THE ADDON DEPENDS ON
-    File names are lower-cased class tokens -- SigilSkins:GetBandTexture and
-    GetCrestTexture format "sigil-runes-%s" / "sigil-crest-%s" with
-    string.lower(classToken), so DEATHKNIGHT -> sigil-crest-deathknight.tga.
+    File names are lower-cased class tokens -- SigilSkins:GetCrestTexture
+    formats "sigil-crest-%s" with string.lower(classToken), so
+    DEATHKNIGHT -> sigil-crest-deathknight.tga.
 
-    The rune atlas is a 2x2 GRID (quarters 1,2 top row; 3,4 bottom row) to match
-    SigilSkins:GetBandTexCoord. Not four stacked strips: SkinBand is drawn into
-    the square ring region, so a non-square source rect squashes every glyph.
+    The fill/track annuli (FILL_OUTER / FILL_INNER below) must stay just inside
+    the casing's inner edge across all four tiers -- the channel hugging the
+    frame is the League read the whole style is modelled on.
 """
 
 from __future__ import annotations
@@ -59,11 +89,9 @@ except ImportError:
 # --------------------------------------------------------------------------
 
 CASING_SIZE = 256
-RUNE_QUARTER = 256          # one tier; the file is 2x2 of these
-RUNE_SHEET = RUNE_QUARTER * 2
 CREST_SIZE = 64
 
-SS = 4                      # supersample factor for casings and runes
+SS = 4                      # supersample factor for casings and the channel
 CREST_SS = 8                # crests are tiny, so they need more
 
 CLASSES = [
@@ -164,7 +192,7 @@ class Canvas:
     def apply_light(self, strength=0.45, angle_deg=125.0):
         """Multiply a directional gradient over the luminance layer.
 
-        One consistent light direction across all 30 files is most of what
+        One consistent light direction across every file is most of what
         makes them read as one set; without it each mark invents its own and
         the ring looks assembled from spare parts.
         """
@@ -198,266 +226,319 @@ def save_tga(img: Image.Image, path: str) -> None:
 
 
 # --------------------------------------------------------------------------
-# CASINGS -- the ring, one per tier
+# CASINGS -- the frame, one per tier
 # --------------------------------------------------------------------------
 
-# Tier pacing. The escalation has to read at a glance and in silhouette, so it
-# is carried by three stacking cues -- thickness, stud count, outer crown --
-# rather than by one that just gets bigger.
+# Tier pacing, reworked 2026-08-16 toward the League level-border vocabulary:
+# layered thin rims, pointed diamond fittings, outer points and crown finials.
+# No studs and no dots -- repeated circles read as rivets, and rivets read as
+# machinery, not regalia.
+#
+# The casing is a TWO-RIM assembly: an outer ornamental band and a fixed inner
+# border ring, with the XP arc channel running in the gap between them -- the
+# reference's construction. The band's INNER edge is fixed (BAND_INNER) and
+# tier escalation grows OUTWARD, so the channel-to-frame relationship is
+# identical at every tier and one fill/track annulus serves all four casings.
+BAND_INNER = 0.345          # fixed inner edge of the outer band, all tiers
+INNER_RIM_OUTER = 0.264     # the inner border ring enclosing the channel
+INNER_RIM_INNER = 0.230     # grew 0.240 -> 0.230 (2026-08-16): 3px read too
+                            # thin beside the band; the rim grows INWARD so the
+                            # channel geometry never moves
+
 CASING_TIERS = {
-    1: dict(thickness=0.085, studs=0,  crown=0,  fillets=False, inner_line=False),
-    2: dict(thickness=0.100, studs=8,  crown=0,  fillets=True,  inner_line=False),
-    3: dict(thickness=0.115, studs=16, crown=0,  fillets=True,  inner_line=True),
-    4: dict(thickness=0.130, studs=24, crown=12, fillets=True,  inner_line=True),
+    1: dict(band=0.050, diamonds=0, points=0, finials=0,  filigree=False),
+    2: dict(band=0.058, diamonds=4, points=4, finials=0,  filigree=False),
+    3: dict(band=0.066, diamonds=4, points=8, finials=8,  filigree=True),
+    4: dict(band=0.074, diamonds=8, points=8, finials=16, filigree=True),
 }
 
 
-def build_casing(tier: int) -> Image.Image:
+def _radial_diamond(c: Canvas, angle: float, r: float, half_len: float, half_wid: float,
+                    lum: int, alpha: int = 255):
+    """A four-point diamond at radius r, its long axis pointing outward --
+    the pointed fitting the reference borders seat at their compass points."""
+    ca, sa = math.cos(angle), math.sin(angle)
+    cx, cy = 0.5 + ca * r, 0.5 + sa * r
+    # Local axes: u = radial (outward), v = tangential.
+    pts = [(half_len, 0.0), (0.0, half_wid), (-half_len, 0.0), (0.0, -half_wid)]
+    c.poly([(cx + u * ca - v * sa, cy + u * sa + v * ca) for u, v in pts], lum=lum, alpha=alpha)
+
+
+def _spike(c: Canvas, angle: float, base_r: float, length: float, half_wid: float,
+           lum: int, alpha: int = 255):
+    """A thin triangle pointing outward from base_r -- a crown finial."""
+    ca, sa = math.cos(angle), math.sin(angle)
+    tip = (0.5 + ca * (base_r + length), 0.5 + sa * (base_r + length))
+    left = (0.5 + math.cos(angle + math.pi / 2) * half_wid + ca * base_r,
+            0.5 + math.sin(angle + math.pi / 2) * half_wid + sa * base_r)
+    right = (0.5 + math.cos(angle - math.pi / 2) * half_wid + ca * base_r,
+             0.5 + math.sin(angle - math.pi / 2) * half_wid + sa * base_r)
+    c.poly([tip, left, right], lum=lum, alpha=alpha)
+
+
+# Per-family ornament vocabulary (2026-08-16): fitting = the mount at the
+# compass points, finial = the crown spike shape, filigree = the detached
+# outer-arc style. Same two-rim skeleton, same tier pacing, different metalwork.
+FAMILY_STYLE = {
+    "arcane":   dict(fit="crescent", fin="spire",  fil="orbit"),
+    "sacred":   dict(fit="cross",    fin="ray",    fil="halo"),
+    "wild":     dict(fit="leaf",     fin="antler", fil="vine"),
+    "martial":  dict(fit="plate",    fin="blade",  fil="chevron"),
+    "umbral":   dict(fit="barb",     fin="hook",   fil="thin"),
+    "draconic": dict(fit="scale",    fin="horn",   fil="wing"),
+}
+
+
+def _tapered_spike(c: Canvas, angle: float, base_r: float, length: float,
+                   half_wid: float, sweep: float = 0.0, lum: int = 210):
+    """A tapered triangle from base_r outward; `sweep` (radians) displaces the
+    tip tangentially, which is what turns a spike into a hook or a horn."""
+    tip_a = angle + sweep
+    tip = (0.5 + math.cos(tip_a) * (base_r + length), 0.5 + math.sin(tip_a) * (base_r + length))
+    left = (0.5 + math.cos(angle + math.pi / 2) * half_wid + math.cos(angle) * base_r,
+            0.5 + math.sin(angle + math.pi / 2) * half_wid + math.sin(angle) * base_r)
+    right = (0.5 + math.cos(angle - math.pi / 2) * half_wid + math.cos(angle) * base_r,
+             0.5 + math.sin(angle - math.pi / 2) * half_wid + math.sin(angle) * base_r)
+    c.poly([tip, left, right], lum=lum, alpha=255)
+
+
+def _fitting(c: Canvas, style: str, angle: float, r: float, band: float):
+    """The mount seated on the band at a compass point, per family."""
+    deg = math.degrees(angle)
+    ca, sa = math.cos(angle), math.sin(angle)
+    cx, cy = 0.5 + ca * r, 0.5 + sa * r
+
+    def pt(u, v):
+        return (cx + u * ca - v * sa, cy + u * sa + v * ca)
+
+    if style == "crescent":
+        # A thick arc segment hugging the band, horns following the ring.
+        c.arc(0.5, 0.5, r, deg - 20, deg + 20, band * 0.62, lum=70, alpha=255)
+        c.arc(0.5, 0.5, r, deg - 16, deg + 16, band * 0.42, lum=235, alpha=255)
+        _radial_diamond(c, angle, r, band * 0.30, band * 0.13, lum=120)
+    elif style == "cross":
+        _radial_diamond(c, angle, r, band * 0.95, band * 0.42, lum=70)
+        c.line(cx - ca * band * 0.75, cy - sa * band * 0.75,
+               cx + ca * band * 0.75, cy + sa * band * 0.75, band * 0.24, lum=238, alpha=255)
+        c.line(cx + sa * band * 0.55, cy - ca * band * 0.55,
+               cx - sa * band * 0.55, cy + ca * band * 0.55, band * 0.24, lum=238, alpha=255)
+    elif style == "leaf":
+        # Pointed oval with shoulders, midrib darker: reads as a leaf, not a gem.
+        L, Wd = band * 1.15, band * 0.44
+        c.poly([pt(L, 0), pt(L * 0.30, Wd), pt(-L * 0.62, Wd * 0.55),
+                pt(-L, 0), pt(-L * 0.62, -Wd * 0.55), pt(L * 0.30, -Wd)], lum=70, alpha=255)
+        c.poly([pt(L * 0.85, 0), pt(L * 0.24, Wd * 0.72), pt(-L * 0.52, Wd * 0.40),
+                pt(-L * 0.85, 0), pt(-L * 0.52, -Wd * 0.40), pt(L * 0.24, -Wd * 0.72)],
+               lum=228, alpha=255)
+        rib_a, rib_b = pt(L * 0.75, 0), pt(-L * 0.75, 0)
+        c.line(rib_a[0], rib_a[1], rib_b[0], rib_b[1], band * 0.09, lum=110, alpha=255)
+    elif style == "plate":
+        L, Wd = band * 0.95, band * 0.52
+        c.poly([pt(L, Wd * 0.55), pt(L, -Wd * 0.55), pt(-L, -Wd), pt(-L, Wd)], lum=70, alpha=255)
+        c.poly([pt(L * 0.82, Wd * 0.42), pt(L * 0.82, -Wd * 0.42),
+                pt(-L * 0.82, -Wd * 0.82), pt(-L * 0.82, Wd * 0.82)], lum=225, alpha=255)
+        n_a, n_b = pt(0, Wd * 0.7), pt(0, -Wd * 0.7)
+        c.line(n_a[0], n_a[1], n_b[0], n_b[1], band * 0.10, lum=95, alpha=255)
+    elif style == "barb":
+        # Two swept blades leaning the same way: the umbral cue, while the ring
+        # as a whole stays radially repeated.
+        _tapered_spike(c, angle, r - band * 0.55, band * 1.35, band * 0.30, sweep=0.16, lum=70)
+        _tapered_spike(c, angle, r - band * 0.45, band * 1.15, band * 0.22, sweep=0.16, lum=232)
+    elif style == "scale":
+        c.arc(0.5, 0.5, r + band * 0.10, deg - 16, deg + 16, band * 0.50, lum=70, alpha=255)
+        c.arc(0.5, 0.5, r - band * 0.12, deg - 11, deg + 11, band * 0.38, lum=225, alpha=255)
+        _tapered_spike(c, angle, r + band * 0.30, band * 0.55, band * 0.16, lum=235)
+    else:  # neutral: the pointed diamond
+        _radial_diamond(c, angle, r, band * 1.05, band * 0.48, lum=70)
+        _radial_diamond(c, angle, r, band * 0.88, band * 0.36, lum=230)
+        _radial_diamond(c, angle, r, band * 0.34, band * 0.14, lum=120)
+
+
+def _finial(c: Canvas, style: str, angle: float, base_r: float, is_long: bool):
+    """The crown spike growing outward from the band, per family."""
+    L = 0.055 if is_long else 0.030
+    Wd = 0.011 if is_long else 0.008
+    lum = 215 if is_long else 190
+    if style == "spire":
+        _tapered_spike(c, angle, base_r, L * 1.15, Wd * 0.72, lum=lum)
+    elif style == "ray":
+        _tapered_spike(c, angle, base_r, L * 0.92, Wd * 1.55, lum=lum)
+    elif style == "antler":
+        _tapered_spike(c, angle, base_r, L, Wd, sweep=0.10, lum=lum)
+        if is_long:
+            _tapered_spike(c, angle + 0.045, base_r + L * 0.35, L * 0.45, Wd * 0.6,
+                           sweep=-0.22, lum=lum - 15)
+    elif style == "blade":
+        _tapered_spike(c, angle, base_r, L, Wd * 1.2, lum=lum)
+        bx, by = 0.5 + math.cos(angle) * (base_r + 0.004), 0.5 + math.sin(angle) * (base_r + 0.004)
+        c.line(bx + math.cos(angle + math.pi / 2) * Wd * 1.7,
+               by + math.sin(angle + math.pi / 2) * Wd * 1.7,
+               bx + math.cos(angle - math.pi / 2) * Wd * 1.7,
+               by + math.sin(angle - math.pi / 2) * Wd * 1.7, 0.006, lum=lum + 20, alpha=255)
+    elif style == "hook":
+        _tapered_spike(c, angle, base_r, L, Wd, sweep=0.20, lum=lum)
+    elif style == "horn":
+        _tapered_spike(c, angle, base_r, L * 0.7, Wd * 1.35, sweep=0.10, lum=lum - 20)
+        _tapered_spike(c, angle + 0.06, base_r + L * 0.30, L * 0.55, Wd * 0.85,
+                       sweep=0.18, lum=lum)
+    else:  # neutral
+        _spike(c, angle, base_r, L, Wd, lum=lum)
+
+
+def _filigree(c: Canvas, style: str, outer: float):
+    """Detached outer arc-work on the diagonals, per family."""
+    for k in range(4):
+        deg = k * 90.0 + 45.0
+        if style == "orbit":
+            c.arc(0.5, 0.5, outer + 0.016, deg - 24, deg + 24, 0.006, lum=200, alpha=255)
+            c.arc(0.5, 0.5, outer + 0.030, deg - 14, deg + 14, 0.005, lum=170, alpha=255)
+        elif style == "halo":
+            c.arc(0.5, 0.5, outer + 0.020, deg - 38, deg + 38, 0.007, lum=205, alpha=255)
+        elif style == "vine":
+            c.arc(0.5, 0.5, outer + 0.014, deg - 24, deg - 4, 0.006, lum=200, alpha=255)
+            c.arc(0.5, 0.5, outer + 0.026, deg + 4, deg + 24, 0.006, lum=180, alpha=255)
+        elif style == "chevron":
+            a = math.radians(deg)
+            mx, my = 0.5 + math.cos(a) * (outer + 0.026), 0.5 + math.sin(a) * (outer + 0.026)
+            for side in (1, -1):
+                ex = 0.5 + math.cos(a + side * 0.16) * (outer + 0.008)
+                ey = 0.5 + math.sin(a + side * 0.16) * (outer + 0.008)
+                c.line(mx, my, ex, ey, 0.007, lum=205, alpha=255)
+        elif style == "thin":
+            c.arc(0.5, 0.5, outer + 0.014, deg - 15, deg + 15, 0.004, lum=190, alpha=255)
+        elif style == "wing":
+            c.arc(0.5, 0.5, outer + 0.016, deg - 26, deg + 26, 0.007, lum=205, alpha=255)
+            c.arc(0.5, 0.5, outer + 0.028, deg - 15, deg + 15, 0.005, lum=175, alpha=255)
+        else:  # neutral
+            c.arc(0.5, 0.5, outer + 0.020, deg - 26, deg + 26, 0.007, lum=200, alpha=255)
+
+
+def build_casing(tier: int, family: str = None) -> Image.Image:
     cfg = CASING_TIERS[tier]
+    style = FAMILY_STYLE.get(family or "", {})
     c = Canvas(CASING_SIZE, SS)
 
-    # Leaves room for tier 4's crown spokes, which reach outer + 0.040.
-    outer = 0.435
-    thickness = cfg["thickness"]
-    inner = outer - thickness
+    inner = BAND_INNER
+    outer = inner + cfg["band"]     # escalation grows outward
     mid = (outer + inner) / 2
+    band = cfg["band"]
 
-    # Crown spokes first so the band covers their inner ends.
-    if cfg["crown"]:
-        n = cfg["crown"]
+    # Filigree first, so every ornament overlaps its ends.
+    if cfg["filigree"]:
+        _filigree(c, style.get("fil", "neutral"), outer)
+
+    # Crown finials next, so the band covers their inner ends.
+    if cfg["finials"]:
+        n = cfg["finials"]
         for i in range(n):
             a = (i / n) * 2 * math.pi - math.pi / 2
-            x0, y0 = 0.5 + math.cos(a) * (outer - 0.005), 0.5 + math.sin(a) * (outer - 0.005)
-            x1, y1 = 0.5 + math.cos(a) * (outer + 0.032), 0.5 + math.sin(a) * (outer + 0.032)
-            c.line(x0, y0, x1, y1, 0.013, lum=205, alpha=255)
-            tipr = 0.010
-            c.disc(0.5 + math.cos(a) * (outer + 0.032), 0.5 + math.sin(a) * (outer + 0.032),
-                   tipr, lum=225, alpha=255)
+            _finial(c, style.get("fin", "neutral"), a, outer - 0.004, i % 2 == 0)
 
-    # Main band
+    # Outer band with the bevel lips: a bright lip outside and a dark lip inside
+    # is the cheapest thing that reads as a rounded metal section.
     c.ring(0.5, 0.5, outer, inner, lum=178, alpha=255)
+    c.ring(0.5, 0.5, outer, outer - band * 0.18, lum=242, alpha=255)
+    c.ring(0.5, 0.5, inner + band * 0.16, inner, lum=88, alpha=255)
 
-    # Bevel. A bright lip outside and a dark lip inside is the cheapest thing
-    # that reads as a rounded metal section rather than a flat annulus. Both
-    # are kept narrow so the mid-tone body still dominates -- widen them and
-    # the ring goes back to reading as a pair of hairlines.
-    c.ring(0.5, 0.5, outer, outer - thickness * 0.16, lum=242, alpha=255)
-    c.ring(0.5, 0.5, inner + thickness * 0.14, inner, lum=88, alpha=255)
+    # Inner border ring: the second rim of the assembly, identical at every
+    # tier. The XP channel runs between this and the band above -- it is what
+    # makes the arc read as SET INTO the frame rather than floating inside it.
+    c.ring(0.5, 0.5, INNER_RIM_OUTER, INNER_RIM_INNER, lum=170, alpha=255)
+    c.ring(0.5, 0.5, INNER_RIM_OUTER, INNER_RIM_OUTER - 0.005, lum=235, alpha=255)
+    c.ring(0.5, 0.5, INNER_RIM_INNER + 0.005, INNER_RIM_INNER, lum=90, alpha=255)
 
-    # A hairline channel down the middle catches the eye as a machined groove.
-    if cfg["inner_line"]:
-        c.ring(0.5, 0.5, mid + 0.004, mid - 0.004, lum=96, alpha=255)
-
-    # Studs set into the band
-    if cfg["studs"]:
-        n = cfg["studs"]
+    # Fittings at the compass points (and diagonals at tier 4).
+    if cfg["diamonds"]:
+        n = cfg["diamonds"]
         for i in range(n):
             a = (i / n) * 2 * math.pi - math.pi / 2
-            x, y = 0.5 + math.cos(a) * mid, 0.5 + math.sin(a) * mid
-            c.disc(x, y, thickness * 0.30, lum=70, alpha=255)      # seat
-            c.disc(x, y, thickness * 0.22, lum=240, alpha=255)     # head
-            c.disc(x - thickness * 0.05, y - thickness * 0.05,
-                   thickness * 0.10, lum=255, alpha=255)           # highlight
+            _fitting(c, style.get("fit", "neutral"), a, mid, band)
 
-    # Cardinal fillets: four larger mounts at the compass points give the ring
-    # an orientation, so tier 2+ does not read as rotationally anonymous.
-    if cfg["fillets"]:
-        for k in range(4):
-            a = k * (math.pi / 2) - math.pi / 2
-            x, y = 0.5 + math.cos(a) * mid, 0.5 + math.sin(a) * mid
-            c.disc(x, y, thickness * 0.55, lum=120, alpha=255)
-            c.disc(x, y, thickness * 0.42, lum=200, alpha=255)
-            c.disc(x, y, thickness * 0.20, lum=90, alpha=255)
+    # Small outer points between the fittings: the notched edge that keeps the
+    # band from reading as a plain washer at a glance.
+    if cfg["points"]:
+        n = cfg["points"]
+        offset = math.pi / n  # midway between the fitting positions
+        for i in range(n):
+            a = (i / n) * 2 * math.pi - math.pi / 2 + offset
+            _spike(c, a, outer - 0.002, 0.018, 0.007, lum=205)
 
     c.apply_light(strength=0.40)
     return c.resolve(alpha_blur=0.6)
 
 
 # --------------------------------------------------------------------------
-# RUNE BANDS -- a ring of family glyphs, one quarter of the atlas per tier
+# FILL CHANNEL -- the XP arc annulus and the groove it runs in
 # --------------------------------------------------------------------------
 
-# How many glyphs are lit at each tier. Tier 1 is deliberately sparse: the band
-# should feel like it is filling in as the character grows.
-RUNE_COUNTS = {1: 4, 2: 8, 3: 12, 4: 16}
+# Radial placement: exactly the gap between the casing's two rims (2026-08-16,
+# second pass). The outer band's inner edge is fixed at BAND_INNER = 0.345 and
+# the inner border ring's outer edge at 0.264, so the channel fills the gap
+# with a hair of clearance on each side -- the arc is SET INTO the frame, which
+# is the reference's whole construction. Both files are consumed by a Cooldown
+# swipe in SigilBarStyle.lua, which reveals sigil-fill clockwise from the crest.
+FILL_OUTER = 0.338
+FILL_INNER = 0.270
 
 
-def _glyph(c: Canvas, family: str, x: float, y: float, r: float, angle: float):
-    """One family glyph, centred at (x, y) and rotated to face outward."""
-    def rot(px, py):
-        ca, sa = math.cos(angle), math.sin(angle)
-        return x + px * ca - py * sa, y + px * sa + py * ca
+def build_fill() -> Image.Image:
+    """The bright annulus the swipe reveals. Near-white so the runtime tint
+    (class accent or XP bar colour) lands on it the way it lands on the fill
+    texture of every other style."""
+    c = Canvas(CASING_SIZE, SS)
 
-    if family == "arcane":
-        # Four-point star
-        pts = [rot(0, -r), rot(r * 0.30, 0), rot(0, r), rot(-r * 0.30, 0)]
-        c.poly(pts, lum=235, alpha=255)
-        pts = [rot(-r, 0), rot(0, -r * 0.30), rot(r, 0), rot(0, r * 0.30)]
-        c.poly(pts, lum=235, alpha=255)
-    elif family == "sacred":
-        # Upright cross with a widened head
-        c.poly([rot(-r * 0.22, -r), rot(r * 0.22, -r), rot(r * 0.22, r), rot(-r * 0.22, r)],
-               lum=235, alpha=255)
-        c.poly([rot(-r * 0.75, -r * 0.25), rot(r * 0.75, -r * 0.25),
-                rot(r * 0.75, r * 0.15), rot(-r * 0.75, r * 0.15)], lum=235, alpha=255)
-    elif family == "wild":
-        # Leaf: two mirrored arcs closed at the tips
-        c.poly([rot(0, -r), rot(r * 0.62, 0), rot(0, r), rot(-r * 0.62, 0)],
-               lum=225, alpha=255)
-        c.line(*rot(0, -r), *rot(0, r), 0.006, lum=90, alpha=255)
-    elif family == "martial":
-        # Chevron
-        c.poly([rot(0, -r), rot(r * 0.70, r * 0.35), rot(r * 0.34, r * 0.35),
-                rot(0, -r * 0.30), rot(-r * 0.34, r * 0.35), rot(-r * 0.70, r * 0.35)],
-               lum=235, alpha=255)
-    elif family == "umbral":
-        # Crescent: a disc with a disc bitten out of it
-        c.disc(x, y, r * 0.85, lum=225, alpha=255)
-        ox, oy = rot(r * 0.45, -r * 0.20)
-        c.disc(ox, oy, r * 0.70, lum=0, alpha=0)
-    elif family == "draconic":
-        # Scale
-        c.poly([rot(0, -r), rot(r * 0.72, r * 0.10), rot(0, r), rot(-r * 0.72, r * 0.10)],
-               lum=230, alpha=255)
-        c.poly([rot(0, -r * 0.35), rot(r * 0.34, r * 0.18), rot(0, r * 0.52),
-                rot(-r * 0.34, r * 0.18)], lum=120, alpha=255)
+    c.ring(0.5, 0.5, FILL_OUTER, FILL_INNER, lum=235, alpha=255)
+    # The same narrow-lip bevel trick the casing uses, so the arc reads as a
+    # solid inlay rather than a flat band.
+    band = FILL_OUTER - FILL_INNER
+    c.ring(0.5, 0.5, FILL_OUTER, FILL_OUTER - band * 0.14, lum=255, alpha=255)
+    c.ring(0.5, 0.5, FILL_INNER + band * 0.12, FILL_INNER, lum=180, alpha=255)
+
+    c.apply_light(strength=0.25)
+    return c.resolve(alpha_blur=0.5)
 
 
-# Per-class variation WITHIN a family. Without this the thirteen strips would be
-# six unique images copied out under thirteen names -- ~700 KB of pure
-# duplication, and a Warlock band indistinguishable from a Mage one. The family
-# still owns the glyph vocabulary; a class varies the rhythm it is laid out in.
-#
-#   phase   rotates the whole ring, so two classes never line up
-#   pips    small studs set between the glyphs
-#   alt     every second glyph drawn smaller, giving a two-beat rhythm
-CLASS_VARIANT = {
-    "MAGE":        dict(phase=0.00, pips=False, alt=False),
-    "WARLOCK":     dict(phase=0.50, pips=True,  alt=True),
-    "PRIEST":      dict(phase=0.00, pips=False, alt=False),
-    "PALADIN":     dict(phase=0.50, pips=True,  alt=False),
-    "DRUID":       dict(phase=0.00, pips=False, alt=False),
-    "SHAMAN":      dict(phase=0.33, pips=True,  alt=False),
-    "HUNTER":      dict(phase=0.66, pips=False, alt=True),
-    "WARRIOR":     dict(phase=0.00, pips=False, alt=False),
-    "DEATHKNIGHT": dict(phase=0.50, pips=True,  alt=True),
-    "MONK":        dict(phase=0.25, pips=False, alt=True),
-    "ROGUE":       dict(phase=0.00, pips=False, alt=True),
-    "DEMONHUNTER": dict(phase=0.50, pips=True,  alt=False),
-    "EVOKER":      dict(phase=0.00, pips=True,  alt=False),
-}
+def build_track() -> Image.Image:
+    """The recessed groove, drawn statically under the arcs. Without it an
+    empty or nearly-empty channel is invisible against the cavity and the arc
+    appears from nowhere; with it the eye knows the path before the fill does."""
+    c = Canvas(CASING_SIZE, SS)
 
+    c.ring(0.5, 0.5, FILL_OUTER, FILL_INNER, lum=30, alpha=215)
+    # Groove lips: dark inside the recess, a faint catch-light on the rim.
+    band = FILL_OUTER - FILL_INNER
+    c.ring(0.5, 0.5, FILL_OUTER, FILL_OUTER - band * 0.10, lum=8, alpha=235)
+    c.ring(0.5, 0.5, FILL_OUTER + 0.006, FILL_OUTER, lum=110, alpha=160)
+    c.ring(0.5, 0.5, FILL_INNER, FILL_INNER - 0.006, lum=95, alpha=140)
 
-def build_rune_quarter(class_token: str, tier: int) -> Image.Image:
-    family = FAMILY_BY_CLASS[class_token]
-    var = CLASS_VARIANT[class_token]
-
-    c = Canvas(RUNE_QUARTER, SS)
-    count = RUNE_COUNTS[tier]
-    radius = 0.375
-    glyph_r = 0.045 if count <= 8 else 0.036
-    step = 2 * math.pi / count
-    phase = var["phase"] * step
-
-    # Guide track: a hairline the glyphs sit on, so a sparse tier still reads as
-    # a band rather than as scattered marks.
-    c.ring(0.5, 0.5, radius + 0.0035, radius - 0.0035, lum=70, alpha=170)
-
-    for i in range(count):
-        a = i * step - math.pi / 2 + phase
-        gx, gy = 0.5 + math.cos(a) * radius, 0.5 + math.sin(a) * radius
-        r = glyph_r * (0.62 if (var["alt"] and i % 2) else 1.0)
-        _glyph(c, family, gx, gy, r, a + math.pi / 2)
-
-    if var["pips"]:
-        for i in range(count):
-            a = (i + 0.5) * step - math.pi / 2 + phase
-            c.disc(0.5 + math.cos(a) * radius, 0.5 + math.sin(a) * radius,
-                   glyph_r * 0.22, lum=200, alpha=255)
-
-    c.apply_light(strength=0.30)
-    return c.resolve(alpha_blur=0.45)
-
-
-def build_rune_sheet(class_token: str) -> Image.Image:
-    """2x2 atlas: quarters 1,2 on the top row and 3,4 on the bottom.
-
-    Must match SigilSkins:GetBandTexCoord exactly.
-    """
-    sheet = Image.new("RGBA", (RUNE_SHEET, RUNE_SHEET), (0, 0, 0, 0))
-    for tier in (1, 2, 3, 4):
-        zero = tier - 1
-        col, row = zero % 2, zero // 2
-        sheet.paste(build_rune_quarter(class_token, tier),
-                    (col * RUNE_QUARTER, row * RUNE_QUARTER))
-    return sheet
+    c.apply_light(strength=0.20)
+    return c.resolve(alpha_blur=0.5)
 
 
 # --------------------------------------------------------------------------
 # CRESTS -- the class mark at 6 o'clock
 # --------------------------------------------------------------------------
 
-# Backing plate per family. The plate is what makes a family legible from
-# across the screen; the motif is what tells two classes in it apart.
-PLATE_BY_FAMILY = {
-    "arcane": "lozenge",
-    "sacred": "arch",
-    "wild": "roundel",
-    "martial": "shield",
-    "umbral": "spike",
-    "draconic": "scale",
-}
-
-
-def _plate(c: Canvas, kind: str):
-    """Draw the family backing plate: bright rim, darker body.
-
-    The rim follows the plate's OWN silhouette. Stamping a circular ring over
-    every plate -- the obvious shortcut -- turns shield, lozenge, arch and spike
-    all into roundels and throws away the family distinction the plate exists
-    to carry. So each plate is described once as a shape function and drawn
-    twice, the second time inset toward the centre.
-    """
-    cx, cy, r = 0.5, 0.52, 0.40
-
-    def scaled(pts, k):
-        return [(cx + (x - cx) * k, cy + (y - cy) * k) for x, y in pts]
-
-    outlines = {
-        "shield": [(cx - r, cy - r * 0.85), (cx + r, cy - r * 0.85),
-                   (cx + r, cy + r * 0.15), (cx, cy + r), (cx - r, cy + r * 0.15)],
-        "lozenge": [(cx, cy - r), (cx + r * 0.82, cy), (cx, cy + r), (cx - r * 0.82, cy)],
-        "spike": [(cx, cy - r), (cx + r * 0.72, cy - r * 0.25), (cx + r * 0.44, cy + r),
-                  (cx - r * 0.44, cy + r), (cx - r * 0.72, cy - r * 0.25)],
-        "scale": [(cx, cy - r), (cx + r * 0.85, cy - r * 0.15), (cx, cy + r),
-                  (cx - r * 0.85, cy - r * 0.15)],
-        # Arch is a half-round over a tapered base, flattened into one outline
-        # so it insets like the rest instead of needing its own special case.
-        "arch": ([(cx + math.cos(math.pi + i / 12 * math.pi) * r * 0.88,
-                   cy - r * 0.06 + math.sin(math.pi + i / 12 * math.pi) * r * 0.88)
-                  for i in range(13)]
-                 + [(cx + r * 0.70, cy + r * 0.92), (cx - r * 0.70, cy + r * 0.92)]),
-    }
-
-    RIM, BODY = 205, 96
-
-    if kind == "roundel":
-        c.disc(cx, cy, r * 0.97, lum=RIM, alpha=255)
-        c.disc(cx, cy, r * 0.86, lum=BODY, alpha=255)
-        return
-
-    pts = outlines[kind]
-    c.poly(pts, lum=RIM, alpha=255)
-    c.poly(scaled(pts, 0.86), lum=BODY, alpha=255)
+# The medallion: the official class crests are uniformly ROUND badges -- one
+# circular frame per class with the class motif inside -- so the plate is a
+# single medallion for everyone (2026-08-16; the six family plate shapes moved
+# aside once the family identity migrated into the casing theming). Bright rim,
+# thin accent ring, darker body: the badge construction, drawn from primitives.
+def _medallion(c: Canvas):
+    cx, cy, r = 0.5, 0.52, 0.42
+    c.disc(cx, cy, r, lum=205, alpha=255)                      # rim
+    c.disc(cx, cy, r * 0.90, lum=96, alpha=255)                # body
+    c.ring(cx, cy, r * 0.84, r * 0.81, lum=175, alpha=255)     # accent ring
 
 
 def _motif(c: Canvas, class_token: str):
-    """An abstract heraldic mark per class.
+    """The class\'s iconic motif, drawn fresh from primitives.
 
-    These are marks, not portraits. At 64px a recognisable weapon silhouette is
-    not achievable and would turn to mud, so each class gets a bold, simple,
-    distinguishable device instead -- the same discipline real heraldry uses at
-    small sizes.
+    Aimed at the official class crests\' ICONOGRAPHY -- crossed swords, the
+    warhammer, the drawn bow, paired daggers, the winged holy orb, the crossed
+    warglaives -- while shipping nothing traced, copied or derived from
+    Blizzard\'s artwork. Motifs are concepts; the drawings here are ours.
+    Bold and simple on purpose: at 64px detail turns to mud.
     """
     cx, cy = 0.5, 0.52
     W = 0.030   # standard stroke
@@ -485,13 +566,17 @@ def _motif(c: Canvas, class_token: str):
                lum=245, alpha=255)
         c.poly([(cx + 0.06, cy - 0.26), (cx + 0.16, cy - 0.26), (cx + 0.11, cy + 0.26)],
                lum=245, alpha=255)
-    elif class_token == "PRIEST":                    # radiant point
-        c.disc(cx, cy - 0.04, 0.11, lum=250, alpha=255)
-        for k in range(8):
-            a = k * math.pi / 4
-            c.line(cx + math.cos(a) * 0.14, cy - 0.04 + math.sin(a) * 0.14,
-                   cx + math.cos(a) * 0.27, cy - 0.04 + math.sin(a) * 0.27,
-                   W * 0.55, lum=225, alpha=255)
+    elif class_token == "PRIEST":                    # winged holy orb
+        c.disc(cx, cy - 0.02, 0.10, lum=250, alpha=255)
+        for k in range(3):                           # three rays above the orb
+            a = -math.pi / 2 + (k - 1) * 0.5
+            c.line(cx + math.cos(a) * 0.13, cy - 0.02 + math.sin(a) * 0.13,
+                   cx + math.cos(a) * 0.27, cy - 0.02 + math.sin(a) * 0.27,
+                   W * 0.55, lum=230, alpha=255)
+        for side in (-1, 1):                         # swept wings at the sides
+            c.poly([(cx + side * 0.12, cy + 0.02), (cx + side * 0.30, cy - 0.10),
+                    (cx + side * 0.26, cy + 0.06), (cx + side * 0.12, cy + 0.10)],
+                   lum=235, alpha=255)
     elif class_token == "DEATHKNIGHT":               # runeblade
         c.poly([(cx - 0.09, cy - 0.28), (cx + 0.09, cy - 0.28),
                 (cx + 0.09, cy + 0.14), (cx, cy + 0.29), (cx - 0.09, cy + 0.14)],
@@ -529,14 +614,13 @@ def _motif(c: Canvas, class_token: str):
                     (cx + off + 0.02, cy - 0.26 + abs(off) * 0.5),
                     (cx + off - 0.02, cy - 0.26 + abs(off) * 0.5)],
                    lum=245 - k * 8, alpha=255)
-    elif class_token == "DEMONHUNTER":               # swept horns over a blindfold
-        # Solid tapered horns, not arcs: at 64px a stroked arc closes up into a
-        # blob and the pair reads as a single lump.
-        c.poly([(cx - 0.07, cy - 0.04), (cx - 0.17, cy - 0.30), (cx - 0.28, cy - 0.12),
-                (cx - 0.18, cy - 0.02)], lum=245, alpha=255)
-        c.poly([(cx + 0.07, cy - 0.04), (cx + 0.17, cy - 0.30), (cx + 0.28, cy - 0.12),
-                (cx + 0.18, cy - 0.02)], lum=245, alpha=255)
-        c.line(cx - 0.26, cy + 0.12, cx + 0.26, cy + 0.12, W * 1.0, lum=215, alpha=255)
+    elif class_token == "DEMONHUNTER":               # crossed warglaives
+        # Each glaive: a crescent blade (thick arc) with a short centre grip.
+        for side in (-1, 1):
+            gx = cx + side * 0.05
+            c.arc(gx, cy, 0.24, 250 - side * 20, 470 - side * 20,
+                  W * 1.15, lum=245, alpha=255)
+            c.line(gx - 0.07, cy, gx + 0.07, cy, W * 0.8, lum=200, alpha=255)
     elif class_token == "EVOKER":                    # wing
         c.poly([(cx - 0.26, cy + 0.22), (cx - 0.02, cy - 0.28), (cx + 0.06, cy - 0.02),
                 (cx + 0.24, cy - 0.16), (cx + 0.12, cy + 0.24)], lum=245, alpha=255)
@@ -545,7 +629,7 @@ def _motif(c: Canvas, class_token: str):
 
 def build_crest(class_token: str) -> Image.Image:
     c = Canvas(CREST_SIZE, CREST_SS)
-    _plate(c, PLATE_BY_FAMILY[FAMILY_BY_CLASS[class_token]])
+    _medallion(c)
     _motif(c, class_token)
     c.apply_light(strength=0.32)
     return c.resolve(alpha_blur=0.35)
@@ -576,16 +660,16 @@ def main() -> int:
         casings[tier] = img
         save_tga(img, os.path.join(args.out, f"sigil-casing-{tier}.tga"))
         written += 1
-        print(f"  tier {tier}")
-
-    print("rune bands")
-    sheets = {}
-    for class_token in CLASSES:
-        sheet = build_rune_sheet(class_token)
-        sheets[class_token] = sheet
-        save_tga(sheet, os.path.join(args.out, f"sigil-runes-{class_token.lower()}.tga"))
-        written += 1
-        print(f"  {class_token.lower()}")
+        print(f"  neutral tier {tier}")
+    themed = {}
+    for family in FAMILY_STYLE:
+        themed[family] = {}
+        for tier in (1, 2, 3, 4):
+            img = build_casing(tier, family)
+            themed[family][tier] = img
+            save_tga(img, os.path.join(args.out, f"sigil-casing-{family}-{tier}.tga"))
+            written += 1
+        print(f"  {family}")
 
     print("crests")
     crests = {}
@@ -596,15 +680,21 @@ def main() -> int:
         written += 1
         print(f"  {class_token.lower()}")
 
+    print("fill channel")
+    save_tga(build_fill(), os.path.join(args.out, "sigil-fill.tga"))
+    save_tga(build_track(), os.path.join(args.out, "sigil-track.tga"))
+    written += 2
+    print("  fill + track")
+
     print(f"\n{written} TGA files written to {args.out}")
 
     if args.preview:
-        _write_previews(here, casings, sheets, crests)
+        _write_previews(here, casings, crests)
 
     return 0
 
 
-def _write_previews(raw_dir, casings, sheets, crests):
+def _write_previews(raw_dir, casings, crests):
     """Contact sheets on a dark slate, tinted like a class colour would tint
     them, so the output can be judged the way it will actually be seen."""
     def tinted(img, rgb):
@@ -616,21 +706,13 @@ def _write_previews(raw_dir, casings, sheets, crests):
 
     gold = (1.0, 0.82, 0.42)
 
-    sheet = Image.new("RGBA", (4 * 256, 256), (24, 24, 30, 255))
-    for i, tier in enumerate((1, 2, 3, 4)):
-        sheet.alpha_composite(tinted(casings[tier], gold), (i * 256, 0))
+    families = ["neutral"] + list(FAMILY_STYLE)
+    sheet = Image.new("RGBA", (4 * 256, len(families) * 256), (24, 24, 30, 255))
+    for row, family in enumerate(families):
+        for i, tier in enumerate((1, 2, 3, 4)):
+            img = casings[tier] if family == "neutral" else build_casing(tier, family)
+            sheet.alpha_composite(tinted(img, gold), (i * 256, row * 256))
     sheet.convert("RGB").save(os.path.join(raw_dir, "sigil-preview-casings.png"))
-
-    # One tier-4 quarter per class, so per-class variation inside a family is
-    # visible side by side rather than having to be taken on trust.
-    cols = 7
-    rows = (len(CLASSES) + cols - 1) // cols
-    band = Image.new("RGBA", (cols * 224, rows * 224), (24, 24, 30, 255))
-    for i, ct in enumerate(CLASSES):
-        q = sheets[ct].crop((RUNE_QUARTER, RUNE_QUARTER, RUNE_SHEET, RUNE_SHEET))
-        q = tinted(q, gold).resize((224, 224), Image.LANCZOS)
-        band.alpha_composite(q, ((i % cols) * 224, (i // cols) * 224))
-    band.convert("RGB").save(os.path.join(raw_dir, "sigil-preview-runes.png"))
 
     cols, cell = 7, 96
     rows = (len(CLASSES) + cols - 1) // cols

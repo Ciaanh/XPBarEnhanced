@@ -2,6 +2,11 @@
 -- Companion ring for the secondary source. Always the procedural halo, never
 -- tier art: tier art means XP, and this bar is never tracking XP. Follows
 -- OrbSecondaryBarStyle's contract.
+--
+-- Progress is a clockwise arc (Amendment A), like the primary: one paused
+-- Cooldown sweeping the annulus channel. A thin swept ring is MORE halo-like
+-- than the masked liquid fill it replaces, so the companion converges on its
+-- design intent. The Bar StatusBar stays as an alpha-0 data carrier.
 
 local Addon = XPBarEnhanced
 
@@ -31,8 +36,13 @@ local StyleHelpers = setmetatable({}, {
 XPBarSigilReputationMixin = {}
 local StyleMixin = {}
 
-local CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local TEX_RING = "Interface\\AddOns\\XPBarEnhanced\\assets\\border"
+local TEX_ARC_FILL = "Interface\\AddOns\\XPBarEnhanced\\assets\\sigil-fill"
+local TEX_ARC_TRACK = "Interface\\AddOns\\XPBarEnhanced\\assets\\sigil-track"
+-- Sweep origin at 6 o'clock, matching the primary ring, even though the
+-- companion has no crest: the two arcs should start at the same place.
+local ARC_ROTATION = math.pi
+local ARC_DURATION = 100
 
 local SIGIL_SECONDARY_SIZE = 70
 
@@ -82,7 +92,22 @@ function StyleMixin:Render(context)
 
     local color = StyleHelpers.GetFactionColor and StyleHelpers.GetFactionColor(context)
         or {r = 0.7, g = 0.3, b = 0.85, a = 1}
+    -- The Bar is the alpha-0 data carrier; the shared helper keeps computing
+    -- the ratio and writing it, and the arc reads it back for the visual.
     SharedStyleHelpers.ApplyStatusBarProgress(self.Bar, context, color)
+
+    if self.ArcFill then
+        self.ArcFill:SetSwipeColor(color.r, color.g, color.b, color.a or 1)
+        local fraction = (self.Bar and self.Bar.GetValue and self.Bar:GetValue()) or 0
+        if fraction <= 0.0001 then
+            self.ArcFill:Clear()
+            self.ArcFill:Hide()
+        else
+            self.ArcFill:Show()
+            self.ArcFill:SetCooldown(GetTime() - math.min(fraction, 1) * ARC_DURATION, ARC_DURATION)
+            self.ArcFill:Pause()
+        end
+    end
 
     -- The halo tracks the source colour, so the companion ring reads as
     -- belonging to whatever it is showing.
@@ -134,28 +159,50 @@ function StyleMixin:OnDragStop()
 end
 
 function StyleMixin:OnSecondaryLoad()
-    -- Clip the fill (it only exists at runtime) to the ring circle
+    -- The Bar is a data carrier only: the arc renders the progress. Hide it at
+    -- FRAME level (the terminal trick) -- texture-level alpha does not survive,
+    -- because ApplyStatusBarProgress recolours the bar every render and
+    -- SetStatusBarColor writes the fill texture's vertex alpha back to 1.
     if self.Bar then
-        local fillMask = self.Bar:CreateMaskTexture()
-        fillMask:SetTexture(CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-        fillMask:SetAllPoints(self)
+        self.Bar:SetAlpha(0)
+    end
 
-        local fillTexture = self.Bar.GetStatusBarTexture and self.Bar:GetStatusBarTexture()
-        if fillTexture and fillTexture.AddMaskTexture then
-            fillTexture:AddMaskTexture(fillMask)
+    -- The groove the arc runs in, then the arc itself.
+    if self.Cavity and not self.ArcTrack then
+        local track = self.Cavity:CreateTexture(nil, "BORDER")
+        track:SetTexture(TEX_ARC_TRACK)
+        track:SetAllPoints(self.Cavity)
+        self.ArcTrack = track
+    end
+
+    if not self.ArcFill then
+        local arc = CreateFrame("Cooldown", nil, self, "CooldownFrameTemplate")
+        arc:SetAllPoints(self.Cavity or self)
+        arc:EnableMouse(false)
+        arc:SetReverse(true)
+        arc:SetSwipeTexture(TEX_ARC_FILL)
+        arc:SetDrawEdge(false)
+        arc:SetDrawBling(false)
+        arc:SetHideCountdownNumbers(true)
+        if arc.SetRotation then
+            arc:SetRotation(ARC_ROTATION)
         end
+        if self.Bar then
+            arc:SetFrameLevel(self.Bar:GetFrameLevel() + 1)
+        end
+        self.ArcFill = arc
     end
 
     if self.RingOverlay and self.RingOverlay.Halo then
         self.RingOverlay.Halo:SetTexture(TEX_RING)
     end
 
-    -- Sibling frames share a frame level; force the ring dressing above the fill
-    -- StatusBar and the label above both.
+    -- Sibling frames share a frame level; the stack bottom-up is carrier Bar,
+    -- fill arc (+1, set above), ring dressing, label.
     if self.RingOverlay and self.Bar then
-        self.RingOverlay:SetFrameLevel(self.Bar:GetFrameLevel() + 1)
+        self.RingOverlay:SetFrameLevel(self.Bar:GetFrameLevel() + 2)
         if self.LabelContainer then
-            self.LabelContainer:SetFrameLevel(self.Bar:GetFrameLevel() + 2)
+            self.LabelContainer:SetFrameLevel(self.Bar:GetFrameLevel() + 3)
         end
     end
 
