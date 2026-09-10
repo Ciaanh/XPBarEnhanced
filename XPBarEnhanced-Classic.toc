@@ -1,5 +1,4 @@
-## Interface: 120100
-## Interface-Retail: 120100
+## Interface: 11508, 11509
 
 ## Title: XP Bar Enhanced
 ## Notes: Enhanced XP bar with quest XP tracking and comprehensive statistics
@@ -16,7 +15,7 @@
 ## X-WoWI-ID: 27090
 ## X-License: MIT
 ## X-Localizations: enUS
-## X-Compatibility: Retail, Classic Era
+## X-Compatibility: Classic Era
 ## X-Embeds: LibStub, AceLocale-3.0
 ## DefaultState: enabled
 
@@ -57,8 +56,6 @@ core\config\ReadoutPresets.lua
 core\services\Database.lua
 core\services\ProfileManager.lua
 core\services\Session.lua
-core\services\ReputationSession.lua
-core\services\HousingSession.lua
 core\services\HonorSession.lua
 core\services\ProfessionSession.lua
 core\services\GoalTracker.lua

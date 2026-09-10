@@ -172,7 +172,7 @@ function Collection:EnsureFrames()
 
         local icon = self.bagButton:CreateTexture(nil, "ARTWORK")
         icon:SetSize(18, 18)
-        icon:SetTexture(tonumber(C_AddOns.GetAddOnMetadata("XPBarEnhanced", "IconTexture")) or 4675649)
+        icon:SetTexture("Interface\\GossipFrame\\ActiveQuestIcon")
         icon:SetPoint("CENTER")
         self.bagButton.icon = icon
 

@@ -15,10 +15,11 @@ local L = Addon.L or {}
 
 --- Update text element visibility based on config
 function XPBarTextMixin:UpdateTextVisibility(context)
-	-- Respect Blizzard's global xpBarText CVar as a master toggle for on-bar text.
-	-- When the CVar is OFF, hide LevelText/XPText/PercentText regardless of addon settings.
+	-- Retail exposes a global xpBarText CVar, but Classic does not reliably
+	-- expose the same status-text behavior. The addon's display options are
+	-- therefore the source of truth for all supported game flavors.
 	local blizzardTextEnabled = true
-	if GetCVarBool then
+	if not Addon.IsClassicEra and GetCVarBool then
 		local cvarValue = GetCVarBool("xpBarText")
 		if cvarValue ~= nil then
 			blizzardTextEnabled = cvarValue

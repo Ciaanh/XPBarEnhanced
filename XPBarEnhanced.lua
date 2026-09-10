@@ -9,6 +9,11 @@ ns = ns or {}
 XPBarEnhanced = ns
 local Addon = ns
 Addon.L = LibStub("AceLocale-3.0"):GetLocale(ADDON_NAME, true)
+Addon.IsClassicEra = rawget(_G, "WOW_PROJECT_ID") == rawget(_G, "WOW_PROJECT_CLASSIC")
+if not Addon.IsClassicEra and GetBuildInfo then
+    local interfaceVersion = tonumber(select(4, GetBuildInfo())) or 0
+    Addon.IsClassicEra = interfaceVersion >= 11500 and interfaceVersion < 12000
+end
 
 Addon.EventNames = {
     XPBAR_BROADCAST_UPDATE = "XPBAR:BROADCAST_UPDATE",

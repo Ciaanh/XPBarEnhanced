@@ -14,27 +14,27 @@
                     <Anchor point="TOPLEFT" x="4" y="-4"/>
                 </Anchors>
                 <Frames>
-                    <Button parentKey="Tab_visual" inherits="PanelTabButtonTemplate" text="Visual">
+                    <Button name="XPBarEnhancedOptionsTabVisual" parentKey="Tab_visual" inherits="PanelTabButtonTemplate" text="Visual">
                         <Anchors>
                             <Anchor point="BOTTOMLEFT" x="4" y="0"/>
                         </Anchors>
                     </Button>
-                    <Button parentKey="Tab_text" inherits="PanelTabButtonTemplate" text="Text">
+                    <Button name="XPBarEnhancedOptionsTabText" parentKey="Tab_text" inherits="PanelTabButtonTemplate" text="Text">
                         <Anchors>
                             <Anchor point="LEFT" relativeKey="$parent.Tab_visual" relativePoint="RIGHT" x="5" y="0"/>
                         </Anchors>
                     </Button>
-                    <Button parentKey="Tab_behavior" inherits="PanelTabButtonTemplate" text="Behavior">
+                    <Button name="XPBarEnhancedOptionsTabBehavior" parentKey="Tab_behavior" inherits="PanelTabButtonTemplate" text="Behavior">
                         <Anchors>
                             <Anchor point="LEFT" relativeKey="$parent.Tab_text" relativePoint="RIGHT" x="5" y="0"/>
                         </Anchors>
                     </Button>
-                    <Button parentKey="Tab_secondary" inherits="PanelTabButtonTemplate" text="Secondary Bar">
+                    <Button name="XPBarEnhancedOptionsTabSecondary" parentKey="Tab_secondary" inherits="PanelTabButtonTemplate" text="Secondary Bar">
                         <Anchors>
                             <Anchor point="LEFT" relativeKey="$parent.Tab_behavior" relativePoint="RIGHT" x="5" y="0"/>
                         </Anchors>
                     </Button>
-                    <Button parentKey="Tab_colors" inherits="PanelTabButtonTemplate" text="Colors">
+                    <Button name="XPBarEnhancedOptionsTabColors" parentKey="Tab_colors" inherits="PanelTabButtonTemplate" text="Colors">
                         <Anchors>
                             <Anchor point="LEFT" relativeKey="$parent.Tab_secondary" relativePoint="RIGHT" x="5" y="0"/>
                         </Anchors>

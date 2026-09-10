@@ -69,6 +69,13 @@ local ROW_OWNER_STYLE = {
     terminalUseCustomColors     = "terminal",
 }
 
+local CLASSIC_HIDDEN_OPTIONS = {
+    hideCompanionOutsideDelve = true,
+    secondaryReputation = true,
+    secondaryHousing = true,
+    secondaryHonor = true,
+}
+
 -- The Colors tab carries one swatch per secondary-bar source, but only one source
 -- is ever on screen. The active source's swatch stays out in the open; the other
 -- three fold into a disclosure and read as inactive.
@@ -308,7 +315,9 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
             -- RefreshRowAvailability, which enables or disables instead.
             local tabMatch = (childTab == tabId)
             local disclosureOk = self:IsDisclosureExpanded(self:GetEffectiveDisclosureGroup(child))
-            child:SetShown(tabMatch and disclosureOk)
+            local classicHidden = Addon.IsClassicEra
+                and CLASSIC_HIDDEN_OPTIONS[child.configKey]
+            child:SetShown(tabMatch and disclosureOk and not classicHidden)
         end
     end
 
@@ -331,8 +340,8 @@ function XPBarEnhancedOptionsMixin:SetupTabs()
             btn:SetScript("OnClick", function()
                 self:SelectTab(tab.id)
             end)
-            PanelTemplates_DeselectTab(btn)
             btn.id = tabId
+            PanelTemplates_DeselectTab(btn)
             tabId = tabId + 1
         end
     end
@@ -777,6 +786,14 @@ function XPBarEnhancedOptionsMixin:BuildOptionCheckboxes()
     local container = self.ContentFrame.OptionsContainer
     local childFrames = CollectChildrenByConfigKey(container)
 
+    if Addon.IsClassicEra then
+        for key in pairs(CLASSIC_HIDDEN_OPTIONS) do
+            if childFrames[key] then
+                childFrames[key]:Hide()
+            end
+        end
+    end
+
     for _, key in ipairs(Config.optionOrder or {}) do
         local detail = Config.optionDetails and Config.optionDetails[key]
         local frame = childFrames[key]
@@ -840,6 +857,15 @@ function XPBarEnhancedOptionsMixin:BuildColorControls()
             local controls = ControlHelpers.SetupColorRow(self, row, info)
             if controls then
                 self.colorControls[info.key] = controls
+            end
+        end
+    end
+
+    if Addon.IsClassicEra then
+        for key in pairs(CLASSIC_HIDDEN_OPTIONS) do
+            local row = rowsByKey[key]
+            if row then
+                row:Hide()
             end
         end
     end
@@ -991,6 +1017,7 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     -- Called continuously as the user changes color/opacity
     local function applyColor(restore, ...)
         local pr, pg, pb, opacity
+        local callbackR, callbackG, callbackB = ...
 
         if type(restore) == "table" then
             pr = clamp01(restore.r or restore[1] or r)
@@ -1000,6 +1027,13 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
             if restoreAlpha ~= nil then
                 opacity = clamp01(restoreAlpha)
             end
+        end
+
+        if not pr and type(restore) == "number" then
+            pr = clamp01(restore)
+            pg = clamp01(callbackR or g)
+            pb = clamp01(callbackG or b)
+            opacity = callbackB and clamp01(callbackB) or nil
         end
 
         if not pr then
@@ -1063,22 +1097,15 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
         end
     end
 
-    if ColorPickerFrame and ColorPickerFrame.SetColorRGB then
-        ColorPickerFrame.func = applyColor
-        ColorPickerFrame.opacityFunc = applyColor
-        ColorPickerFrame.cancelFunc = cancelColor
-
-        ColorPickerFrame.hasOpacity = true
-        ColorPickerFrame.opacity = a
-        ColorPickerFrame.previousValues = {r = r, g = g, b = b, a = a}
-        ColorPickerFrame:SetColorRGB(r, g, b)
-        ColorPickerFrame:Hide()
-        ColorPickerFrame:Show()
-    elseif ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow then
+    if ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow then
         ColorPickerFrame:SetupColorPickerAndShow(
             {
-                swatchFunc = applyColor,
-                opacityFunc = applyColor,
+                swatchFunc = function()
+                    applyColor()
+                end,
+                opacityFunc = function()
+                    applyColor()
+                end,
                 cancelFunc = cancelColor,
                 hasOpacity = true,
                 opacity = a,
@@ -1088,6 +1115,25 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
                 previousValues = {r = r, g = g, b = b, a = a}
             }
         )
+        -- Some Classic builds still invoke the legacy callback from the OK
+        -- button even after the modern picker has been opened. The Classic
+        -- XML specifically invokes swatchFunc() from the OK button.
+        ColorPickerFrame.swatchFunc = applyColor
+        ColorPickerFrame.opacityFunc = applyColor
+        ColorPickerFrame.cancelFunc = cancelColor
+        ColorPickerFrame.func = applyColor
+    elseif ColorPickerFrame and ColorPickerFrame.SetColorRGB then
+        ColorPickerFrame.func = applyColor
+        ColorPickerFrame.swatchFunc = applyColor
+        ColorPickerFrame.opacityFunc = applyColor
+        ColorPickerFrame.cancelFunc = cancelColor
+
+        ColorPickerFrame.hasOpacity = true
+        ColorPickerFrame.opacity = a
+        ColorPickerFrame.previousValues = {r = r, g = g, b = b, a = a}
+        ColorPickerFrame:SetColorRGB(r, g, b)
+        ColorPickerFrame:Hide()
+        ColorPickerFrame:Show()
     else
         local OpenColorPicker = rawget(_G, "OpenColorPicker")
         if OpenColorPicker then
@@ -1805,6 +1851,6 @@ end
 Addon.UI = Addon.UI or {}
 Addon.UI.Mixins = Addon.UI.Mixins or {}
 Addon.UI.Mixins.XPBarEnhancedOptionsMixin = XPBarEnhancedOptionsMixin
-_G.XPBarEnhancedOptionsMixin = XPBarEnhancedOptionsMixin
+rawset(_G, "XPBarEnhancedOptionsMixin", XPBarEnhancedOptionsMixin)
 
 return Options

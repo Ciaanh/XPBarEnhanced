@@ -73,7 +73,7 @@ function Feed:Initialize()
     self._dataObject = ldb:NewDataObject("XPBarEnhanced", {
         type = "data source",
         label = L["LDB_LABEL"],
-        icon = 4675649, -- matches the TOC IconTexture
+        icon = "Interface\\GossipFrame\\ActiveQuestIcon",
         text = "",
         OnClick = function()
             if Addon.Stats and Addon.Stats.Toggle then

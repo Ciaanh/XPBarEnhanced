@@ -71,6 +71,21 @@ function BaseMixin:OnLoad()
 	-- Initialize internal config
 	self.__xpbar_config = self.__xpbar_config or {}
 
+	-- Text elements are declared inside style-specific containers in XML. Expose
+	-- them on the bar frame because TextMixin renders through these direct keys.
+	local onBarText = self.OverlayFrameTextContainer
+	if onBarText then
+		self.LevelText = self.LevelText or onBarText.LevelText
+		self.XPText = self.XPText or onBarText.XPText
+		self.PercentText = self.PercentText or onBarText.PercentText
+	end
+	local belowBarText = self.BelowBarTextContainer
+	if belowBarText then
+		self.RateText = self.RateText or belowBarText.RateText
+		self.SessionText = self.SessionText or belowBarText.SessionText
+		self.QuestSummaryText = self.QuestSummaryText or belowBarText.QuestSummaryText
+	end
+
 	-- Initialize animation system (from AnimationBase mixin)
 	if self.InitializeAnimation then
 		self:InitializeAnimation()

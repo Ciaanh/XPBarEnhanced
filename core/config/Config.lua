@@ -67,6 +67,10 @@ end
 ---Initialize configuration state and migrate any classic settings
 function Config:Initialize()
     -- Configuration is now managed by Database module
+    if Addon.IsClassicEra and Addon.db and Addon.db.secondaryBarSource ~= "profession" then
+        Addon.db.secondaryBarSource = "profession"
+    end
+
     -- Migrate single barPosition to per-style barPositions if needed
     if Addon and Addon.db then
         if not Addon.db.barPositions then

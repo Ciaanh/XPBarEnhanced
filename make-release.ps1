@@ -29,6 +29,7 @@ $stageDir = Join-Path $projectRoot "XPBarEnhanced"
 $includes = @(
     "XPBarEnhanced.lua",
     "XPBarEnhanced.toc",
+    "XPBarEnhanced-Classic.toc",
     "LICENSE",
     "README.md",
     "core",
