@@ -162,13 +162,13 @@ function Shared.ShowSecondaryTooltip(frame, context, anchor)
     GameTooltip:AddLine(context.name or "", 1, 1, 1)
 
     if context.isCompanion and context.currentLevel and context.currentLevel > 0 then
-        GameTooltip:AddLine(string.format("Level: %d", context.currentLevel), 0.7, 0.7, 0.7)
+        GameTooltip:AddLine(string.format("%s: %d", Addon.L["TT_LEVEL"], context.currentLevel), 0.7, 0.7, 0.7)
     elseif context.standingLabel and context.standingLabel ~= "" then
         GameTooltip:AddLine(context.standingLabel, 0.7, 0.7, 0.7)
     end
 
     if context.isMaxed then
-        GameTooltip:AddLine("Progress: MAX", 0.7, 1, 0.7)
+        GameTooltip:AddLine(string.format("%s: MAX", Addon.L["TT_PROGRESS"]), 0.7, 1, 0.7)
     else
         local progressText = nil
         local displayCurrent = context.current or 0
@@ -185,29 +185,29 @@ function Shared.ShowSecondaryTooltip(frame, context, anchor)
             progressText = TextFormatter:FormatPercent(displayCurrent, displayMax)
         end
         if progressText then
-            GameTooltip:AddLine(string.format("Progress: %s", progressText), 0.7, 1, 0.7)
+            GameTooltip:AddLine(string.format("%s: %s", Addon.L["TT_PROGRESS"], progressText), 0.7, 1, 0.7)
         end
 
         if TextFormatter and TextFormatter.FormatNumber then
             local currentText = TextFormatter:FormatNumber(displayCurrent, false)
             local maxText = TextFormatter:FormatNumber(displayMax, false)
-            GameTooltip:AddDoubleLine("Current:", currentText .. " / " .. maxText, 0.7, 0.7, 0.7, 0.7, 0.9, 1)
+            GameTooltip:AddDoubleLine(Addon.L["TT_CURRENT"] .. ":", currentText .. " / " .. maxText, 0.7, 0.7, 0.7, 0.7, 0.9, 1)
         end
     end
 
     if context.sessionGained and context.sessionGained > 0 and TextFormatter and TextFormatter.FormatNumber then
         local gained = TextFormatter:FormatNumber(context.sessionGained, false)
-        GameTooltip:AddLine(string.format("Gained: +%s", gained), 0.5, 1, 0.5)
+        GameTooltip:AddLine(string.format("%s: +%s", Addon.L["TT_GAINED"], gained), 0.5, 1, 0.5)
     end
 
     if context.repPerHour and context.repPerHour > 0 and TextFormatter and TextFormatter.FormatNumber then
         local rate = TextFormatter:FormatNumber(context.repPerHour, false)
-        GameTooltip:AddLine(string.format("Rate: %s/hr", rate), 0.5, 0.8, 1)
+        GameTooltip:AddLine(string.format("%s: %s/hr", Addon.L["TT_RATE"], rate), 0.5, 0.8, 1)
     end
 
     if context.timeToNextLevel and context.timeToNextLevel > 0 and TextFormatter and TextFormatter.FormatTime then
         local timeStr = TextFormatter:FormatTime(context.timeToNextLevel, true)
-        GameTooltip:AddLine(string.format("Next: %s", timeStr), 0.8, 0.8, 0.5)
+        GameTooltip:AddLine(string.format("%s: %s", Addon.L["TT_NEXT"], timeStr), 0.8, 0.8, 0.5)
     end
 end
 
@@ -215,7 +215,7 @@ function Shared.AddSecondaryTooltipMoveHint(context)
     local primaryFrame = Addon.BarManager and Addon.BarManager:GetCurrentFrame()
     local isAttachedToPrimary = (Utils and Utils.GetOptionValue or function() return true end)("secondaryBarsAttached", true) and primaryFrame ~= nil
     if not isAttachedToPrimary then
-        GameTooltip:AddLine("Shift+Drag to move", 0.4, 0.4, 0.4)
+        GameTooltip:AddLine(Addon.L["TT_SHIFT_DRAG_MOVE"], 0.4, 0.4, 0.4)
     end
 end
 

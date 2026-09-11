@@ -44,9 +44,15 @@ local function emit(eventName, payload)
 end
 
 local function ensureStorage()
-    Addon.db = Addon.db or {}
-    Addon.db.profiles = Addon.db.profiles or {}
-    Addon.db.characterProfileKeys = Addon.db.characterProfileKeys or {}
+    if type(Addon.db) ~= "table" then
+        Addon.db = {}
+    end
+    if type(Addon.db.profiles) ~= "table" then
+        Addon.db.profiles = {}
+    end
+    if type(Addon.db.characterProfileKeys) ~= "table" then
+        Addon.db.characterProfileKeys = {}
+    end
     return Addon.db
 end
 
@@ -63,7 +69,9 @@ local function getCharacterKey(characterKey)
     -- value issues in 12.0.0+; pcall-guarded with a UnitName fallback.
     local playerName
     if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
-        local ok, name = pcall(C_PlayerInfo.GetName, PlayerLocation:CreateFromUnit("player"))
+        local ok, name = pcall(function()
+            return C_PlayerInfo.GetName(PlayerLocation:CreateFromUnit("player"))
+        end)
         if ok and type(name) == "string" and name ~= "" then
             playerName = name
         end
@@ -114,6 +122,17 @@ end
 function ProfileManager:Initialize()
     local db = ensureStorage()
 
+    for name, profile in pairs(db.profiles) do
+        if type(name) ~= "string" or type(profile) ~= "table" then
+            db.profiles[name] = nil
+        end
+    end
+    for playerKey, profileName in pairs(db.characterProfileKeys) do
+        if type(playerKey) ~= "string" or type(profileName) ~= "string" or type(db.profiles[profileName]) ~= "table" then
+            db.characterProfileKeys[playerKey] = nil
+        end
+    end
+
     -- Backward-compatible migration from older single key experiments.
     if db.activeProfile ~= nil then
         local playerKey = getCharacterKey()
@@ -153,7 +172,9 @@ function ProfileManager:GetProfileNames()
     local profiles = self:GetProfiles()
 
     for name in pairs(profiles) do
-        names[#names + 1] = name
+        if type(name) == "string" and type(profiles[name]) == "table" then
+            names[#names + 1] = name
+        end
     end
 
     table.sort(names, function(left, right)
@@ -186,7 +207,7 @@ function ProfileManager:GetActiveProfileKey()
     end
 
     local profiles = self:GetProfiles()
-    if not profiles[assigned] then
+    if type(assigned) ~= "string" or type(profiles[assigned]) ~= "table" then
         return nil
     end
 

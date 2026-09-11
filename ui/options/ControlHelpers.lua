@@ -10,7 +10,7 @@ local Config = Addon.Config
 
 -- Helper function to resolve locale keys (matches Options.lua)
 local function ResolveLocale(key)
-    return Addon.L and Addon.L[key] or key
+    return Addon.L and rawget(Addon.L, key) or key
 end
 
 -- Play sound helper from Options.lua
@@ -96,6 +96,14 @@ function ControlHelpers.SetupTwoColumnCheckbox(selfFrame, row, key, detail)
 
     -- Register click
     checkbox:SetScript("OnClick", function(btn) CheckboxOnClick(selfFrame, btn, key) end)
+    if row.EnableMouse and row.SetScript then
+        row:EnableMouse(true)
+        row:SetScript("OnMouseUp", function(_, button)
+            if button == "LeftButton" and checkbox:IsEnabled() and not checkbox:IsMouseOver() then
+                checkbox:Click()
+            end
+        end)
+    end
 
     -- Alias for refresh
     selfFrame.controls = selfFrame.controls or {}

@@ -284,6 +284,7 @@
                             </Anchors>
                         </FontString>
                         <FontString parentKey="CurrentLevelValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Size x="200" y="0"/>
                             <Anchors>
                                 <Anchor point="TOPRIGHT" relativeKey="$parent.CurrentLevelLabel" relativePoint="TOPLEFT" x="200" y="0"/>
                             </Anchors>
@@ -295,6 +296,7 @@
                             </Anchors>
                         </FontString>
                         <FontString parentKey="CurrentXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Size x="200" y="0"/>
                             <Anchors>
                                 <Anchor point="TOPRIGHT" relativeKey="$parent.CurrentLevelValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
                             </Anchors>
@@ -306,6 +308,7 @@
                             </Anchors>
                         </FontString>
                         <FontString parentKey="MaxXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Size x="200" y="0"/>
                             <Anchors>
                                 <Anchor point="TOPRIGHT" relativeKey="$parent.CurrentXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
                             </Anchors>
@@ -317,6 +320,7 @@
                             </Anchors>
                         </FontString>
                         <FontString parentKey="ProgressValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Size x="200" y="0"/>
                             <Anchors>
                                 <Anchor point="TOPRIGHT" relativeKey="$parent.MaxXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
                             </Anchors>
@@ -328,6 +332,7 @@
                             </Anchors>
                         </FontString>
                         <FontString parentKey="RemainingXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Size x="200" y="0"/>
                             <Anchors>
                                 <Anchor point="TOPRIGHT" relativeKey="$parent.ProgressValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
                             </Anchors>
@@ -340,6 +345,7 @@
                             </Anchors>
                         </FontString>
                         <FontString parentKey="RestedXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Size x="200" y="0"/>
                             <Anchors>
                                 <Anchor point="TOPRIGHT" x="-10" y="0"/>
                             </Anchors>
@@ -351,6 +357,7 @@
                             </Anchors>
                         </FontString>
                         <FontString parentKey="QuestXPValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Size x="200" y="0"/>
                             <Anchors>
                                 <Anchor point="TOPRIGHT" relativeKey="$parent.RestedXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
                             </Anchors>
@@ -362,6 +369,7 @@
                             </Anchors>
                         </FontString>
                         <FontString parentKey="LevelTimeValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Size x="200" y="0"/>
                             <Anchors>
                                 <Anchor point="TOPRIGHT" relativeKey="$parent.QuestXPValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
                             </Anchors>
@@ -373,6 +381,7 @@
                             </Anchors>
                         </FontString>
                         <FontString parentKey="SessionStartValue" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Size x="200" y="0"/>
                             <Anchors>
                                 <Anchor point="TOPRIGHT" relativeKey="$parent.LevelTimeValue" relativePoint="BOTTOMRIGHT" x="0" y="-4"/>
                             </Anchors>

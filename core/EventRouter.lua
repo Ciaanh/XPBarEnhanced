@@ -6,8 +6,18 @@ Addon.EventRouter = Addon.EventRouter or {}
 
 local EventRouter = Addon.EventRouter
 local Utils = Addon.Utils
+local CLASSIC_UNAVAILABLE_EVENTS = {
+    MAJOR_FACTION_RENOWN_LEVEL_CHANGED = true,
+    DELVES_ACCOUNT_DATA_ELEMENT_CHANGED = true,
+    QUEST_DATA_LOAD_RESULT = true,
+    HONOR_LEVEL_UPDATE = true,
+}
 
 local function RegisterEventSafely(frame, eventName)
+    if Addon.IsClassicEra and CLASSIC_UNAVAILABLE_EVENTS[eventName] then
+        return
+    end
+
     local ok, err = pcall(frame.RegisterEvent, frame, eventName)
     if not ok and Utils and Utils.ReportError then
         Utils.ReportError(string.format("XPBarEnhanced: skipping unavailable event '%s' (%s)", tostring(eventName), tostring(err)))

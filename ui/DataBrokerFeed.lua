@@ -63,17 +63,27 @@ function Feed:Initialize()
     if self._initialized then
         return
     end
-    self._initialized = true
 
     local ldb = LibStub and LibStub.GetLibrary and LibStub:GetLibrary("LibDataBroker-1.1", true)
     if not ldb then
-        return -- no LDB display installed; nothing to feed
+        if not self._retryTicker and C_Timer and C_Timer.NewTicker then
+            self._retryTicker = C_Timer.NewTicker(REFRESH_SECONDS, function()
+                Feed:Initialize()
+            end)
+        end
+        return -- no LDB display installed yet; retry if one loads later
+    end
+
+    self._initialized = true
+    if self._retryTicker then
+        self._retryTicker:Cancel()
+        self._retryTicker = nil
     end
 
     self._dataObject = ldb:NewDataObject("XPBarEnhanced", {
         type = "data source",
         label = L["LDB_LABEL"],
-        icon = 4675649, -- matches the TOC IconTexture
+        icon = "Interface\\GossipFrame\\ActiveQuestIcon",
         text = "",
         OnClick = function()
             if Addon.Stats and Addon.Stats.Toggle then

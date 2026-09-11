@@ -8,6 +8,22 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.2.6",
+        notes = {
+            "Improved recovery from malformed saved settings and profile data.",
+            "Reduced redundant quest and event processing during rapid updates.",
+            "Improved LibDataBroker registration, option interaction, text layout, and secondary-bar tooltip localization.",
+        },
+    },
+    {
+        version = "1.2.5",
+        notes = {
+            "Added support for World of Warcraft Classic Era 1.15.9 alongside Retail.",
+            "Retail-only features such as Housing, Delves, modern renown, and modern reputation sources are hidden or disabled on Classic.",
+            "Classic and Retail now use Blizzard's quest turn-in icon for the addon list, minimap button, and notifications.",
+        },
+    },
+    {
         version = "1.2.0",
         notes = {
             "Updated for Patch 12.1.",

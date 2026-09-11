@@ -33,8 +33,7 @@ end
 -- read as addon notices, distinct from Blizzard system/error text.
 -------------------------------------------------------------------
 
-local ADDON_ICON = tonumber(C_AddOns and C_AddOns.GetAddOnMetadata
-    and C_AddOns.GetAddOnMetadata("XPBarEnhanced", "IconTexture")) or 4675649
+local ADDON_ICON = "Interface\\GossipFrame\\ActiveQuestIcon"
 local TOAST_VISIBLE_SECONDS = 4
 local TOAST_MIN_WIDTH = 220
 local TOAST_MAX_WIDTH = 480

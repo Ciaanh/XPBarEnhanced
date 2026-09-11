@@ -2,7 +2,10 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail only** · Interface 120100 · Version 1.2.0
+**Retail and Classic Era** · Retail Interface 120100 · Classic Interface 11509 · Version 1.2.6
+
+XP Bar Enhanced supports both World of Warcraft Retail and Classic Era 1.15.9.
+The addon selects the appropriate game-version manifest and API behavior at load time.
 
 ## Features
 
@@ -83,8 +86,20 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 
 ## Requirements
 
-- World of Warcraft Retail
+- World of Warcraft Retail or Classic Era 1.15.9
 - No external dependencies
+
+### Classic Era support
+
+Classic Era includes the main XP bar, quest XP overlays, rested XP, session tracking,
+statistics, profiles, colors, minimap access, notifications, LibDataBroker support,
+and all compatible bar styles: Classic, Flat, Vertical, Circular, Minimap Ring,
+Terminal, and Orb.
+
+Features that depend on Retail APIs are unavailable on Classic and are hidden from
+the options panel: Housing Favor, Delves and companion tracking, modern renown,
+modern reputation sources, and Honor as a secondary source. Profession tracking
+remains available on Classic through its compatible profession APIs.
 
 ## Credits
 

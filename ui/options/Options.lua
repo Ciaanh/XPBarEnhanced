@@ -2,6 +2,10 @@
 -- XP Bar Enhanced Options Panel
 local Addon = XPBarEnhanced
 
+-- OptionsPanel.xml resolves this mixin by its global name while loading the XML.
+-- Keep the table global before declaring any methods on it.
+XPBarEnhancedOptionsMixin = XPBarEnhancedOptionsMixin or {}
+
 Addon.Options = {}
 local Options = Addon.Options
 local Config = Addon.Config
@@ -9,7 +13,22 @@ local EventNames = Addon.EventNames
 
 -- Helper function to resolve locale keys from Config
 local function ResolveLocale(key)
-    return Addon.L and Addon.L[key] or key
+    return Addon.L and rawget(Addon.L, key) or key
+end
+
+function XPBarEnhancedOptionsMixin:ApplyResponsiveScale()
+    if not UIParent or not UIParent.GetWidth or not UIParent.GetHeight then
+        return
+    end
+
+    local width = UIParent:GetWidth()
+    local height = UIParent:GetHeight()
+    if width <= 0 or height <= 0 then
+        return
+    end
+
+    local scale = math.min(1, (width - 40) / 700, (height - 80) / 640)
+    self:SetScale(math.max(0.75, scale))
 end
 
 -- Expose via multiple namespaces for compatibility
@@ -32,8 +51,6 @@ local PANEL_NAME = ResolveLocale("ADDON_NAME")
 local PROFILE_CREATE_POPUP = "XPBE_CREATE_PROFILE"
 local PROFILE_RENAME_POPUP = "XPBE_RENAME_PROFILE"
 local PROFILE_DELETE_POPUP = "XPBE_DELETE_PROFILE"
-
-local XPBarEnhancedOptionsMixin = {}
 
 -- Rows the active style cannot render, keyed by config key then style name, with
 -- the locale key of the muted reason to show. A style absent from a row's table
@@ -67,6 +84,13 @@ local ROW_OWNER_STYLE = {
     minimapRingSegmentHeight    = "minimap_ring",
     minimapArcStartExpanded     = "minimap_ring",
     terminalUseCustomColors     = "terminal",
+}
+
+local CLASSIC_HIDDEN_OPTIONS = {
+    hideCompanionOutsideDelve = true,
+    secondaryReputation = true,
+    secondaryHousing = true,
+    secondaryHonor = true,
 }
 
 -- The Colors tab carries one swatch per secondary-bar source, but only one source
@@ -267,6 +291,12 @@ local TABS = {
     {id = "colors",    label = ResolveLocale("OPT_TAB_COLORS")},
 }
 
+local function HideDeselectedTabBorder(button)
+    if button.Left then button.Left:Hide() end
+    if button.Middle then button.Middle:Hide() end
+    if button.Right then button.Right:Hide() end
+end
+
 function XPBarEnhancedOptionsMixin:SelectTab(tabId)
     self._activeTab = tabId
 
@@ -282,6 +312,7 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
                     btn:SetFrameLevel(baseLevel + 3)
                 else
                     PanelTemplates_DeselectTab(btn)
+                    HideDeselectedTabBorder(btn)
                     btn:SetFrameLevel(baseLevel + 1)
                 end
             end
@@ -308,7 +339,9 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
             -- RefreshRowAvailability, which enables or disables instead.
             local tabMatch = (childTab == tabId)
             local disclosureOk = self:IsDisclosureExpanded(self:GetEffectiveDisclosureGroup(child))
-            child:SetShown(tabMatch and disclosureOk)
+            local classicHidden = Addon.IsClassicEra
+                and CLASSIC_HIDDEN_OPTIONS[child.configKey]
+            child:SetShown(tabMatch and disclosureOk and not classicHidden)
         end
     end
 
@@ -331,8 +364,9 @@ function XPBarEnhancedOptionsMixin:SetupTabs()
             btn:SetScript("OnClick", function()
                 self:SelectTab(tab.id)
             end)
-            PanelTemplates_DeselectTab(btn)
             btn.id = tabId
+            PanelTemplates_DeselectTab(btn)
+            HideDeselectedTabBorder(btn)
             tabId = tabId + 1
         end
     end
@@ -475,6 +509,7 @@ end
 
 function XPBarEnhancedOptionsMixin:OnLoad()
     Options.frame = self
+    self:ApplyResponsiveScale()
     self.controls = {}
     self.colorControls = {}
     self.radioGroups = {}
@@ -550,7 +585,6 @@ function XPBarEnhancedOptionsMixin:OnLoad()
                     if not frame.initialized then
                         -- Just set the frame to match ContentFrame's size
                         frame:SetSize(scrollChild:GetWidth(), CalculateContentHeight())
-                        -- Make ContentFrame visible within this frame
                         scrollChild:ClearAllPoints()
                         scrollChild:SetAllPoints(frame)
                         frame.initialized = true
@@ -719,6 +753,7 @@ function XPBarEnhancedOptionsMixin:OnLoad()
 end
 
 function XPBarEnhancedOptionsMixin:OnPanelShow()
+    self:ApplyResponsiveScale()
     self:Refresh()
     -- Resize tab buttons now that the frame is visible and FontStrings have valid widths.
     -- PanelTemplates_TabResize uses GetStringWidth() which returns 0 at OnLoad time.
@@ -776,6 +811,14 @@ function XPBarEnhancedOptionsMixin:BuildOptionCheckboxes()
 
     local container = self.ContentFrame.OptionsContainer
     local childFrames = CollectChildrenByConfigKey(container)
+
+    if Addon.IsClassicEra then
+        for key in pairs(CLASSIC_HIDDEN_OPTIONS) do
+            if childFrames[key] then
+                childFrames[key]:Hide()
+            end
+        end
+    end
 
     for _, key in ipairs(Config.optionOrder or {}) do
         local detail = Config.optionDetails and Config.optionDetails[key]
@@ -840,6 +883,15 @@ function XPBarEnhancedOptionsMixin:BuildColorControls()
             local controls = ControlHelpers.SetupColorRow(self, row, info)
             if controls then
                 self.colorControls[info.key] = controls
+            end
+        end
+    end
+
+    if Addon.IsClassicEra then
+        for key in pairs(CLASSIC_HIDDEN_OPTIONS) do
+            local row = rowsByKey[key]
+            if row then
+                row:Hide()
             end
         end
     end
@@ -991,6 +1043,7 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     -- Called continuously as the user changes color/opacity
     local function applyColor(restore, ...)
         local pr, pg, pb, opacity
+        local callbackR, callbackG, callbackB = ...
 
         if type(restore) == "table" then
             pr = clamp01(restore.r or restore[1] or r)
@@ -1000,6 +1053,13 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
             if restoreAlpha ~= nil then
                 opacity = clamp01(restoreAlpha)
             end
+        end
+
+        if not pr and type(restore) == "number" then
+            pr = clamp01(restore)
+            pg = clamp01(callbackR or g)
+            pb = clamp01(callbackG or b)
+            opacity = callbackB and clamp01(callbackB) or nil
         end
 
         if not pr then
@@ -1063,22 +1123,15 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
         end
     end
 
-    if ColorPickerFrame and ColorPickerFrame.SetColorRGB then
-        ColorPickerFrame.func = applyColor
-        ColorPickerFrame.opacityFunc = applyColor
-        ColorPickerFrame.cancelFunc = cancelColor
-
-        ColorPickerFrame.hasOpacity = true
-        ColorPickerFrame.opacity = a
-        ColorPickerFrame.previousValues = {r = r, g = g, b = b, a = a}
-        ColorPickerFrame:SetColorRGB(r, g, b)
-        ColorPickerFrame:Hide()
-        ColorPickerFrame:Show()
-    elseif ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow then
+    if ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow then
         ColorPickerFrame:SetupColorPickerAndShow(
             {
-                swatchFunc = applyColor,
-                opacityFunc = applyColor,
+                swatchFunc = function()
+                    applyColor()
+                end,
+                opacityFunc = function()
+                    applyColor()
+                end,
                 cancelFunc = cancelColor,
                 hasOpacity = true,
                 opacity = a,
@@ -1088,6 +1141,25 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
                 previousValues = {r = r, g = g, b = b, a = a}
             }
         )
+        -- Some Classic builds still invoke the legacy callback from the OK
+        -- button even after the modern picker has been opened. The Classic
+        -- XML specifically invokes swatchFunc() from the OK button.
+        ColorPickerFrame.swatchFunc = applyColor
+        ColorPickerFrame.opacityFunc = applyColor
+        ColorPickerFrame.cancelFunc = cancelColor
+        ColorPickerFrame.func = applyColor
+    elseif ColorPickerFrame and ColorPickerFrame.SetColorRGB then
+        ColorPickerFrame.func = applyColor
+        ColorPickerFrame.swatchFunc = applyColor
+        ColorPickerFrame.opacityFunc = applyColor
+        ColorPickerFrame.cancelFunc = cancelColor
+
+        ColorPickerFrame.hasOpacity = true
+        ColorPickerFrame.opacity = a
+        ColorPickerFrame.previousValues = {r = r, g = g, b = b, a = a}
+        ColorPickerFrame:SetColorRGB(r, g, b)
+        ColorPickerFrame:Hide()
+        ColorPickerFrame:Show()
     else
         local OpenColorPicker = rawget(_G, "OpenColorPicker")
         if OpenColorPicker then
@@ -1627,15 +1699,20 @@ function Options:Open()
         return
     end
 
-    self:Refresh()
-
     local category = self.category
     if Settings and Settings.OpenToCategory and category then
         local id = category.GetID and category:GetID() or category.ID or category
-        -- Defer via C_Timer to break addon taint from the click call stack;
-        -- OpenSettingsPanel() is protected and cannot be called from tainted code.
-        C_Timer.After(0, function() Settings.OpenToCategory(id) end)
+        if id and not self._opening then
+            -- Keep the protected Settings call out of the mouse callback and
+            -- let the panel's OnPanelShow perform the first refresh.
+            self._opening = true
+            C_Timer.After(0, function()
+                self._opening = nil
+                Settings.OpenToCategory(id)
+            end)
+        end
     elseif InterfaceOptionsFrame_OpenToCategory then
+        self:Refresh()
         InterfaceOptionsFrame_OpenToCategory(panel)
         InterfaceOptionsFrame_OpenToCategory(panel)
     end
@@ -1805,6 +1882,6 @@ end
 Addon.UI = Addon.UI or {}
 Addon.UI.Mixins = Addon.UI.Mixins or {}
 Addon.UI.Mixins.XPBarEnhancedOptionsMixin = XPBarEnhancedOptionsMixin
-_G.XPBarEnhancedOptionsMixin = XPBarEnhancedOptionsMixin
+rawset(_G, "XPBarEnhancedOptionsMixin", XPBarEnhancedOptionsMixin)
 
 return Options

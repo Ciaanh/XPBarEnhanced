@@ -50,8 +50,11 @@ local function mergeDefaults(target, source)
         if target[key] == nil then
             target[key] = cloneTable(value)
         elseif type(value) == "table" then
-            target[key] = target[key] or {}
-            mergeDefaults(target[key], value)
+            if type(target[key]) ~= "table" then
+                target[key] = cloneTable(value)
+            else
+                mergeDefaults(target[key], value)
+            end
         end
     end
 end

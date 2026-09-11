@@ -14,7 +14,7 @@ local MinimapButton = Addon.MinimapButton
 -------------------------------------------------------------------
 
 local BUTTON_NAME = "XPBarEnhancedMinimapButton"
-local ICON_TEXTURE = tonumber(C_AddOns.GetAddOnMetadata("XPBarEnhanced", "IconTexture")) or 4675649
+local ICON_TEXTURE = "Interface\\GossipFrame\\ActiveQuestIcon"
 local BUTTON_RADIUS = 5 -- Extra radius beyond minimap edge (like LibDBIcon)
 
 local function GetOptionValue(key, fallback)

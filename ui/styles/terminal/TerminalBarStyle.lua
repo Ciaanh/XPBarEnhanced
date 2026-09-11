@@ -19,6 +19,17 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
 end
 
 local Addon = XPBarEnhanced
+local L = Addon.L or {}
+
+local function GetOption(key, fallback)
+    if Addon.Config and Addon.Config.GetOptionValue then
+        local value = Addon.Config:GetOptionValue(key)
+        if value ~= nil then
+            return value
+        end
+    end
+    return fallback
+end
 
 -------------------------------------------------------------------
 -- CONSTANTS
@@ -108,7 +119,6 @@ local function BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, res
     local parts     = {}
     local lastColor = nil
 
-    local db = Addon.db or {}
     local palette = ResolveTerminalPalette()
 
     local useEarned = palette.earned
@@ -251,8 +261,6 @@ function TerminalBarStyleTemplate:RenderBar(context)
         ratio = xpMax > 0 and (xp / xpMax) or 0
     end
 
-    local db = Addon.db or {}
-
     local pct   = string.format("%.1f%%", ratio * 100)
     local level = context.level or (UnitLevel and UnitLevel("player")) or "?"
     local barChars = BAR_CHARS
@@ -262,7 +270,7 @@ function TerminalBarStyleTemplate:RenderBar(context)
 
     -- Complete quest XP (solid amber █ — ready to collect right now)
     local questCompleteEnd = filled
-    if db.showCompleteQuestOverlay ~= false and context.completeQuestXP and context.completeQuestXP > 0
+    if GetOption("showCompleteQuestOverlay", true) ~= false and context.completeQuestXP and context.completeQuestXP > 0
        and context.xpMax and context.xpMax > 0 then
         local chars = math.floor(context.completeQuestXP / context.xpMax * barChars + 0.5)
         questCompleteEnd = math.min(barChars, filled + chars)
@@ -270,7 +278,7 @@ function TerminalBarStyleTemplate:RenderBar(context)
 
     -- Incomplete quest XP (medium amber ▒ — needs completing first)
     local questIncompleteEnd = questCompleteEnd
-    if db.showIncompleteQuestOverlay == true and context.incompleteQuestXP and context.incompleteQuestXP > 0
+    if GetOption("showIncompleteQuestOverlay", false) == true and context.incompleteQuestXP and context.incompleteQuestXP > 0
        and context.xpMax and context.xpMax > 0 then
         local chars = math.floor(context.incompleteQuestXP / context.xpMax * barChars + 0.5)
         questIncompleteEnd = math.min(barChars, questCompleteEnd + chars)
@@ -279,7 +287,7 @@ function TerminalBarStyleTemplate:RenderBar(context)
     -- Rested XP (dark teal ▓ — after quest segments)
     local restedEnd    = questIncompleteEnd
     local hasRestedXP  = context.hasRestedXP or (context.restedXP and context.restedXP > 0)
-    if db.showRestedOverlay ~= false and hasRestedXP
+    if GetOption("showRestedOverlay", true) ~= false and hasRestedXP
        and context.restedXP and context.xpMax and context.xpMax > 0 then
         local chars = math.floor(context.restedXP / context.xpMax * barChars + 0.5)
         restedEnd = math.min(barChars, questIncompleteEnd + chars)
@@ -306,7 +314,13 @@ function TerminalBarStyleTemplate:RenderBar(context)
     -- Stats prompt line
     local statsText = self._terminalStatsText
     if statsText then
-        local statsLine = BuildTerminalStatsLine(db)
+        local statsLine = BuildTerminalStatsLine({
+            abbreviateNumbers = GetOption("abbreviateNumbers", true),
+            showXPPerHourText = GetOption("showXPPerHourText", true),
+            showTimeToLevelText = GetOption("showTimeToLevelText", true),
+            showSessionTimeText = GetOption("showSessionTimeText", true),
+            showLevelTimeText = GetOption("showLevelTimeText", true),
+        })
         if statsLine then
             if statsLine ~= self._lastStatsLine then
                 statsText:SetText(statsLine)
@@ -363,7 +377,6 @@ local function GetOrCreateTerminalTooltip()
 end
 
 local function BuildTerminalTooltipText(context)
-    local db  = Addon.db or {}
     local sep = C_STATS .. string.rep(CH_SEP, 42) .. "|r"
     local lines = {}
     local palette = ResolveTerminalPalette()
@@ -385,10 +398,10 @@ local function BuildTerminalTooltipText(context)
         local currentXPText = FormatXP(context.currentXP, false) or "0"
         local maxXPText = FormatXP(context.xpMax, false) or "0"
         local remainingXPText = FormatXP(rem, false) or "0"
-        lines[#lines+1] = C_STATS .. "current:   |r"
+        lines[#lines+1] = C_STATS .. (L["TT_TERMINAL_CURRENT"] or "current") .. ":   |r"
             .. colorEarned .. currentXPText .. " / " .. maxXPText
             .. C_STATS  .. string.format("  (%.1f%%)", pct) .. "|r"
-        lines[#lines+1] = C_STATS .. "remaining: |r"
+        lines[#lines+1] = C_STATS .. (L["TT_TERMINAL_REMAINING"] or "remaining") .. ": |r"
             .. colorEarned .. remainingXPText .. "|r"
     end
 
@@ -396,7 +409,7 @@ local function BuildTerminalTooltipText(context)
     if context.restedXP and context.restedXP > 0 and context.xpMax and context.xpMax > 0 then
         local rpct = context.restedXP / context.xpMax * 100
         lines[#lines+1] = ""
-        lines[#lines+1] = C_STATS .. "rested:    |r"
+        lines[#lines+1] = C_STATS .. (L["TT_TERMINAL_RESTED"] or "rested") .. ":    |r"
             .. colorRested .. FormatXP(context.restedXP, false)
             .. C_STATS  .. string.format("  (%.1f%%)", rpct) .. "|r"
     end
@@ -404,20 +417,20 @@ local function BuildTerminalTooltipText(context)
     -- Quest XP
     local cq = context.completeQuestXP   or 0
     local iq = context.incompleteQuestXP or 0
-    local showCQ = db.showCompleteQuestOverlay ~= false
-    local showIQ = db.showIncompleteQuestOverlay == true
+    local showCQ = GetOption("showCompleteQuestOverlay", true) ~= false
+    local showIQ = GetOption("showIncompleteQuestOverlay", false) == true
     if (cq > 0 and showCQ) or (iq > 0 and showIQ) then
         lines[#lines+1] = ""
-        lines[#lines+1] = C_LABEL .. "> quest xp|r"
+        lines[#lines+1] = C_LABEL .. "> " .. (L["TT_TERMINAL_QUEST_XP"] or "quest xp") .. "|r"
         if cq > 0 and showCQ then
             local pct = context.xpMax and context.xpMax > 0 and (cq / context.xpMax * 100) or 0
-            lines[#lines+1] = C_STATS .. "  complete:   |r"
+            lines[#lines+1] = C_STATS .. "  " .. (L["TT_TERMINAL_COMPLETE"] or "complete") .. ":   |r"
                 .. colorQuest .. FormatXP(cq)
                 .. C_STATS .. string.format("  (%.1f%%)", pct) .. "|r"
         end
         if iq > 0 and showIQ then
             local pct = context.xpMax and context.xpMax > 0 and (iq / context.xpMax * 100) or 0
-            lines[#lines+1] = C_STATS .. "  incomplete: |r"
+            lines[#lines+1] = C_STATS .. "  " .. (L["TT_TERMINAL_INCOMPLETE"] or "incomplete") .. ": |r"
                 .. colorQuestInc .. FormatXP(iq)
                 .. C_STATS .. string.format("  (%.1f%%)", pct) .. "|r"
         end
@@ -442,7 +455,7 @@ local function BuildTerminalTooltipText(context)
     end
     if #parts > 0 then
         lines[#lines+1] = ""
-        lines[#lines+1] = C_LABEL .. "> session|r"
+        lines[#lines+1] = C_LABEL .. "> " .. (L["TT_TERMINAL_SESSION"] or "session") .. "|r"
         lines[#lines+1] = "  " .. table.concat(parts, C_STATS .. "  |  |r")
     end
 
@@ -459,7 +472,7 @@ local function BuildTerminalTooltipText(context)
     -- Footer
     lines[#lines+1] = ""
     lines[#lines+1] = sep
-    lines[#lines+1] = C_STATS .. "shift+drag to move  |  alt+click options|r"
+    lines[#lines+1] = C_STATS .. (L["TT_TERMINAL_LEGEND_HINT"] or "shift+drag to move  |  alt+click options") .. "|r"
 
     return table.concat(lines, "\n")
 end

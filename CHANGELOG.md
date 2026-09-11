@@ -4,39 +4,56 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-09-11
+
+### Fixed
+
+- Improved recovery from malformed saved settings and profile data instead of failing during initialization.
+- Coalesced quest-cache rebuilds during bursts of quest events to reduce redundant work.
+- LibDataBroker registration now retries when a display addon loads after the player login event.
+- Reduced EventBus dispatch allocations on frequent update events.
+- Made option checkbox rows easier to use by allowing the label area to be clicked.
+- Added width limits to Classic, Terminal and Stats text fields to reduce overlap at large values.
+- Moved shared secondary-bar tooltip labels into the localization system.
+- Repaired corrupted profile assignments during startup and made Terminal respect active profile settings.
+- Improved small-screen options layout and ScrollBox content handling.
+
+## [1.2.5] - 2026-09-10
+
+### Added
+
+- Added support for World of Warcraft Classic Era 1.15.9 alongside Retail.
+- Added a dedicated Classic manifest while retaining the Retail manifest.
+
+### Changed
+
+- Retail-only features such as Housing, Delves, modern renown, and modern reputation sources are hidden or disabled on Classic.
+- Classic and Retail now use Blizzard's quest turn-in icon for the addon list, minimap button, and notifications.
+
 ## [1.2.0] - 2026-08-16
 
 ### Added
 
-- **Readout presets**: Minimal, Standard and Leveller set every text and overlay toggle in one click. Editing any of them switches the preset to Custom; a "Reset to Standard" link puts it back.
-- **Style gallery**: pick a bar style from labelled previews of all eight styles instead of a text dropdown, with the selected one ringed in the addon's own colour. `/xpbe style <name>` is unchanged.
+- **Readout presets**: Minimal, Standard and Leveller configure text and overlay settings in one click, with a Custom mode for manual changes.
+- **Style gallery**: choose among all bar styles from labelled visual previews. `/xpbe style <name>` remains available.
 
 ### Changed
 
-- **Updated for Patch 12.1** — interface bumped from `120007` to `120100`, so the addon no longer reports as out of date.
-- **Individual text toggles** now live under a collapsed **Advanced** section, so the presets come first. Advanced opens automatically when the preset is Custom.
-- **Options rows no longer appear and disappear** when you switch bar style. Rows the active style ignores stay in place, disabled, with the reason beside them ("— Circular only"), so the panel keeps a constant height and you can see what each style offers.
-- **Level-up celebration works on every bar style.** It previously anchored to a StatusBar, so it was invisible on Circular, Minimap Ring and Terminal; it now anchors to the bar and is clipped to the ring shape on the round styles.
-- **Colors tab leads with the secondary-source colour actually in use**, tagged "(active)". The other three fold into an "Other secondary sources" section and stay editable, so you can set a colour before switching to that source.
-- **Stats window rebuilt around the two numbers you open it for.** XP/hour and time to level are now large hero figures; session totals sit on one compact strip; the level bookkeeping rows collapse into a **Details** section. The window is 384px tall instead of 685.
-- **Time-to-level on the Circular and Vertical styles now updates while you stand still.** Both show the ETA as an on-bar row rather than below the bar, and the 2.5s refresh only ran for styles with a below-bar row — so the one number you read when you are *not* gaining XP was the one that froze. A new `timeReadout` capability drives the refresh; no other style gained a timer.
-- **Minimap tooltip keeps a fixed shape** — the XP and time rows stay present reading `0` at the start of a session instead of vanishing and changing the tooltip's height — and its XP number is now formatted like the rest of the UI.
-- The LibDataBroker feed honours the number-abbreviation option instead of always abbreviating.
-- **The Circular ring repaints only the segments that changed.** At 100 segments a steady animation was issuing 100 `SetVertexColor` plus 100 `Show` calls per frame, rebuilding a four-entry colour table from four option/colour lookups per frame, and resolving the segment count twice per frame through the full profile chain. The fill advances identically; the widget traffic does not.
+- Updated for Patch 12.1 (`Interface: 120100`).
+- Moved individual text controls under an Advanced section and kept unavailable options visible but disabled with an explanation.
+- Level-up celebrations now work across all bar styles, including Circular, Minimap Ring and Terminal.
+- Improved the Colors tab, Stats window, minimap tooltip and LibDataBroker feed for clearer, more consistent readouts.
+- Circular and Vertical styles now keep time-to-level current while the player is idle.
+- Improved Circular bar rendering performance without changing its appearance.
 
 ### Fixed
 
-- **XP could be credited to your session twice, or not at all, because two independent trackers computed the gain.** `ContextBuilder` kept its own XP baseline alongside `Session`'s, advanced on a different set of events and fed to the shared calculation with different arguments, so the two could take different branches on the same event — and the gain flash followed the wrong one. `Session` now owns the single baseline and hands the delta over once.
-- **Crossing a level boundary between two levels that share the same XP requirement dropped a whole level of XP.** When `PLAYER_XP_UPDATE` arrived before `UnitLevel` caught up, the crossing was indistinguishable from a data reset and was credited as zero, and the rebaseline that followed meant `PLAYER_LEVEL_UP` no longer credited the remainder either. The ambiguous case is now parked and resolved when the level-up confirms it, crediting the old level's remainder *and* the progress already made into the new level. A genuine data reset still credits nothing.
-- **XP/hour could read in the millions in a session's first seconds.** The fallback divided a whole level's XP by the time played at that level with no floor, so a few seconds produced an absurd rate — and the Circular centre ETA is derived from it. The sliding window of recent gains is now preferred whenever it has data, and the fallback divisor is floored at 60 seconds.
-- **The Circular style's ring border and centre disc never rendered.** Both were requested as `.png` while the shipped art is `.tga`; WoW silently draws nothing for an explicit wrong extension. Present since the first release.
-- **A saved bar style that no longer exists took the whole addon down at login.** The stored key went straight from saved variables to frame creation, and an unrecognised one raised a hard Lua error — so a style dropped from a build, a profile written by a newer version, or an interrupted update cost you every feature of the addon, not just your bar, with no working options panel to fix it from. Unknown keys now fall back to the default style, say so once in chat, and repair the stored value so the secondary bar and the options panel agree with what is on screen.
-- The XP gain flash tinted itself with the rested *overlay* colour while every other rested-aware fill path uses the rested *fill* colour, so the flash disagreed with the bar it flashed over.
-- The Stats window showed the session XP total twice, as "XP Gained" and "Total XP", one separator apart.
-- The session XP total and its legacy `sessionXP` alias were assigned in four separate places, which is four chances for them to drift; both now have exactly one writer.
-- The style gallery now sizes its swatch grid *and* the row the options panel stacks from, so a future style that needs a third row of swatches cannot paint over the option rows below it.
-- **`/xpbe style` listed and accepted a hand-written set of styles** that had already fallen out of step with the styles the options panel offers, so the command could advertise a style it then rejected. The list and the validation both come from the bar styles themselves now.
-- The published package no longer carries `.github` and `.claude` — roughly 990 KB of development tooling, larger than the addon itself, that `.pkgmeta` never excluded.
+- XP session totals are no longer duplicated, lost at level boundaries, or credited twice.
+- XP/hour and time-to-level estimates no longer spike during the first seconds of a session.
+- Circular border and center artwork now render correctly.
+- Invalid saved bar styles now fall back to the default instead of preventing the addon from loading.
+- Rested XP colors, style gallery sizing and `/xpbe style` validation now remain consistent.
+- Development-only files are excluded from published packages.
 
 ## [1.1.8] - 2026-07-16
 
@@ -53,31 +70,20 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Added
 
-- **Level-up celebration**: a golden glow pulse on the bar at level-up (`levelUpCelebration`).
-- **Session charts** in the Stats window: an XP/hour histogram across the session plus a quest-vs-other XP split bar, rendered in a new chart panel.
-- **Honor secondary-bar source**: the secondary bar can now track Honor (PvP) progress, with wrap-aware gain across honor levels.
-- **Profession secondary-bar source**: the secondary bar can now track a primary profession's skill level (auto-selects the first primary profession with room to grow).
-- **Use main bar at max level** (`maxLevelPrimaryShowsSecondary`, default off): at max level, show the selected secondary source on the main bar instead of hiding it (mirrors Blizzard's status bar). The standalone secondary bar is hidden while active to avoid rendering the same source twice.
-- **Tracked profession selector** (`professionSlot`): choose whether the Profession source tracks the first or second profession, or Auto (first primary with room to grow).
-- **Level progress notifications** (`goalNotifications`, on by default): announces 25%/50%/75% level progress with the estimated time to ding, once per level, shown as a small on-screen notice.
-- **LibDataBroker feed** (`enableDataBrokerFeed`, on by default): publishes "XP/h · time-to-level" to LDB displays (Titan Panel, Bazooka, ElvUI datatexts); shows the active secondary source at max level; click opens the Stats window. Active only when an LDB display addon is installed.
-- **Orb bar style**: a Diablo-style filling sphere (vertical fill clipped to a circle) with a glass highlight and metallic rim, draggable, with centered level and percent text. Renders the rested extent and quest XP overlays as circle-clipped bands, and supports animations, gain flash, custom colors and the max-level secondary mode. Includes a smaller companion orb for the secondary bar, docked to the right of the primary orb.
+- **Level-up celebration** with a golden glow pulse.
+- **Session charts** showing XP/hour and quest-versus-other XP.
+- **Honor and Profession** as secondary-bar sources, including profession selection.
+- **Max-level secondary display** to show the selected source on the main bar.
+- **Level progress notifications** at 25%, 50% and 75% with an estimated time to level.
+- **LibDataBroker feed** for XP/hour and time-to-level displays such as Titan Panel, Bazooka and ElvUI.
+- **Orb bar style** with a companion orb, custom colors, animations, rested XP and quest overlays.
 
 ### Fixed
 
-- **Level-Up XP Accounting**: Session XP no longer drops the level-crossing amount. `Session:OnLevelUp` now credits the wrap-around XP of the old level before re-baselining (handles `PLAYER_LEVEL_UP` arriving before `PLAYER_XP_UPDATE`), and `XPCalculations.ComputeGain` detects level-ups from level snapshots instead of relying solely on `xpMax` changes (fixes equal-`xpMax` consecutive levels and multi-level jumps).
-- **Renown/Paragon/Housing Gains at Thresholds**: Reputation gained across a renown level or paragon cycle is now credited via wrap-aware gain computation; housing favor gained across a house level-up is no longer discarded; paragon `threshold = 0` no longer produces NaN.
-- **Minimap Ring Zoom Error**: Mouse-wheeling over the minimap ring hit strips no longer throws — replaced removed `Minimap_ZoomIn`/`Minimap_ZoomOut` globals with `Minimap:SetZoom`.
-- **Profile Overrides Everywhere**: Session, ReputationSession, ContextBuilder, TextFormatter and quest-summary paths now resolve options through `Config:GetOptionValue`, so active profile overrides apply; `Config:SetOptionKey` writes profile overrides even when the value matches the inherited one; `/xpbe resetcolors` and `Colors:ResetAll` clear profile color overrides and refresh without `/reload`.
-- **Per-Character Sessions**: XP/reputation/housing session data is now stored per character (alts no longer inherit played time); housing session resets on login like the other sessions; level time no longer inflated by offline wall-clock.
-- **Chat Filter**: The played-time chat suppression now only blocks the actual "Time played" lines and times out after 5 seconds, instead of swallowing all system messages indefinitely on a lost response.
-- **Animation Flash**: Tiny XP gains with flash enabled no longer overwrite the bar fill with a stale ratio for the flash duration.
-- **Combat Deferral**: Deferred Blizzard-bar hides reuse a single frame (no frame leak) and re-check style state at combat end, so switching to style "none" mid-combat can no longer hide Blizzard's XP bar; profile-change deferral no longer misses combat ending within 0.1s.
-- **EventBus**: Removed the deferred-registration mechanism (subscriptions made during dispatch could never be unregistered and leaked); handlers unregistered mid-dispatch are no longer invoked from the stale snapshot.
-- **Stats Window**: No longer leaks a global `frame`; subscribes to EventBus broadcasts instead of registering WoW events directly; skips refreshes while hidden; honors `abbreviateNumbers`; removed per-frame empty `OnUpdate`; window position restore prefers saved anchor data (survives UI-scale changes).
-- **Options Panel**: Scroll height now measures actual content instead of a hardcoded 800px, making tall tabs fully scrollable; removed dead `hideBlizzardBar`/`questOverlaysEnabled` branches and 13 orphaned defaults for features that don't exist.
-- **Bar Position**: Switching the classic bar from static to draggable positioning no longer teleports it to the screen corner (positions are captured as true screen coordinates).
-- **Misc**: Exhaustion-tick tooltip now reports actual rested XP; XP/h text honors `abbreviateNumbers`; tooltips only hide when owned (no longer dismissing other addons' tooltips); changelog popup shows only unseen entries and pools its font strings; secret-safe housing GUID handling; profile names count UTF-8 characters; full-circle secondary ring no longer overlaps its first segment.
+- Session XP, reputation and housing gains are now tracked correctly across level and standing thresholds.
+- Profile overrides consistently apply to sessions, colors, overlays and text settings.
+- Session data is stored per character, and XP/hour, tooltips and stats remain accurate after reloads or UI-scale changes.
+- Fixed minimap ring zoom errors, combat visibility issues, stale XP flashes, options scrolling and several stability problems.
 
 ## [1.1.6] - 2026-06-21
 
@@ -124,15 +130,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Added
 
-- **Profile System**: New profile workflow in the options panel, including profile selection, creation, rename, and delete.
-- **Blizzard-Style Profile Menu**: Profiles dropdown with radio selection plus inline row actions and an in-menu New Profile action.
 - **Profile-Aware Settings Access**: Added centralized profile-aware option lookups via `Utils.GetOptionValue` and migrated key callers to the shared helper.
-
-### Fixed
-
-- **Reputation Bar at Max Level**: Secondary reputation bar now renders correctly when the player is at max level and the primary XP bar is hidden.
-- **Companion Detection in Delves**: Companion presence is now detected via party roster name match (`UnitName` on `partyN` slots) instead of the unreliable `C_DelvesUI.GetFactionForCompanion` path, which returned `nil` in all tested cases.
-- **Companion Bar Refresh on Roster Change**: `GROUP_ROSTER_UPDATE` now triggers a reputation visibility refresh so the companion bar appears and disappears correctly as Brann joins or leaves the delve group.
 - **Minimap Ring Button Collection**: Fixed button collection ownership and shared scan timer to prevent duplicate registrations and nil-reference errors.
 
 ## [1.1.2] - 2026-04-19
@@ -341,20 +339,6 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - **Removed No-Op Stub**: Deleted `BaseMixin:RegisterQuestEvents()` which was kept for backward compatibility but had no callers
 - **Removed Duplicate Event Registration**: Session event frame no longer registers `PLAYER_LEVEL_UP` (handled exclusively by AddOnLifecycle)
 
-### Technical
-
-- All bars now use shared base template reducing XML duplication by ~60 lines per style
-- Session XP updates now broadcast via EventBus for consistent notification flow
-- ContextBuilder properly sets hasLeveledUp/shouldAnimate flags for animation system
-- TextMixin visibility logic respects xpBarText CVar as master toggle for on-bar text
-- PaintMixin provides flexible atlas-or-texture rendering for Blizzard-compatible styles
-- AnimationManager accumulation reduces processing overhead by 85% during rapid XP events
-- Added .gitignore updates for development artifacts
-- EventBus now correctly processes broadcast updates as full-render triggers alongside manual refresh, full update, and cvar-update events
-- All color lookups use immutable `Addon.Colors` context instead of mutable globals
-- Session is now the single authoritative source for XP, rested, and level-up events; AddOnLifecycle coordinates dependents and broadcasts via EventBus
-- Reduced event handler dispatch complexity from 3× to 1× per level-up
-
 ## [1.0.4] - 2026-03-01
 
 ### Added
@@ -366,24 +350,13 @@ All notable changes to XP Bar Enhanced will be documented in this file.
     - Huge (2.0× scale)
 - Selective scaling: Ring segments, border, and glow effects scale with the preset size; center background image remains fixed at its original size for optimal visual presentation
 
-### Technical
-
-- Added `CIRCULAR_SIZE_SCALES` lookup mapping preset names to scale factors
-- Added `GetCircularScale()` method to read saved size preference
-- Modified `RepositionSegments()` to apply scale factors to ring geometry
-- Added `FixStaticElements()` method to keep CenterBG at fixed 256×256 size regardless of ring scale
-- Dropdown control in Circular Bar options section for intuitive size selection
-
 ## [1.0.3] - 2026-02-28
 
 ### Fixed
 
 - **Time-to-Level Estimates**: Improved accuracy of XP/hour and time-to-level calculations by automatically detecting when level time includes significant idle time. When session-based rate is 2.5x or higher than level-based rate, the addon now uses session time for estimates, eliminating inflated times for new expansion levels
 
-### Technical
 
-- Enhanced `TimeCalculations.CalculateXPPerHour()` to intelligently compare session-based and level-based calculation methods
-- Automatically switches to session time when idle time is detected, preventing inaccurate estimates without requiring manual configuration
 
 ## [1.0.1] - 2026-01-11
 
@@ -392,12 +365,6 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - **Max Level Bar Visibility**: Fixed issue where the XP bar wasn't hidden when reaching max level (80). Now correctly detects level-up and switches to Blizzard bar at max level
 - **Classic Bar Draggability**: Fixed classic bar not being draggable even when `classicBarDraggable` setting was enabled. Added missing mouse event handler registration in frame initialization
 - **Position Mode Detection**: Improved level-up event handling to use the actual level parameter from `PLAYER_LEVEL_UP` event instead of calculating it
-
-### Technical
-
-- Removed dead code for `MainMenuExpBar` frame which doesn't exist in retail WoW
-- Added `OnMouseDown` and `OnMouseUp` script handler registration in `BaseMixin:OnLoad()` to properly wire up interaction events
-- Enhanced position mixin to accept optional level parameter for accurate max level detection
 
 ## [1.0.0] - 2024-12-04
 
@@ -412,8 +379,3 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - **Slash Commands**: `/xpbe`, `/xpbe stats`, `/xpbe reset`, `/xpbe help`
 - **Tooltip**: Hover info showing current XP, rested bonus, and session stats
 
-### Technical
-
-- Modular architecture with centralized calculations
-- Mixin-based UI components for maintainability
-- Fail-fast error handling for reliable operation

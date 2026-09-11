@@ -3,6 +3,7 @@
 
 local Addon = XPBarEnhanced
 local Config = Addon.Config
+local IS_CLASSIC = Addon.IsClassicEra
 
 local optionDetails = {
     -- Declared as a dropdown so Config:SetOptionKey preserves the string value
@@ -371,6 +372,15 @@ local optionDetails = {
     }
 }
 
+if IS_CLASSIC then
+    local sourceOptions = optionDetails.secondaryBarSource.options
+    for index = #sourceOptions, 1, -1 do
+        if sourceOptions[index].value ~= "profession" then
+            table.remove(sourceOptions, index)
+        end
+    end
+end
+
 local optionOrder = {
     "barStyle",
     "showSecondaryBar",
@@ -428,11 +438,14 @@ local colorOptionsList = {
     { key = "questComplete", command = "questcomplete", aliases = {"complete"}, label = Addon.L["COLOR_QUEST_COMPLETE"], description = Addon.L["COLOR_QUEST_COMPLETE_DESC"], preview = "texture" },
     { key = "questIncomplete", command = "questincomplete", aliases = {"incomplete"}, label = Addon.L["COLOR_QUEST_INCOMPLETE"], description = Addon.L["COLOR_QUEST_INCOMPLETE_DESC"], preview = "texture" },
     { key = "rested", command = "rested", aliases = {"rest"}, label = Addon.L["COLOR_RESTED"], description = Addon.L["COLOR_RESTED_DESC"], preview = "texture" },
-    { key = "secondaryReputation", command = "secondaryreputation", aliases = {"repbar","reputationbar"}, label = Addon.L["COLOR_SECONDARY_REPUTATION"], description = Addon.L["COLOR_SECONDARY_REPUTATION_DESC"], preview = "statusbar" },
-    { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" },
-    { key = "secondaryHonor", command = "secondaryhonor", aliases = {"honorbar"}, label = Addon.L["COLOR_SECONDARY_HONOR"], description = Addon.L["COLOR_SECONDARY_HONOR_DESC"], preview = "statusbar" },
     { key = "secondaryProfession", command = "secondaryprofession", aliases = {"professionbar","skillbar"}, label = Addon.L["COLOR_SECONDARY_PROFESSION"], description = Addon.L["COLOR_SECONDARY_PROFESSION_DESC"], preview = "statusbar" }
 }
+
+if not IS_CLASSIC then
+    table.insert(colorOptionsList, 6, { key = "secondaryReputation", command = "secondaryreputation", aliases = {"repbar","reputationbar"}, label = Addon.L["COLOR_SECONDARY_REPUTATION"], description = Addon.L["COLOR_SECONDARY_REPUTATION_DESC"], preview = "statusbar" })
+    table.insert(colorOptionsList, 7, { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" })
+    table.insert(colorOptionsList, 8, { key = "secondaryHonor", command = "secondaryhonor", aliases = {"honorbar"}, label = Addon.L["COLOR_SECONDARY_HONOR"], description = Addon.L["COLOR_SECONDARY_HONOR_DESC"], preview = "statusbar" })
+end
 
 -- Build lookup maps
 local colorOptionMap = {}

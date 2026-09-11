@@ -213,7 +213,7 @@ function StyleMixin:OnEnter()
             GameTooltip:AddLine(context.name or "", 1, 1, 1)
         end
     end
-    GameTooltip:AddLine("Right-click: open Reputation", 0.4, 0.4, 0.4)
+    GameTooltip:AddLine(Addon.L["TT_OPEN_REPUTATION"], 0.4, 0.4, 0.4)
     if SharedStyleHelpers and SharedStyleHelpers.AddSecondaryTooltipMoveHint then
         SharedStyleHelpers.AddSecondaryTooltipMoveHint(context)
     end

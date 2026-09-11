@@ -10,7 +10,8 @@ local EventNames = Addon.EventNames
 
 local function getActiveProfileTable()
     if Addon.ProfileManager and Addon.ProfileManager.GetActiveProfile then
-        return Addon.ProfileManager:GetActiveProfile()
+        local profile = Addon.ProfileManager:GetActiveProfile()
+        return type(profile) == "table" and profile or nil
     end
     return nil
 end
@@ -67,6 +68,10 @@ end
 ---Initialize configuration state and migrate any classic settings
 function Config:Initialize()
     -- Configuration is now managed by Database module
+    if Addon.IsClassicEra and Addon.db and Addon.db.secondaryBarSource ~= "profession" then
+        Addon.db.secondaryBarSource = "profession"
+    end
+
     -- Migrate single barPosition to per-style barPositions if needed
     if Addon and Addon.db then
         if not Addon.db.barPositions then
