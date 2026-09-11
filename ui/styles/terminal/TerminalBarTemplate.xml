@@ -72,7 +72,6 @@
 
 						<!-- Line 1: coloured block progress bar -->
 						<FontString parentKey="TerminalBarText" inherits="GameFontHighlightSmall">
-							<Size x="470" y="0"/>
 							<Anchors>
 								<Anchor point="TOPLEFT" x="8" y="-8"/>
 							</Anchors>
@@ -80,7 +79,6 @@
 
 						<!-- Line 1 label: percentage + level -->
 						<FontString parentKey="TerminalLabelText" inherits="GameFontHighlightSmall" justifyH="RIGHT">
-							<Size x="150" y="0"/>
 							<Anchors>
 								<Anchor point="TOPRIGHT" x="-8" y="-8"/>
 							</Anchors>
@@ -88,7 +86,6 @@
 
 						<!-- Line 2: stats prompt -->
 						<FontString parentKey="TerminalStatsText" inherits="GameFontNormalSmall" hidden="true">
-							<Size x="500" y="0"/>
 							<Anchors>
 								<Anchor point="BOTTOMLEFT" x="8" y="4"/>
 							</Anchors>
