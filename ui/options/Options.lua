@@ -291,6 +291,12 @@ local TABS = {
     {id = "colors",    label = ResolveLocale("OPT_TAB_COLORS")},
 }
 
+local function HideDeselectedTabBorder(button)
+    if button.Left then button.Left:Hide() end
+    if button.Middle then button.Middle:Hide() end
+    if button.Right then button.Right:Hide() end
+end
+
 function XPBarEnhancedOptionsMixin:SelectTab(tabId)
     self._activeTab = tabId
 
@@ -306,6 +312,7 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
                     btn:SetFrameLevel(baseLevel + 3)
                 else
                     PanelTemplates_DeselectTab(btn)
+                    HideDeselectedTabBorder(btn)
                     btn:SetFrameLevel(baseLevel + 1)
                 end
             end
@@ -359,6 +366,7 @@ function XPBarEnhancedOptionsMixin:SetupTabs()
             end)
             btn.id = tabId
             PanelTemplates_DeselectTab(btn)
+            HideDeselectedTabBorder(btn)
             tabId = tabId + 1
         end
     end
@@ -577,7 +585,6 @@ function XPBarEnhancedOptionsMixin:OnLoad()
                     if not frame.initialized then
                         -- Just set the frame to match ContentFrame's size
                         frame:SetSize(scrollChild:GetWidth(), CalculateContentHeight())
-                        scrollChild:SetParent(frame)
                         scrollChild:ClearAllPoints()
                         scrollChild:SetAllPoints(frame)
                         frame.initialized = true
@@ -1692,15 +1699,20 @@ function Options:Open()
         return
     end
 
-    self:Refresh()
-
     local category = self.category
     if Settings and Settings.OpenToCategory and category then
         local id = category.GetID and category:GetID() or category.ID or category
-        -- Defer via C_Timer to break addon taint from the click call stack;
-        -- OpenSettingsPanel() is protected and cannot be called from tainted code.
-        C_Timer.After(0, function() Settings.OpenToCategory(id) end)
+        if id and not self._opening then
+            -- Keep the protected Settings call out of the mouse callback and
+            -- let the panel's OnPanelShow perform the first refresh.
+            self._opening = true
+            C_Timer.After(0, function()
+                self._opening = nil
+                Settings.OpenToCategory(id)
+            end)
+        end
     elseif InterfaceOptionsFrame_OpenToCategory then
+        self:Refresh()
         InterfaceOptionsFrame_OpenToCategory(panel)
         InterfaceOptionsFrame_OpenToCategory(panel)
     end
