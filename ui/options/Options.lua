@@ -2,6 +2,10 @@
 -- XP Bar Enhanced Options Panel
 local Addon = XPBarEnhanced
 
+-- OptionsPanel.xml resolves this mixin by its global name while loading the XML.
+-- Keep the table global before declaring any methods on it.
+XPBarEnhancedOptionsMixin = XPBarEnhancedOptionsMixin or {}
+
 Addon.Options = {}
 local Options = Addon.Options
 local Config = Addon.Config
@@ -47,8 +51,6 @@ local PANEL_NAME = ResolveLocale("ADDON_NAME")
 local PROFILE_CREATE_POPUP = "XPBE_CREATE_PROFILE"
 local PROFILE_RENAME_POPUP = "XPBE_RENAME_PROFILE"
 local PROFILE_DELETE_POPUP = "XPBE_DELETE_PROFILE"
-
-local XPBarEnhancedOptionsMixin = {}
 
 -- Rows the active style cannot render, keyed by config key then style name, with
 -- the locale key of the muted reason to show. A style absent from a row's table
