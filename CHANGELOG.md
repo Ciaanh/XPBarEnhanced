@@ -15,6 +15,8 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - Made option checkbox rows easier to use by allowing the label area to be clicked.
 - Added width limits to Classic, Terminal and Stats text fields to reduce overlap at large values.
 - Moved shared secondary-bar tooltip labels into the localization system.
+- Repaired corrupted profile assignments during startup and made Terminal respect active profile settings.
+- Improved small-screen options layout and ScrollBox content handling.
 
 ## [1.2.5] - 2026-09-10
 

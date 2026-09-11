@@ -12,6 +12,21 @@ local function ResolveLocale(key)
     return Addon.L and Addon.L[key] or key
 end
 
+function XPBarEnhancedOptionsMixin:ApplyResponsiveScale()
+    if not UIParent or not UIParent.GetWidth or not UIParent.GetHeight then
+        return
+    end
+
+    local width = UIParent:GetWidth()
+    local height = UIParent:GetHeight()
+    if width <= 0 or height <= 0 then
+        return
+    end
+
+    local scale = math.min(1, (width - 40) / 700, (height - 80) / 640)
+    self:SetScale(math.max(0.75, scale))
+end
+
 -- Expose via multiple namespaces for compatibility
 Addon.UI = Addon.UI or {}
 Addon.App = Addon.App or {}
@@ -484,6 +499,7 @@ end
 
 function XPBarEnhancedOptionsMixin:OnLoad()
     Options.frame = self
+    self:ApplyResponsiveScale()
     self.controls = {}
     self.colorControls = {}
     self.radioGroups = {}
@@ -559,7 +575,7 @@ function XPBarEnhancedOptionsMixin:OnLoad()
                     if not frame.initialized then
                         -- Just set the frame to match ContentFrame's size
                         frame:SetSize(scrollChild:GetWidth(), CalculateContentHeight())
-                        -- Make ContentFrame visible within this frame
+                        scrollChild:SetParent(frame)
                         scrollChild:ClearAllPoints()
                         scrollChild:SetAllPoints(frame)
                         frame.initialized = true
@@ -728,6 +744,7 @@ function XPBarEnhancedOptionsMixin:OnLoad()
 end
 
 function XPBarEnhancedOptionsMixin:OnPanelShow()
+    self:ApplyResponsiveScale()
     self:Refresh()
     -- Resize tab buttons now that the frame is visible and FontStrings have valid widths.
     -- PanelTemplates_TabResize uses GetStringWidth() which returns 0 at OnLoad time.
@@ -808,7 +825,7 @@ function XPBarEnhancedOptionsMixin:BuildOptionCheckboxes()
                 frame.Label:SetText(detail.label)
             elseif frame.Slider then
                 -- Two-column slider template (ConfigSliderTemplate)
-                ControlHelpers.SetupProperSlider(self, frame, key, detail)
+                                scrollChild:SetParent(frame)
             elseif frame.Dropdown then
                 -- Two-column dropdown template (ConfigDropdownTemplate)
                 ControlHelpers.SetupProperDropdown(self, frame, key, detail)

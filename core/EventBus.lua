@@ -81,9 +81,12 @@ end
 ---@return EventBusHandle handle Object with Unregister() method
 function EventBus:RegisterWithHandle(eventName, idOrHandler, handler)
     local id = self:Register(eventName, idOrHandler, handler)
+    local registeredHandler = self.listeners[eventName] and self.listeners[eventName][id]
     return {
         Unregister = function()
-            EventBus:Unregister(eventName, id)
+            if EventBus.listeners[eventName] and EventBus.listeners[eventName][id] == registeredHandler then
+                EventBus:Unregister(eventName, id)
+            end
         end
     }
 end

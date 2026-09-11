@@ -71,6 +71,15 @@ L["TT_HINT_CTRL_STATS"] = "Ctrl+Click to toggle stats"
 L["TT_LEVEL_FMT"] = "Level %d"
 -- Tooltip hints
 L["TT_HINT_CONFIG"] = "Right-click to configure XP Bar"
+L["TT_OPEN_REPUTATION"] = "Right-click: open Reputation"
+L["TT_TERMINAL_CURRENT"] = "current"
+L["TT_TERMINAL_REMAINING"] = "remaining"
+L["TT_TERMINAL_RESTED"] = "rested"
+L["TT_TERMINAL_QUEST_XP"] = "quest xp"
+L["TT_TERMINAL_COMPLETE"] = "complete"
+L["TT_TERMINAL_INCOMPLETE"] = "incomplete"
+L["TT_TERMINAL_SESSION"] = "session"
+L["TT_TERMINAL_LEGEND_HINT"] = "shift+drag to move  |  alt+click options"
 
 -- Terminal style legend
 L["TT_TERMINAL_LEGEND"]    = "Terminal Legend"

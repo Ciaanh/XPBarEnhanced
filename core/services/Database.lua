@@ -19,7 +19,9 @@ local Database = Addon.Database
 -- since a bad call here would take down all per-character storage.
 local function GetSafePlayerName()
     if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
-        local ok, name = pcall(C_PlayerInfo.GetName, PlayerLocation:CreateFromUnit("player"))
+        local ok, name = pcall(function()
+            return C_PlayerInfo.GetName(PlayerLocation:CreateFromUnit("player"))
+        end)
         if ok and type(name) == "string" and name ~= "" then
             return name
         end

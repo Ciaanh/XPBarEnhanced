@@ -10,7 +10,8 @@ local EventNames = Addon.EventNames
 
 local function getActiveProfileTable()
     if Addon.ProfileManager and Addon.ProfileManager.GetActiveProfile then
-        return Addon.ProfileManager:GetActiveProfile()
+        local profile = Addon.ProfileManager:GetActiveProfile()
+        return type(profile) == "table" and profile or nil
     end
     return nil
 end
