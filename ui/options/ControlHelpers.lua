@@ -10,7 +10,7 @@ local Config = Addon.Config
 
 -- Helper function to resolve locale keys (matches Options.lua)
 local function ResolveLocale(key)
-    return Addon.L and Addon.L[key] or key
+    return Addon.L and rawget(Addon.L, key) or key
 end
 
 -- Play sound helper from Options.lua

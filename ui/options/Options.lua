@@ -13,7 +13,7 @@ local EventNames = Addon.EventNames
 
 -- Helper function to resolve locale keys from Config
 local function ResolveLocale(key)
-    return Addon.L and Addon.L[key] or key
+    return Addon.L and rawget(Addon.L, key) or key
 end
 
 function XPBarEnhancedOptionsMixin:ApplyResponsiveScale()
@@ -827,7 +827,7 @@ function XPBarEnhancedOptionsMixin:BuildOptionCheckboxes()
                 frame.Label:SetText(detail.label)
             elseif frame.Slider then
                 -- Two-column slider template (ConfigSliderTemplate)
-                                scrollChild:SetParent(frame)
+                ControlHelpers.SetupProperSlider(self, frame, key, detail)
             elseif frame.Dropdown then
                 -- Two-column dropdown template (ConfigDropdownTemplate)
                 ControlHelpers.SetupProperDropdown(self, frame, key, detail)
