@@ -44,9 +44,15 @@ local function emit(eventName, payload)
 end
 
 local function ensureStorage()
-    Addon.db = Addon.db or {}
-    Addon.db.profiles = Addon.db.profiles or {}
-    Addon.db.characterProfileKeys = Addon.db.characterProfileKeys or {}
+    if type(Addon.db) ~= "table" then
+        Addon.db = {}
+    end
+    if type(Addon.db.profiles) ~= "table" then
+        Addon.db.profiles = {}
+    end
+    if type(Addon.db.characterProfileKeys) ~= "table" then
+        Addon.db.characterProfileKeys = {}
+    end
     return Addon.db
 end
 

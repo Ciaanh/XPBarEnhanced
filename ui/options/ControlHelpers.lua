@@ -96,6 +96,14 @@ function ControlHelpers.SetupTwoColumnCheckbox(selfFrame, row, key, detail)
 
     -- Register click
     checkbox:SetScript("OnClick", function(btn) CheckboxOnClick(selfFrame, btn, key) end)
+    if row.EnableMouse and row.SetScript then
+        row:EnableMouse(true)
+        row:SetScript("OnMouseUp", function(_, button)
+            if button == "LeftButton" and checkbox:IsEnabled() and not checkbox:IsMouseOver() then
+                checkbox:Click()
+            end
+        end)
+    end
 
     -- Alias for refresh
     selfFrame.controls = selfFrame.controls or {}

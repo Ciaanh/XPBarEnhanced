@@ -125,18 +125,18 @@ function EventBus:Emit(eventName, context)
 
     -- Iterate over a stable snapshot so handlers can safely register/unregister
     -- during emit without mutating the table being iterated.
-    local dispatchIds = {}
-    local dispatchFns = {}
+    local dispatch = {}
     for id, handler in pairs(listenersForEvent) do
-        dispatchIds[#dispatchIds + 1] = id
-        dispatchFns[#dispatchFns + 1] = handler
+        dispatch[#dispatch + 1] = id
+        dispatch[#dispatch + 1] = handler
     end
 
-    for i = 1, #dispatchIds do
-        local handler = dispatchFns[i]
+    for i = 1, #dispatch, 2 do
+        local id = dispatch[i]
+        local handler = dispatch[i + 1]
         -- Skip handlers unregistered by an earlier handler in this dispatch —
         -- they may belong to frames that were just torn down.
-        if listenersForEvent[dispatchIds[i]] == handler then
+        if listenersForEvent[id] == handler then
             xpcall(handler, Utils.ReportError, context)
         end
     end

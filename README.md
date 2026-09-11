@@ -2,7 +2,7 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail and Classic Era** · Retail Interface 120100 · Classic Interface 11509 · Version 1.2.5
+**Retail and Classic Era** · Retail Interface 120100 · Classic Interface 11509 · Version 1.2.6
 
 XP Bar Enhanced supports both World of Warcraft Retail and Classic Era 1.15.9.
 The addon selects the appropriate game-version manifest and API behavior at load time.

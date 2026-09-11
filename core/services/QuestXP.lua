@@ -153,8 +153,14 @@ end
 -- ROUTED EVENT HANDLERS
 -------------------------------------------------------------------
 
+local rebuildTimer
+
 local function scheduleRebuild(delay)
-    C_Timer.After(delay, function()
+    if rebuildTimer then
+        rebuildTimer:Cancel()
+    end
+    rebuildTimer = C_Timer.NewTimer(delay, function()
+        rebuildTimer = nil
         buildQuestCache()
         Addon.EventBus:Emit(Addon.EventNames.QUESTS_CACHE_REBUILT, { event = Addon.EventNames.QUESTS_CACHE_REBUILT })
         if Addon.Session and Addon.Session.EmitUpdate then

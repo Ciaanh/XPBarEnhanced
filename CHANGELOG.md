@@ -4,6 +4,18 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-09-11
+
+### Fixed
+
+- Improved recovery from malformed saved settings and profile data instead of failing during initialization.
+- Coalesced quest-cache rebuilds during bursts of quest events to reduce redundant work.
+- LibDataBroker registration now retries when a display addon loads after the player login event.
+- Reduced EventBus dispatch allocations on frequent update events.
+- Made option checkbox rows easier to use by allowing the label area to be clicked.
+- Added width limits to Classic, Terminal and Stats text fields to reduce overlap at large values.
+- Moved shared secondary-bar tooltip labels into the localization system.
+
 ## [1.2.5] - 2026-09-10
 
 ### Added

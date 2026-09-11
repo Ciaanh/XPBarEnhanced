@@ -33,7 +33,7 @@ end
 
 function Database:Initialize()
     -- Create database if it doesn't exist
-    if not XPBarEnhancedDB then
+    if type(XPBarEnhancedDB) ~= "table" then
         XPBarEnhancedDB = {}
     end
 
@@ -48,8 +48,18 @@ function Database:Initialize()
     Addon.db = XPBarEnhancedDB
 
     -- Optional profile system storage.
-    Addon.db.profiles = Addon.db.profiles or {}
-    Addon.db.characterProfileKeys = Addon.db.characterProfileKeys or {}
+    local function ensureTable(key)
+        if type(Addon.db[key]) ~= "table" then
+            Addon.db[key] = {}
+        end
+    end
+
+    ensureTable("profiles")
+    ensureTable("characterProfileKeys")
+
+    if Addon.db.secondaryBarPosition ~= nil and type(Addon.db.secondaryBarPosition) ~= "table" then
+        Addon.db.secondaryBarPosition = nil
+    end
 
     if Addon.db.secondaryBarPosition
         and Addon.db.secondaryBarPosition.relativeTo == "SecondaryStatusTrackingBarContainer"
@@ -76,11 +86,12 @@ function Database:Initialize()
         Addon.db.secondaryBarPosition = nil
     end
 
-    Addon.db.sessionData = Addon.db.sessionData or {}
-    Addon.db.reputationSessionData = Addon.db.reputationSessionData or {}
-    Addon.db.housingSessionData = Addon.db.housingSessionData or {}
-    Addon.db.honorSessionData = Addon.db.honorSessionData or {}
-    Addon.db.professionSessionData = Addon.db.professionSessionData or {}
+    ensureTable("secondaryBarPositions")
+    ensureTable("sessionData")
+    ensureTable("reputationSessionData")
+    ensureTable("housingSessionData")
+    ensureTable("honorSessionData")
+    ensureTable("professionSessionData")
 
     -- Set player key
     local playerName = GetSafePlayerName()
