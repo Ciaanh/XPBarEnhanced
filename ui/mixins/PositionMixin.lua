@@ -15,6 +15,43 @@ local function GetSettingsTable(key, createIfMissing)
 	return Addon.db[key]
 end
 
+local function NormalizePositionKey(key)
+	if type(key) ~= "string" then
+		return nil
+	end
+
+	local normalized = string.lower(key)
+	if string.sub(normalized, -3) == "bar" then
+		normalized = string.sub(normalized, 1, -4)
+	end
+	return normalized
+end
+
+local function GetSavedPosition(positions, positionKey)
+	if type(positions) ~= "table" then
+		return nil
+	end
+
+	local seen = {}
+	local keys = {
+		positionKey,
+		string.lower(positionKey or ""),
+		NormalizePositionKey(positionKey),
+	}
+
+	for _, key in ipairs(keys) do
+		if type(key) == "string" and key ~= "" and not seen[key] then
+			seen[key] = true
+			local value = positions[key]
+			if value and value.point then
+				return value
+			end
+		end
+	end
+
+	return nil
+end
+
 -------------------------------------------------------------------
 -- GLOBAL POSITION MIXIN
 -------------------------------------------------------------------
@@ -83,6 +120,9 @@ function PositionMixin:InitializePosition()
 	local mode = positionConfig.mode or POSITION_MODE.STATIC
 	self.__position_mode = mode
 	self.__position_key = positionConfig.positionKey or "XPBar_Default"
+
+	local saved = GetSettingsTable("barPositions")
+	local savedForKey = GetSavedPosition(saved, self.__position_key)
 
 	-- Apply position based on mode
 	if mode == POSITION_MODE.STATIC then
@@ -156,7 +196,7 @@ function PositionMixin:RestorePosition()
 		return
 	end
 
-	local savedPos = positions[self.__position_key]
+	local savedPos = GetSavedPosition(positions, self.__position_key)
 	if not savedPos or not savedPos.point then
 		-- No saved position for this key, use default
 		self:SetDefaultDraggablePosition()
@@ -176,6 +216,9 @@ function PositionMixin:SetDefaultDraggablePosition()
 
 	if Addon.defaults and Addon.defaults.barPositions and self.__position_key then
 		defaultPos = Addon.defaults.barPositions[self.__position_key]
+		if not defaultPos then
+			defaultPos = Addon.defaults.barPositions[NormalizePositionKey(self.__position_key)]
+		end
 	end
 
 	self:ClearAllPoints()
@@ -200,6 +243,10 @@ function PositionMixin:ClearSavedPosition()
 	local positions = GetSettingsTable("barPositions")
 	if positions then
 		positions[self.__position_key] = nil
+		local normalized = NormalizePositionKey(self.__position_key)
+		if normalized and normalized ~= self.__position_key then
+			positions[normalized] = nil
+		end
 	end
 end
 

@@ -622,7 +622,7 @@ local DefaultConfig = {
         enableAnimations = true,
         flashOnGain = true,
     },
-    position = {mode = "STATIC", positionKey = "MinimapRing"},
+    position = {mode = "STATIC", positionKey = Addon.StyleKeys.minimap_ring},
     style = {},
     capabilities = {
         statusBar = false,

@@ -214,7 +214,7 @@ local DefaultConfig = {
 		enableAnimations = true,
 		flashOnGain = true
 	},
-	position = {mode = "DRAGGABLE", positionKey = "FlatBar"},
+	position = {mode = "DRAGGABLE", positionKey = Addon.StyleKeys.flat},
 	style = {}
 }
 

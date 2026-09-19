@@ -614,7 +614,7 @@ local DefaultConfig = {
     interaction = {enabled = true},
     tooltip     = {enabled = true},
     animation   = {enableAnimations = true, flashOnGain = true},
-    position    = {mode = "DRAGGABLE", positionKey = "TerminalBar"},
+    position    = {mode = "DRAGGABLE", positionKey = Addon.StyleKeys.terminal},
     style       = {},
     capabilities = {
         statusBar      = false,

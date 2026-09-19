@@ -271,7 +271,7 @@ local DefaultConfig = {
         enableAnimations = true,
         flashOnGain = true
     },
-    position = {mode = "DRAGGABLE", positionKey = "OrbBar"},
+    position = {mode = "DRAGGABLE", positionKey = Addon.StyleKeys.orb},
     style = {},
     capabilities = {
         exhaustionTick = false,

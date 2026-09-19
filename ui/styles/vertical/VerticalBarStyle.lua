@@ -319,7 +319,7 @@ local DefaultConfig = {
         enableAnimations = true,
         flashOnGain = true
     },
-    position = {mode = "DRAGGABLE", positionKey = "VerticalBar"},
+    position = {mode = "DRAGGABLE", positionKey = Addon.StyleKeys.vertical},
     style = {},
     capabilities = {
         textBelowBar = false,

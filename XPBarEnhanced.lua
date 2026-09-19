@@ -27,6 +27,17 @@ Addon.EventNames = {
 
 Addon.OptionsCategory = "XP Bar Enhanced"
 
+Addon.StyleKeys = Addon.StyleKeys or {
+    classic = "classic",
+    flat = "flat",
+    vertical = "vertical",
+    circular = "circular",
+    minimap_ring = "minimap_ring",
+    terminal = "terminal",
+    orb = "orb",
+    none = "none"
+}
+
 -- Core modules
 Addon.Config = Addon.Config or {}
 Addon.Database = Addon.Database or {}

@@ -3,8 +3,12 @@
 
 local Addon = XPBarEnhanced
 
+local styleKey = (Addon.StyleKeys and Addon.StyleKeys.classic) or "classic"
+local flatStyleKey = (Addon.StyleKeys and Addon.StyleKeys.flat) or "flat"
+local circularStyleKey = (Addon.StyleKeys and Addon.StyleKeys.circular) or "circular"
+
 local defaults = {
-    barStyle = "classic",
+    barStyle = styleKey,
     showSecondaryBar = false,
     secondaryBarSource = "reputation",
     professionSlot = "auto",
@@ -82,9 +86,9 @@ local defaults = {
         y = 0
     },
     barPositions = {
-        classic = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 12},
-        flat = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
-        circular = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
+        [styleKey] = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 12},
+        [flatStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
+        [circularStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
     },
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,

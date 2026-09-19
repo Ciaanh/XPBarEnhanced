@@ -196,7 +196,7 @@ local function GetClassicBarConfig()
         },
         position = {
             mode = isDraggable and "DRAGGABLE" or "STATIC",
-            positionKey = "ClassicBar"
+            positionKey = Addon.StyleKeys.classic
         },
         style = {},
         capabilities = {

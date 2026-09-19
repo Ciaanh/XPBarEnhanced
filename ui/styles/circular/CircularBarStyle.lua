@@ -1009,7 +1009,7 @@ local DefaultConfig = {
         enableAnimations = true,
         flashOnGain = true
     },
-    position = {mode = "DRAGGABLE", positionKey = "CircularBar"},
+    position = {mode = "DRAGGABLE", positionKey = Addon.StyleKeys.circular},
     style = {},
     capabilities = {
         statusBar      = false,
