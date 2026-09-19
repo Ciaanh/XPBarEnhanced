@@ -88,15 +88,14 @@ local ROW_OWNER_STYLE = {
     terminalUseCustomColors     = "terminal",
 }
 
--- Rows hidden on classic-style clients. secondaryReputation is conditional:
--- it is only meaningless when ReputationSession.lua is absent from this
--- client's TOC, and a classic-style client can still ship it.
+-- Rows hidden by client feature policy. Reputation is conditional independently
+-- of the broad classic-client behavior flag because flavor profiles can differ.
 local CLASSIC_HIDDEN_OPTIONS = {
     hideCompanionOutsideDelve = true,
     secondaryHousing = true,
     secondaryHonor = true,
 }
-if not (Addon.ReputationSession and Addon.ReputationSession.Initialize) then
+if not Addon:IsFeatureEnabled("reputation") then
     CLASSIC_HIDDEN_OPTIONS.secondaryReputation = true
 end
 
@@ -104,6 +103,11 @@ end
 -- is ever on screen. The active source's swatch stays out in the open; the other
 -- three fold into a disclosure and read as inactive.
 local SECONDARY_COLOR_GROUP = "othersources"
+local OPTION_FEATURES = {
+    secondaryReputation = "reputation",
+    secondaryHousing = "housing",
+    secondaryHonor = "honor",
+}
 local SECONDARY_SOURCE_COLOR = {
     reputation = "secondaryReputation",
     housing = "secondaryHousing",
@@ -346,8 +350,9 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
             -- RefreshRowAvailability, which enables or disables instead.
             local tabMatch = (childTab == tabId)
             local disclosureOk = self:IsDisclosureExpanded(self:GetEffectiveDisclosureGroup(child))
-            local classicHidden = Addon.IsClassicEra
-                and CLASSIC_HIDDEN_OPTIONS[child.configKey]
+            local requiredFeature = OPTION_FEATURES[child.configKey]
+            local classicHidden = (child.configKey == "hideCompanionOutsideDelve" and Addon:IsFeatureEnabled("classicClientBehavior"))
+                or (requiredFeature and not Addon:IsFeatureEnabled(requiredFeature))
             child:SetShown(tabMatch and disclosureOk and not classicHidden)
         end
     end
@@ -819,7 +824,7 @@ function XPBarEnhancedOptionsMixin:BuildOptionCheckboxes()
     local container = self.ContentFrame.OptionsContainer
     local childFrames = CollectChildrenByConfigKey(container)
 
-    if Addon.IsClassicEra then
+    if Addon:IsFeatureEnabled("classicClientBehavior") then
         for key in pairs(CLASSIC_HIDDEN_OPTIONS) do
             if childFrames[key] then
                 childFrames[key]:Hide()
@@ -894,7 +899,7 @@ function XPBarEnhancedOptionsMixin:BuildColorControls()
         end
     end
 
-    if Addon.IsClassicEra then
+    if Addon:IsFeatureEnabled("classicClientBehavior") then
         for key in pairs(CLASSIC_HIDDEN_OPTIONS) do
             local row = rowsByKey[key]
             if row then

@@ -3,11 +3,10 @@
 
 local Addon = XPBarEnhanced
 local Config = Addon.Config
-local IS_CLASSIC = Addon.IsClassicEra
--- Reputation is offered whenever ReputationSession.lua is in this client's TOC.
--- That is not the same question as the flavor: the camelot beta is a
--- classic-style client that still ships the reputation module.
-local HAS_REPUTATION = (Addon.ReputationSession and Addon.ReputationSession.Initialize) and true or false
+local IS_CLASSIC_CLIENT = Addon:IsFeatureEnabled("classicClientBehavior")
+-- Reputation is offered when the resolved client feature profile enables it.
+-- Module presence is not a capability signal because all clients use one TOC.
+local HAS_REPUTATION = Addon:IsFeatureEnabled("reputation")
 
 local optionDetails = {
     -- Declared as a dropdown so Config:SetOptionKey preserves the string value
@@ -403,8 +402,8 @@ do
     local availableSources = {
         profession = true,
         reputation = HAS_REPUTATION,
-        housing = not IS_CLASSIC,
-        honor = not IS_CLASSIC,
+        housing = Addon:IsFeatureEnabled("housing"),
+        honor = Addon:IsFeatureEnabled("honor"),
     }
 
     local sourceOptions = optionDetails.secondaryBarSource.options
@@ -487,7 +486,7 @@ do
         insertAt = insertAt + 1
     end
 
-    if not IS_CLASSIC then
+    if not IS_CLASSIC_CLIENT then
         table.insert(colorOptionsList, insertAt, { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" })
         insertAt = insertAt + 1
         table.insert(colorOptionsList, insertAt, { key = "secondaryHonor", command = "secondaryhonor", aliases = {"honorbar"}, label = Addon.L["COLOR_SECONDARY_HONOR"], description = Addon.L["COLOR_SECONDARY_HONOR_DESC"], preview = "statusbar" })

@@ -154,7 +154,7 @@ end
 function HousingSession:RequestCurrentTrackedHouseFavor()
     -- This is a server round-trip and is reachable from several housing events,
     -- so it carries its own capability gate rather than trusting every caller.
-    if not (Addon.IsHousingAvailable and Addon.IsHousingAvailable()) then
+    if not Addon:IsFeatureEnabled("housing") then
         return
     end
 
@@ -181,7 +181,7 @@ local function resetHousingSessionProgress(session)
 end
 
 function HousingSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
-    if not (Addon.IsHousingAvailable and Addon.IsHousingAvailable()) then
+    if not Addon:IsFeatureEnabled("housing") then
         return
     end
 

@@ -28,7 +28,7 @@ local FALLBACK_SHARED_STYLE_HELPERS = {
         return (Addon.EventNames and Addon.EventNames.REPUTATION_BROADCAST_UPDATE) or "REPUTATION:BROADCAST_UPDATE"
     end,
     GetSecondaryInitialContext = function()
-        if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
+        if Addon:IsFeatureEnabled("reputation", "GetCurrentContext") then
             return Addon.ReputationSession:GetCurrentContext()
         end
         return nil

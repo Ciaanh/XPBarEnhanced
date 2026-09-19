@@ -129,7 +129,7 @@ function HonorSession:Snapshot()
 end
 
 function HonorSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
-    if Addon.IsClassicEra or not (C_Honor or UnitHonor or UnitHonorLevel) then
+    if not Addon:IsFeatureEnabled("honor") or not (C_Honor or UnitHonor or UnitHonorLevel) then
         return
     end
 

@@ -1,11 +1,10 @@
-## Interface: 120100
-## Interface-Retail: 120100
+## Interface: 11508, 11509, 16001, 20505, 20506, 30405, 38002, 40402, 50503, 50504, 120007, 120100, 120105
 
 ## Title: XP Bar Enhanced
 ## Notes: Enhanced XP bar with quest XP tracking and comprehensive statistics
 
 ## Author: Ciaanh
-## Version: 1.2.6
+## Version: 1.3.0
 
 ## SavedVariables: XPBarEnhancedDB
 ## IconTexture: Interface\GossipFrame\ActiveQuestIcon
@@ -16,7 +15,7 @@
 ## X-WoWI-ID: 27090
 ## X-License: MIT
 ## X-Localizations: enUS
-## X-Compatibility: Retail, Classic Era
+## X-Compatibility: Retail, Classic Era, Forever
 ## X-Embeds: LibStub, AceLocale-3.0
 ## DefaultState: enabled
 

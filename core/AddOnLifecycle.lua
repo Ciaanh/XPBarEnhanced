@@ -12,8 +12,6 @@ function eventHandlers:OnAddonLoaded(name)
         return
     end
 
-    Addon:Log("OnAddonLoaded start")
-
     -- Always initialize saved-variable state first so profile/settings survive
     -- logout/login even while startup is intentionally held off by the manual
     -- enable gate. The UI should stay dormant until /xpbe enable, but config
@@ -27,7 +25,6 @@ function eventHandlers:OnAddonLoaded(name)
     Addon.Config:Initialize()
 
     if not Addon.enabled then
-        Addon:Log("Startup is disabled; waiting for /xpbe enable")
         return
     end
 
@@ -36,69 +33,54 @@ function eventHandlers:OnAddonLoaded(name)
 
     -- Print loaded message
     print(Addon.L["ADDON_LOADED"])
-    Addon:Log("OnAddonLoaded complete")
 end
 
 function eventHandlers:OnPlayerLogin()
-    Addon:Log("OnPlayerLogin start")
     if not Addon.enabled then
-        Addon:Log("Skipping OnPlayerLogin because startup is disabled")
         return
     end
 
-    -- Initialize session
     if Addon.Session and Addon.Session.Initialize then
         Addon.Session:Initialize()
     end
 
-    -- Initialize Reputation session
-    if Addon.ReputationSession and Addon.ReputationSession.Initialize then
+    if Addon:IsFeatureEnabled("reputation", "Initialize") then
         Addon.ReputationSession:Initialize()
     end
 
-    -- Housing is gated on the housing service reporting itself available, not on
-    -- the flavor. See Addon.IsHousingAvailable.
-    if Addon.IsHousingAvailable and Addon.IsHousingAvailable() and Addon.HousingSession and Addon.HousingSession.Initialize then
+    if Addon:IsFeatureEnabled("housing", "Initialize") then
         Addon.HousingSession:Initialize()
     end
 
-    if not Addon.IsClassicEra and Addon.HonorSession and Addon.HonorSession.Initialize then
+    if Addon:IsFeatureEnabled("honor", "Initialize") then
         Addon.HonorSession:Initialize()
     end
 
-    -- Profession data is still valid in classic-style builds, but it must be
-    -- gated behind the API's existence to avoid a dead call during world load.
-    if Addon.ProfessionSession and Addon.ProfessionSession.Initialize then
+    if Addon:IsFeatureEnabled("profession", "Initialize") then
         Addon.ProfessionSession:Initialize()
     end
 
-    -- Initialize milestone notifications
     if Addon.GoalTracker and Addon.GoalTracker.Initialize then
         Addon.GoalTracker:Initialize()
     end
 
-    -- Initialize the LibDataBroker feed (no-op when no LDB display is installed)
     if Addon.DataBrokerFeed and Addon.DataBrokerFeed.Initialize then
         Addon.DataBrokerFeed:Initialize()
     end
 
-    -- Initialize features
     local stats = Addon.Stats
     if stats and stats.Initialize then
         stats:Initialize()
     end
 
-    -- Initialize XP bar manager / legacy XPBar shim.
     if Addon.BarManager and Addon.BarManager.Initialize then
         Addon.BarManager:Initialize()
     end
 
-    -- Initialize Secondary Bar Manager
     if Addon.SecondaryBarManager and Addon.SecondaryBarManager.Initialize then
         Addon.SecondaryBarManager:Initialize()
     end
 
-    -- Initialize Minimap Button
     if Addon.MinimapButton and Addon.MinimapButton.Initialize then
         Addon.MinimapButton:Initialize()
     end
@@ -108,20 +90,16 @@ function eventHandlers:OnPlayerLogin()
         options:Initialize()
     end
 
-    Addon:Log("OnPlayerLogin complete")
 end
 
 function eventHandlers:OnPlayerLogout()
-    Addon:Log("OnPlayerLogout")
     if Addon.BarManager and Addon.BarManager.Shutdown then
         Addon.BarManager:Shutdown()
     end
 end
 
 function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
-    Addon:Log(string.format("OnPlayerEnteringWorld start (initial=%s reload=%s)", tostring(isInitialLogin), tostring(isReloadingUI)))
     if not Addon.enabled then
-        Addon:Log("Skipping OnPlayerEnteringWorld because startup is disabled")
         return
     end
 
@@ -136,7 +114,6 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
         end
     end
 
-    Addon:Log("OnPlayerEnteringWorld complete")
 end
 
 function eventHandlers:OnPlayerMaxLevelUpdate()

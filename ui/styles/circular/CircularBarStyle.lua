@@ -733,7 +733,7 @@ end
 -------------------------------------------------------------------
 
 local function GetReputationContext()
-    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
+    if Addon:IsFeatureEnabled("reputation", "GetCurrentContext") then
         local ctx = Addon.ReputationSession:GetCurrentContext()
         if ctx and ctx.isAvailable then
             return ctx

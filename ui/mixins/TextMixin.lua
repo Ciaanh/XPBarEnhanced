@@ -19,7 +19,7 @@ function XPBarTextMixin:UpdateTextVisibility(context)
 	-- expose the same status-text behavior. The addon's display options are
 	-- therefore the source of truth for all supported game flavors.
 	local blizzardTextEnabled = true
-	if not Addon.IsClassicEra and GetCVarBool then
+	if Addon:IsFeatureEnabled("blizzardXPBarTextCVar") then
 		local cvarValue = GetCVarBool("xpBarText")
 		if cvarValue ~= nil then
 			blizzardTextEnabled = cvarValue

@@ -446,28 +446,28 @@ local function ResolveConfiguredSecondarySource()
 end
 
 local function GetHousingContext()
-    if Addon.HousingSession and Addon.HousingSession.GetCurrentContext then
+    if Addon:IsFeatureEnabled("housing", "GetCurrentContext") then
         return Addon.HousingSession:GetCurrentContext()
     end
     return nil
 end
 
 local function GetReputationContext()
-    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
+    if Addon:IsFeatureEnabled("reputation", "GetCurrentContext") then
         return Addon.ReputationSession:GetCurrentContext()
     end
     return nil
 end
 
 local function GetHonorContext()
-    if Addon.HonorSession and Addon.HonorSession.GetCurrentContext then
+    if Addon:IsFeatureEnabled("honor", "GetCurrentContext") then
         return Addon.HonorSession:GetCurrentContext()
     end
     return nil
 end
 
 local function GetProfessionContext()
-    if Addon.ProfessionSession and Addon.ProfessionSession.GetCurrentContext then
+    if Addon:IsFeatureEnabled("profession", "GetCurrentContext") then
         return Addon.ProfessionSession:GetCurrentContext()
     end
     return nil

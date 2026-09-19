@@ -138,16 +138,16 @@ function Colors:NotifyColorsChanged()
     if Addon.Session and Addon.Session.EmitUpdate then
         Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
     end
-    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+    if Addon:IsFeatureEnabled("reputation", "EmitUpdate") then
         Addon.ReputationSession:EmitUpdate()
     end
-    if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+    if Addon:IsFeatureEnabled("housing", "EmitUpdate") then
         Addon.HousingSession:EmitUpdate()
     end
-    if Addon.HonorSession and Addon.HonorSession.EmitUpdate then
+    if Addon:IsFeatureEnabled("honor", "EmitUpdate") then
         Addon.HonorSession:EmitUpdate()
     end
-    if Addon.ProfessionSession and Addon.ProfessionSession.EmitUpdate then
+    if Addon:IsFeatureEnabled("profession", "EmitUpdate") then
         Addon.ProfessionSession:EmitUpdate()
     end
 end

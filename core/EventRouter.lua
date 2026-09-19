@@ -14,7 +14,7 @@ local CLASSIC_UNAVAILABLE_EVENTS = {
 }
 
 local function RegisterEventSafely(frame, eventName)
-    if Addon.IsClassicEra and CLASSIC_UNAVAILABLE_EVENTS[eventName] then
+    if Addon:IsFeatureEnabled("classicClientBehavior") and CLASSIC_UNAVAILABLE_EVENTS[eventName] then
         return
     end
 
@@ -25,19 +25,19 @@ local function RegisterEventSafely(frame, eventName)
 end
 
 local function EmitReputationUpdate()
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.EmitUpdate then
+    if Addon:IsFeatureEnabled("reputation", "EmitUpdate") and Addon.ReputationSession._session then
         Addon.ReputationSession:EmitUpdate()
     end
 end
 
 local function EmitHousingUpdate()
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.EmitUpdate then
+    if Addon:IsFeatureEnabled("housing", "EmitUpdate") and Addon.HousingSession._session then
         Addon.HousingSession:EmitUpdate()
     end
 end
 
 local function RequestHousingFavorRefresh()
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.RequestCurrentTrackedHouseFavor then
+    if Addon:IsFeatureEnabled("housing", "RequestCurrentTrackedHouseFavor") and Addon.HousingSession._session then
         Addon.HousingSession:RequestCurrentTrackedHouseFavor()
     else
         EmitHousingUpdate()
@@ -45,19 +45,19 @@ local function RequestHousingFavorRefresh()
 end
 
 local function DispatchUpdateFaction(factionID)
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
+    if Addon:IsFeatureEnabled("reputation", "OnFactionUpdate") and Addon.ReputationSession._session then
         Addon.ReputationSession:OnFactionUpdate()
     end
 end
 
 local function DispatchChatCombatFactionChange()
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
+    if Addon:IsFeatureEnabled("reputation", "OnFactionUpdate") and Addon.ReputationSession._session then
         Addon.ReputationSession:OnFactionUpdate()
     end
 end
 
 local function DispatchRenownLevelChanged(...)
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnRenownLevelChanged then
+    if Addon:IsFeatureEnabled("reputation", "OnRenownLevelChanged") and Addon.ReputationSession._session then
         Addon.ReputationSession:OnRenownLevelChanged(...)
     end
 end
@@ -71,7 +71,7 @@ local function DispatchReputationVisibilityRefresh()
 end
 
 local function DispatchTrackedHouseChanged()
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnTrackedHouseChanged then
+    if Addon:IsFeatureEnabled("housing", "OnTrackedHouseChanged") and Addon.HousingSession._session then
         Addon.HousingSession:OnTrackedHouseChanged()
     else
         EmitHousingUpdate()
@@ -79,7 +79,7 @@ local function DispatchTrackedHouseChanged()
 end
 
 local function DispatchPlayerHouseListUpdated(list)
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnPlayerHouseListUpdated then
+    if Addon:IsFeatureEnabled("housing", "OnPlayerHouseListUpdated") and Addon.HousingSession._session then
         Addon.HousingSession:OnPlayerHouseListUpdated(list)
     else
         EmitHousingUpdate()
@@ -87,7 +87,7 @@ local function DispatchPlayerHouseListUpdated(list)
 end
 
 local function DispatchHouseLevelFavorUpdated(...)
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnHouseLevelFavorUpdated then
+    if Addon:IsFeatureEnabled("housing", "OnHouseLevelFavorUpdated") and Addon.HousingSession._session then
         Addon.HousingSession:OnHouseLevelFavorUpdated(...)
     else
         EmitHousingUpdate()
@@ -99,13 +99,13 @@ local function DispatchHouseLevelChanged()
 end
 
 local function DispatchHonorUpdate()
-    if Addon.HonorSession and Addon.HonorSession._session and Addon.HonorSession.OnHonorUpdate then
+    if Addon:IsFeatureEnabled("honor", "OnHonorUpdate") and Addon.HonorSession._session then
         Addon.HonorSession:OnHonorUpdate()
     end
 end
 
 local function DispatchProfessionUpdate()
-    if Addon.ProfessionSession and Addon.ProfessionSession._session and Addon.ProfessionSession.OnSkillUpdate then
+    if Addon:IsFeatureEnabled("profession", "OnSkillUpdate") and Addon.ProfessionSession._session then
         Addon.ProfessionSession:OnSkillUpdate()
     end
 end
@@ -200,19 +200,19 @@ local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
         Addon.Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnEnteringWorld then
+    if Addon:IsFeatureEnabled("reputation", "OnEnteringWorld") and Addon.ReputationSession._session then
         Addon.ReputationSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if Addon.IsHousingAvailable and Addon.IsHousingAvailable() and Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnEnteringWorld then
+    if Addon:IsFeatureEnabled("housing", "OnEnteringWorld") and Addon.HousingSession._session then
         Addon.HousingSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if not Addon.IsClassicEra and Addon.HonorSession and Addon.HonorSession._session and Addon.HonorSession.OnEnteringWorld then
+    if Addon:IsFeatureEnabled("honor", "OnEnteringWorld") and Addon.HonorSession._session then
         Addon.HonorSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if Addon.ProfessionSession and Addon.ProfessionSession._session and Addon.ProfessionSession.OnEnteringWorld then
+    if Addon:IsFeatureEnabled("profession", "OnEnteringWorld") and Addon.ProfessionSession._session then
         Addon.ProfessionSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 

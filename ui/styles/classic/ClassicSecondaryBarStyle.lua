@@ -164,7 +164,7 @@ function StyleMixin:GetInitialContext()
     if SharedStyleHelpers and SharedStyleHelpers.GetSecondaryInitialContext then
         return SharedStyleHelpers.GetSecondaryInitialContext()
     end
-    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
+    if Addon:IsFeatureEnabled("reputation", "GetCurrentContext") then
         return Addon.ReputationSession:GetCurrentContext()
     end
     return nil

@@ -67,11 +67,10 @@ end
 
 ---Initialize configuration state and migrate any classic settings
 function Config:Initialize()
-    -- Configuration is now managed by Database module
-    -- "reputation" is only a valid secondary source when ReputationSession.lua
-    -- is in this client's TOC. Test the module rather than the flavor: the
-    -- camelot beta is a classic-style client that still loads it.
-    local hasReputationSource = Addon.ReputationSession and Addon.ReputationSession.Initialize
+    -- Configuration is now managed by the Database module. Secondary sources
+    -- are activated by the resolved client feature profile, not by TOC layout
+    -- or module presence: every client now loads the same manifest.
+    local hasReputationSource = Addon:IsFeatureEnabled("reputation")
     if not hasReputationSource and Addon.db and Addon.db.secondaryBarSource == "reputation" then
         Addon.db.secondaryBarSource = "profession"
     end
@@ -377,7 +376,7 @@ function Config:NotifyProfileChanged()
         Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
     end
 
-    if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+    if Addon:IsFeatureEnabled("reputation", "EmitUpdate") then
         Addon.ReputationSession:EmitUpdate()
     end
 
@@ -507,10 +506,10 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
 
     if key == "hideCompanionOutsideDelve" then
         -- ReputationSession owns reputation context construction.
-        if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+        if Addon:IsFeatureEnabled("reputation", "EmitUpdate") then
             Addon.ReputationSession:EmitUpdate()
         end
-        if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+        if Addon:IsFeatureEnabled("housing", "EmitUpdate") then
             Addon.HousingSession:EmitUpdate()
         end
     end
@@ -518,16 +517,16 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
     if key == "secondaryBarSource" then
         -- Emit every source so whichever one is now active re-resolves and the
         -- secondary bar re-renders immediately.
-        if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+        if Addon:IsFeatureEnabled("reputation", "EmitUpdate") then
             Addon.ReputationSession:EmitUpdate()
         end
-        if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+        if Addon:IsFeatureEnabled("housing", "EmitUpdate") then
             Addon.HousingSession:EmitUpdate()
         end
-        if Addon.HonorSession and Addon.HonorSession.EmitUpdate then
+        if Addon:IsFeatureEnabled("honor", "EmitUpdate") then
             Addon.HonorSession:EmitUpdate()
         end
-        if Addon.ProfessionSession and Addon.ProfessionSession.EmitUpdate then
+        if Addon:IsFeatureEnabled("profession", "EmitUpdate") then
             Addon.ProfessionSession:EmitUpdate()
         end
     end
@@ -535,7 +534,7 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
     if key == "professionSlot" then
         -- Re-baseline to the newly tracked profession so session gain doesn't
         -- jump, then refresh the bar.
-        if Addon.ProfessionSession then
+        if Addon:IsFeatureEnabled("profession") then
             if Addon.ProfessionSession.Snapshot then
                 Addon.ProfessionSession:Snapshot()
             end
@@ -547,10 +546,10 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
 
     if key == "circularSecondaryFullCircle" or key == "minimapArcStartExpanded"
        or key == "minimapArcDisplayAngle" or key == "minimapArcIconAngle" then
-        if Addon.ReputationSession and Addon.ReputationSession.EmitUpdate then
+        if Addon:IsFeatureEnabled("reputation", "EmitUpdate") then
             Addon.ReputationSession:EmitUpdate()
         end
-        if Addon.HousingSession and Addon.HousingSession.EmitUpdate then
+        if Addon:IsFeatureEnabled("housing", "EmitUpdate") then
             Addon.HousingSession:EmitUpdate()
         end
     end

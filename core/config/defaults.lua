@@ -6,9 +6,6 @@ local Addon = XPBarEnhanced
 local defaults = {
     barStyle = "classic",
     showSecondaryBar = false,
-    -- Coerced at Config:Initialize when the reputation module is not shipped in
-    -- this client's TOC. Keyed on the module, not on the flavor, because a
-    -- classic-style client can still load ReputationSession.lua.
     secondaryBarSource = "reputation",
     professionSlot = "auto",
     hideCompanionOutsideDelve = false,
