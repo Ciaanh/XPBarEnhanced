@@ -231,7 +231,7 @@ function StyleMixin:OnEnter()
 end
 
 function StyleMixin:OnLeave()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.HideTooltip then
         SharedStyleHelpers.HideTooltip()
     elseif GameTooltip then
@@ -240,7 +240,7 @@ function StyleMixin:OnLeave()
 end
 
 function StyleMixin:OnMouseUp(button)
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.HandleStandardSecondaryMouseUp then
         SharedStyleHelpers.HandleStandardSecondaryMouseUp(self, button, self.OnRightClick)
         return
@@ -251,7 +251,7 @@ function StyleMixin:OnMouseUp(button)
 end
 
 function StyleMixin:OnRightClick()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.OpenReputationPanel then
         SharedStyleHelpers.OpenReputationPanel()
     elseif ToggleCharacter then
@@ -261,14 +261,14 @@ end
 
 
 function StyleMixin:OnDragStart()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.BeginSecondaryShiftDrag then
         SharedStyleHelpers.BeginSecondaryShiftDrag(self)
     end
 end
 
 function StyleMixin:OnDragStop()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.EndSecondaryDrag then
         SharedStyleHelpers.EndSecondaryDrag(self)
     end
@@ -298,7 +298,7 @@ function StyleMixin:ResizeToConfiguredWidth()
 end
 
 function StyleMixin:OnSecondaryLoad()
-    ResolveHelpers()
+    EnsureHelpers()
     self:ConfigureDragSupport()
     ApplyFrameLayering(self)
 

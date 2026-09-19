@@ -44,12 +44,13 @@ local BASE_PERCENT_TEXT_WIDTH = 120
 -- Atlas textures are resolution-independent and scale better than custom TGAs.
 local ATLAS_CONFIG = {
     barFill = {
-        -- Probed in order. Blizzard's own experience bar uses
-        -- "-Fill-Experience"; "-Fill-XP" does not appear anywhere in the
-        -- current Blizzard UI source, so on any client matching it this bar was
-        -- falling through to the TGA instead of the atlas. The old name is kept
-        -- as a second candidate in case an older client still ships it.
-        atlas = {"UI-HUD-ExperienceBar-Fill-Experience", "UI-HUD-ExperienceBar-Fill-XP"},
+        -- Both "-Fill-Experience" and "-Fill-XP" bake in Blizzard's own
+        -- green/orange gradient. SetStatusBarColor only multiplies our custom
+        -- color onto that baked hue, so it never fully replaces it - the
+        -- player's chosen color always shows Blizzard's tint bleeding through
+        -- behind it. Same class of bug the restedOverlay comment below
+        -- describes; use the neutral file texture here for the same reason.
+        atlas = nil,
         fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
     },
     restedOverlay = {
