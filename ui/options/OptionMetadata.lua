@@ -4,6 +4,10 @@
 local Addon = XPBarEnhanced
 local Config = Addon.Config
 local IS_CLASSIC = Addon.IsClassicEra
+-- Reputation is offered whenever ReputationSession.lua is in this client's TOC.
+-- That is not the same question as the flavor: the camelot beta is a
+-- classic-style client that still ships the reputation module.
+local HAS_REPUTATION = (Addon.ReputationSession and Addon.ReputationSession.Initialize) and true or false
 
 local optionDetails = {
     -- Declared as a dropdown so Config:SetOptionKey preserves the string value
@@ -240,6 +244,28 @@ local optionDetails = {
         description = Addon.L["OPT_DATA_BROKER_FEED_DESC"],
         commandKeys = {"ldb", "databroker"}
     },
+    classicWidth = {
+        key = "classicWidth",
+        type = "slider",
+        label = Addon.L["OPT_CLASSIC_WIDTH"],
+        description = Addon.L["OPT_CLASSIC_WIDTH_DESC"],
+        min = 200,
+        max = 1400,
+        step = 2,
+        format = "%.0f",
+        commandKeys = {"classicwidth", "barwidth"}
+    },
+    classicSegments = {
+        key = "classicSegments",
+        type = "slider",
+        label = Addon.L["OPT_CLASSIC_SEGMENTS"],
+        description = Addon.L["OPT_CLASSIC_SEGMENTS_DESC"],
+        min = 0,
+        max = 40,
+        step = 1,
+        format = "%.0f",
+        commandKeys = {"classicsegments", "barsegments"}
+    },
     circularSize = {
         key = "circularSize",
         type = "dropdown",
@@ -372,10 +398,18 @@ local optionDetails = {
     }
 }
 
-if IS_CLASSIC then
+-- Offer a secondary source only where its backing module can actually run.
+do
+    local availableSources = {
+        profession = true,
+        reputation = HAS_REPUTATION,
+        housing = not IS_CLASSIC,
+        honor = not IS_CLASSIC,
+    }
+
     local sourceOptions = optionDetails.secondaryBarSource.options
     for index = #sourceOptions, 1, -1 do
-        if sourceOptions[index].value ~= "profession" then
+        if not availableSources[sourceOptions[index].value] then
             table.remove(sourceOptions, index)
         end
     end
@@ -414,6 +448,8 @@ local optionOrder = {
     "levelUpCelebration",
     "goalNotifications",
     "enableDataBrokerFeed",
+    "classicWidth",
+    "classicSegments",
     "flatSize",
     "verticalSize",
     "circularSize",
@@ -441,10 +477,21 @@ local colorOptionsList = {
     { key = "secondaryProfession", command = "secondaryprofession", aliases = {"professionbar","skillbar"}, label = Addon.L["COLOR_SECONDARY_PROFESSION"], description = Addon.L["COLOR_SECONDARY_PROFESSION_DESC"], preview = "statusbar" }
 }
 
-if not IS_CLASSIC then
-    table.insert(colorOptionsList, 6, { key = "secondaryReputation", command = "secondaryreputation", aliases = {"repbar","reputationbar"}, label = Addon.L["COLOR_SECONDARY_REPUTATION"], description = Addon.L["COLOR_SECONDARY_REPUTATION_DESC"], preview = "statusbar" })
-    table.insert(colorOptionsList, 7, { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" })
-    table.insert(colorOptionsList, 8, { key = "secondaryHonor", command = "secondaryhonor", aliases = {"honorbar"}, label = Addon.L["COLOR_SECONDARY_HONOR"], description = Addon.L["COLOR_SECONDARY_HONOR_DESC"], preview = "statusbar" })
+-- Inserted in display order; the index advances so a missing entry does not
+-- leave a gap or reorder the ones that follow.
+do
+    local insertAt = 6
+
+    if HAS_REPUTATION then
+        table.insert(colorOptionsList, insertAt, { key = "secondaryReputation", command = "secondaryreputation", aliases = {"repbar","reputationbar"}, label = Addon.L["COLOR_SECONDARY_REPUTATION"], description = Addon.L["COLOR_SECONDARY_REPUTATION_DESC"], preview = "statusbar" })
+        insertAt = insertAt + 1
+    end
+
+    if not IS_CLASSIC then
+        table.insert(colorOptionsList, insertAt, { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" })
+        insertAt = insertAt + 1
+        table.insert(colorOptionsList, insertAt, { key = "secondaryHonor", command = "secondaryhonor", aliases = {"honorbar"}, label = Addon.L["COLOR_SECONDARY_HONOR"], description = Addon.L["COLOR_SECONDARY_HONOR_DESC"], preview = "statusbar" })
+    end
 end
 
 -- Build lookup maps

@@ -6,6 +6,7 @@
     <!-- Blizzard-style XP bar with border frame and atlas textures -->
     <!-- Inherits script handlers from XPBarBaseTemplate -->
 
+    <Script file="ClassicChrome.lua"/>
     <Script file="ClassicBarStyle.lua"/>
 
     <Frame name="ClassicBarTemplate" virtual="true" inherits="XPBarBaseTemplate" mixin="ClassicBarXPBarMixin">

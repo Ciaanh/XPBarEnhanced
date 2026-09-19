@@ -68,7 +68,11 @@ end
 ---Initialize configuration state and migrate any classic settings
 function Config:Initialize()
     -- Configuration is now managed by Database module
-    if Addon.IsClassicEra and Addon.db and Addon.db.secondaryBarSource ~= "profession" then
+    -- "reputation" is only a valid secondary source when ReputationSession.lua
+    -- is in this client's TOC. Test the module rather than the flavor: the
+    -- camelot beta is a classic-style client that still loads it.
+    local hasReputationSource = Addon.ReputationSession and Addon.ReputationSession.Initialize
+    if not hasReputationSource and Addon.db and Addon.db.secondaryBarSource == "reputation" then
         Addon.db.secondaryBarSource = "profession"
     end
 
@@ -589,6 +593,27 @@ function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
         local stats = Addon.Stats
         if stats and stats.Update then
             stats:Update()
+        end
+    end
+
+    -- Classic bar geometry changed. Handled here rather than in the options UI
+    -- so that every writer of the option lands on one path -- the sliders reach
+    -- this through ApplyPendingOptionChanges, and anything setting the key
+    -- directly reaches it through SetOptionKey. Both bars are driven in one
+    -- pass: the secondary anchors to the primary, so a stale one reads as two
+    -- mismatched lengths stacked on each other.
+    if key == "classicWidth" or key == "classicSegments" then
+        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
+            local bar = Addon.BarManager:GetCurrentFrame()
+            if bar and bar.ResizeToConfiguredWidth then
+                bar:ResizeToConfiguredWidth()
+            end
+        end
+        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
+            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
+            if secondaryBar and secondaryBar.ResizeToConfiguredWidth then
+                secondaryBar:ResizeToConfiguredWidth()
+            end
         end
     end
 

@@ -283,45 +283,71 @@ local function SafeHideContainer(container)
 end
 
 function BarManager:ApplyDefaultXPBarVisibility()
-    -- Hide only the Blizzard XP bar container when a custom XP style is active.
-    -- Secondary/reputation tracking is managed independently by SecondaryBarManager.
-    if self:IsCustomStyle(self.currentStyle) then
-        SafeHideContainer(_G.MainStatusTrackingBarContainer)
-    else
-        -- Otherwise, restore Blizzard XP bar visibility.
-        if _G.MainStatusTrackingBarContainer then
-            if ShouldSecondarySuppressMainContainer() then
-                SafeHideContainer(_G.MainStatusTrackingBarContainer)
-            else
-                _G.MainStatusTrackingBarContainer:Show()
+    -- Never touch Blizzard's protected status-bar containers during the login
+    -- race. In retail/classic beta, visibility changes from early startup can
+    -- trigger restricted-action disconnects. Queue the hide/show after the world
+    -- has settled instead of forcing it in the middle of the initial load path.
+    local shouldHide = self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer()
+
+    local function applyVisibility()
+        local candidates = {
+            _G.MainStatusTrackingBarContainer,
+            _G.MainMenuExpBar,
+            _G.MainMenuBarXP,
+            _G.MainMenuBarMaxLevelBar,
+            _G.StatusTrackingBarContainer,
+            _G.ExperienceBar,
+        }
+
+        for _, container in ipairs(candidates) do
+            if container and container.SetShown then
+                local ok = pcall(function()
+                    if shouldHide then
+                        if not InCombatLockdown() then
+                            container:SetShown(false)
+                        else
+                            SafeHideContainer(container)
+                        end
+                    else
+                        if not InCombatLockdown() then
+                            container:SetShown(true)
+                        end
+                    end
+                end)
+                if not ok then
+                    return
+                end
             end
         end
     end
+
+    if Addon and Addon._blizzardXPVisibilityQueued then
+        return
+    end
+
+    Addon._blizzardXPVisibilityQueued = true
+    local timer = C_Timer and C_Timer.After
+    if timer then
+        timer(1.25, function()
+            Addon._blizzardXPVisibilityQueued = false
+            applyVisibility()
+        end)
+    else
+        Addon._blizzardXPVisibilityQueued = false
+        applyVisibility()
+    end
 end
 
--- Install hooksecurefunc hooks to prevent Blizzard's bar from re-showing
--- while a custom style is active. Called once during Initialize().
+-- Do not hook Blizzard's protected status-bar container methods. Re-entrant
+-- calls inside a Show/SetShown hook can trip the client into a restricted-
+-- action path or an event loop when the addon is trying to hide the same
+-- Blizzard frame it is observing. We only need a single, explicit visibility
+-- pass here; the frame can be hidden or shown by our own logic without
+-- intercepting Blizzard's secure callbacks.
 function BarManager:InstallBlizzardBarHooks()
-    local containers = {
-        _G.MainStatusTrackingBarContainer,
-    }
-
-    for _, container in ipairs(containers) do
-        if container and container.Show then
-            hooksecurefunc(container, "Show", function()
-                if self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer() then
-                    SafeHideContainer(container)
-                end
-            end)
-        end
-        if container and container.SetShown then
-            hooksecurefunc(container, "SetShown", function(_, shown)
-                if shown and (self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer()) then
-                    SafeHideContainer(container)
-                end
-            end)
-        end
-    end
+    -- Intentionally left as a no-op. Visibility is managed by
+    -- ApplyDefaultXPBarVisibility() and by the direct state checks in
+    -- SetStyle()/RefreshMaxLevelRepurpose().
 end
 
 function BarManager:GetCurrentFrame()

@@ -53,16 +53,21 @@ function XPBarLayoutMixin:CalculateRestedBounds(context, barWidth)
 	local restedXP = context.restedXP or 0
 	local currentXP = context.currentXP or 0
 	local maxXP = context.xpMax or 1
-	local isFullyRested = context.isFullyRested or false
 
 	--  approach: Rested overlay BEHIND StatusBar, starts from 0
 	-- Width = currentXP + questOverlays + restedXP, so the visible portion shows beyond filled bar and quests
 	-- This way it animates automatically as currentXP changes
 
-	-- Hide if no rested XP or fully rested (>= 150% threshold)
-	if restedXP <= 0 or isFullyRested then
+	if restedXP <= 0 then
 		return 0, 0, false
 	end
+
+	-- Deliberately does NOT bail on context.isFullyRested. Rested XP that
+	-- overflows the level used to blank the overlay outright, so the player with
+	-- the most rested XP saw the least evidence of it. Blizzard's camelot bar
+	-- takes the opposite line -- ShouldRestedXpBarDisplayWhenOverflowing() is
+	-- true there, and ExhaustionTickMixin clamps the fill to the bar edge -- and
+	-- the clamp to maxXP below already produces exactly that.
 
 	-- Get quest overlay visibility from context (single source of truth)
 	local showQuestXP = context.showQuestXP
@@ -314,19 +319,19 @@ function XPBarLayoutMixin:UpdateExhaustionTickLayout(context, tickName)
 		return
 	end
 
-	-- Calculate visibility
-	local restedXP = context.restedXP or 0
-	local currentXP = context.currentXP or 0
-	local maxXP = context.xpMax or 1
-	local remainingXP = math.max(0, maxXP - currentXP)
+	-- Derive visibility from the same bounds the overlay uses, so the pip can
+	-- never drift off the end of the fill it is supposed to mark.
+	--
+	-- Mirrors Blizzard's ExhaustionTickMixin:UpdateTickPosition, which hides the
+	-- pip outside a 1%..99% band (`hideAtBarEdge`): at either extreme it sits
+	-- half off the bar and reads as a defect in the frame rather than a marker.
+	-- A full bar lands at exactly 1.0 here, which is how overflowing rested XP
+	-- now shows as a filled bar with no pip instead of no rested bar at all.
+	local barWidth = self:ValidateBarWidth(self)
+	local _, widthPixels, overlayVisible = self:CalculateRestedBounds(context, barWidth)
+	local ratio = (barWidth > 0) and (widthPixels / barWidth) or 0
 
-	local restedXPClamped = math.min(restedXP, remainingXP)
-	local restedRatio = restedXPClamped / maxXP
-
-	-- Show tick only when there is rested XP, the overlay is at least 1% wide,
-	-- and rested does NOT cover all remaining XP (which would make the tick redundant).
-	local restedCoversAll = restedXP >= remainingXP
-	local visible = restedXP > 0 and restedRatio >= 0.01 and not restedCoversAll
+	local visible = overlayVisible and ratio >= 0.01 and ratio <= 0.99
 	tick:SetShown(visible)
 
 	if visible then

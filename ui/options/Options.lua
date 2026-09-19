@@ -72,6 +72,8 @@ local ROW_OWNER_STYLE = {
     showMilestoneTicks          = "flat",
     verticalSize                = "vertical",
     classicBarDraggable         = "classic",
+    classicWidth                = "classic",
+    classicSegments             = "classic",
     circularSize                = "circular",
     circularSegments            = "circular",
     circularUseTexture          = "circular",
@@ -86,12 +88,17 @@ local ROW_OWNER_STYLE = {
     terminalUseCustomColors     = "terminal",
 }
 
+-- Rows hidden on classic-style clients. secondaryReputation is conditional:
+-- it is only meaningless when ReputationSession.lua is absent from this
+-- client's TOC, and a classic-style client can still ship it.
 local CLASSIC_HIDDEN_OPTIONS = {
     hideCompanionOutsideDelve = true,
-    secondaryReputation = true,
     secondaryHousing = true,
     secondaryHonor = true,
 }
+if not (Addon.ReputationSession and Addon.ReputationSession.Initialize) then
+    CLASSIC_HIDDEN_OPTIONS.secondaryReputation = true
+end
 
 -- The Colors tab carries one swatch per secondary-bar source, but only one source
 -- is ever on screen. The active source's swatch stays out in the open; the other

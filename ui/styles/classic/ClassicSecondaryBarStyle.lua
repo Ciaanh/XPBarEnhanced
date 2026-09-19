@@ -44,6 +44,10 @@ local STANDING_ATLAS = {
 
 local BLUE_ATLAS = "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Blue"
 
+-- Authored dimensions from ClassicSecondaryBarTemplate.xml.
+local FRAME_HEIGHT = 12
+local BAR_HEIGHT = 10
+
 -- Explicitly enforce draw order so atlas/texture fill is never occluded:
 -- background < status fill < border < label.
 local function ApplyFrameLayering(frame)
@@ -268,10 +272,39 @@ function StyleMixin:OnDragStop()
     end
 end
 
+--- Match the Classic primary bar's configured width. The secondary bar is
+--- anchored BOTTOM-to-TOP of the primary, so any mismatch reads immediately as
+--- two bars of different lengths stacked on each other.
+function StyleMixin:ResizeToConfiguredWidth()
+    local Chrome = Addon.UI and Addon.UI.ClassicChrome
+    if not Chrome then
+        return
+    end
+
+    local width = Chrome.GetWidth()
+    self:SetSize(width, FRAME_HEIGHT)
+
+    if self.Bar and self.Bar.SetSize then
+        self.Bar:SetSize(width, BAR_HEIGHT)
+    end
+
+    if self.LabelContainer and self.LabelContainer.Label then
+        self.LabelContainer.Label:SetWidth(width)
+    end
+
+    Chrome.LayoutDividers(self)
+end
+
 function StyleMixin:OnSecondaryLoad()
     ResolveHelpers()
     self:ConfigureDragSupport()
     ApplyFrameLayering(self)
+
+    local Chrome = Addon.UI and Addon.UI.ClassicChrome
+    if Chrome then
+        Chrome.BuildSlicedChrome(self, "Border")
+    end
+    self:ResizeToConfiguredWidth()
 end
 
 XPBarClassicReputationMixin = CreateFromMixins(XPBarSecondaryBaseMixin, StyleMixin)

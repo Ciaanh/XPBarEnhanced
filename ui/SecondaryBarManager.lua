@@ -240,62 +240,62 @@ function Manager:GetCurrentFrame()
 end
 
 function Manager:ApplyDefaultReputationBarVisibility()
-    local hasCustomReputationStyle = IsCustomStyle(self._currentStyle)
+    local shouldHide = ShouldHideSecondaryContainer()
 
-    if hasCustomReputationStyle then
-        SafeHideContainer(_G.SecondaryStatusTrackingBarContainer)
-        -- At max level Blizzard promotes the reputation bar to the main container.
-        -- Suppress it there too so only our secondary bar is visible.
-        if ShouldSuppressMainContainer() then
-            SafeHideContainer(_G.MainStatusTrackingBarContainer)
-        end
-    else
-        if _G.SecondaryStatusTrackingBarContainer then
-            _G.SecondaryStatusTrackingBarContainer:Show()
+    local function applyVisibility()
+        local candidates = {
+            _G.SecondaryStatusTrackingBarContainer,
+            _G.ReputationWatchBar,
+            _G.ReputationStatusBar,
+            _G.StatusTrackingBarContainer,
+        }
+
+        for _, container in ipairs(candidates) do
+            if container and container.SetShown then
+                local ok = pcall(function()
+                    if shouldHide then
+                        if not InCombatLockdown() then
+                            container:SetShown(false)
+                        else
+                            SafeHideContainer(container)
+                        end
+                    else
+                        if not InCombatLockdown() then
+                            container:SetShown(true)
+                        end
+                    end
+                end)
+                if not ok then
+                    return
+                end
+            end
         end
     end
-end
 
-function Manager:InstallBlizzardBarHooks()
-    if self._blizzardHooksInstalled then
+    if Addon and Addon._blizzardRepVisibilityQueued then
         return
     end
 
-    local secondaryContainer = _G.SecondaryStatusTrackingBarContainer
-    if secondaryContainer and secondaryContainer.Show then
-        hooksecurefunc(secondaryContainer, "Show", function()
-            if IsCustomStyle(self._currentStyle) then
-                SafeHideContainer(secondaryContainer)
-            end
+    Addon._blizzardRepVisibilityQueued = true
+    local timer = C_Timer and C_Timer.After
+    if timer then
+        timer(1.5, function()
+            Addon._blizzardRepVisibilityQueued = false
+            applyVisibility()
         end)
+    else
+        Addon._blizzardRepVisibilityQueued = false
+        applyVisibility()
     end
-    if secondaryContainer and secondaryContainer.SetShown then
-        hooksecurefunc(secondaryContainer, "SetShown", function(_, shown)
-            if shown and IsCustomStyle(self._currentStyle) then
-                SafeHideContainer(secondaryContainer)
-            end
-        end)
-    end
+end
 
-    -- At max level Blizzard promotes the watched reputation bar into the main
-    -- status bar container. Hook it so we can suppress it when our own bar is active.
-    local mainContainer = _G.MainStatusTrackingBarContainer
-    if mainContainer and mainContainer.Show then
-        hooksecurefunc(mainContainer, "Show", function()
-            if ShouldSuppressMainContainer() then
-                SafeHideContainer(mainContainer)
-            end
-        end)
-    end
-    if mainContainer and mainContainer.SetShown then
-        hooksecurefunc(mainContainer, "SetShown", function(_, shown)
-            if shown and ShouldSuppressMainContainer() then
-                SafeHideContainer(mainContainer)
-            end
-        end)
-    end
-
-    self._blizzardHooksInstalled = true
+-- Never hook Blizzard protected status-bar container methods. Those hooks can
+-- call Hide()/Show() while the protected UI is already in a show/setshown
+-- callback, which is the pattern that triggers illegal-action disconnects.
+function Manager:InstallBlizzardBarHooks()
+    -- Intentionally left as a no-op. We suppress the Blizzard containers via
+    -- explicit visibility checks in ApplyDefaultReputationBarVisibility() and
+    -- RefreshForPrimaryStyleChange() instead of intercepting protected callbacks.
 end
 
 function Manager:SetSecondaryStyle(style)

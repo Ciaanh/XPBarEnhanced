@@ -134,6 +134,27 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <!-- ==================== Classic Bar ==================== -->
+
+                                    <Frame parentKey="Row_classicWidth" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="classicWidth" type="string"/>
+                                            <KeyValue key="layoutIndex" value="5.3" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_classicSegments" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="classicSegments" type="string"/>
+                                            <KeyValue key="layoutIndex" value="5.6" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Flat Bar ==================== -->
 
                                     <Frame parentKey="Row_showMilestoneTicks" inherits="ConfigCheckboxTemplate">

@@ -6,12 +6,20 @@ local Addon = XPBarEnhanced
 local defaults = {
     barStyle = "classic",
     showSecondaryBar = false,
-    secondaryBarSource = Addon.IsClassicEra and "profession" or "reputation",
+    -- Coerced at Config:Initialize when the reputation module is not shipped in
+    -- this client's TOC. Keyed on the module, not on the flavor, because a
+    -- classic-style client can still load ReputationSession.lua.
+    secondaryBarSource = "reputation",
     professionSlot = "auto",
     hideCompanionOutsideDelve = false,
     secondaryBarsAttached = true,
     maxLevelPrimaryShowsSecondary = false,
     barLocked = false,
+    -- 566 and 10 are the dimensions the Classic templates were authored at, and
+    -- the legacy border art already paints nine dividers at exactly the ten-
+    -- segment positions -- so these defaults reproduce the pre-option bar.
+    classicWidth = 566,
+    classicSegments = 10,
     circularSize = "medium",
     flatSize = "default",
     verticalSize = "default",

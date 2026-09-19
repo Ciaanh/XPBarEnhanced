@@ -4,6 +4,20 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Classic bar width**: a slider (200-1400px) sets the Classic bar's width. The border's end caps keep a fixed size while the middle stretches, so the frame stays crisp instead of smearing.
+- **Classic segment count**: a slider (0-40) divides the Classic bar into evenly spaced segments, following Blizzard's new experience bar. 0 or 1 gives one unbroken bar, 10 matches the previous art, 20 matches Blizzard's wide bar.
+
+### Changed
+
+- Rested XP that overflows the current level now fills the bar to its edge instead of hiding the rested overlay entirely, matching Blizzard's newer experience bar.
+- The rested marker now hides within 1% of either end of the bar, where it used to sit half off the frame.
+
+### Fixed
+
+- The Classic bar requested an XP fill atlas under a name no current client ships, so it silently fell back to the bundled texture. It now probes Blizzard's current name first.
+
 ## [1.2.6] - 2026-09-11
 
 ### Fixed
