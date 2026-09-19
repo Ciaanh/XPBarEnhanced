@@ -28,6 +28,7 @@ locales\enUS.lua
 
 # Core Systems
 XPBarEnhanced.lua
+core\FlavorDetection.lua
 
 core\config\defaults.lua
 
