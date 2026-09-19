@@ -65,6 +65,9 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFprofile new <name>|r - Create and select a new profile")
     print("  /xpbe |cFFFFFFFFprofile rename <new name>|r - Rename the active profile")
     print("  /xpbe |cFFFFFFFFprofile delete [name]|r - Delete a profile")
+    print("  /xpbe |cFFFFFFFFenable|r - Manually start the addon after login")
+    print("  /xpbe |cFFFFFFFFdisable|r - Stop the addon until it is manually enabled again")
+    print("  /xpbe |cFFFFFFFFstatus|r - Show startup state and recent log")
     print("  /xpbe |cFFFFFFFFreps|r - Export all faction IDs")
     print("  /xpbe |cFFFFFFFFdebugevents [on|off|show|reset]|r - Toggle/show/reset EventBus counters")
     print("  /xpbe |cFFFFFFFFtest celebration|r - Preview the level-up celebration (no real level-up)")
@@ -109,6 +112,46 @@ local function handleReset()
         Addon.Config:Reset()
     else
         print("|cFFFF0000XP Bar Enhanced:|r Reset function not available")
+    end
+end
+
+local function handleEnable()
+    Addon.enabled = true
+    Addon:Log("Manual startup requested via /xpbe enable")
+
+    if Addon.Database and Addon.Database.Initialize then
+        Addon.Database:Initialize()
+    end
+
+    if Addon.ProfileManager and Addon.ProfileManager.Initialize then
+        Addon.ProfileManager:Initialize()
+    end
+
+    if Addon.Config and Addon.Config.Initialize then
+        Addon.Config:Initialize()
+    end
+
+    if Addon.LifecycleHandlers and Addon.LifecycleHandlers.OnPlayerLogin then
+        Addon.LifecycleHandlers:OnPlayerLogin()
+    end
+
+    if Addon.LifecycleHandlers and Addon.LifecycleHandlers.OnPlayerEnteringWorld then
+        Addon.LifecycleHandlers:OnPlayerEnteringWorld(true, false)
+    end
+end
+
+local function handleDisable()
+    Addon.enabled = false
+    Addon:Log("Manual startup disabled via /xpbe disable")
+end
+
+local function handleStatus()
+    print(string.format("|cFF00FF00XP Bar Enhanced:|r startup is %s", Addon.enabled and "enabled" or "disabled"))
+    if #Addon.startupLog > 0 then
+        print("|cFF00FF00XP Bar Enhanced:|r recent startup log:")
+        for i = 1, #Addon.startupLog do
+            print("  " .. Addon.startupLog[i])
+        end
     end
 end
 
@@ -382,6 +425,12 @@ local function handleSlashCommand(message)
 
     if command == "" or command == "help" then
         showHelp()
+    elseif command == "enable" then
+        handleEnable()
+    elseif command == "disable" then
+        handleDisable()
+    elseif command == "status" then
+        handleStatus()
     elseif command == "stats" then
         handleStats()
     elseif command == "changelog" or command == "changes" or command == "news" then

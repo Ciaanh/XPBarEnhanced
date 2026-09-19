@@ -204,11 +204,11 @@ local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
         Addon.ReputationSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnEnteringWorld then
+    if Addon.IsHousingAvailable and Addon.IsHousingAvailable() and Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnEnteringWorld then
         Addon.HousingSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if Addon.HonorSession and Addon.HonorSession._session and Addon.HonorSession.OnEnteringWorld then
+    if not Addon.IsClassicEra and Addon.HonorSession and Addon.HonorSession._session and Addon.HonorSession.OnEnteringWorld then
         Addon.HonorSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 

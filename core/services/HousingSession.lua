@@ -12,6 +12,9 @@ local HOUSING_NAME = L["HOUSING_NAME"] or "Housing Favor"
 local HOUSING_MAX_LEVEL_LABEL = L["HOUSING_MAX_LEVEL_LABEL"] or "Max House Level"
 local HOUSING_LEVEL_FMT = L["HOUSING_LEVEL_FMT"] or "Level %d"
 
+-- Cap on consecutive re-requests for a malformed favor payload.
+local MAX_FAVOR_RETRIES = 3
+
 local function IsSecret(value)
     return (issecretvalue and issecretvalue(value)) and true or false
 end
@@ -149,6 +152,12 @@ function HousingSession:Initialize()
 end
 
 function HousingSession:RequestCurrentTrackedHouseFavor()
+    -- This is a server round-trip and is reachable from several housing events,
+    -- so it carries its own capability gate rather than trusting every caller.
+    if not (Addon.IsHousingAvailable and Addon.IsHousingAvailable()) then
+        return
+    end
+
     if not C_Housing or not C_Housing.GetCurrentHouseLevelFavor then
         return
     end
@@ -172,6 +181,12 @@ local function resetHousingSessionProgress(session)
 end
 
 function HousingSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    if not (Addon.IsHousingAvailable and Addon.IsHousingAvailable()) then
+        return
+    end
+
+    self._favorRetries = 0
+
     local session = self._session
     if session then
         -- Same reset semantics as the XP session: fresh login always starts a
@@ -270,11 +285,22 @@ function HousingSession:OnHouseLevelFavorUpdated(a1, a2, a3)
         -- Re-request only for a genuinely empty/malformed payload. If the args
         -- were secret (SafeNumber -> nil), re-requesting would trigger the same
         -- secret payload again, an unbounded request/event loop.
+        --
+        -- The retry is capped for the same reason: a realm that keeps answering
+        -- with an unusable payload would otherwise put this handler and the
+        -- request into a request/event storm with no backoff, which is its own
+        -- way to lose the connection.
         if not (IsSecret(a1) or IsSecret(a2) or IsSecret(a3)) then
-            self:RequestCurrentTrackedHouseFavor()
+            local retries = (self._favorRetries or 0) + 1
+            self._favorRetries = retries
+            if retries <= MAX_FAVOR_RETRIES then
+                self:RequestCurrentTrackedHouseFavor()
+            end
         end
         return
     end
+
+    self._favorRetries = 0
 
     local favor = SafeNumber(houseLevelFavor.houseFavor)
     local level = SafeNumber(houseLevelFavor.houseLevel)

@@ -12,24 +12,40 @@ function eventHandlers:OnAddonLoaded(name)
         return
     end
 
-    -- Fail fast: core modules must be present; missing files indicate a load-order bug
+    Addon:Log("OnAddonLoaded start")
+
+    -- Always initialize saved-variable state first so profile/settings survive
+    -- logout/login even while startup is intentionally held off by the manual
+    -- enable gate. The UI should stay dormant until /xpbe enable, but config
+    -- data must still be present.
     assert(Addon.Database, "XPBarEnhanced: Database module not loaded (check .toc order)")
     assert(Addon.Config,   "XPBarEnhanced: Config module not loaded (check .toc order)")
     assert(Addon.ProfileManager, "XPBarEnhanced: ProfileManager module not loaded (check .toc order)")
 
-    -- Initialize core systems
     Addon.Database:Initialize()
     Addon.ProfileManager:Initialize()
     Addon.Config:Initialize()
+
+    if not Addon.enabled then
+        Addon:Log("Startup is disabled; waiting for /xpbe enable")
+        return
+    end
 
     -- Get XP gain disabled state
     Addon.state.xpGainDisabled = Addon.Database:IsXPGainDisabled()
 
     -- Print loaded message
     print(Addon.L["ADDON_LOADED"])
+    Addon:Log("OnAddonLoaded complete")
 end
 
 function eventHandlers:OnPlayerLogin()
+    Addon:Log("OnPlayerLogin start")
+    if not Addon.enabled then
+        Addon:Log("Skipping OnPlayerLogin because startup is disabled")
+        return
+    end
+
     -- Initialize session
     if Addon.Session and Addon.Session.Initialize then
         Addon.Session:Initialize()
@@ -40,17 +56,18 @@ function eventHandlers:OnPlayerLogin()
         Addon.ReputationSession:Initialize()
     end
 
-    -- Initialize Housing session
-    if Addon.HousingSession and Addon.HousingSession.Initialize then
+    -- Housing is gated on the housing service reporting itself available, not on
+    -- the flavor. See Addon.IsHousingAvailable.
+    if Addon.IsHousingAvailable and Addon.IsHousingAvailable() and Addon.HousingSession and Addon.HousingSession.Initialize then
         Addon.HousingSession:Initialize()
     end
 
-    -- Initialize Honor session
-    if Addon.HonorSession and Addon.HonorSession.Initialize then
+    if not Addon.IsClassicEra and Addon.HonorSession and Addon.HonorSession.Initialize then
         Addon.HonorSession:Initialize()
     end
 
-    -- Initialize Profession session
+    -- Profession data is still valid in classic-style builds, but it must be
+    -- gated behind the API's existence to avoid a dead call during world load.
     if Addon.ProfessionSession and Addon.ProfessionSession.Initialize then
         Addon.ProfessionSession:Initialize()
     end
@@ -91,15 +108,27 @@ function eventHandlers:OnPlayerLogin()
         options:Initialize()
     end
 
+    Addon:Log("OnPlayerLogin complete")
 end
 
 function eventHandlers:OnPlayerLogout()
+    Addon:Log("OnPlayerLogout")
     if Addon.BarManager and Addon.BarManager.Shutdown then
         Addon.BarManager:Shutdown()
     end
 end
 
 function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
+    Addon:Log(string.format("OnPlayerEnteringWorld start (initial=%s reload=%s)", tostring(isInitialLogin), tostring(isReloadingUI)))
+    if not Addon.enabled then
+        Addon:Log("Skipping OnPlayerEnteringWorld because startup is disabled")
+        return
+    end
+
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("PLAYER_ENTERING_WORLD")
+    end
+
     if not Addon._changelogChecked then
         Addon._changelogChecked = true
         if Addon.Changelog and Addon.Changelog.CheckForUpdates then
@@ -107,31 +136,7 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
         end
     end
 
-    if Addon.Session and Addon.Session.EmitUpdate then
-        Addon.Session:EmitUpdate("PLAYER_ENTERING_WORLD")
-    end
-
-    C_Timer.After(0, function()
-        if Addon.BarManager and Addon.BarManager.SetStyle then
-            local defaultStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
-            local configuredStyle = defaultStyle
-            if Addon.Config and Addon.Config.GetOptionValue then
-                configuredStyle = Addon.Config:GetOptionValue("barStyle") or defaultStyle
-            else
-                local db = Addon.db or {}
-                configuredStyle = db.barStyle or defaultStyle
-            end
-            Addon.BarManager.currentStyle = nil
-            Addon.BarManager:SetStyle(configuredStyle)
-        end
-
-        if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
-            Addon.BarManager:ApplyDefaultXPBarVisibility()
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ApplyDefaultReputationBarVisibility then
-            Addon.SecondaryBarManager:ApplyDefaultReputationBarVisibility()
-        end
-    end)
+    Addon:Log("OnPlayerEnteringWorld complete")
 end
 
 function eventHandlers:OnPlayerMaxLevelUpdate()
