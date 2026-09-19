@@ -90,13 +90,6 @@ Addon.ContextBuilder = ContextBuilder
 
 ContextBuilder._contextCache = ContextBuilder._contextCache or {}
 ContextBuilder._contextCacheFlushPending = false
-ContextBuilder._debugStats = ContextBuilder._debugStats or {
-	fullBuilds = 0,
-	fullHits = 0,
-	textBuilds = 0,
-	textHits = 0,
-	lastLogAt = 0,
-}
 
 local function GetFrameToken()
 	if GetTimePreciseSec then
@@ -120,53 +113,6 @@ end
 local function BuildContextCacheKey(event, ...)
 	local arg1, arg2 = ...
 	return table.concat({ tostring(event or "UNKNOWN"), tostring(arg1), tostring(arg2) }, "|")
-end
-
-local function IsContextDebugEnabled()
-	if not GetCVar then
-		return false
-	end
-
-	local value = GetCVar("XPBE_DEBUG_CONTEXT")
-	return value == "1"
-end
-
-local function RecordDebugStat(statKey)
-	local stats = ContextBuilder._debugStats
-	if not stats then
-		return
-	end
-
-	stats[statKey] = (stats[statKey] or 0) + 1
-
-	if not IsContextDebugEnabled() then
-		return
-	end
-
-	local now = GetTime and GetTime() or 0
-	if (now - (stats.lastLogAt or 0)) < 10 then
-		return
-	end
-
-	stats.lastLogAt = now
-	local fullBuilds = stats.fullBuilds or 0
-	local fullHits = stats.fullHits or 0
-	local textBuilds = stats.textBuilds or 0
-	local textHits = stats.textHits or 0
-	local fullTotal = fullBuilds + fullHits
-	local textTotal = textBuilds + textHits
-	local fullHitRate = fullTotal > 0 and math.floor((fullHits / fullTotal) * 100 + 0.5) or 0
-	local textHitRate = textTotal > 0 and math.floor((textHits / textTotal) * 100 + 0.5) or 0
-
-	print(string.format(
-		"XPBE ContextCache full b=%d h=%d hit=%d%% | text b=%d h=%d hit=%d%%",
-		fullBuilds,
-		fullHits,
-		fullHitRate,
-		textBuilds,
-		textHits,
-		textHitRate
-	))
 end
 
 -------------------------------------------------------------------
@@ -388,7 +334,6 @@ function XPBarContextBuilder.BuildContext(event, ...)
 	local cacheKey = BuildContextCacheKey(event, unpack(args))
 	local cached = ContextBuilder._contextCache[cacheKey]
 	if cached and cached.frameToken == frameToken and cached.context then
-		RecordDebugStat("fullHits")
 		return cached.context
 	end
 
@@ -490,7 +435,6 @@ function XPBarContextBuilder.BuildContext(event, ...)
 		frameToken = frameToken,
 		context = context,
 	}
-	RecordDebugStat("fullBuilds")
 	ScheduleCacheFlush()
 
 	return context
@@ -521,25 +465,11 @@ function ContextBuilder.Initialize()
 	-- copy here would leave dead state that reads as authoritative.
 	ContextBuilder._contextCache = {}
 	ContextBuilder._contextCacheFlushPending = false
-	ContextBuilder._debugStats = {
-		fullBuilds = 0,
-		fullHits = 0,
-		textBuilds = 0,
-		textHits = 0,
-		lastLogAt = 0,
-	}
 end
 
 function ContextBuilder.ResetSession()
 	ContextBuilder._contextCache = {}
 	ContextBuilder._contextCacheFlushPending = false
-	ContextBuilder._debugStats = {
-		fullBuilds = 0,
-		fullHits = 0,
-		textBuilds = 0,
-		textHits = 0,
-		lastLogAt = 0,
-	}
 	-- Session's baseline is reset by Session:OnEnteringWorld / resetSessionProgress.
 end
 
@@ -556,7 +486,6 @@ function XPBarContextBuilder.BuildTextRefreshContext(event)
 	local cacheKey = BuildContextCacheKey("TEXT_REFRESH", event)
 	local cached = ContextBuilder._contextCache[cacheKey]
 	if cached and cached.frameToken == frameToken and cached.context then
-		RecordDebugStat("textHits")
 		return cached.context
 	end
 
@@ -603,7 +532,6 @@ function XPBarContextBuilder.BuildTextRefreshContext(event)
 		frameToken = frameToken,
 		context = context,
 	}
-	RecordDebugStat("textBuilds")
 	ScheduleCacheFlush()
 
 	return context

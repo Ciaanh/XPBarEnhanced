@@ -67,11 +67,7 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFprofile delete [name]|r - Delete a profile")
     print("  /xpbe |cFFFFFFFFenable|r - Manually start the addon after login")
     print("  /xpbe |cFFFFFFFFdisable|r - Stop the addon until it is manually enabled again")
-    print("  /xpbe |cFFFFFFFFstatus|r - Show startup state and recent log")
-    print("  /xpbe |cFFFFFFFFreps|r - Export all faction IDs")
-    print("  /xpbe |cFFFFFFFFdebugevents [on|off|show|reset]|r - Toggle/show/reset EventBus counters")
-    print("  /xpbe |cFFFFFFFFtest celebration|r - Preview the level-up celebration (no real level-up)")
-    print("  /xpbe |cFFFFFFFFtest milestone|r - Preview a level-progress notification (no real milestone)")
+    print("  /xpbe |cFFFFFFFFstatus|r - Show startup state")
     print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -117,8 +113,6 @@ end
 
 local function handleEnable()
     Addon.enabled = true
-    Addon:Log("Manual startup requested via /xpbe enable")
-
     if Addon.Database and Addon.Database.Initialize then
         Addon.Database:Initialize()
     end
@@ -142,17 +136,10 @@ end
 
 local function handleDisable()
     Addon.enabled = false
-    Addon:Log("Manual startup disabled via /xpbe disable")
 end
 
 local function handleStatus()
     print(string.format("|cFF00FF00XP Bar Enhanced:|r startup is %s", Addon.enabled and "enabled" or "disabled"))
-    if #Addon.startupLog > 0 then
-        print("|cFF00FF00XP Bar Enhanced:|r recent startup log:")
-        for i = 1, #Addon.startupLog do
-            print("  " .. Addon.startupLog[i])
-        end
-    end
 end
 
 local function handleResetStats()
@@ -195,76 +182,6 @@ local function handleStyle(style)
     else
         print("|cFFFF0000XP Bar Enhanced:|r Invalid style. Use: " .. StyleList(", "))
     end
-end
-
-local function handleReps()
-    if Addon.ReputationSession and Addon.ReputationSession.ListAllFactions then
-        Addon.ReputationSession:ListAllFactions()
-    else
-        print("|cFFFF0000XP Bar Enhanced:|r Reputation module not available")
-    end
-end
-
-local function handleDebugEvents(arg)
-    local eventBus = Addon.EventBus
-    if not eventBus then
-        print("|cFFFF0000XP Bar Enhanced:|r EventBus unavailable")
-        return
-    end
-
-    local mode = string.lower((arg or ""):match("^%s*(%S*)") or "")
-    if mode == "" then
-        mode = "show"
-    end
-
-    if mode == "on" then
-        if eventBus.SetDebugCountersEnabled then
-            eventBus:SetDebugCountersEnabled(true)
-        end
-        print("|cFF00FF00XP Bar Enhanced:|r Event counters enabled")
-        return
-    end
-
-    if mode == "off" then
-        if eventBus.SetDebugCountersEnabled then
-            eventBus:SetDebugCountersEnabled(false)
-        end
-        print("|cFF00FF00XP Bar Enhanced:|r Event counters disabled")
-        return
-    end
-
-    if mode == "reset" then
-        if eventBus.ResetDebugCounters then
-            eventBus:ResetDebugCounters()
-        end
-        print("|cFF00FF00XP Bar Enhanced:|r Event counters reset")
-        return
-    end
-
-    if mode == "show" then
-        local enabled = eventBus.IsDebugCountersEnabled and eventBus:IsDebugCountersEnabled()
-        local status = enabled and "enabled" or "disabled"
-        print("|cFF00FF00XP Bar Enhanced:|r Event counters are " .. status)
-
-        if not eventBus.GetDebugCounters then
-            return
-        end
-
-        local rows = eventBus:GetDebugCounters(12)
-        if not rows or #rows == 0 then
-            print("|cFF00FF00XP Bar Enhanced:|r No EventBus emits recorded")
-            return
-        end
-
-        print("|cFF00FF00XP Bar Enhanced:|r Top EventBus emits:")
-        for i = 1, #rows do
-            local row = rows[i]
-            print(string.format("  %s x%d", tostring(row.event), tonumber(row.count) or 0))
-        end
-        return
-    end
-
-    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe debugevents [on|off|show|reset]")
 end
 
 local function handleProfile(arg)
@@ -384,41 +301,6 @@ local function handleProfile(arg)
     print("Usage: /xpbe profile [global|use <name>|new <name>|rename <new name>|delete [name]]")
 end
 
--- Preview-only triggers for promo screenshots/GIFs: fire the visual effect
--- directly on the current bar/session state without mutating real XP data
--- or session totals.
-local function handleTest(arg)
-    arg = string.lower(arg or "")
-
-    if arg == "celebration" then
-        local manager = Addon.BarManager
-        local bar = manager and manager.GetCurrentFrame and manager:GetCurrentFrame()
-        local anim = Addon.AnimationManager
-        if bar and anim and anim.PlayLevelUpCelebration then
-            local config = bar.GetAnimationConfig and bar:GetAnimationConfig() or nil
-            anim:PlayLevelUpCelebration(bar, config)
-            print("|cff33ff99XP Bar Enhanced:|r Celebration preview triggered.")
-        else
-            print("|cFFFF0000XP Bar Enhanced:|r No active bar frame to preview on.")
-        end
-        return
-    elseif arg == "milestone" then
-        local tracker = Addon.GoalTracker
-        if tracker and tracker.PreviewMilestone then
-            -- Preview-only: does not touch persisted milestone state, so it
-            -- can't suppress or duplicate a real notification later.
-            local level = (UnitLevel and UnitLevel("player")) or 1
-            tracker:PreviewMilestone(75, level, 1800)
-            print("|cff33ff99XP Bar Enhanced:|r Milestone preview triggered (75%).")
-        else
-            print("|cFFFF0000XP Bar Enhanced:|r Milestone tracker unavailable.")
-        end
-        return
-    end
-
-    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe test <celebration|milestone>")
-end
-
 local function handleSlashCommand(message)
     local command, arg = string.match(message or "", "^(%S*)%s*(.-)$")
     command = string.lower(command or "")
@@ -447,12 +329,6 @@ local function handleSlashCommand(message)
         handleStyle(arg)
     elseif command == "profile" or command == "profiles" then
         handleProfile(arg)
-    elseif command == "reps" then
-        handleReps()
-    elseif command == "debugevents" then
-        handleDebugEvents(arg)
-    elseif command == "test" then
-        handleTest(arg)
     else
         printUnknown(command)
     end

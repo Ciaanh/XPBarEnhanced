@@ -54,18 +54,6 @@ Addon.state =
 -- blocking legitimate login initialization and made settings look like they were
 -- not being saved.
 Addon.enabled = true
-Addon.startupLog = Addon.startupLog or {}
-function Addon:Log(message)
-    if not message then
-        return
-    end
-    print(string.format("|cFF00FF00[XPBarEnhanced]|r %s", tostring(message)))
-    table.insert(Addon.startupLog, tostring(message))
-    if #Addon.startupLog > 25 then
-        table.remove(Addon.startupLog, 1)
-    end
-end
-
 -- Database reference
 Addon.db = Addon.db or {}
 
