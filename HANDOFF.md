@@ -1,6 +1,7 @@
 # XPBarEnhanced — login disconnect on the Forever beta
 
-**Status: root cause identified and confirmed. Fix implemented, not yet verified in game.**
+**Status: historical incident analysis. The original two-TOC detection fix has
+since been replaced by the single-TOC, build-to-flavor feature mapping.**
 
 Last updated 2026-09-19. This replaces an earlier handoff whose leading
 hypothesis (a protected Blizzard status-bar race) has since been disproven. See
@@ -122,14 +123,14 @@ not been enough on its own.
 
 ---
 
-## 3. Fix implemented in this working tree
+## 3. Historical fix and current architecture
 
 Not committed. Not yet verified in game.
 
-1. **`XPBarEnhanced.lua:23-30`** — flavor detection now keys on a retail
-   interface floor of 100000. Retail has been six digits since 10.0, every
-   classic-style flavor is five (Classic Era 11508, camelot 16001, Mists 50500).
-   Also exposes `Addon.InterfaceVersion`.
+1. The original fix moved flavor detection out of `XPBarEnhanced.lua` and
+  exposed `Addon.InterfaceVersion`. The current implementation lives in
+  `core/FlavorDetection.lua`, where build metadata resolves to a named flavor
+  and that flavor resolves to an explicit feature profile.
 
 2. **`XPBarEnhanced.lua:39`** — new `Addon.IsHousingAvailable()`. It asks
    `C_Housing.IsHousingServiceEnabled()`, which is the predicate Blizzard itself
@@ -147,13 +148,9 @@ Not committed. Not yet verified in game.
    re-request is capped by `MAX_FAVOR_RETRIES`, reset on a good payload and on
    entering world.
 
-5. **Reputation keyed on the module, not the flavor**, at
-   `core/config/Config.lua:74`, `core/config/defaults.lua`,
-   `ui/options/OptionMetadata.lua:10` and `ui/options/Options.lua:98`. Widening
-   `IsClassicEra` would otherwise have forced the secondary source to profession
-   and stripped the reputation option and colour swatch on camelot, where
-   reputation genuinely works because the retail TOC ships
-   `ReputationSession.lua`.
+5. Reputation and all other secondary sources are now keyed on feature
+  activation, not TOC/module presence. All supported clients load the same
+  manifest, and `Addon:IsFeatureEnabled()` is the runtime authority.
 
 ---
 
@@ -165,9 +162,10 @@ Not committed. Not yet verified in game.
    `.../_classic_beta_/Interface/AddOns/XPBarEnhanced` and log in.
 3. Confirm state in game:
    ```
-   /run print(XPBarEnhanced.InterfaceVersion, XPBarEnhanced.IsClassicEra, XPBarEnhanced.IsHousingAvailable(), C_Housing and C_Housing.IsHousingServiceEnabled ~= nil)
+  /run print(XPBarEnhanced.Client, XPBarEnhanced.InterfaceVersion, XPBarEnhanced:IsFeatureEnabled("housing"), XPBarEnhanced.IsHousingAvailable())
    ```
-   Expect interface 16001, `IsClassicEra` true, `IsHousingAvailable()` false.
+  Expect client `forever`, interface 16001, housing feature false, and
+  `IsHousingAvailable()` false.
 4. Expected behaviour on camelot: no disconnect, housing absent, honor absent,
    reputation still selectable as a secondary source.
 5. **Regression-check retail.** The flavor change and the housing gate both
@@ -182,12 +180,10 @@ Not committed. Not yet verified in game.
 - If `IsHousingAvailable()` returns false on **retail**, the capability query is
   not answerable at `PLAYER_LOGIN` time and the gate needs to be re-evaluated
   after entering world instead. This is the one design risk in the fix.
-- `XPBarEnhanced.toc` still declares only interface 120100, so the addon shows
-  as out of date on the beta. Adding 16001 to that line would clear it. That is
-  a support statement, so it was left alone deliberately.
-- The unsuffixed TOC is what camelot loads. If you ever want camelot to get the
-  reduced classic file list, that needs a TOC suffix the client actually
-  recognises, not `-Classic`.
+- `XPBarEnhanced.toc` is now the single multi-client manifest. Keep its
+  interface list synchronized with the build ranges in
+  `core/FlavorDetection.lua`; do not reintroduce flavor-specific TOCs for
+  feature activation.
 
 ---
 

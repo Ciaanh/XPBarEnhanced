@@ -8,6 +8,14 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.3.0",
+        notes = {
+            "Added configurable Classic bar width and segment count with crisp, resizable chrome.",
+            "Added build-based flavor mapping for Retail and supported Classic branches.",
+            "Disabled unsupported feature services on clients that expose incompatible APIs, including Forever housing.",
+        },
+    },
+    {
         version = "1.2.6",
         notes = {
             "Improved recovery from malformed saved settings and profile data.",
