@@ -65,9 +65,18 @@ local function getCharacterKey(characterKey)
         return Addon.Database:GetPlayerKey()
     end
 
-    -- Use C_PlayerInfo.GetName (REQUIRES a playerLocation) to avoid secret
-    -- value issues in 12.0.0+; pcall-guarded with a UnitName fallback.
+    -- Keep this fallback consistent with Database:GetPlayerKey: only Forever
+    -- uses the full first-and-last name as its realmless character identity.
     local playerName
+    if Addon.Client == Addon.Clients.FOREVER and UnitFullName then
+        playerName = UnitFullName("player")
+    end
+    playerName = playerName or (UnitName and UnitName("player"))
+    if type(playerName) == "string" and playerName ~= "" then
+        local realmName = GetRealmName() or "Unknown"
+        return string.format("%s-%s", playerName, realmName)
+    end
+
     if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
         local ok, name = pcall(function()
             return C_PlayerInfo.GetName(PlayerLocation:CreateFromUnit("player"))

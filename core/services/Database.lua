@@ -14,10 +14,22 @@ Addon.Database = Addon.Database or {}
 
 local Database = Addon.Database
 
--- Resolve the player's name for the per-character storage key.
--- C_PlayerInfo.GetName REQUIRES a playerLocation argument; pcall-guarded
--- since a bad call here would take down all per-character storage.
+-- Resolve the player's character name for the per-character storage key.
+-- Forever is realmless and identifies characters by first + last name, so only
+-- that flavor uses UnitFullName. Other clients keep their normal UnitName path.
 local function GetSafePlayerName()
+    if Addon.Client == Addon.Clients.FOREVER and UnitFullName then
+        local fullName = UnitFullName("player")
+        if type(fullName) == "string" and fullName ~= "" then
+            return fullName
+        end
+    end
+
+    local unitName = UnitName and UnitName("player")
+    if type(unitName) == "string" and unitName ~= "" then
+        return unitName
+    end
+
     if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
         local ok, name = pcall(function()
             return C_PlayerInfo.GetName(PlayerLocation:CreateFromUnit("player"))
