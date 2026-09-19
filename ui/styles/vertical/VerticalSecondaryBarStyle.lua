@@ -3,87 +3,9 @@
 -- Tooltip-only: no on-bar label (too narrow), all info surfaced on hover.
 
 local Addon = XPBarEnhanced
-local FALLBACK_SHARED_STYLE_HELPERS = {
-    GetSecondaryPositionConfigKey = function()
-        return "secondaryBarPositions"
-    end,
-    BuildConfiguredStyleCenterFallback = function(x, y)
-        return {
-            point = "CENTER",
-            relativeTo = "UIParent",
-            relativePoint = "CENTER",
-            x = x or 0,
-            y = y or 0,
-        }
-    end,
-    GetSecondaryBroadcastEventName = function()
-        return (Addon.EventNames and Addon.EventNames.REPUTATION_BROADCAST_UPDATE) or "REPUTATION:BROADCAST_UPDATE"
-    end,
-    GetSecondaryInitialContext = function()
-        if Addon:IsFeatureEnabled("reputation", "GetCurrentContext") then
-            return Addon.ReputationSession:GetCurrentContext()
-        end
-        return nil
-    end,
-    BeginSecondaryRender = function(frame, context)
-        frame._lastContext = context
-        if not context or not context.isAvailable then
-            frame:SetAlpha(0)
-            return false
-        end
-        frame:SetAlpha(1)
-        return true
-    end,
-    ApplyStatusBarProgress = function(bar, context, color)
-        if not bar or not context then
-            return
-        end
-        bar:SetMinMaxValues(context.min or 0, context.max or 1)
-        bar:SetValue(context.current or 0)
-        if color then
-            bar:SetStatusBarColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
-        end
-    end,
-    ShowSecondaryTooltip = function(frame, context, anchor)
-        if not GameTooltip then
-            return
-        end
-        GameTooltip:SetOwner(frame, anchor or "ANCHOR_TOP")
-        GameTooltip:AddLine((context and context.name) or "", 1, 1, 1)
-    end,
-    AddSecondaryTooltipMoveHint = function()
-    end,
-    FinishSecondaryTooltip = function()
-        if GameTooltip then
-            GameTooltip:Show()
-        end
-    end,
-    HideTooltip = function()
-        if GameTooltip then
-            GameTooltip:Hide()
-        end
-    end,
-    HandleStandardSecondaryMouseUp = function(frame, button, onRightClick)
-        if button == "RightButton" and onRightClick then
-            onRightClick(frame)
-        end
-    end,
-    OpenReputationPanel = function()
-        if ToggleCharacter then
-            ToggleCharacter("ReputationFrame")
-        end
-    end,
-    BeginSecondaryShiftDrag = function()
-        return false
-    end,
-    EndSecondaryDrag = function(frame)
-        if frame and frame.StopMovingOrSizing then
-            frame:StopMovingOrSizing()
-        end
-    end,
-}
+local FALLBACK_SHARED_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondarySharedHelpers and Addon.UI.StyleHelpers:GetDefaultSecondarySharedHelpers() or {}
 
-local FALLBACK_STYLE_HELPERS = {
+local FALLBACK_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondaryStyleHelpers and Addon.UI.StyleHelpers:GetDefaultSecondaryStyleHelpers() or {
     GetFactionColor = function()
         return {r = 0.7, g = 0.3, b = 0.85, a = 1}
     end,

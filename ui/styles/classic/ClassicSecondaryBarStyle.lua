@@ -3,21 +3,23 @@
 -- with standing-color atlas fill.
 
 local Addon = XPBarEnhanced
-local SharedStyleHelpers = nil
-local StyleHelpers = nil
+local SharedStyleHelpers = Addon and Addon.UI and Addon.UI.SharedStyleHelpers or {}
+local StyleHelpers = Addon and Addon.UI and Addon.UI.StyleHelpers or {}
 
-local function ResolveHelpers()
+local function EnsureHelpers()
     local ui = Addon and Addon.UI
-    if not ui then
-        return
+    if ui then
+        if not SharedStyleHelpers or not SharedStyleHelpers.GetSecondaryPositionConfigKey then
+            SharedStyleHelpers = ui.SharedStyleHelpers or SharedStyleHelpers
+        end
+        if not StyleHelpers or not StyleHelpers.GetFactionColor then
+            StyleHelpers = ui.StyleHelpers or StyleHelpers
+        end
     end
-
-    SharedStyleHelpers = ui.SharedStyleHelpers
-    StyleHelpers = ui.StyleHelpers
 end
 
 local function GetFactionColor(context)
-    ResolveHelpers()
+    EnsureHelpers()
     if StyleHelpers and StyleHelpers.GetFactionColor then
         return StyleHelpers.GetFactionColor(context)
     end
@@ -111,7 +113,7 @@ end
 
 
 function StyleMixin:GetPositionConfigKey()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.GetSecondaryPositionConfigKey then
         return SharedStyleHelpers.GetSecondaryPositionConfigKey()
     end
@@ -119,7 +121,7 @@ function StyleMixin:GetPositionConfigKey()
 end
 
 function StyleMixin:GetFallbackPosition()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.BuildConfiguredStyleOffsetFallback then
         return SharedStyleHelpers.BuildConfiguredStyleOffsetFallback("BOTTOM", 0, 34, 20)
     end
@@ -141,7 +143,7 @@ function StyleMixin:GetTextTickerContext()
 end
 
 function StyleMixin:OnTextTick(context)
-    ResolveHelpers()
+    EnsureHelpers()
     if context and self.LabelContainer then
         if SharedStyleHelpers and SharedStyleHelpers.BuildSecondaryLabel then
             self.LabelContainer.Label:SetText(SharedStyleHelpers.BuildSecondaryLabel(context))
@@ -152,7 +154,7 @@ function StyleMixin:OnTextTick(context)
 end
 
 function StyleMixin:GetBroadcastEventName()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.GetSecondaryBroadcastEventName then
         return SharedStyleHelpers.GetSecondaryBroadcastEventName()
     end
@@ -160,7 +162,7 @@ function StyleMixin:GetBroadcastEventName()
 end
 
 function StyleMixin:GetInitialContext()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.GetSecondaryInitialContext then
         return SharedStyleHelpers.GetSecondaryInitialContext()
     end
@@ -172,7 +174,7 @@ end
 
 
 function StyleMixin:Render(context)
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.BeginSecondaryRender then
         if not SharedStyleHelpers.BeginSecondaryRender(self, context) then
             return
@@ -204,7 +206,7 @@ function StyleMixin:Render(context)
 end
 
 function StyleMixin:OnEnter()
-    ResolveHelpers()
+    EnsureHelpers()
     if not self._lastContext then
         return
     end

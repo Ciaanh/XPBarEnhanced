@@ -3,31 +3,9 @@
 
 local Addon = XPBarEnhanced
 local Config = Addon.Config
-local FALLBACK_SHARED_STYLE_HELPERS = {
-    GetSecondaryPositionConfigKey = function()
-        return "secondaryBarPositions"
-    end,
-    GetSecondaryBroadcastEventName = function()
-        return (Addon.EventNames and Addon.EventNames.REPUTATION_BROADCAST_UPDATE) or "REPUTATION:BROADCAST_UPDATE"
-    end,
-    GetSecondaryInitialContext = function()
-        if Addon:IsFeatureEnabled("reputation", "GetCurrentContext") then
-            return Addon.ReputationSession:GetCurrentContext()
-        end
-        return nil
-    end,
-    BeginSecondaryRender = function(frame, context)
-        frame._lastContext = context
-        if not context or not context.isAvailable then
-            frame:SetAlpha(0)
-            return false
-        end
-        frame:SetAlpha(1)
-        return true
-    end,
-}
+local FALLBACK_SHARED_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondarySharedHelpers and Addon.UI.StyleHelpers:GetDefaultSecondarySharedHelpers() or {}
 
-local FALLBACK_STYLE_HELPERS = {
+local FALLBACK_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondaryStyleHelpers and Addon.UI.StyleHelpers:GetDefaultSecondaryStyleHelpers() or {
     GetFactionColor = function()
         return {r = 0.7, g = 0.3, b = 0.85, a = 1}
     end,

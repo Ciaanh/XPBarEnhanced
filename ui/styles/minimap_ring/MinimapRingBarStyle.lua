@@ -457,6 +457,22 @@ function MinimapRingBarStyleTemplate:UpdateSegmentColors(hasRestedXP)
     }
 
     local displayCount = self:GetDisplaySegmentCount()
+    local previous = self._prevSegmentTypes
+    local changed = not previous or #previous ~= displayCount or self._prevHasRestedXP ~= hasRestedXP
+
+    if not changed then
+        for index = 1, displayCount do
+            if previous[index] ~= self.segmentTypes[index] then
+                changed = true
+                break
+            end
+        end
+    end
+
+    if not changed then
+        return
+    end
+
     for index = 1, displayCount do
         local segment = self.segments[index]
         if shared and shared.ApplySegmentTypeColor then
@@ -465,6 +481,12 @@ function MinimapRingBarStyleTemplate:UpdateSegmentColors(hasRestedXP)
             local fallback = colors.currentXP or EMPTY_SEGMENT_COLOR
             segment:SetVertexColor(fallback.r, fallback.g, fallback.b, fallback.a or 1)
         end
+    end
+
+    self._prevHasRestedXP = hasRestedXP
+    self._prevSegmentTypes = {}
+    for index = 1, displayCount do
+        self._prevSegmentTypes[index] = self.segmentTypes[index]
     end
 end
 

@@ -134,16 +134,21 @@ end
 local function getPerCharacterTable(db, storeKey)
     db[storeKey] = db[storeKey] or {}
     local store = db[storeKey]
+    db._migrationFlags = db._migrationFlags or {}
+    local migrations = db._migrationFlags
     local playerKey = Database:GetPlayerKey()
 
-    -- Legacy layout: session fields stored directly on the store table.
-    if store.sessionStart ~= nil or store.lastUpdate ~= nil then
-        local legacy = {}
-        for k, v in pairs(store) do
-            legacy[k] = v
-            store[k] = nil
+    if not migrations[storeKey] then
+        -- Legacy layout: session fields stored directly on the store table.
+        if store.sessionStart ~= nil or store.lastUpdate ~= nil then
+            local legacy = {}
+            for k, v in pairs(store) do
+                legacy[k] = v
+                store[k] = nil
+            end
+            store[playerKey] = legacy
         end
-        store[playerKey] = legacy
+        migrations[storeKey] = true
     end
 
     store[playerKey] = store[playerKey] or {}
