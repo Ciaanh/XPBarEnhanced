@@ -552,20 +552,6 @@ function Session:OnQuestTurnedIn(questID)
     self:_QueuePendingQuestTurnIn(questID)
 
     local function RefreshCompletedQuests()
-        -- Touch the API to ensure it's updated
-        local completed = false
-        if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
-            completed = C_QuestLog.IsQuestFlaggedCompleted(questID) or false
-        end
-
-        -- If the addon maintains a database/quest cache, try to update it.
-        -- Use existence checks to remain non-invasive if those APIs don't exist.
-        if Addon.Database and Addon.Database.UpdateQuestCompletion then
-            pcall(Addon.Database.UpdateQuestCompletion, Addon.Database, questID, completed)
-        elseif Addon.Database and Addon.Database.MarkQuestCompleted then
-            pcall(Addon.Database.MarkQuestCompleted, Addon.Database, questID, completed)
-        end
-
         -- Ensure session XP baseline is up-to-date (XP gains from quest may have triggered PLAYER_XP_UPDATE
         -- before the completed flag became available). Also ensure the centralized quest cache is invalidated
         -- so UI and other services can refresh based on the latest quest state.
@@ -577,15 +563,17 @@ function Session:OnQuestTurnedIn(questID)
             session.lastUpdate = time()
         end
 
-        -- Invalidate/rebuild the centralized QuestXP cache to ensure totals reflect the new quest state.
+        -- Rebuild the quest cache so totals reflect the new quest state. The
+        -- rebuild emits QUEST_LOG_UPDATE itself once the cache is fresh; a
+        -- broadcast here as well rebuilt the cache a second time, 0.1 s early.
         if Addon.QuestXP and Addon.QuestXP.Rebuild then
             xpcall(Addon.QuestXP.Rebuild, Utils.ReportError, Addon.QuestXP, 0.1)
-        elseif Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-            xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
+        else
+            if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
+                xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
+            end
+            Session:EmitUpdate("QUEST_LOG_UPDATE")
         end
-
-        -- Emit one coalesced update from the session owner after quest state changes.
-        Session:EmitUpdate("QUEST_LOG_UPDATE")
     end
 
     -- Small delay: the quest history/completed flag may not be instantly available.

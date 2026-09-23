@@ -358,8 +358,11 @@ local ROUTER_DISPATCH = {
     CHAT_MSG_SKILL = function()
         DispatchProfessionUpdate()
     end,
-    UNIT_QUEST_LOG_CHANGED = function()
-        DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")
+    UNIT_QUEST_LOG_CHANGED = function(unit)
+        -- Fires for every party member; only the player's log feeds quest XP.
+        if unit == "player" then
+            DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")
+        end
     end,
     QUEST_TURNED_IN = function(questID)
         DispatchSessionQuestTurnedIn(questID)

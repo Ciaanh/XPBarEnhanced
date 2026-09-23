@@ -23,9 +23,6 @@ function eventHandlers:OnAddonLoaded(name)
 
     -- Get XP gain disabled state
     Addon.state.xpGainDisabled = Addon.Database:IsXPGainDisabled()
-
-    -- Print loaded message
-    print(Addon.L["ADDON_LOADED"])
 end
 
 -- Start one module on its own, so a failure in one of them (a client API that

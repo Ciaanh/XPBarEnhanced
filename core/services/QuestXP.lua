@@ -199,10 +199,10 @@ end
 function QuestXP:HandleRoutedEvent(event)
     self:InvalidateQuestCache()
 
+    -- QUEST_TURNED_IN is not routed here: Session:OnQuestTurnedIn calls
+    -- Rebuild itself once the quest's completed state has settled.
     if event == "PLAYER_ENTERING_WORLD" then
         scheduleRebuild(1.0)
-    elseif event == "QUEST_TURNED_IN" then
-        scheduleRebuild(0.1)
     else
         scheduleRebuild(0.5)
     end

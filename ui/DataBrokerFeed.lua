@@ -66,18 +66,24 @@ function Feed:Initialize()
 
     local ldb = LibStub and LibStub.GetLibrary and LibStub:GetLibrary("LibDataBroker-1.1", true)
     if not ldb then
-        if not self._retryTicker and C_Timer and C_Timer.NewTicker then
-            self._retryTicker = C_Timer.NewTicker(REFRESH_SECONDS, function()
+        -- LibDataBroker arrives with a display addon. Try again whenever an
+        -- addon loads (one that loads after us, or on demand) rather than
+        -- polling all session long when no display is installed.
+        if not self._waitFrame then
+            local frame = CreateFrame("Frame")
+            frame:RegisterEvent("ADDON_LOADED")
+            frame:SetScript("OnEvent", function()
                 Feed:Initialize()
             end)
+            self._waitFrame = frame
         end
-        return -- no LDB display installed yet; retry if one loads later
+        return
     end
 
     self._initialized = true
-    if self._retryTicker then
-        self._retryTicker:Cancel()
-        self._retryTicker = nil
+    if self._waitFrame then
+        self._waitFrame:UnregisterAllEvents()
+        self._waitFrame:SetScript("OnEvent", nil)
     end
 
     self._dataObject = ldb:NewDataObject("XPBarEnhanced", {
