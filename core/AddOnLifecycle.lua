@@ -20,9 +20,6 @@ function eventHandlers:OnAddonLoaded(name)
     Addon.Database:Initialize()
     Addon.ProfileManager:Initialize()
     Addon.Config:Initialize()
-
-    -- Get XP gain disabled state
-    Addon.state.xpGainDisabled = Addon.Database:IsXPGainDisabled()
 end
 
 -- Start one module on its own, so a failure in one of them (a client API that
@@ -76,50 +73,31 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
 
 end
 
-function eventHandlers:OnPlayerMaxLevelUpdate()
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        local configuredStyle = "classic"
-        if Addon.Config and Addon.Config.GetOptionValue then
-            configuredStyle = Addon.Config:GetOptionValue("barStyle") or "classic"
-        else
-            local db = Addon.db or {}
-            configuredStyle = db.barStyle or "classic"
-        end
-        Addon.BarManager.currentStyle = nil
-        Addon.BarManager:SetStyle(configuredStyle)
+-- Re-drive the configured style: SetStyle itself falls back to Blizzard's
+-- bar at the level cap or while XP gain is off.
+local function RefreshConfiguredStyle()
+    local manager = Addon.BarManager
+    if manager and manager.SetStyle then
+        manager.currentStyle = nil
+        manager:SetStyle(Addon.Config:GetOptionValue("barStyle"))
     end
+end
+
+function eventHandlers:OnPlayerMaxLevelUpdate()
+    RefreshConfiguredStyle()
 end
 
 function eventHandlers:OnEnableXPGain()
-    Addon.state.xpGainDisabled = false
-
-    if Addon.Database and Addon.Database.SetXPGainDisabled then
-        Addon.Database:SetXPGainDisabled(false)
-    end
-
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        local configuredStyle = "classic"
-        if Addon.Config and Addon.Config.GetOptionValue then
-            configuredStyle = Addon.Config:GetOptionValue("barStyle") or "classic"
-        else
-            local db = Addon.db or {}
-            configuredStyle = db.barStyle or "classic"
-        end
-        Addon.BarManager.currentStyle = nil
-        Addon.BarManager:SetStyle(configuredStyle)
-    end
+    RefreshConfiguredStyle()
 end
 
 function eventHandlers:OnDisableXPGain()
-    Addon.state.xpGainDisabled = true
-
-    if Addon.Database and Addon.Database.SetXPGainDisabled then
-        Addon.Database:SetXPGainDisabled(true)
-    end
-
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        Addon.BarManager.currentStyle = nil
-        Addon.BarManager:SetStyle("none")
+    -- Straight to Blizzard's bar rather than trusting IsXPUserDisabled to
+    -- report the new state already.
+    local manager = Addon.BarManager
+    if manager and manager.SetStyle then
+        manager.currentStyle = nil
+        manager:SetStyle("none")
     end
 end
 

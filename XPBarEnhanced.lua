@@ -56,8 +56,6 @@ Addon.state =
     Addon.state or
     {
         requestingTimePlayed = false,
-        xpGainDisabled = false,
-        defaultXPBarHidden = false
     }
 
 -- Database reference

@@ -220,11 +220,11 @@ function StyleBuilder:CreateFrameForStyle(styleKey, config, templateName)
 		error("CreateFrameForStyle: failed to create frame from template: " .. tostring(templateName))
 	end
 
-	-- Apply mixin if XML template didn't already do so
-	-- (XML template should reference the mixin via mixin="FlatBarXPBarMixin")
-	-- This is a safety fallback for programmatic creation
+	-- The XML template applies the mixin (mixin="FlatBarXPBarMixin"), which is
+	-- what runs OnLoad. Mixing it in afterwards would leave OnLoad unrun, so a
+	-- template without it is a load-order bug to report, not to patch.
 	if not frame.OnLoad then
-		Mixin(frame, mixin)
+		error("CreateFrameForStyle: template did not apply its mixin: " .. tostring(templateName))
 	end
 
 	-- Store config

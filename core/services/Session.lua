@@ -43,7 +43,6 @@ local LAST_GAIN_MAX_AGE_SECONDS = 2
 
 -- Cap on the persisted gain history, and the block size it is trimmed by.
 local GAINS_HISTORY_CAP = 500
-local RECENT_GAINS_CAP = 20
 
 local function PurgeExpiredPendingQuestTurnIns(list, now)
     local i = 1
@@ -100,7 +99,8 @@ local function ensureSessionDefaults(session)
     session.levelsGained = session.levelsGained or 0
     session.gainsHistory = session.gainsHistory or {}
     session.levelUpTimestamps = session.levelUpTimestamps or {}
-    session.recentGains = session.recentGains or {}
+    -- Retired recent-gains window; drop what older versions stored.
+    session.recentGains = nil
     session.questXP = session.questXP or 0
     session.otherXP = session.otherXP or 0
 end
@@ -126,7 +126,6 @@ local function resetSessionProgress(session)
     session.lastUpdate = now
     session.gainsHistory = {}
     session.levelUpTimestamps = {}
-    session.recentGains = {}
     session.questXP = 0
     session.otherXP = 0
 end
@@ -173,9 +172,8 @@ end
 ---@param amount number XP to credit; non-positive amounts are ignored
 ---@param source string "quest" or "other"
 ---@param level number|nil Level stamped on the history entry
----@param trackRecent boolean Also append to the sliding recent-gains window
 ---@return table|nil entry The recorded history entry, or nil if nothing was credited
-local function creditGain(session, amount, source, level, trackRecent)
+local function creditGain(session, amount, source, level)
     if not session or not amount or amount <= 0 then
         return nil
     end
@@ -199,14 +197,6 @@ local function creditGain(session, amount, source, level, trackRecent)
     session.gainsHistory = session.gainsHistory or {}
     table.insert(session.gainsHistory, entry)
     trimHistory(session.gainsHistory, GAINS_HISTORY_CAP)
-
-    -- The level-up remainder path deliberately passes false here, preserving the
-    -- pre-existing behaviour that the sliding window tracks only ordinary gains.
-    if trackRecent then
-        session.recentGains = session.recentGains or {}
-        table.insert(session.recentGains, entry)
-        trimHistory(session.recentGains, RECENT_GAINS_CAP)
-    end
 
     return entry
 end
@@ -395,7 +385,7 @@ function Session:OnXPUpdate(suppressBroadcast)
     -- Track gain source and record in history
     if gained > 0 then
         local source = self:_ConsumePendingQuestTurnInForXPGain() and "quest" or "other"
-        creditGain(session, gained, source, currentLevel, true)
+        creditGain(session, gained, source, currentLevel)
     end
 
     -- Hand the delta to ContextBuilder. Must precede the broadcast below, which is
@@ -471,7 +461,7 @@ function Session:OnLevelUp(level)
 
     if creditedXP > 0 then
         local source = self:_ConsumePendingQuestTurnInForXPGain() and "quest" or "other"
-        creditGain(session, creditedXP, source, currentLevel, false)
+        creditGain(session, creditedXP, source, currentLevel)
     end
 
     -- Hand the delta to ContextBuilder ahead of this function's broadcast.
@@ -750,60 +740,5 @@ function Session:GetXPPerHour()
     )
     return math.floor(rate)
 end
-
----Return XP per hour based on a sliding window of recent gains
----@return number xpPerHour Recent XP/hour rate
-function Session:GetRecentXPPerHour()
-    local session = self:GetCurrent()
-    if not session or not session.recentGains then
-        return 0
-    end
-    local TimeCalc = Addon.TimeCalculations
-    if not TimeCalc or not TimeCalc.RecentXPPerHour then
-        return 0
-    end
-    return TimeCalc.RecentXPPerHour(session.recentGains)
-end
--------------------------------------------------------------------
-
----Return a normalized stats table for the current session
-function Session:GetStats()
-    local session = self:GetCurrent()
-    if not session then
-        return {
-            duration = 0,
-            xpGained = 0,
-            xpPerHour = 0,
-            startTime = time()
-        }
-    end
-
-    -- Calculate session duration
-    local duration = time() - (session.sessionStart or time())
-
-    -- Calculate XP per hour
-    local xpPerHour = 0
-    if duration > 0 then
-        xpPerHour = (session.gainedXP or 0) / (duration / 3600)
-    end
-
-    return {
-        duration = duration,
-        xpGained = session.gainedXP or 0,
-        xpPerHour = xpPerHour,
-        startTime = session.sessionStart or time(),
-        realTotalTime = session.realTotalTime or 0,
-        realLevelTime = session.realLevelTime or 0,
-        recentXPPerHour = self:GetRecentXPPerHour(),
-        questXPGained = session.questXP or 0,
-        otherXP = session.otherXP or 0,
-        gainsCount = #(session.gainsHistory or {}),
-        levelUpTimestamps = session.levelUpTimestamps or {},
-    }
-end
-
--------------------------------------------------------------------
--- BACKWARD COMPATIBILITY
--------------------------------------------------------------------
 
 return Session

@@ -61,13 +61,11 @@ end
 
 -- Export option metadata for UI (still assigned elsewhere)
 
--- Keys of defaults.lua that are not settings: profile bookkeeping and the
--- static companion table sit beside the settings but are not a profile's to
--- reset.
+-- Keys of defaults.lua that are not settings: profile bookkeeping sits beside
+-- the settings but is not a profile's to reset.
 local NON_SETTING_KEYS = {
     profiles = true,
     characterProfileKeys = true,
-    delveCompanions = true,
 }
 
 -- Preferred replacement, in order, for a secondary source this client lacks.
@@ -114,27 +112,15 @@ function Config:Initialize()
         end
     end
 
-    -- Migrate single barPosition to per-style barPositions if needed
     if Addon and Addon.db then
-        if not Addon.db.barPositions then
-            -- If user has an existing single position, copy it to all styles as a sensible default
-            if Addon.db.barPosition then
-                Addon.db.barPositions = {
-                    classic = Addon.db.barPosition,
-                    flat = Addon.db.barPosition,
-                    vertical = Addon.db.barPosition,
-                    circular = Addon.db.barPosition,
-                    minimap_ring = Addon.db.barPosition
-                }
-            else
-                -- Ensure table exists so code can write per-style entries
-                Addon.db.barPositions = {}
-            end
-        end
-
-        -- Prune option keys that no longer exist so stale saved values can't
-        -- resurface if a same-named option is ever reintroduced.
-        local removedKeys = { "fadeWhenInactive", "fadeDelay", "idleOpacity", "celebrationSound", "goalSound" }
+        -- Prune keys that no longer exist so stale saved values can't resurface
+        -- if a same-named option is ever reintroduced. barPosition predates the
+        -- per-style barPositions, and delveCompanions is static data that was
+        -- merged into saved settings from defaults.
+        local removedKeys = {
+            "fadeWhenInactive", "fadeDelay", "idleOpacity", "celebrationSound", "goalSound",
+            "barPosition", "delveCompanions",
+        }
         for _, key in ipairs(removedKeys) do
             Addon.db[key] = nil
         end
@@ -341,13 +327,6 @@ function Config:ResetColor(key, silent)
     end
 
     return true, normalized
-end
-
-function Config:GetColorOption(target)
-    if not target then
-        return nil
-    end
-    return self.colorOptionMap and self.colorOptionMap[string.lower(target)]
 end
 
 function Config:GetColorOptionByKey(key)
@@ -770,25 +749,6 @@ end
 -------------------------------------------------------------------
 -- HELPERS
 -------------------------------------------------------------------
-
-function Config:ShowHelp()
-    print("|cFF00FF00" .. Addon.L["ADDON_NAME"] .. " Commands:|r")
-    print("  |cFFFFD700/xpbe|r or |cFFFFD700/xpbe help|r - Show this help")
-    print("  |cFFFFD700/xpbe stats|r - Toggle stats window")
-    print("    (Ctrl + Click the XP bar for quick access)")
-    print("    (Alt + Click the XP bar to open options)")
-    print("  |cFFFFD700/xpbe options|r - Open the in-game options panel")
-    print("     Customize colors and features from the options panel.")
-    print("  |cFFFFD700/xpbe reset|r - Reset all settings to defaults")
-    print("  |cFFFFD700/xpbe resetstats|r - Clear all tracked statistics")
-    -- Built from the barStyle option's own values rather than spelled out, so
-    -- this line cannot drift from the styles the panel actually offers.
-    local styleKeys = {}
-    for _, option in ipairs(self:GetOptionDetail("barStyle") and self:GetOptionDetail("barStyle").options or {}) do
-        styleKeys[#styleKeys + 1] = option.value
-    end
-    print("  |cFFFFD700/xpbe style <" .. (#styleKeys > 0 and table.concat(styleKeys, "|") or "style") .. ">|r - Change bar style")
-end
 
 --- Restore the active profile's settings, colors and bar positions to their
 --- defaults. Other profiles, character profile assignments and tracked

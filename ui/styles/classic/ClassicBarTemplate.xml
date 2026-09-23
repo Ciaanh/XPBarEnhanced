@@ -146,38 +146,6 @@
                 </Layers>
             </Frame>
 
-            <!-- Below-bar text (overrides base template: different y-offset for Classic) -->
-            <Frame parentKey="BelowBarTextContainer" frameStrata="MEDIUM">
-                <Size x="565" y="30"/>
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
-                </Anchors>
-                <Layers>
-                    <Layer level="ARTWORK">
-                        <FontString parentKey="RateText" inherits="GameFontNormal" hidden="true">
-                            <Anchors>
-                                <Anchor point="TOPLEFT" x="0" y="0"/>
-                            </Anchors>
-                            <Color r="0.8" g="0.8" b="0.8"/>
-                        </FontString>
-
-                        <FontString parentKey="SessionText" inherits="GameFontNormal" hidden="true">
-                            <Anchors>
-                                <Anchor point="TOPRIGHT" x="0" y="0"/>
-                            </Anchors>
-                            <Color r="0.8" g="0.8" b="0.8"/>
-                        </FontString>
-
-                        <FontString parentKey="QuestSummaryText" inherits="GameFontNormal" hidden="true">
-                            <Anchors>
-                                <Anchor point="TOP" x="0" y="-14"/>
-                            </Anchors>
-                            <Color r="0.8" g="0.8" b="0.8"/>
-                        </FontString>
-                    </Layer>
-                </Layers>
-            </Frame>
-
             <!-- Frame art on top of the StatusBar; sliced into fixed caps and a stretched middle in Lua -->
             <Frame parentKey="BorderFrame" frameStrata="MEDIUM" enableMouse="false">
                 <Anchors>

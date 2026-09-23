@@ -6,8 +6,6 @@
 ---@field GetDB fun(self: Database): table Get the root saved-variables table
 ---@field GetSessionData fun(self: Database): table Get the session data table
 ---@field GetPlayerKey fun(self: Database): string Get the player-realm key
----@field IsXPGainDisabled fun(self: Database): boolean Check if XP gain is disabled
----@field SetXPGainDisabled fun(self: Database, disabled: boolean) Set XP gain disabled state
 
 local Addon = XPBarEnhanced
 Addon.Database = Addon.Database or {}
@@ -189,26 +187,6 @@ function Database:GetPlayerKey()
         Addon.playerKey = string.format("%s-%s", playerName, realmName)
     end
     return Addon.playerKey
-end
-
--------------------------------------------------------------------
--- XP GAIN STATE
--------------------------------------------------------------------
-
----Return whether XP gain is currently disabled for the player
-function Database:IsXPGainDisabled()
-    -- Safe call to IsXPUserDisabled (may not exist in all versions)
-    local disabled = false
-    if IsXPUserDisabled then
-        disabled = IsXPUserDisabled()
-    end
-    Addon.state.xpGainDisabled = disabled
-    return disabled
-end
-
----Set whether XP gain is disabled
-function Database:SetXPGainDisabled(disabled)
-    Addon.state.xpGainDisabled = disabled
 end
 
 return Database

@@ -3,17 +3,7 @@
 
 local Addon = XPBarEnhanced
 
-local function GetSettingsTable(key, createIfMissing)
-	if Addon.Config and Addon.Config.GetSettingsTable then
-		return Addon.Config:GetSettingsTable(key, createIfMissing)
-	end
-
-	Addon.db = Addon.db or {}
-	if Addon.db[key] == nil and createIfMissing then
-		Addon.db[key] = {}
-	end
-	return Addon.db[key]
-end
+local GetSettingsTable = Addon.Utils.GetSettingsTable
 
 local function NormalizePositionKey(key)
 	if type(key) ~= "string" then

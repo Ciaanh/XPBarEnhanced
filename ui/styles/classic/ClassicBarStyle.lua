@@ -29,6 +29,8 @@ end
 -- marooned at the default insets.
 local BASE_WIDTH = 566
 local BELOW_BAR_HEIGHT = 30
+local BELOW_BAR_OFFSET_Y = -4
+local QUEST_SUMMARY_OFFSET_Y = -14
 local OVERLAY_TEXT_HEIGHT = 11
 
 local BASE_LEVEL_TEXT_WIDTH = 120
@@ -74,9 +76,17 @@ function ClassicBarStyleTemplate:ResizeToConfiguredWidth()
         ScaleTextWidth(overlay.PercentText, BASE_PERCENT_TEXT_WIDTH, width)
     end
 
+    -- XPBarBaseTemplate's container, placed where Classic has always put it:
+    -- 4px under the frame, the quest summary on its own row.
     local below = self.BelowBarTextContainer
     if below and below.SetSize then
         below:SetSize(width + Chrome.BELOW_TEXT_INSET, BELOW_BAR_HEIGHT)
+        below:ClearAllPoints()
+        below:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, BELOW_BAR_OFFSET_Y)
+        if below.QuestSummaryText then
+            below.QuestSummaryText:ClearAllPoints()
+            below.QuestSummaryText:SetPoint("TOP", below, "TOP", 0, QUEST_SUMMARY_OFFSET_Y)
+        end
     end
 end
 

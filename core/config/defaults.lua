@@ -78,13 +78,6 @@ local defaults = {
         secondaryHonor = {r = 0.80, g = 0.20, b = 0.20, a = 1},
         secondaryProfession = {r = 0.30, g = 0.65, b = 0.75, a = 1}
     },
-    barPosition = {
-        point = "CENTER",
-        relativeTo = "UIParent",
-        relativePoint = "CENTER",
-        x = 0,
-        y = 0
-    },
     barPositions = {
         [styleKey] = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
         [flatStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
@@ -94,12 +87,6 @@ local defaults = {
     secondaryFadeOutSpeed = 0.5,
     profiles = {},
     characterProfileKeys = {},
-    -- Known Delve companion factions (by faction ID).
-    -- Maps faction ID -> display name for locale-independent companion detection.
-    delveCompanions = {
-        [2640] = "Brann Bronzebeard",
-        [2744] = "Valeera Sanguinar"
-    }
 }
 
 Addon.defaults = defaults

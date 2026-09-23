@@ -11,6 +11,13 @@ local RepSession = Addon.ReputationSession
 
 local MAX_HISTORY = 200
 
+-- Known Delve companion factions: faction ID -> display name, for
+-- locale-independent companion detection.
+local DELVE_COMPANIONS = {
+    [2640] = "Brann Bronzebeard",
+    [2744] = "Valeera Sanguinar",
+}
+
 -- Defined with the snapshot and update code below.
 local StoreBaseline, RenownGain
 
@@ -28,11 +35,7 @@ end
 --- Checks if a watched faction is a known Delve companion.
 --- Uses faction ID lookup for locale-independent matching.
 local function IsKnownDelveCompanion(factionID, name)
-    local defaults = Addon.defaults
-    if not defaults then return false end
-
-    local companions = defaults.delveCompanions
-    if not companions then return false end
+    local companions = DELVE_COMPANIONS
 
     -- Faction ID lookup (preferred, locale-independent)
     if factionID and companions[factionID] then

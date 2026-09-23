@@ -906,15 +906,6 @@ function XPBarEnhancedOptionsMixin:BuildOptionCheckboxes()
             elseif frame.Checkbox and frame.Label then
                 -- Two-column checkbox template (ConfigCheckboxTemplate)
                 ControlHelpers.SetupTwoColumnCheckbox(self, frame, key, detail)
-            elseif detail.type == "slider" then
-                -- Old-style slider (dynamically created)
-                ControlHelpers.SetupSlider(self, frame, key, detail)
-            elseif detail.type == "dropdown" and detail.options and #detail.options > 2 then
-                -- Old-style cycling button dropdown
-                ControlHelpers.SetupDropdown(self, frame, key, detail)
-            elseif detail.type == "dropdown" then
-                -- Old-style radio group
-                ControlHelpers.SetupRadioGroup(self, frame, key, detail)
             else
                 -- Default to checkbox
                 ControlHelpers.SetupCheckbox(self, frame, key, detail)
@@ -962,28 +953,6 @@ function XPBarEnhancedOptionsMixin:BuildColorControls()
     end
 
     self:UpdateColorControls()
-end
-
-function XPBarEnhancedOptionsMixin:UpdateContentHeight(bottomAnchor)
-    local contentFrame = self.ContentFrame
-    if not contentFrame then
-        return
-    end
-
-    local top = contentFrame:GetTop()
-    local bottom = bottomAnchor and bottomAnchor.valueText and bottomAnchor.valueText:GetBottom()
-
-    local resetBtn = self.ResetSettingsButton
-    if not bottom and resetBtn and resetBtn.GetBottom then
-        bottom = resetBtn:GetBottom()
-    end
-
-    if top and bottom then
-        local height = (top - bottom) + 80
-        if height > contentFrame:GetHeight() then
-            contentFrame:SetHeight(height)
-        end
-    end
 end
 
 function XPBarEnhancedOptionsMixin:RegisterCategory()

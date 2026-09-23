@@ -57,37 +57,7 @@ local function ensureStorage()
 end
 
 local function getCharacterKey(characterKey)
-    if characterKey then
-        return characterKey
-    end
-
-    if Addon.Database and Addon.Database.GetPlayerKey then
-        return Addon.Database:GetPlayerKey()
-    end
-
-    -- Keep this fallback consistent with Database:GetPlayerKey: only Forever
-    -- uses the full first-and-last name as its realmless character identity.
-    local playerName
-    if Addon.Client == Addon.Clients.FOREVER and UnitFullName then
-        playerName = UnitFullName("player")
-    end
-    playerName = playerName or (UnitName and UnitName("player"))
-    if type(playerName) == "string" and playerName ~= "" then
-        local realmName = GetRealmName() or "Unknown"
-        return string.format("%s-%s", playerName, realmName)
-    end
-
-    if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
-        local ok, name = pcall(function()
-            return C_PlayerInfo.GetName(PlayerLocation:CreateFromUnit("player"))
-        end)
-        if ok and type(name) == "string" and name ~= "" then
-            playerName = name
-        end
-    end
-    playerName = playerName or UnitName("player") or "Unknown"
-    local realmName = GetRealmName() or "Unknown"
-    return string.format("%s-%s", playerName, realmName)
+    return characterKey or Addon.Database:GetPlayerKey()
 end
 
 local function getSettingsSnapshot(source)
@@ -148,13 +118,6 @@ function ProfileManager:Initialize()
         if type(playerKey) ~= "string" or type(profileName) ~= "string" or type(db.profiles[profileName]) ~= "table" then
             db.characterProfileKeys[playerKey] = nil
         end
-    end
-
-    -- Backward-compatible migration from older single key experiments.
-    if db.activeProfile ~= nil then
-        local playerKey = getCharacterKey()
-        db.characterProfileKeys[playerKey] = db.activeProfile
-        db.activeProfile = nil
     end
 end
 
