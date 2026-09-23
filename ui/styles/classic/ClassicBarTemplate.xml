@@ -107,7 +107,7 @@
                 </Anchors>
                 <Layers>
                     <Layer level="ARTWORK" textureSubLevel="5">
-                        <FontString parentKey="LevelText" inherits="TextStatusBarText" hidden="true">
+                        <FontString parentKey="LevelText" inherits="TextStatusBarText" hidden="true" wordwrap="false">
                             <Size x="120" y="0"/>
                             <Anchors>
                                 <Anchor point="LEFT" x="8" y="0"/>
@@ -119,7 +119,7 @@
                             </Shadow>
                         </FontString>
 
-                        <FontString parentKey="XPText" inherits="TextStatusBarText" hidden="true">
+                        <FontString parentKey="XPText" inherits="TextStatusBarText" hidden="true" wordwrap="false">
                             <Size x="280" y="0"/>
                             <Anchors>
                                 <Anchor point="CENTER" x="0" y="0"/>
@@ -131,7 +131,7 @@
                             </Shadow>
                         </FontString>
 
-                        <FontString parentKey="PercentText" inherits="TextStatusBarText" hidden="true">
+                        <FontString parentKey="PercentText" inherits="TextStatusBarText" hidden="true" wordwrap="false">
                             <Size x="120" y="0"/>
                             <Anchors>
                                 <Anchor point="RIGHT" x="-8" y="0"/>

@@ -144,7 +144,7 @@ function StyleMixin:OnEnter()
     end
 
     if GameTooltip then
-        GameTooltip:AddLine("Right-click: open Reputation", 0.4, 0.4, 0.4)
+        GameTooltip:AddLine(Addon.UI.SharedStyleHelpers.GetOpenPanelHint(), 0.4, 0.4, 0.4)
         GameTooltip:Show()
     end
 end

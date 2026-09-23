@@ -87,13 +87,29 @@ function MinimapRingBarStyleTemplate:_SetupRingTooltipHitFrames()
         return f
     end
 
-    -- 4 thin strips at cardinal edges of the 256x256 ring frame
+    -- 4 thin strips at the cardinal edges of the ring frame
     self._ringHitFrames = {
         MakeHitFrame(120, 30, "TOP"),
         MakeHitFrame(120, 30, "BOTTOM"),
         MakeHitFrame(30, 120, "LEFT"),
         MakeHitFrame(30, 120, "RIGHT"),
     }
+    self:_LayoutRingTooltipHitFrames()
+end
+
+-- The strips cover only the outer half of the segment band. The minimap's own
+-- edge buttons (zoom, tracking, the zone text) sit under its inner half, and a
+-- mouse-enabled strip over them swallowed their clicks.
+function MinimapRingBarStyleTemplate:_LayoutRingTooltipHitFrames()
+    local frames = self._ringHitFrames
+    if not frames then
+        return
+    end
+    local thickness = math.max(8, math.floor((self:GetSegmentHeight() or 25) / 2) + 2)
+    frames[1]:SetSize(120, thickness)
+    frames[2]:SetSize(120, thickness)
+    frames[3]:SetSize(thickness, 120)
+    frames[4]:SetSize(thickness, 120)
 end
 
 function MinimapRingBarStyleTemplate:OnShow()
@@ -285,6 +301,9 @@ function MinimapRingBarStyleTemplate:QueueReposition()
 end
 
 function MinimapRingBarStyleTemplate:RepositionSegments()
+    -- Geometry and texture change here, so the next paint is a full one.
+    self._prevSegmentTypes = nil
+
     local displayCount = self:GetDisplaySegmentCount()
     local clockwise = -1
     local segmentWidth = self:GetSegmentWidth(displayCount)
@@ -337,6 +356,8 @@ function MinimapRingBarStyleTemplate:RepositionSegments()
         Addon.MinimapRingButtonCollection:UpdateAnchor()
         Addon.MinimapRingButtonCollection:UpdateLayout()
     end
+
+    self:_LayoutRingTooltipHitFrames()
 
     if self.Refresh then
         self:Refresh()
@@ -438,12 +459,13 @@ function MinimapRingBarStyleTemplate:ComputeOverlaySegments(progress, context, t
     return result
 end
 
-function MinimapRingBarStyleTemplate:UpdateSegmentColors(hasRestedXP)
+function MinimapRingBarStyleTemplate:UpdateSegmentColors(hasRestedXP, secondaryColor)
     local Colors = Addon.Colors
     local shared = GetSharedStyleHelpers()
     local currentXPColor = nil
     if shared and shared.GetXPBarColor then
-        currentXPColor = shared.GetXPBarColor({hasRestedXP = hasRestedXP})
+        -- _secondaryColor: the source's color in the max-level secondary mode
+        currentXPColor = shared.GetXPBarColor({hasRestedXP = hasRestedXP, _secondaryColor = secondaryColor})
     end
     if not currentXPColor or not currentXPColor.r then
         local key = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
@@ -526,13 +548,18 @@ function MinimapRingBarStyleTemplate:SetArcProgress(progress, context)
         end
     end
 
-    self:UpdateSegmentColors(context.hasRestedXP == true)
+    self:UpdateSegmentColors(context.hasRestedXP == true, context._secondaryColor)
 end
 
 function MinimapRingBarStyleTemplate:RenderBar(context)
     if not context then
         error("RenderBar requires an explicit immutable context")
     end
+
+    -- Every color change reaches the bar as a broadcast that ends here, so a
+    -- full repaint per render keeps the segment diff from holding old colors;
+    -- animation frames in between still repaint only what moved.
+    self._prevSegmentTypes = nil
 
     local targetRatio = self:CalculateTargetRatio(context)
     self:UpdateGainedBar(targetRatio, context)

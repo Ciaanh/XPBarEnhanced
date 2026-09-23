@@ -42,6 +42,15 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - The Classic and Terminal reputation bars show standing colors for regular factions, and the housing bar no longer takes standing colors from its house level.
 - Housing favor earned on another character, or while logged out, is no longer counted in this session.
 - On Retail, the housing bar and its favor tracking start once the housing service comes up, even when it was not ready at login.
+- With "primary shows secondary source" at max level, the Circular and Minimap Ring fills take the source's color, and Circular, Vertical and Terminal show the source's standing or level instead of "0".
+- A second XP gain during the two-step level-up animation no longer drains the bar back down and leaves it short of your real XP.
+- Quest and rested overlays update when a quest is turned in during a gain animation instead of staying stale until the next XP gain.
+- The Minimap Ring picks up color and profile changes immediately, and its hover area no longer blocks the minimap's zoom and tracking buttons.
+- The Circular bar's tooltip and right-click follow the attached secondary source (honor, housing, profession) instead of always showing reputation.
+- Terminal: its session and level timers keep running while idle, it respects the Quest XP master toggle, and long faction names in Cyrillic or East Asian scripts are shortened cleanly.
+- The Vertical bar's percentage follows Blizzard's status-text setting like its other texts.
+- Classic on-bar texts are cut short on a narrow bar instead of wrapping out of it.
+- Secondary bar hints and the rested marker's tooltip are localized, and name the right panel for each source.
 - The Classic bar's fill no longer spills past the rounded ends of its frame.
 - The Classic bar's fill and the Classic reputation bar no longer use Blizzard's pre-colored fill textures, which tinted custom colors or went blank on clients that lack them.
 

@@ -243,6 +243,7 @@ function TerminalBarStyleTemplate:UpdateGainedBar(currentRatio, eventContext)
     _renderCtx.completeQuestXP   = ctx.completeQuestXP
     _renderCtx.incompleteQuestXP = ctx.incompleteQuestXP
     _renderCtx.level             = ctx.level
+    _renderCtx.levelTextOverride = ctx.levelTextOverride
     self:RenderBar(_renderCtx)
 end
 
@@ -260,6 +261,10 @@ function TerminalBarStyleTemplate:RenderBar(context)
 
     local pct   = string.format("%.1f%%", ratio * 100)
     local level = context.level or (UnitLevel and UnitLevel("player")) or "?"
+    -- The source's standing in the max-level secondary mode, else "Lv.N"
+    local override = context.levelTextOverride
+    local levelLabel = (override and override ~= "") and override or ("Lv." .. tostring(level))
+    local showQuestXP = GetOption("showQuestXP", true) ~= false
     local barChars = BAR_CHARS
 
     -- Segment boundaries — stacked left-to-right, each proportional to its XP amount
@@ -267,7 +272,7 @@ function TerminalBarStyleTemplate:RenderBar(context)
 
     -- Complete quest XP (solid amber █ — ready to collect right now)
     local questCompleteEnd = filled
-    if GetOption("showCompleteQuestOverlay", true) ~= false and context.completeQuestXP and context.completeQuestXP > 0
+    if showQuestXP and GetOption("showCompleteQuestOverlay", true) ~= false and context.completeQuestXP and context.completeQuestXP > 0
        and context.xpMax and context.xpMax > 0 then
         local chars = math.floor(context.completeQuestXP / context.xpMax * barChars + 0.5)
         questCompleteEnd = math.min(barChars, filled + chars)
@@ -275,7 +280,7 @@ function TerminalBarStyleTemplate:RenderBar(context)
 
     -- Incomplete quest XP (medium amber ▒ — needs completing first)
     local questIncompleteEnd = questCompleteEnd
-    if GetOption("showIncompleteQuestOverlay", false) == true and context.incompleteQuestXP and context.incompleteQuestXP > 0
+    if showQuestXP and GetOption("showIncompleteQuestOverlay", false) == true and context.incompleteQuestXP and context.incompleteQuestXP > 0
        and context.xpMax and context.xpMax > 0 then
         local chars = math.floor(context.incompleteQuestXP / context.xpMax * barChars + 0.5)
         questIncompleteEnd = math.min(barChars, questCompleteEnd + chars)
@@ -293,7 +298,7 @@ function TerminalBarStyleTemplate:RenderBar(context)
     -- Build bar line: [coloured blocks] (left) + XX.X%  Lv.N (right, separate element)
     local inner = BuildColoredBar(filled, questCompleteEnd, questIncompleteEnd, restedEnd, barChars)
     local display = C_LABEL .. "[|r" .. inner .. C_LABEL .. "]|r"
-    local label   = C_LABEL .. pct .. "  Lv." .. tostring(level) .. "|r"
+    local label   = C_LABEL .. pct .. "  " .. levelLabel .. "|r"
 
     if display ~= self._lastDisplay then
         barText:SetText(display)
@@ -308,26 +313,7 @@ function TerminalBarStyleTemplate:RenderBar(context)
         end
     end
 
-    -- Stats prompt line
-    local statsText = self._terminalStatsText
-    if statsText then
-        local statsLine = BuildTerminalStatsLine({
-            abbreviateNumbers = GetOption("abbreviateNumbers", true),
-            showXPPerHourText = GetOption("showXPPerHourText", true),
-            showTimeToLevelText = GetOption("showTimeToLevelText", true),
-            showSessionTimeText = GetOption("showSessionTimeText", true),
-            showLevelTimeText = GetOption("showLevelTimeText", true),
-        })
-        if statsLine then
-            if statsLine ~= self._lastStatsLine then
-                statsText:SetText(statsLine)
-                self._lastStatsLine = statsLine
-            end
-            statsText:Show()
-        else
-            statsText:Hide()
-        end
-    end
+    self:RefreshStatsLine()
 
     -- Sync hidden StatusBar value
     if self.StatusBar then
@@ -335,6 +321,38 @@ function TerminalBarStyleTemplate:RenderBar(context)
         self.StatusBar:SetValue(ratio)
     end
 end
+
+--- Rebuild the stats prompt line (xp/hr, eta, session and level time).
+function TerminalBarStyleTemplate:RefreshStatsLine()
+    local statsText = self._terminalStatsText
+    if not statsText then
+        return
+    end
+    local statsLine = BuildTerminalStatsLine({
+        abbreviateNumbers = GetOption("abbreviateNumbers", true),
+        showXPPerHourText = GetOption("showXPPerHourText", true),
+        showTimeToLevelText = GetOption("showTimeToLevelText", true),
+        showSessionTimeText = GetOption("showSessionTimeText", true),
+        showLevelTimeText = GetOption("showLevelTimeText", true),
+    })
+    if statsLine then
+        if statsLine ~= self._lastStatsLine then
+            statsText:SetText(statsLine)
+            self._lastStatsLine = statsLine
+        end
+        statsText:Show()
+    else
+        statsText:Hide()
+    end
+end
+
+-- The 2.5s text ticker (timeReadout) calls these; the stats line carries the
+-- session and level timers, which otherwise froze whenever no XP came in.
+function TerminalBarStyleTemplate:UpdateSessionText()
+    self:RefreshStatsLine()
+end
+
+function TerminalBarStyleTemplate:UpdateRateText() end
 
 -------------------------------------------------------------------
 -- TERMINAL TOOLTIP  (custom frame — replaces GameTooltip entirely)
@@ -414,8 +432,9 @@ local function BuildTerminalTooltipText(context)
     -- Quest XP
     local cq = context.completeQuestXP   or 0
     local iq = context.incompleteQuestXP or 0
-    local showCQ = GetOption("showCompleteQuestOverlay", true) ~= false
-    local showIQ = GetOption("showIncompleteQuestOverlay", false) == true
+    local showQuestXP = GetOption("showQuestXP", true) ~= false
+    local showCQ = showQuestXP and GetOption("showCompleteQuestOverlay", true) ~= false
+    local showIQ = showQuestXP and GetOption("showIncompleteQuestOverlay", false) == true
     if (cq > 0 and showCQ) or (iq > 0 and showIQ) then
         lines[#lines+1] = ""
         lines[#lines+1] = C_LABEL .. "> " .. (L["TT_TERMINAL_QUEST_XP"] or "quest xp") .. "|r"
@@ -620,6 +639,7 @@ local DefaultConfig = {
         textOnBar      = false,
         textBelowBar   = false,
         barColors      = false,
+        timeReadout    = true,
     },
 }
 

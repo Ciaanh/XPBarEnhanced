@@ -485,7 +485,7 @@ function StyleMixin:OnEnter()
     end
 
     GameTooltip:AddLine("Left-click: Toggle arc", 0.4, 0.4, 0.4)
-    GameTooltip:AddLine("Right-click: open Reputation", 0.4, 0.4, 0.4)
+    GameTooltip:AddLine(Addon.UI.SharedStyleHelpers.GetOpenPanelHint(), 0.4, 0.4, 0.4)
     GameTooltip:AddLine("Drag: rotate icon around minimap", 0.4, 0.4, 0.4)
     SharedStyleHelpers.FinishSecondaryTooltip()
 end

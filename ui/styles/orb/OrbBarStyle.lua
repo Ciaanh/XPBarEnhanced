@@ -93,18 +93,7 @@ function OrbBarStyleTemplate:UpdateLevelText(context)
     -- label ("Honor Level 29"), so show the bare numeric level when the
     -- source has one — the tooltip carries the full context. Sources with
     -- no numeric level (renown standing, profession name) keep their label.
-    if context and context.levelTextOverride and context.levelTextOverride ~= "" then
-        local numericLevel = tonumber(context.level)
-        if numericLevel and numericLevel > 0 then
-            self.LevelText:SetText(tostring(numericLevel))
-        else
-            self.LevelText:SetText(context.levelTextOverride)
-        end
-        return
-    end
-
-    local level = (context and context.level) or UnitLevel("player")
-    self.LevelText:SetText(tostring(level))
+    self.LevelText:SetText(Addon.UI.SharedStyleHelpers.GetLevelText(context, true))
 end
 
 function OrbBarStyleTemplate:UpdatePercentText(context)

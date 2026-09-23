@@ -96,7 +96,7 @@ function StyleMixin:OnEnter()
     end
     local context = self._lastContext
     SharedStyleHelpers.ShowSecondaryTooltip(self, context, "ANCHOR_RIGHT")
-    GameTooltip:AddLine("Right-click: open Reputation", 0.4, 0.4, 0.4)
+    GameTooltip:AddLine(Addon.UI.SharedStyleHelpers.GetOpenPanelHint(), 0.4, 0.4, 0.4)
     SharedStyleHelpers.AddSecondaryTooltipMoveHint(context)
     SharedStyleHelpers.FinishSecondaryTooltip()
 end

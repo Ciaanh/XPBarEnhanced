@@ -56,7 +56,7 @@ local BASE_HEIGHT = 22
 
 -- Unicode block fill characters (UTF-8 byte sequences matching TerminalBarStyle)
 local CH_FULL  = "\226\150\136"  -- U+2588 █  FULL BLOCK  (filled)
-local CH_DARK  = "\226\150\147"  -- U+2593 ▓  DARK SHADE  
+local CH_DARK  = "\226\150\147"  -- U+2593 ▓  DARK SHADE
 local CH_EMPTY = "\226\150\145"  -- U+2591 ░  LIGHT SHADE (empty)
 
 local function Hex(r, g, b)
@@ -220,6 +220,18 @@ end
 -- LINE BUILDER
 -------------------------------------------------------------------
 
+--- `text` cut to at most `maxChars` characters, the last replaced by "~".
+local function TruncateUTF8(text, maxChars)
+    local chars = {}
+    for char in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do
+        chars[#chars + 1] = char
+    end
+    if #chars <= maxChars then
+        return text
+    end
+    return table.concat(chars, "", 1, maxChars - 1) .. "~"
+end
+
 local function GetFillColor(context)
     if context.isCompanion then
         return C_COMPANION
@@ -249,11 +261,10 @@ local function BuildRepLine(context)
         inner = inner .. C_EMPTY_COL .. string.rep(CH_EMPTY, BAR_CHARS - filled) .. "|r"
     end
 
-    -- Faction name (truncate to 22 chars to keep the line tight)
-    local name = context.name or "?"
-    if #name > 22 then
-        name = string.sub(name, 1, 21) .. "~"
-    end
+    -- Faction name (truncate to 22 characters to keep the line tight).
+    -- Counted in characters, not bytes: a byte cut splits multi-byte letters
+    -- (Cyrillic, CJK) and shortens those names far earlier.
+    local name = TruncateUTF8(context.name or "?", 22)
 
     -- Standing label or companion level
     local standing = ""

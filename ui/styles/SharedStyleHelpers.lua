@@ -154,11 +154,22 @@ function Shared.ShowSecondaryTooltip(frame, context, anchor)
         return
     end
 
+    GameTooltip:SetOwner(frame, anchor or "ANCHOR_TOP")
+    Shared.AddSecondaryTooltipLines(context)
+end
+
+--- Add a secondary source's lines (name, standing, progress, session gain,
+--- rate, time to next level) to the tooltip being built, so a style that shows
+--- the source inside another tooltip uses the same text.
+---@param context table|nil Secondary source context
+function Shared.AddSecondaryTooltipLines(context)
+    if not GameTooltip or not context or context.isAvailable == false then
+        return
+    end
+
     local TextFormatter = Addon.TextFormatter
     local StyleHelpers = Addon.UI and Addon.UI.StyleHelpers
-    local tooltipAnchor = anchor or "ANCHOR_TOP"
 
-    GameTooltip:SetOwner(frame, tooltipAnchor)
     GameTooltip:AddLine(context.name or "", 1, 1, 1)
 
     if context.isCompanion and context.currentLevel and context.currentLevel > 0 then
@@ -209,6 +220,41 @@ function Shared.ShowSecondaryTooltip(frame, context, anchor)
         local timeStr = TextFormatter:FormatTime(context.timeToNextLevel, true)
         GameTooltip:AddLine(string.format("%s: %s", Addon.L["TT_NEXT"], timeStr), 0.8, 0.8, 0.5)
     end
+end
+
+-- Right-click opens the panel for the active source (see OpenReputationPanel).
+local OPEN_PANEL_HINTS = {
+    reputation = "TT_OPEN_REPUTATION",
+    honor = "TT_OPEN_HONOR",
+    housing = "TT_OPEN_HOUSING",
+    profession = "TT_OPEN_PROFESSIONS",
+}
+
+--- The right-click hint for the active secondary source.
+---@return string
+function Shared.GetOpenPanelHint()
+    local source = Shared.GetActiveSecondarySource and Shared.GetActiveSecondarySource()
+    return Addon.L[OPEN_PANEL_HINTS[source] or "TT_OPEN_REPUTATION"]
+end
+
+--- Text for a style's level readout. In the max-level "shows secondary
+--- source" mode the context carries the source's standing in
+--- levelTextOverride ("Renown 3", "Honor Level 29", a profession name);
+--- a `compact` readout with no room for that shows the bare level when the
+--- source has one.
+---@param context table|nil
+---@param compact boolean|nil
+---@return string
+function Shared.GetLevelText(context, compact)
+    local override = context and context.levelTextOverride
+    if override and override ~= "" then
+        local numeric = tonumber(context.level)
+        if compact and numeric and numeric > 0 then
+            return tostring(numeric)
+        end
+        return override
+    end
+    return tostring((context and context.level) or UnitLevel("player"))
 end
 
 function Shared.AddSecondaryTooltipMoveHint(context)

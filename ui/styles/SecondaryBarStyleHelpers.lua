@@ -79,7 +79,8 @@ function StyleHelpers.GetDefaultSecondarySharedHelpers()
             return "secondaryBarPositions"
         end,
         BuildConfiguredStyleCenterFallback = function(defaultX, defaultY, xOffset, yOffset)
-            local configuredStyle = (Addon.Config and Addon.Config.GetOptionValue or function() end)("barStyle")
+            local configuredStyle = Addon.Config and Addon.Config.GetOptionValue
+                and Addon.Config:GetOptionValue("barStyle")
             if configuredStyle and configuredStyle ~= "none" then
                 local barDefPos = Addon.defaults
                     and Addon.defaults.barPositions

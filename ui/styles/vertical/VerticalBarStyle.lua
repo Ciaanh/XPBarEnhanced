@@ -67,9 +67,9 @@ function VerticalBarStyleTemplate:UpdateLevelText(context)
         return
     end
 
-    -- shows just the level number, not "Level XX"
-    local level = (context and context.level) or UnitLevel("player")
-    self.LevelText:SetText(tostring(level))
+    -- The bare level number, not "Level XX"; the source's level or standing in
+    -- the max-level secondary mode.
+    self.LevelText:SetText(GetSharedStyleHelpers().GetLevelText(context, true))
 end
 
 function VerticalBarStyleTemplate:UpdateRateText(context)
@@ -304,7 +304,8 @@ function VerticalBarStyleTemplate:UpdatePercentText(context)
 
     local percent = (maxXP > 0) and (currentXP / maxXP * 100) or 0
     self.PercentText:SetText(string.format("%." .. decimals .. "f%%", percent))
-    self.PercentText:Show()
+    -- No unconditional Show(): visibility is owned by UpdateTextVisibility
+    -- (which honors the Blizzard status-text CVar).
 end
 
 -------------------------------------------------------------------

@@ -181,6 +181,17 @@ function AnimationManager:ProcessAnimateTo(bar, targetRatio, xpContext, config)
 		return
 	end
 
+	-- A gain during a two-phase level-up (phase 1 filling to 100%, or the hold
+	-- there) belongs to the new level: fold it into the queued phase 2 rather
+	-- than retargeting phase 1, which drained the bar back down and then ran
+	-- phase 2 with the stale, pre-gain target.
+	if anim.pendingSecondPhase and not AnimationUtils.DetectLevelUp(xpContext) then
+		local currentXP = xpContext.currentXP or xpContext.xpAfter or 0
+		anim.pendingSecondPhase.targetRatio = currentXP / math.max(1, xpContext.xpMax or 1)
+		anim.pendingSecondPhase.context = xpContext
+		return
+	end
+
 	-- Detect level-up
 	if AnimationUtils.DetectLevelUp(xpContext) then
 		-- Level-up celebration (golden glow)
