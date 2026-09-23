@@ -392,21 +392,10 @@ function TooltipMixin:AddSessionSection(content, context, cfg)
 		}
 	)
 
-	-- XP/hour: calculate either from context or via helper, fallback safe
+	-- XP/hour: the context's, else the session rate every other readout uses
 	local xpPerHour = context.xpPerHour
-	if (not xpPerHour) and sessionStart and sessionXP then
-		if XPBarContextBuilder and type(XPBarContextBuilder.CalculateXPPerHour) == "function" then
-			-- Dot-call: CalculateXPPerHour takes positional args, not self
-			local val = XPBarContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, 0, context.currentXP or 0)
-			if tonumber(val) then
-				xpPerHour = tonumber(val)
-			end
-		else
-			-- best-effort naive calc: xp/sec * 3600
-			if sessionDuration and sessionDuration > 0 then
-				xpPerHour = (sessionXP / math.max(1, sessionDuration)) * 3600
-			end
-		end
+	if not xpPerHour and Addon.Session and Addon.Session.GetXPPerHour then
+		xpPerHour = Addon.Session:GetXPPerHour()
 	end
 
 	if xpPerHour and xpPerHour > 0 then

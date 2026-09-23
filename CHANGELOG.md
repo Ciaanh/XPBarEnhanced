@@ -32,6 +32,11 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - Turning off "Classic Bar Draggable" now survives a reload, and a fixed Classic bar keeps its configured width and sits where Blizzard's bar does.
 - Reset Bar Position leaves the Minimap Ring and a fixed Classic bar on their anchors instead of moving them to the middle of the screen.
 - Profiles keep their own secondary bar positions: resetting one on a profile no longer resets Global Settings' positions for other characters.
+- XP per hour is one figure everywhere: the bar, its tooltip and the Stats window no longer show different rates, and the bar text no longer flips between two values every few seconds.
+- The time-on-level readout keeps running after a level-up instead of vanishing until the next loading screen, and XP per hour no longer drops by about half after a ding.
+- XP per hour waits a minute of data before showing, so a quest turned in right after login no longer reads as millions per hour.
+- The Stats window's time on level and time to level now advance while you play.
+- The rested percentage in the quest summary shows up to 150% instead of stopping at 100%.
 - The Classic bar's fill no longer spills past the rounded ends of its frame.
 - The Classic bar's fill and the Classic reputation bar no longer use Blizzard's pre-colored fill textures, which tinted custom colors or went blank on clients that lack them.
 

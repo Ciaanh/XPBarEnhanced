@@ -482,8 +482,16 @@ function Session:OnLevelUp(level)
     session.levelUpTimestamps = session.levelUpTimestamps or {}
     table.insert(session.levelUpTimestamps, time())
 
-    -- Reset level time
+    -- Level time restarts at the ding: carried forward from here, so the level
+    -- readouts keep running and the rate never counts the previous level's
+    -- time against this level's XP. The total takes the time since the last
+    -- reply first, since that anchor moves with it.
+    local now = time()
+    if (session.lastTimePlayedRequest or 0) > 0 then
+        session.realTotalTime = (session.realTotalTime or 0) + math.max(0, now - session.lastTimePlayedRequest)
+    end
     session.realLevelTime = 0
+    session.lastTimePlayedRequest = now
 
     -- Update current level state
     session.lastLevel = currentLevel
@@ -728,51 +736,31 @@ function Session:GetTimeToLevel()
     return 0
 end
 
----Return XP per hour based on session or level-time fallback
+---Time played at the current level, carried forward to now (0 when unknown)
+---@return number levelSeconds
+function Session:GetLevelSeconds()
+    local session = self:GetCurrent()
+    if not session then
+        return 0
+    end
+    return Addon.TimeCalculations.AdjustedLevelTime(session.realLevelTime, session.lastTimePlayedRequest)
+end
+
+---Return XP per hour. Every XP/hour readout uses this, through
+---TimeCalc.CalculateXPPerHour, so bar, tooltip and Stats window agree.
 function Session:GetXPPerHour()
     local session = self:GetCurrent()
     if not session then
         return 0
     end
 
-    local duration = time() - (session.sessionStart or time())
-    local gainedXP = session.gainedXP or 0
-
-    -- Prefer session-derived rate when session is meaningful
-    if duration >= 10 and gainedXP > 0 then
-        return math.floor((gainedXP / duration) * 3600)
-    end
-
-    -- Then the sliding window of recent gains. It is a real measurement, so it
-    -- beats the level-time estimate below in the two windows where the session
-    -- path declines: a session's first 10 seconds, and a session that has
-    -- recorded no gains at all.
-    if self.GetRecentXPPerHour then
-        local recent = self:GetRecentXPPerHour()
-        if recent and recent > 0 then
-            return recent
-        end
-    end
-
-    -- Last resort: estimate from realLevelTime.
-    if session.realLevelTime and session.realLevelTime > 0 then
-        local levelTime = session.realLevelTime
-        if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-            local elapsed = time() - session.lastTimePlayedRequest
-            levelTime = levelTime + elapsed
-        end
-        -- Floor the divisor. This path divides a whole level's XP by the time
-        -- played at that level, and a handful of seconds there yields a
-        -- millions-per-hour reading -- which the circular centre ETA is derived
-        -- from, so the spike is visible, not just internal.
-        levelTime = math.max(60, levelTime)
-        local currentXP = UnitXP("player") or 0
-        if currentXP > 0 then
-            return math.floor((currentXP / levelTime) * 3600)
-        end
-    end
-
-    return 0
+    local rate = Addon.TimeCalculations.CalculateXPPerHour(
+        session.sessionStart,
+        session.gainedXP or 0,
+        self:GetLevelSeconds(),
+        UnitXP("player") or 0
+    )
+    return math.floor(rate)
 end
 
 ---Return XP per hour based on a sliding window of recent gains

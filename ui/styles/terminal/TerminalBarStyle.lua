@@ -196,11 +196,8 @@ local function BuildTerminalStatsLine(db)
             local fmt = FormatTime(time() - session.sessionStart)
             if fmt then parts[#parts + 1] = "sess:" .. fmt end
         end
-        if db.showLevelTimeText ~= false and session.realLevelTime and session.realLevelTime > 0 then
-            local lvlSec = session.realLevelTime
-            if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-                lvlSec = lvlSec + (time() - session.lastTimePlayedRequest)
-            end
+        local lvlSec = Addon.Session:GetLevelSeconds()
+        if db.showLevelTimeText ~= false and lvlSec > 0 then
             local fmt = FormatTime(lvlSec)
             if fmt then parts[#parts + 1] = "lvl:" .. fmt end
         end

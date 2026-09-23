@@ -127,7 +127,7 @@ function ContextBuilder.GetCoreState()
 	local restedXP = GetXPExhaustion() or 0
 	local isResting = IsResting()
 	local hasRestedXP = restedXP > 0
-	local isFullyRested = restedXP >= (1.5 * xpMax)
+	local isFullyRested = Addon.XPCalculations.IsFullyRested(restedXP, xpMax)
 	return {
 		currentXP = currentXP,
 		xpMax = xpMax,
@@ -227,11 +227,12 @@ end
 -- context.xpGained is what decides the gain flash, they disagreed visibly.
 -- Session:ConsumeLastGain is now the single source; see BuildContext below.
 
--- Update session tracking with a gain and return session snapshot
-function ContextBuilder.UpdateSessionWithGain(xpGained)
+-- Session snapshot for an event context. The rate is Session:GetXPPerHour,
+-- the same one the text ticker and Stats window read.
+function ContextBuilder.UpdateSessionWithGain()
 	local sessionStart = time()
 	local sessionXP = 0
-	local realLevelTime = 0
+	local xpPerHour = 0
 
 	if Addon and Addon.Session then
 		local session = Addon.Session:GetCurrent()
@@ -242,20 +243,13 @@ function ContextBuilder.UpdateSessionWithGain(xpGained)
 			if session.gainedXP then
 				sessionXP = session.gainedXP
 			end
-			if session.realLevelTime then
-				realLevelTime = session.realLevelTime
-				if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-					local elapsed = time() - session.lastTimePlayedRequest
-					realLevelTime = realLevelTime + elapsed
-				end
-			end
+		end
+		if Addon.Session.GetXPPerHour then
+			xpPerHour = Addon.Session:GetXPPerHour()
 		end
 	end
 
 	local sessionDuration = time() - sessionStart
-	local currentXP = UnitXP("player") or 0
-	local xpPerHour = ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
-
 	return sessionStart, sessionXP, sessionDuration, xpPerHour
 end
 
@@ -279,13 +273,7 @@ function ContextBuilder.BuildCoreContext(coreState)
 			if session.gainedXP then
 				sessionXP = session.gainedXP
 			end
-			if session.realLevelTime and session.realLevelTime > 0 then
-				levelSeconds = session.realLevelTime
-				if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-					local elapsed = time() - session.lastTimePlayedRequest
-					levelSeconds = levelSeconds + elapsed
-				end
-			end
+			levelSeconds = Addon.Session:GetLevelSeconds()
 			questXPGained = session.questXP or 0
 			otherXP       = session.otherXP  or 0
 		end
@@ -359,7 +347,7 @@ function XPBarContextBuilder.BuildContext(event, ...)
 		preLevelMax = (session and session.maxXP) or coreState.xpMax
 	end
 
-	local sessionStart, sessionXP, sessionDuration, xpPerHour = ContextBuilder.UpdateSessionWithGain(xpGained)
+	local sessionStart, sessionXP, sessionDuration, xpPerHour = ContextBuilder.UpdateSessionWithGain()
 
 	local hasGainedXP = (xpGained and xpGained > 0) or false
 
@@ -443,11 +431,6 @@ end
 -------------------------------------------------------------------
 -- SESSION CALCULATION METHODS
 -------------------------------------------------------------------
-
-function ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
-	local TimeCalc = XPBarEnhanced.TimeCalculations
-	return TimeCalc.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
-end
 
 function ContextBuilder.CalculateTimeToLevel(currentXP, maxXP, xpPerHour)
 	local TimeCalc = XPBarEnhanced.TimeCalculations

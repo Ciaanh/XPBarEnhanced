@@ -278,15 +278,9 @@ function XPBarTextMixin:UpdateSessionText(context)
 			if showSessionTime and session.sessionStart then
 				sessionSeconds = time() - session.sessionStart
 			end
-			-- Level time: realLevelTime from TIME_PLAYED_MSG plus elapsed time since last request
+			-- Level time: from the last TIME_PLAYED_MSG, or the ding, carried forward
 			if showLevelTime then
-				if session.realLevelTime and session.realLevelTime > 0 then
-					levelSeconds = session.realLevelTime
-					if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-						local elapsed = time() - session.lastTimePlayedRequest
-						levelSeconds = levelSeconds + elapsed
-					end
-				end
+				levelSeconds = Addon.Session:GetLevelSeconds()
 			end
 		end
 	end

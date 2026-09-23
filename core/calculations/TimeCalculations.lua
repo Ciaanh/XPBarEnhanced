@@ -11,32 +11,36 @@ local TimeCalc = Addon.TimeCalculations
 -- XP RATE CALCULATIONS
 -------------------------------------------------------------------
 
---- Calculate XP per hour based on session data
---- Automatically detects when level time includes significant idle time and prefers session calculation
+-- A rate needs at least this much time behind it. One quest turn-in a few
+-- seconds into a session would otherwise read as millions of XP an hour and
+-- an ETA of seconds. Matches the floor the reputation, housing, honor and
+-- profession trackers use.
+TimeCalc.MIN_RATE_SECONDS = 60
+
+--- Calculate XP per hour from session data and level time.
+--- The single XP/hour formula: bar texts, the text ticker, tooltips and the
+--- Stats window all come through here, so they cannot disagree.
+--- Detects when level time includes significant idle time and prefers the
+--- session rate then.
 ---@param sessionStart number Session start timestamp (from time())
 ---@param sessionXP number Total XP gained in session
----@param realLevelTime number|nil Real level time from TIME_PLAYED_MSG (optional)
+---@param levelSeconds number|nil Time played at this level, carried forward to now (optional)
 ---@param currentXP number|nil Current XP for level-time based calculation (optional)
 ---@return number xpPerHour XP gained per hour
-function TimeCalc.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
+function TimeCalc.CalculateXPPerHour(sessionStart, sessionXP, levelSeconds, currentXP)
     local now = time()
     local elapsed = now - (sessionStart or now)
-
-    -- Minimum elapsed time to avoid division issues (10 seconds)
-    if elapsed < 10 then
-        return 0
-    end
 
     -- Calculate both rates and compare them
     local sessionRate = 0
     local levelRate = 0
-    
-    if sessionXP and sessionXP > 0 then
+
+    if elapsed >= TimeCalc.MIN_RATE_SECONDS and sessionXP and sessionXP > 0 then
         sessionRate = (sessionXP / elapsed) * 3600
     end
-    
-    if realLevelTime and realLevelTime > 0 and currentXP and currentXP > 0 then
-        levelRate = (currentXP / realLevelTime) * 3600
+
+    if levelSeconds and levelSeconds >= TimeCalc.MIN_RATE_SECONDS and currentXP and currentXP > 0 then
+        levelRate = (currentXP / levelSeconds) * 3600
     end
 
     -- If we have both rates, compare them
@@ -208,21 +212,18 @@ function TimeCalc.SessionDuration(sessionStart)
     return math.max(0, time() - sessionStart)
 end
 
---- Calculate adjusted level time (realLevelTime + elapsed since last update)
----@param realLevelTime number Level time from TIME_PLAYED_MSG
----@param lastTimePlayedRequest number Timestamp of last TIME_PLAYED_MSG
----@return number adjustedTime Real-time adjusted level time
+--- Time played at the current level, carried forward to now: the level time
+--- of the last TIME_PLAYED_MSG (or 0 from the ding onward) plus the wall-clock
+--- time since. 0 only while no level time is known at all.
+---@param realLevelTime number|nil Level time at lastTimePlayedRequest
+---@param lastTimePlayedRequest number|nil When realLevelTime was taken
+---@return number levelSeconds
 function TimeCalc.AdjustedLevelTime(realLevelTime, lastTimePlayedRequest)
-    if not realLevelTime or realLevelTime <= 0 then
-        return 0
+    local base = math.max(0, realLevelTime or 0)
+    if not lastTimePlayedRequest or lastTimePlayedRequest <= 0 then
+        return base
     end
-
-    local elapsed = 0
-    if lastTimePlayedRequest and lastTimePlayedRequest > 0 then
-        elapsed = math.max(0, time() - lastTimePlayedRequest)
-    end
-
-    return realLevelTime + elapsed
+    return base + math.max(0, time() - lastTimePlayedRequest)
 end
 
 -------------------------------------------------------------------
