@@ -11,12 +11,15 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Changed
 
+- **Classic bar art**: redrawn after Blizzard's newer experience bar, with a chamfered frame, a two-tone fill in your chosen color, and new dividers and rested marker. The Classic reputation bar uses the same frame, so the two bars stay identical when stacked. All of it ships with the addon, so a Blizzard art change can no longer alter or blank the bar.
+- The bar style gallery draws premade previews instead of assembling each style from dozens of textures when the options open.
 - Rested XP that overflows the current level now fills the bar to its edge instead of hiding the rested overlay entirely, matching Blizzard's newer experience bar.
 - The rested marker now hides within 1% of either end of the bar, where it used to sit half off the frame.
 
 ### Fixed
 
-- The Classic bar requested an XP fill atlas under a name no current client ships, so it silently fell back to the bundled texture. It now probes Blizzard's current name first.
+- The Classic bar's fill no longer spills past the rounded ends of its frame.
+- The Classic bar's fill and the Classic reputation bar no longer use Blizzard's pre-colored fill textures, which tinted custom colors or went blank on clients that lack them.
 
 ## [1.2.6] - 2026-09-11
 

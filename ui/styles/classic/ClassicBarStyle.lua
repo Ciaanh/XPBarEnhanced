@@ -1,6 +1,6 @@
 -- XP Bar Enhanced - Classic Bar Style
--- Blizzard-style XP bar with border frame and atlas textures
--- Static positioning (anchored to Blizzard's MainStatusTrackingBarContainer)
+-- Blizzard-style XP bar: a chamfered frame over a tinted neutral fill, drawn
+-- entirely from the addon's own textures (see ClassicChrome.lua).
 
 -------------------------------------------------------------------
 -- DEPENDENCIES
@@ -23,12 +23,11 @@ end
 -- TEMPLATE GEOMETRY
 -------------------------------------------------------------------
 
--- Authored dimensions from ClassicBarTemplate.xml. The on-bar text fields are
--- scaled against BASE_WIDTH so a wider bar gets proportionally more room for
--- level/XP/percent rather than three clusters marooned at the default insets.
+-- Frame and fill heights come from ClassicChrome so the secondary bar matches.
+-- The on-bar text fields are scaled against BASE_WIDTH so a wider bar gets
+-- proportionally more room for level/XP/percent rather than three clusters
+-- marooned at the default insets.
 local BASE_WIDTH = 566
-local FRAME_HEIGHT = 15
-local STATUS_BAR_HEIGHT = 13
 local BELOW_BAR_HEIGHT = 30
 local OVERLAY_TEXT_HEIGHT = 11
 
@@ -37,79 +36,13 @@ local BASE_XP_TEXT_WIDTH = 280
 local BASE_PERCENT_TEXT_WIDTH = 120
 
 -------------------------------------------------------------------
--- ATLAS CONFIGURATION
--------------------------------------------------------------------
-
--- Blizzard atlas names for the XP bar fill with TGA file fallbacks.
--- Atlas textures are resolution-independent and scale better than custom TGAs.
-local ATLAS_CONFIG = {
-    barFill = {
-        -- Both "-Fill-Experience" and "-Fill-XP" bake in Blizzard's own
-        -- green/orange gradient. SetStatusBarColor only multiplies our custom
-        -- color onto that baked hue, so it never fully replaces it - the
-        -- player's chosen color always shows Blizzard's tint bleeding through
-        -- behind it. Same class of bug the restedOverlay comment below
-        -- describes; use the neutral file texture here for the same reason.
-        atlas = nil,
-        fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
-    },
-    restedOverlay = {
-        -- Keep this on a neutral texture so the configured rested color is not
-        -- multiplied by Blizzard's baked rested tint/shading.
-        atlas = nil,
-        fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
-    },
-    questComplete = {
-        atlas = nil, -- No Blizzard atlas for quest overlays; use file texture
-        fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
-    },
-    questIncomplete = {
-        atlas = nil,
-        fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
-    }
-}
-
--------------------------------------------------------------------
 -- STYLE TEMPLATE
 -------------------------------------------------------------------
 
--- Classic Bar style template: follows  composition pattern
+-- The fill and the rested/quest overlays all use classic-bar-fill.tga, set in
+-- ClassicBarTemplate.xml. It is a neutral grey, so the configured colors come
+-- through as chosen instead of being multiplied into a baked hue.
 local ClassicBarStyleTemplate = {}
-
---- Apply atlas textures after BuildVisuals aliases all XML elements.
---- Called from OnLoad chain via mixin composition.
-function ClassicBarStyleTemplate:ApplyAtlasTextures()
-    if not self.ApplyBarAtlasOrTexture then
-        return -- PaintMixin not available
-    end
-
-    -- Main bar fill: prefer atlas over custom TGA
-    local Chrome = GetChrome()
-    local cfg = ATLAS_CONFIG.barFill
-    local atlas = Chrome and Chrome.ResolveAtlas(cfg.atlas) or nil
-    self:ApplyBarAtlasOrTexture(atlas, cfg.fallback)
-
-    -- Rested overlay
-    if self.RestedOverlay then
-        cfg = ATLAS_CONFIG.restedOverlay
-        if self.ApplyAtlasOrTexture then
-            self:ApplyAtlasOrTexture(self.RestedOverlay, cfg.atlas, cfg.fallback)
-        end
-    end
-
-    -- Quest overlays (no atlas available, keep file textures)
-    -- These are already set in XML, no action needed
-end
-
---- Override ApplyStyle to also apply atlas textures after base style setup
-function ClassicBarStyleTemplate:ApplyStyle(styleConfig)
-    -- Call parent ApplyStyle (from PaintMixin)
-    if XPBarPaintMixin and XPBarPaintMixin.ApplyStyle then
-        XPBarPaintMixin.ApplyStyle(self, styleConfig)
-    end
-    -- Apply atlas textures (with fallback to TGA if unavailable)
-    self:ApplyAtlasTextures()
-end
 
 -------------------------------------------------------------------
 -- SIZING
@@ -131,12 +64,7 @@ function ClassicBarStyleTemplate:ResizeToConfiguredWidth()
         return
     end
 
-    local width = Chrome.GetWidth()
-    self:SetSize(width, FRAME_HEIGHT)
-
-    if self.StatusBar and self.StatusBar.SetSize then
-        self.StatusBar:SetSize(width, STATUS_BAR_HEIGHT)
-    end
+    local width = Chrome.LayoutBar(self, self.StatusBar)
 
     local overlay = self.OverlayFrameTextContainer
     if overlay and overlay.SetSize then
@@ -150,15 +78,13 @@ function ClassicBarStyleTemplate:ResizeToConfiguredWidth()
     if below and below.SetSize then
         below:SetSize(width + Chrome.BELOW_TEXT_INSET, BELOW_BAR_HEIGHT)
     end
-
-    Chrome.LayoutDividers(self)
 end
 
 -------------------------------------------------------------------
 -- LIFECYCLE OVERRIDES
 -------------------------------------------------------------------
 
---- Override BuildVisuals to slice the chrome and apply the configured width
+--- Override BuildVisuals to texture the chrome and apply the configured width
 --- once the base has aliased the XML elements.
 function ClassicBarStyleTemplate:BuildVisuals()
     if XPBarPaintMixin and XPBarPaintMixin.BuildVisuals then
@@ -167,7 +93,8 @@ function ClassicBarStyleTemplate:BuildVisuals()
 
     local Chrome = GetChrome()
     if Chrome then
-        Chrome.BuildSlicedChrome(self)
+        Chrome.BuildChrome(self, self.StatusBar)
+        Chrome.StylePip(self.ExhaustionTick)
     end
 
     self:ResizeToConfiguredWidth()

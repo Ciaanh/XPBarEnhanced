@@ -3,16 +3,18 @@
 ..\..\Blizzard_SharedXML\UI.xsd">
 
     <!-- XP Bar Enhanced - Classic Bar Template  -->
-    <!-- Blizzard-style XP bar with border frame and atlas textures -->
+    <!-- Blizzard-style XP bar: chamfered frame over a tinted neutral fill -->
+    <!-- The art is the addon's own (assets/classic-bar*.tga); sizes, insets and
+         frame slicing are applied from ClassicChrome.lua -->
     <!-- Inherits script handlers from XPBarBaseTemplate -->
 
     <Script file="ClassicChrome.lua"/>
     <Script file="ClassicBarStyle.lua"/>
 
     <Frame name="ClassicBarTemplate" virtual="true" inherits="XPBarBaseTemplate" mixin="ClassicBarXPBarMixin">
-        <Size x="566" y="12"/>
+        <Size x="566" y="17"/>
         <Frames>
-            <!-- Border frame - separate frame on top of StatusBar -->
+            <!-- Track behind the fill; re-anchored to the StatusBar in Lua -->
             <Frame parentKey="BackgroundFrame" enableMouse="false">
                 <Anchors>
                     <Anchor point="TOPLEFT"/>
@@ -20,7 +22,7 @@
                 </Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
-                        <Texture parentKey="Background" file="Interface\AddOns\XPBarEnhanced\assets\legacy-background">
+                        <Texture parentKey="Background" file="Interface\AddOns\XPBarEnhanced\assets\classic-bar">
                             <Anchors>
                                 <Anchor point="TOPLEFT"/>
                                 <Anchor point="BOTTOMRIGHT"/>
@@ -30,19 +32,19 @@
                 </Layers>
             </Frame>
 
-            <!-- StatusBar offset inside frame to accommodate border -->
+            <!-- Inset inside the frame so the fill's square ends sit under the rim -->
             <StatusBar parentKey="StatusBar" minValue="0" maxValue="1" defaultValue="0">
-                <Size x="566" y="10"/>
+                <Size x="559" y="10"/>
                 <Anchors>
                     <Anchor point="CENTER" x="0" y="0"/>
                 </Anchors>
-                <BarTexture file="Interface\AddOns\XPBarEnhanced\assets\xp-bar"/>
+                <BarTexture file="Interface\AddOns\XPBarEnhanced\assets\classic-bar-fill"/>
                 <BarColor r="1" g="1" b="1"/>
                 <Layers>
                     <!-- Rested XP overlay -->
                     <Layer level="BACKGROUND" textureSubLevel="0">
-                        <Texture parentKey="RestedOverlay" hidden="true" file="Interface\AddOns\XPBarEnhanced\assets\xp-bar">
-                            <Size x="0" y="11"/>
+                        <Texture parentKey="RestedOverlay" hidden="true" file="Interface\AddOns\XPBarEnhanced\assets\classic-bar-fill">
+                            <Size x="0" y="10"/>
                             <Anchors>
                                 <Anchor point="LEFT" x="0" y="0"/>
                             </Anchors>
@@ -52,8 +54,8 @@
 
                     <!-- Quest XP overlay - incomplete quests -->
                     <Layer level="OVERLAY" textureSubLevel="2">
-                        <Texture parentKey="QuestOverlayIncomplete" hidden="true" file="Interface\AddOns\XPBarEnhanced\assets\xp-bar">
-                            <Size x="0" y="11"/>
+                        <Texture parentKey="QuestOverlayIncomplete" hidden="true" file="Interface\AddOns\XPBarEnhanced\assets\classic-bar-fill">
+                            <Size x="0" y="10"/>
                             <Anchors>
                                 <Anchor point="LEFT" x="0" y="0"/>
                             </Anchors>
@@ -63,8 +65,8 @@
 
                     <!-- Quest XP overlay - complete quests -->
                     <Layer level="OVERLAY" textureSubLevel="3">
-                        <Texture parentKey="QuestOverlayComplete" hidden="true" file="Interface\AddOns\XPBarEnhanced\assets\xp-bar">
-                            <Size x="0" y="11"/>
+                        <Texture parentKey="QuestOverlayComplete" hidden="true" file="Interface\AddOns\XPBarEnhanced\assets\classic-bar-fill">
+                            <Size x="0" y="10"/>
                             <Anchors>
                                 <Anchor point="LEFT" x="0" y="0"/>
                             </Anchors>
@@ -74,24 +76,21 @@
 
                     <!-- Flash effect overlay -->
                     <Layer level="OVERLAY" textureSubLevel="7">
-                        <Texture parentKey="GainFlash" hidden="true" alphaMode="BLEND">
-                            <Anchors>
-                                <Anchor point="TOPLEFT" x="0" y="1"/>
-                                <Anchor point="BOTTOMRIGHT" x="0" y="-1"/>
-                            </Anchors>
-                        </Texture>
+                        <!-- Exactly the fill's rectangle: any larger and its corners show past the rim -->
+                        <Texture parentKey="GainFlash" hidden="true" alphaMode="BLEND" setAllPoints="true"/>
                     </Layer>
                 </Layers>
 
                 <Frames>
                     <!-- Exhaustion Tick (rested XP marker) -->
                     <Button parentKey="ExhaustionTick" hidden="true" frameStrata="MEDIUM" mixin="XPBarExhaustionTickMixin">
-                        <Size x="10" y="14"/>
+                        <!-- Size and texture coordinates are applied by ClassicChrome.StylePip -->
+                        <Size x="11" y="14"/>
                         <Anchors>
-                            <Anchor point="CENTER" relativeKey="$parent.RestedOverlay" relativePoint="RIGHT" x="0" y="1"/>
+                            <Anchor point="CENTER" relativeKey="$parent.RestedOverlay" relativePoint="RIGHT" x="0" y="0"/>
                         </Anchors>
-                        <NormalTexture parentKey="Normal" file="Interface\AddOns\XPBarEnhanced\assets\tick"/>
-                        <HighlightTexture parentKey="Highlight" file="Interface\AddOns\XPBarEnhanced\assets\tick-highlight" alphaMode="ADD"/>
+                        <NormalTexture parentKey="Normal" file="Interface\AddOns\XPBarEnhanced\assets\classic-bar"/>
+                        <HighlightTexture parentKey="Highlight" file="Interface\AddOns\XPBarEnhanced\assets\classic-bar" alphaMode="ADD"/>
                         <Scripts>
                             <OnEnter method="OnEnter"/>
                             <OnLeave function="GameTooltip_Hide"/>
@@ -179,7 +178,7 @@
                 </Layers>
             </Frame>
 
-            <!-- Border frame - on top of StatusBar -->
+            <!-- Frame art on top of the StatusBar; sliced into fixed caps and a stretched middle in Lua -->
             <Frame parentKey="BorderFrame" frameStrata="MEDIUM" enableMouse="false">
                 <Anchors>
                     <Anchor point="TOPLEFT"/>
@@ -187,7 +186,7 @@
                 </Anchors>
                 <Layers>
                     <Layer level="ARTWORK">
-                        <Texture parentKey="Texture" file="Interface\AddOns\XPBarEnhanced\assets\legacy-border">
+                        <Texture parentKey="Texture" file="Interface\AddOns\XPBarEnhanced\assets\classic-bar">
                             <Anchors>
                                 <Anchor point="TOPLEFT"/>
                                 <Anchor point="BOTTOMRIGHT"/>

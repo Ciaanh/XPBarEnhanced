@@ -11,6 +11,7 @@ Changelog.entries = {
         version = "1.3.0",
         notes = {
             "Added configurable Classic bar width and segment count with crisp, resizable chrome.",
+            "Redrew the Classic bar after Blizzard's newer experience bar, with all of its art bundled in the addon.",
             "Added build-based flavor mapping for Retail and supported Classic branches.",
             "Disabled unsupported feature services on clients that expose incompatible APIs, including Forever housing.",
         },

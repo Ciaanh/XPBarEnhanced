@@ -15,6 +15,7 @@ manual-changelog: CHANGELOG.md
 ignore:
     - refs
     - .build
+    - _archive
     - images
     - assets/raw
     - ROADMAP.md
