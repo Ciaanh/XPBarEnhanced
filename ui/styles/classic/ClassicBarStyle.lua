@@ -109,12 +109,6 @@ end
 -------------------------------------------------------------------
 
 local function GetClassicBarConfig()
-    local Addon = XPBarEnhanced
-    local isDraggable = Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("classicBarDraggable")
-    if isDraggable == nil then
-        isDraggable = true -- Default to draggable
-    end
-
     return {
         interaction = {enabled = true},
         tooltip = {enabled = true},
@@ -123,7 +117,9 @@ local function GetClassicBarConfig()
             flashOnGain = true
         },
         position = {
-            mode = isDraggable and "DRAGGABLE" or "STATIC",
+            -- Read by PositionMixin when the frame is built, once saved
+            -- settings exist; this table is built at file load.
+            modeOption = "classicBarDraggable",
             positionKey = Addon.StyleKeys.classic
         },
         style = {},

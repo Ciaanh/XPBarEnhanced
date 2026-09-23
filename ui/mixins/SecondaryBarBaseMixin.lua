@@ -402,7 +402,9 @@ function SecondaryBaseMixin:ResetPosition()
         return
     end
 
-    local positions = GetSettingsTable(configKey)
+    -- The write target, not a read: on a profile, a read falls back to Global's
+    -- table and would clear another character's position.
+    local positions = GetSettingsTable(configKey, true)
     if styleKey and positions then
         positions[styleKey] = nil
     else

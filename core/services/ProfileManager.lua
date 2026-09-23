@@ -104,6 +104,11 @@ local function getSettingsSnapshot(source)
         end
     end
 
+    -- Secondary bar positions have no default, so the loop above skips them,
+    -- but a profile needs its own copy: without one, every read falls back to
+    -- Global's positions and every reset clears Global's.
+    snapshot.secondaryBarPositions = cloneValue(source.secondaryBarPositions or {})
+
     return snapshot
 end
 
@@ -124,6 +129,9 @@ local function getEffectiveSettingsSnapshot()
             snapshot[key] = cloneValue(value)
         end
     end
+
+    local positions = config and config.GetSettingsTable and config:GetSettingsTable("secondaryBarPositions")
+    snapshot.secondaryBarPositions = cloneValue(positions or {})
 
     return snapshot
 end

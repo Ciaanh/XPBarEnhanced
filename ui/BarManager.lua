@@ -19,14 +19,6 @@ local function GetOptionValue(key, fallback)
     return fallback
 end
 
-local function ShouldSecondarySuppressMainContainer()
-    local manager = Addon.SecondaryBarManager
-    if manager and manager.ShouldSuppressMainContainer then
-        return manager:ShouldSuppressMainContainer()
-    end
-    return false
-end
-
 local StyleTemplateNameMap = {
     [Addon.StyleKeys.classic] = "ClassicBarTemplate",
     [Addon.StyleKeys.flat] = "FlatBarTemplate",
@@ -126,9 +118,6 @@ function BarManager:Initialize()
     local defaultStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
     local configuredStyle = GetOptionValue("barStyle", defaultStyle)
     local style = self:ResolveStyleKey(configuredStyle)
-
-    -- Install hooks before SetStyle so they are in place when bars are hidden
-    self:InstallBlizzardBarHooks()
 
     self:SetStyle(style)
 
@@ -286,84 +275,13 @@ function BarManager:AdjustContextForMaxLevel(context)
     return self:GetMaxLevelSecondaryContext()
 end
 
--- True while the Blizzard main container must stay hidden. Re-checked when a
--- combat-deferred hide fires, so switching to style "none" mid-combat cannot
--- leave the player without any XP bar.
-local function ShouldHideMainContainer()
-    return BarManager:IsCustomStyle(BarManager.currentStyle) or ShouldSecondarySuppressMainContainer()
-end
-
--- Safely hide a Blizzard container, deferring to after combat if in lockdown.
-local function SafeHideContainer(container)
-    Utils.SafeHideContainer(container, ShouldHideMainContainer)
-end
-
+-- Blizzard's own bars are kept out of the way by BlizzardBars, which judges
+-- each container by the bar it holds and hides it again whenever Blizzard
+-- shows it. Called on every style change.
 function BarManager:ApplyDefaultXPBarVisibility()
-    -- Never touch Blizzard's protected status-bar containers during the login
-    -- race. In retail/classic beta, visibility changes from early startup can
-    -- trigger restricted-action disconnects. Queue the hide/show after the world
-    -- has settled instead of forcing it in the middle of the initial load path.
-    local shouldHide = self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer()
-
-    local function applyVisibility()
-        local candidates = {
-            _G.MainStatusTrackingBarContainer,
-            _G.MainMenuExpBar,
-            _G.MainMenuBarXP,
-            _G.MainMenuBarMaxLevelBar,
-            _G.StatusTrackingBarContainer,
-            _G.ExperienceBar,
-        }
-
-        for _, container in ipairs(candidates) do
-            if container and container.SetShown then
-                local ok = pcall(function()
-                    if shouldHide then
-                        if not InCombatLockdown() then
-                            container:SetShown(false)
-                        else
-                            SafeHideContainer(container)
-                        end
-                    else
-                        if not InCombatLockdown() then
-                            container:SetShown(true)
-                        end
-                    end
-                end)
-                if not ok then
-                    return
-                end
-            end
-        end
+    if Addon.BlizzardBars then
+        Addon.BlizzardBars:Refresh()
     end
-
-    if Addon and Addon._blizzardXPVisibilityQueued then
-        return
-    end
-
-    Addon._blizzardXPVisibilityQueued = true
-    local timer = C_Timer and C_Timer.After
-    if timer then
-        timer(1.25, function()
-            Addon._blizzardXPVisibilityQueued = false
-            applyVisibility()
-        end)
-    else
-        Addon._blizzardXPVisibilityQueued = false
-        applyVisibility()
-    end
-end
-
--- Do not hook Blizzard's protected status-bar container methods. Re-entrant
--- calls inside a Show/SetShown hook can trip the client into a restricted-
--- action path or an event loop when the addon is trying to hide the same
--- Blizzard frame it is observing. We only need a single, explicit visibility
--- pass here; the frame can be hidden or shown by our own logic without
--- intercepting Blizzard's secure callbacks.
-function BarManager:InstallBlizzardBarHooks()
-    -- Intentionally left as a no-op. Visibility is managed by
-    -- ApplyDefaultXPBarVisibility() and by the direct state checks in
-    -- SetStyle()/RefreshMaxLevelRepurpose().
 end
 
 function BarManager:GetCurrentFrame()
@@ -471,11 +389,13 @@ function BarManager:GetCurrentStyle()
     return self.currentStyle
 end
 
+-- Each frame resets itself: a fixed-position bar re-anchors to Blizzard's bar
+-- (or, for the minimap ring, to the minimap) instead of being dropped at a
+-- draggable default it never uses.
 function BarManager:ResetBarPosition()
-    for key, value in pairs(self.barFrames) do
-        if value.ClearSavedPosition and value.SetDefaultDraggablePosition then
-            value:ClearSavedPosition()
-            value:SetDefaultDraggablePosition()
+    for _, frame in pairs(self.barFrames or {}) do
+        if frame.ResetPosition then
+            frame:ResetPosition()
         end
     end
 end

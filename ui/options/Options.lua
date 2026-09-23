@@ -990,19 +990,14 @@ function Options:AcceptResetSettingsDialog()
 end
 
 function XPBarEnhancedOptionsMixin:OnResetBarPositionClicked()
-    -- Prefer BarManager wrapper or direct view call for reset position; fallback to old shim
     if Addon.BarManager and Addon.BarManager.ResetBarPosition then
         Addon.BarManager:ResetBarPosition()
     end
-    -- Clear persisted secondary bar positions so bars return to default anchors
-    -- Use profile-aware API instead of direct Addon.db access
-    if Addon.Config and Addon.Config.GetSettingsStorage then
-        local storage = Addon.Config:GetSettingsStorage()
-        if storage then
-            storage.secondaryBarPositions = nil
-        end
-    elseif Addon.db then
-        Addon.db.secondaryBarPositions = nil
+    -- Only the active profile's own positions: an empty table rather than nil,
+    -- which on a profile would fall back to Global's.
+    local storage = Config:GetSettingsStorage()
+    if storage then
+        storage.secondaryBarPositions = {}
     end
     if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ResetBarPositions then
         Addon.SecondaryBarManager:ResetBarPositions()

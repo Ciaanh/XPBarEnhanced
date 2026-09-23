@@ -105,6 +105,12 @@ function Config:Initialize()
     if Addon.db and type(Addon.db.profiles) == "table" then
         for _, profile in pairs(Addon.db.profiles) do
             NormalizeSecondarySource(profile)
+            -- Profiles created before snapshots carried secondary positions
+            -- read, and reset, Global's. Give each its own copy of what it
+            -- shows today, so nothing moves and the profiles stop sharing.
+            if type(profile) == "table" and type(profile.secondaryBarPositions) ~= "table" then
+                profile.secondaryBarPositions = Addon.Utils.Clone(Addon.db.secondaryBarPositions or {})
+            end
         end
     end
 

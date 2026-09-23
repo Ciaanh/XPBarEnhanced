@@ -85,6 +85,7 @@ ui\mixins\animation\AnimationBase.lua
 
 # Style system (after mixins so globals are defined)
 ui\StyleBuilder.lua
+ui\BlizzardBars.lua
 ui\BarManager.lua
 ui\SecondaryBarManager.lua
 

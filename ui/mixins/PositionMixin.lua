@@ -116,13 +116,17 @@ function PositionMixin:InitializePosition()
 		self:SetSize(styleConfig.width, styleConfig.height)
 	end
 
-	-- Determine mode (default: STATIC)
-	local mode = positionConfig.mode or POSITION_MODE.STATIC
+	-- Determine mode (default: STATIC). A style whose mode is a player option
+	-- names it in modeOption, read here rather than when the style's file
+	-- loads: saved settings do not exist yet at file load.
+	local mode = positionConfig.mode
+	if positionConfig.modeOption and Addon.Config and Addon.Config.GetOptionValue then
+		local draggable = Addon.Config:GetOptionValue(positionConfig.modeOption)
+		mode = (draggable == false) and POSITION_MODE.STATIC or POSITION_MODE.DRAGGABLE
+	end
+	mode = mode or POSITION_MODE.STATIC
 	self.__position_mode = mode
 	self.__position_key = positionConfig.positionKey or "XPBar_Default"
-
-	local saved = GetSettingsTable("barPositions")
-	local savedForKey = GetSavedPosition(saved, self.__position_key)
 
 	-- Apply position based on mode
 	if mode == POSITION_MODE.STATIC then
@@ -148,9 +152,12 @@ function PositionMixin:ApplyStaticPosition()
 		if not container:IsShown() then
 			anchor = container:GetParent() or container
 		end
+		-- Centred on the bottom edge, where Blizzard's main bar sits, rather
+		-- than stretched between the anchor's top corners: stretching took the
+		-- anchor's width over the bar's own (so the Classic width option did
+		-- nothing to the frame) and, on Retail, put the bar in the upper slot.
 		self:ClearAllPoints()
-		self:SetPoint("TOPLEFT", anchor, "TOPLEFT", 0, 0)
-		self:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", 0, 0)
+		self:SetPoint("BOTTOM", anchor, "BOTTOM", 0, 0)
 		return
 	end
 

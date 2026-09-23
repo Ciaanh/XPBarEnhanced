@@ -28,6 +28,10 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - Quest XP on the Classic clients counted no quest shown on the current map and dropped quests under a collapsed header.
 - The two "Time played" lines no longer print in chat when the addon asks for played time.
 - A secondary bar source the client does not offer is moved to one it does in every profile, not only in Global Settings.
+- Blizzard's own XP or reputation bar no longer reappears beside the addon's after Edit Mode, at the level cap, or on Retail while a house is tracked.
+- Turning off "Classic Bar Draggable" now survives a reload, and a fixed Classic bar keeps its configured width and sits where Blizzard's bar does.
+- Reset Bar Position leaves the Minimap Ring and a fixed Classic bar on their anchors instead of moving them to the middle of the screen.
+- Profiles keep their own secondary bar positions: resetting one on a profile no longer resets Global Settings' positions for other characters.
 - The Classic bar's fill no longer spills past the rounded ends of its frame.
 - The Classic bar's fill and the Classic reputation bar no longer use Blizzard's pre-colored fill textures, which tinted custom colors or went blank on clients that lack them.
 

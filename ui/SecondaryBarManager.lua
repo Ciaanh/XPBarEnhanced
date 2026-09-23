@@ -54,6 +54,11 @@ local function DeriveSecondaryStyle()
     -- style. Use db.barStyle (user preference) rather than the runtime style so
     -- the secondary bar remains visible at max level even when the primary hides.
     local primaryStyle = GetOptionValue("barStyle", "none")
+    -- Resolved the way the primary bar resolves it, so a stored style this
+    -- build cannot render still gets the secondary bar of the style shown.
+    if Addon.BarManager and Addon.BarManager.ResolveStyleKey then
+        primaryStyle = Addon.BarManager:ResolveStyleKey(primaryStyle)
+    end
     if TEMPLATE_MAP[primaryStyle] then
         return primaryStyle
     end
@@ -68,44 +73,6 @@ local function SetDetachedInteractionState(frame, detached)
     if frame and frame.SetDetachedInteractionEnabled then
         frame:SetDetachedInteractionEnabled(detached)
     end
-end
-
--- Returns true when our secondary bar is active at max level and Blizzard
--- would otherwise promote the reputation bar into the main status bar container.
-local function ShouldSuppressMainContainer()
-    local barManagerStyle = Addon.BarManager and Addon.BarManager.currentStyle
-    local barManagerIdle = not barManagerStyle or barManagerStyle == "none"
-    return IsCustomStyle(Manager._currentStyle) and barManagerIdle
-end
-
-function Manager:ShouldSuppressMainContainer()
-    return ShouldSuppressMainContainer()
-end
-
--- Predicates re-checked when a combat-deferred hide fires, so disabling the
--- secondary bar mid-combat cannot hide Blizzard's bars once combat ends.
-local function ShouldHideSecondaryContainer()
-    return IsCustomStyle(Manager._currentStyle)
-end
-
--- Any reason the main container must stay hidden (either manager). Deferred
--- hides for a container are keyed per container, so both managers must agree
--- on one main-container predicate.
-local function ShouldHideMainContainer()
-    local barManager = Addon.BarManager
-    if barManager and barManager.IsCustomStyle and barManager:IsCustomStyle(barManager.currentStyle) then
-        return true
-    end
-    return ShouldSuppressMainContainer()
-end
-
--- Safely hide a Blizzard container, deferring to after combat if in lockdown.
-local function SafeHideContainer(container)
-    local predicate = ShouldHideMainContainer
-    if container == _G.SecondaryStatusTrackingBarContainer then
-        predicate = ShouldHideSecondaryContainer
-    end
-    Addon.Utils.SafeHideContainer(container, predicate)
 end
 
 -------------------------------------------------------------------
@@ -161,8 +128,6 @@ end
 -------------------------------------------------------------------
 
 function Manager:Initialize()
-    self:InstallBlizzardBarHooks()
-
     self:RefreshForPrimaryStyleChange()
 
     Addon.EventBus:Register(
@@ -239,63 +204,17 @@ function Manager:GetCurrentFrame()
     return self._frames and self._frames[style] or nil
 end
 
-function Manager:ApplyDefaultReputationBarVisibility()
-    local shouldHide = ShouldHideSecondaryContainer()
-
-    local function applyVisibility()
-        local candidates = {
-            _G.SecondaryStatusTrackingBarContainer,
-            _G.ReputationWatchBar,
-            _G.ReputationStatusBar,
-            _G.StatusTrackingBarContainer,
-        }
-
-        for _, container in ipairs(candidates) do
-            if container and container.SetShown then
-                local ok = pcall(function()
-                    if shouldHide then
-                        if not InCombatLockdown() then
-                            container:SetShown(false)
-                        else
-                            SafeHideContainer(container)
-                        end
-                    else
-                        if not InCombatLockdown() then
-                            container:SetShown(true)
-                        end
-                    end
-                end)
-                if not ok then
-                    return
-                end
-            end
-        end
-    end
-
-    if Addon and Addon._blizzardRepVisibilityQueued then
-        return
-    end
-
-    Addon._blizzardRepVisibilityQueued = true
-    local timer = C_Timer and C_Timer.After
-    if timer then
-        timer(1.5, function()
-            Addon._blizzardRepVisibilityQueued = false
-            applyVisibility()
-        end)
-    else
-        Addon._blizzardRepVisibilityQueued = false
-        applyVisibility()
-    end
+--- True while one of the addon's secondary bars is showing.
+function Manager:IsActive()
+    return IsCustomStyle(self._currentStyle) and true or false
 end
 
--- Never hook Blizzard protected status-bar container methods. Those hooks can
--- call Hide()/Show() while the protected UI is already in a show/setshown
--- callback, which is the pattern that triggers illegal-action disconnects.
-function Manager:InstallBlizzardBarHooks()
-    -- Intentionally left as a no-op. We suppress the Blizzard containers via
-    -- explicit visibility checks in ApplyDefaultReputationBarVisibility() and
-    -- RefreshForPrimaryStyleChange() instead of intercepting protected callbacks.
+-- See BlizzardBars: it hides Blizzard's container for whatever bar this one
+-- stands in for, and hands it back when this bar goes away.
+function Manager:ApplyDefaultReputationBarVisibility()
+    if Addon.BlizzardBars then
+        Addon.BlizzardBars:Refresh()
+    end
 end
 
 function Manager:SetSecondaryStyle(style)
@@ -306,7 +225,8 @@ end
 function Manager:ResetBarPositions()
     local configKey = "secondaryBarPositions"
     local style = GetOptionValue("barStyle")
-    local positions = GetSettingsTable(configKey)
+    -- The write target: a plain read falls back to Global's table on a profile.
+    local positions = GetSettingsTable(configKey, true)
 
     if positions and style then
         positions[style] = nil
