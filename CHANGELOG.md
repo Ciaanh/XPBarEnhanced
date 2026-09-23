@@ -47,7 +47,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - Quest and rested overlays update when a quest is turned in during a gain animation instead of staying stale until the next XP gain.
 - The Minimap Ring picks up color and profile changes immediately, and its hover area no longer blocks the minimap's zoom and tracking buttons.
 - The Circular bar's tooltip and right-click follow the attached secondary source (honor, housing, profession) instead of always showing reputation.
-- Terminal: its session and level timers keep running while idle, it respects the Quest XP master toggle, and long faction names in Cyrillic or East Asian scripts are shortened cleanly.
+- Terminal: its session and level timers keep running while idle, it respects the Quest XP master toggle, its tooltip labels rested XP "rested" rather than a leftover legend line, and long faction names in Cyrillic or East Asian scripts are shortened cleanly.
 - The Vertical bar's percentage follows Blizzard's status-text setting like its other texts.
 - Classic on-bar texts are cut short on a narrow bar instead of wrapping out of it.
 - Secondary bar hints and the rested marker's tooltip are localized, and name the right panel for each source.

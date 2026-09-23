@@ -5,7 +5,7 @@ local Addon = XPBarEnhanced
 local L = Addon.L
 
 local function printUnknown(command)
-    print("|cFFFF0000Unknown command:|r " .. (command or ""))
+    print("|cFFFF0000" .. L["MSG_UNKNOWN_COMMAND"] .. "|r " .. (command or ""))
     print("|cff33ff99XP Bar Enhanced|r - Use /xpbe help for commands")
 end
 
@@ -76,20 +76,22 @@ local function handleStats()
     if stats and stats.Toggle then
         stats:Toggle()
     else
-        print("|cFFFF0000XP Bar Enhanced:|r Stats feature not available")
+        print("|cFFFF0000XP Bar Enhanced:|r " .. L["MSG_STATS_UNAVAILABLE"])
     end
 end
 
 local function handleOptions()
     if Addon and Addon.Options and Addon.Options.Open then
-		Addon.Options:Open()
-	elseif Settings and Settings.OpenToCategory then
-        local category = (Addon and Addon.Options and Addon.Options.category) or Addon.OptionsCategory
-        local id = category and ((category.GetID and category:GetID()) or category.ID or category)
-        if id then
-            Settings.OpenToCategory(id)
-        end
-	end
+        Addon.Options:Open()
+        return
+    end
+    local category = (Addon and Addon.Options and Addon.Options.category) or Addon.OptionsCategory
+    local id = category and ((category.GetID and category:GetID()) or category.ID or category)
+    if id and Settings and Settings.OpenToCategory then
+        Settings.OpenToCategory(id)
+    else
+        print("|cFFFF0000XP Bar Enhanced:|r " .. L["MSG_OPTIONS_UNAVAILABLE"])
+    end
 end
 
 local function handleChangelog()
@@ -103,7 +105,7 @@ end
 local function handleReset()
     local config = Addon.Config
     if not (config and config.ResetActiveProfile) then
-        print("|cFFFF0000XP Bar Enhanced:|r Reset function not available")
+        print("|cFFFF0000XP Bar Enhanced:|r " .. L["MSG_RESET_UNAVAILABLE"])
         return
     end
     local profileName = config:GetActiveProfileName() or L["OPT_PROFILE_GLOBAL"]
@@ -115,7 +117,7 @@ local function handleResetStats()
     if Addon.Config and Addon.Config.ResetStats then
         Addon.Config:ResetStats()
     else
-        print("|cFFFF0000XP Bar Enhanced:|r Reset stats function not available")
+        print("|cFFFF0000XP Bar Enhanced:|r " .. L["MSG_RESET_STATS_UNAVAILABLE"])
     end
 end
 
@@ -179,7 +181,7 @@ local function handleProfile(arg)
     if action == "global" or action == "clear" then
         local success, err = config:SelectProfile(nil)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Using global shared settings")
+            print("|cFF00FF00XP Bar Enhanced:|r " .. L["MSG_PROFILE_GLOBAL"])
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end
@@ -199,7 +201,7 @@ local function handleProfile(arg)
         end
         local success, err = config:SelectProfile(sanitized)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Active profile: " .. sanitized)
+            print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_PROFILE_SELECTED"], sanitized))
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end
@@ -219,7 +221,7 @@ local function handleProfile(arg)
         end
         local success, err = config:CreateProfile(sanitized, true)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Created profile: " .. sanitized)
+            print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_PROFILE_CREATED"], sanitized))
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end
@@ -229,7 +231,7 @@ local function handleProfile(arg)
     if action == "rename" then
         local active = config:GetActiveProfileName()
         if not active then
-            print("|cFFFF0000XP Bar Enhanced:|r Global settings cannot be renamed")
+            print("|cFFFF0000XP Bar Enhanced:|r " .. L["ERR_PROFILE_GLOBAL_RENAME"])
             return
         end
         if rest == "" then
@@ -244,7 +246,7 @@ local function handleProfile(arg)
         end
         local success, err = config:RenameProfile(active, sanitized)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Renamed profile to: " .. sanitized)
+            print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_PROFILE_RENAMED"], sanitized))
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end
@@ -254,12 +256,12 @@ local function handleProfile(arg)
     if action == "delete" or action == "remove" then
         local targetName = rest ~= "" and rest or config:GetActiveProfileName()
         if not targetName then
-            print("|cFFFF0000XP Bar Enhanced:|r No active profile to delete")
+            print("|cFFFF0000XP Bar Enhanced:|r " .. L["ERR_PROFILE_GLOBAL_DELETE"])
             return
         end
         local success, err = config:DeleteProfile(targetName)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Deleted profile: " .. targetName)
+            print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_PROFILE_DELETED"], targetName))
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end

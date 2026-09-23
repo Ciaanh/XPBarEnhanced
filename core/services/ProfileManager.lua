@@ -210,11 +210,11 @@ function ProfileManager:SetAssignedProfileKey(profileName, silent)
 
     local normalized = self:NormalizeProfileName(profileName)
     if profileName ~= nil and not normalized then
-        return false, "Invalid profile name"
+        return false, Addon.L["ERR_PROFILE_INVALID_NAME"]
     end
 
     if normalized and not db.profiles[normalized] then
-        return false, "Profile does not exist"
+        return false, Addon.L["ERR_PROFILE_MISSING"]
     end
 
     local oldProfile = db.characterProfileKeys[playerKey]
@@ -239,12 +239,12 @@ end
 function ProfileManager:CreateProfile(name, source)
     local normalized = self:NormalizeProfileName(name)
     if not normalized then
-        return false, "Invalid profile name"
+        return false, Addon.L["ERR_PROFILE_INVALID_NAME"]
     end
 
     local db = ensureStorage()
     if db.profiles[normalized] then
-        return false, "Profile already exists"
+        return false, Addon.L["ERR_PROFILE_EXISTS"]
     end
 
     local sourceTable = source
@@ -268,15 +268,15 @@ function ProfileManager:RenameProfile(oldName, newName)
     local newKey = self:NormalizeProfileName(newName)
 
     if not oldKey or not newKey then
-        return false, "Invalid profile name"
+        return false, Addon.L["ERR_PROFILE_INVALID_NAME"]
     end
 
     local db = ensureStorage()
     if not db.profiles[oldKey] then
-        return false, "Profile does not exist"
+        return false, Addon.L["ERR_PROFILE_MISSING"]
     end
     if db.profiles[newKey] then
-        return false, "Profile already exists"
+        return false, Addon.L["ERR_PROFILE_EXISTS"]
     end
 
     db.profiles[newKey] = db.profiles[oldKey]
@@ -301,12 +301,12 @@ end
 function ProfileManager:DeleteProfile(name)
     local key = self:NormalizeProfileName(name)
     if not key then
-        return false, "Invalid profile name"
+        return false, Addon.L["ERR_PROFILE_INVALID_NAME"]
     end
 
     local db = ensureStorage()
     if not db.profiles[key] then
-        return false, "Profile does not exist"
+        return false, Addon.L["ERR_PROFILE_MISSING"]
     end
 
     db.profiles[key] = nil

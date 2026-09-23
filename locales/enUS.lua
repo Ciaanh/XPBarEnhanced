@@ -9,42 +9,26 @@ end
 -- ADDON GENERAL
 -- ============================================================================
 L["ADDON_NAME"] = "XP Bar Enhanced"
-L["ADDON_LOADED"] = "Loaded!"
 L["CHANGELOG_TITLE"] = "What's New in XP Bar Enhanced"
 
 -- ============================================================================
 -- TOOLTIPS
 -- ============================================================================
-L["TT_EXPERIENCE"] = "Experience"
 L["TT_CURRENT"] = "Current"
 L["TT_REMAINING"] = "Remaining"
 L["TT_CURRENT_FMT"] = "%s / %s (%.1f%%)"
 L["TT_AMOUNT"] = "Amount"
 L["TT_PERCENT"] = "Percent"
-L["TT_TO_LEVEL"] = "%s to level %d"
 L["TT_RESTED"] = "Rested"
 L["TT_RESTED_XP"] = "Rested XP"
-L["TT_QUEST_XP"] = "Quest XP"
 L["TT_STATUS"] = "Status"
-L["TT_FULLY_RESTED"] = "Fully Rested"
-L["TT_RESTED_TO_LEVEL"] = "Rested (to level)"
-L["TT_RESTED_LOW_WARNING"] = "Almost out of rest! Visit an inn or city to rest."
-L["TT_NORMAL"] = "Normal"
-L["TT_QUEST_XP_AVAILABLE"] = "Quest XP Available"
-L["TT_COMPLETE"] = "Complete"
-L["TT_INCOMPLETE"] = "Incomplete"
-L["TT_TOTAL"] = "Total"
 L["TT_SESSION"] = "Session"
 L["TT_GAINED"] = "Gained"
-L["TT_TIME"] = "Time"
 L["TT_XP_PER_HOUR"] = "XP/Hour"
 L["TT_TIME_TO_LEVEL"] = "Time to level"
 L["TT_SESSION_XP"] = "Session XP"
 L["TT_CALCULATING"] = "Calculating..."
 L["TT_OVER_99_HOURS"] = "99+ hours"
-L["TT_SESSION_XP_GAINED"] = "Session XP Gained"
-L["TT_SESSION_TIME"] = "Session Time"
-L["TT_SESSION_STATS"] = "Session Stats"
 L["TT_LEVEL_TIME"] = "Level Time"
 L["TT_LEVEL"] = "Level"
 L["TT_PROGRESS"] = "Progress"
@@ -64,14 +48,12 @@ L["TT_RESTED_FMT"] = "%s (%.1f%%)"
 L["TT_RESTING"] = "Resting"
 
 -- Tooltip hints and formatting
-L["TT_HINTS"] = "Alt+Click to reset; Shift+Drag to move; Ctrl+Click for options."
 L["TT_HINT_DRAG"] = "Shift+Drag to move"
 L["TT_HINT_ALT_OPTIONS"] = "Alt+Click for options"
 L["TT_HINT_CTRL_STATS"] = "Ctrl+Click to toggle stats"
 
 L["TT_LEVEL_FMT"] = "Level %d"
 -- Tooltip hints
-L["TT_HINT_CONFIG"] = "Right-click to configure XP Bar"
 L["TT_OPEN_REPUTATION"] = "Right-click: open Reputation"
 L["TT_OPEN_HONOR"] = "Right-click: open Player vs. Player"
 L["TT_OPEN_HOUSING"] = "Right-click: open the Housing Dashboard"
@@ -84,19 +66,6 @@ L["TT_TERMINAL_COMPLETE"] = "complete"
 L["TT_TERMINAL_INCOMPLETE"] = "incomplete"
 L["TT_TERMINAL_SESSION"] = "session"
 L["TT_TERMINAL_LEGEND_HINT"] = "shift+drag to move  |  alt+click options"
-
--- Terminal style legend
-L["TT_TERMINAL_LEGEND"]    = "Terminal Legend"
-L["TT_TERMINAL_EARNED"]    = "█ Green: Earned XP"
-L["TT_TERMINAL_QUEST_DONE"]= "█ Amber: Quest XP (completed)"
-L["TT_TERMINAL_QUEST_TODO"]= "▒ Amber: Quest XP (in progress)"
-L["TT_TERMINAL_RESTED"]    = "▒ Teal: Rested bonus"
-L["TT_TERMINAL_EMPTY"]     = "░ Dim: Not earned"
-
--- Modifier display names
-L["KEY_SHIFT"] = "Shift"
-L["KEY_CTRL"] = "Ctrl"
-L["KEY_ALT"] = "Alt"
 
 -- ============================================================================
 -- OPTIONS PANEL
@@ -166,9 +135,6 @@ L["OPT_TIME_TO_LEVEL_DESC"] =
 L["OPT_ABBREVIATE_NUMBERS"] = "Abbreviate numbers"
 L["OPT_ABBREVIATE_NUMBERS_DESC"] = "Use abbreviated number format (K, M, B) instead of full numbers in all displays."
 
--- Subsection headers
--- (see "Text Display Section Headers" below for the canonical definitions)
-
 -- Options
 L["OPT_BAR_STYLE"] = "Bar Style"
 L["OPT_BAR_STYLE_DESC"] = "Choose which XP bar to display: None (Blizzard only), Classic (Blizzard-style), Flat (Draggable), Vertical, Circular (Progress ring), Minimap Ring, Terminal (ASCII progress bar), or Orb (filling sphere)."
@@ -190,8 +156,6 @@ L["OPT_BAR_STYLE_CIRCULAR"] = "Circular (Progress ring)"
 L["OPT_BAR_STYLE_MINIMAP_RING"] = "Minimap Ring"
 L["OPT_BAR_STYLE_TERMINAL"] = "Terminal (ASCII progress bar)"
 L["OPT_BAR_STYLE_ORB"] = "Orb (filling sphere)"
-L["OPT_BAR_STYLE_MAX_LEVEL"] = "Blizzard Bar (Max Level)"
-L["OPT_BAR_STYLE_MAX_LEVEL_DESC"] = "Disabled at max level: Blizzard experience bar enforced"
 L["OPT_BAR_LOCKED"] = "Lock bar position"
 L["OPT_BAR_LOCKED_DESC"] = "Prevent the Flat bar from being moved with Shift+Drag. Applies only to Flat bar style."
 L["OPT_SHOW_MINIMAP_BUTTON"] = "Show minimap button"
@@ -203,10 +167,8 @@ L["OPT_CLASSIC_WIDTH_DESC"] = "Width of the Classic bar in pixels. The end caps 
 L["OPT_CLASSIC_SEGMENTS"] = "Classic segment count"
 L["OPT_CLASSIC_SEGMENTS_DESC"] = "Number of segments the Classic bar is divided into. 0 or 1 gives one unbroken bar, 10 matches the original art, and 20 matches Blizzard's new wide experience bar."
 L["OPT_RESET_BAR_POSITION"] = "Reset Bar Position"
-L["OPT_RESET_BAR_POSITION_DESC"] = "Reset the Flat bar to its default position at the bottom center of the screen."
 L["OPT_RESET_SETTINGS"] = "Reset Settings"
 L["OPT_RESET_SETTINGS_DIALOG"] = "Reset %s to its default settings, colors and bar positions?\n\nOther profiles and your tracked statistics are kept."
-L["OPT_RESET_STATS"] = "Reset Statistics"
 
 -- Text Display Section Headers
 L["OPT_TEXT_ON_BAR"] = "Text ON the Bar"
@@ -222,7 +184,6 @@ L["OPT_HEADER_QUEST_FEATURES"] = "Quest Features"
 L["OPT_HEADER_TEXT_DISPLAY"] = "Text Display"
 L["OPT_HEADER_ANIMATION"] = "Animation"
 L["OPT_HEADER_COLORS"] = "Colors"
-L["OPT_HEADER_CIRCULAR"] = "Circular Bar"
 L["OPT_HEADER_SECONDARY_BARS"] = "Secondary Bars"
 
 -- Options panel chrome (subtitle + tab labels)
@@ -233,14 +194,12 @@ L["OPT_TAB_BEHAVIOR"] = "Behavior"
 L["OPT_TAB_SECONDARY"] = "Secondary Bar"
 L["OPT_TAB_COLORS"] = "Colors"
 
-L["OPT_HEADER_PROFILES"] = "Profiles"
 L["OPT_PROFILE_SELECTOR"] = "Profile => "
 L["OPT_PROFILE_GLOBAL"] = "Global Settings"
 L["OPT_PROFILE_NEW"] = "New"
 L["OPT_PROFILE_RENAME"] = "Rename"
 L["OPT_PROFILE_DELETE"] = "Delete"
 L["OPT_PROFILE_CREATE_DIALOG"] = "Create a new profile"
-L["OPT_PROFILE_CREATE_INSTRUCTIONS"] = "New profiles copy the current effective settings and can be shared across characters."
 L["OPT_PROFILE_RENAME_DIALOG"] = "Rename profile"
 L["OPT_PROFILE_DELETE_DIALOG"] = "Delete profile '%s'?\n\nAll characters using it will fall back to Global Settings."
 L["MSG_PROFILE_CREATED"] = "Profile created: %s"
@@ -369,8 +328,6 @@ L["OPT_MINIMAP_RING_SEGMENTS"] = "Minimap ring segments"
 L["OPT_MINIMAP_RING_SEGMENTS_DESC"] = "Number of visible segments in the minimap ring. Lower values look chunkier; higher values appear smoother."
 L["OPT_MINIMAP_RING_COLLECT_BUTTONS"] = "Collect addon minimap buttons"
 L["OPT_MINIMAP_RING_COLLECT_BUTTONS_DESC"] = "Collapse addon minimap buttons into an XP Bar Enhanced bag button to keep the ring clear. Blizzard minimap buttons are ignored."
-L["OPT_MINIMAP_RING_BAG_ANGLE"] = "Bag button angle"
-L["OPT_MINIMAP_RING_BAG_ANGLE_DESC"] = "Angle in degrees used to place the minimap button bag around the ring. 0 is right, 90 is top."
 
 L["OPT_MINIMAP_RING_SEGMENT_WIDTH"] = "Segment width"
 L["OPT_MINIMAP_RING_SEGMENT_WIDTH_DESC"] = "Base width of each ring segment in pixels. The value auto-scales with segment count so spacing stays consistent."
@@ -378,8 +335,6 @@ L["OPT_MINIMAP_RING_SEGMENT_HEIGHT"] = "Segment height"
 L["OPT_MINIMAP_RING_SEGMENT_HEIGHT_DESC"] = "Radial height (thickness) of each ring segment in pixels."
 L["OPT_MINIMAP_ARC_START_EXPANDED"] = "Start minimap arc expanded"
 L["OPT_MINIMAP_ARC_START_EXPANDED_DESC"] = "For minimap ring secondary bars, show the reputation arc by default when it appears."
-L["OPT_MINIMAP_ARC_ICON_SCALE"] = "Minimap arc icon scale"
-L["OPT_MINIMAP_ARC_ICON_SCALE_DESC"] = "Scale of the minimap reputation toggle icon."
 
 -- Terminal bar options
 L["OPT_TERMINAL_USE_CUSTOM_COLORS"] = "Use custom bar colors"
@@ -413,10 +368,6 @@ L["OPT_COLOR_SWATCH_RESET_HINT"] = "Shift-Click to restore the default color."
 -- ============================================================================
 -- MESSAGES
 -- ============================================================================
-L["MSG_OPTION_ENABLED"] = "%s enabled"
-L["MSG_OPTION_DISABLED"] = "%s disabled"
-L["MSG_COLOR_SET"] = "%s color set to #%s"
-L["MSG_COLOR_RESET"] = "%s color reset to default"
 L["MSG_UNKNOWN_COMMAND"] = "Unknown command:"
 L["MSG_STATS_UNAVAILABLE"] = "Stats feature is unavailable."
 L["MSG_OPTIONS_UNAVAILABLE"] = "Options panel is unavailable."
@@ -452,5 +403,3 @@ L["LABEL_MAX"] = "MAX"
 L["ERR_UNKNOWN_COLOR_TARGET"] = "Unknown color target."
 L["ERR_INVALID_COLOR"] = "Invalid color. Use a hex value such as 4C63FF or 4C63FFFF."
 L["ERR_NO_DEFAULT_COLOR"] = "No default color available."
-L["ERR_INIT_FAILED"] = "Initialization failed: missing core modules."
-L["ERR_EVENT_HANDLER_FAILED"] = "Event %s handler failed: %s"
