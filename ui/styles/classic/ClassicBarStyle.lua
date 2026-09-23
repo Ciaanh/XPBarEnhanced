@@ -27,8 +27,8 @@ end
 -- scaled against BASE_WIDTH so a wider bar gets proportionally more room for
 -- level/XP/percent rather than three clusters marooned at the default insets.
 local BASE_WIDTH = 566
-local FRAME_HEIGHT = 12
-local STATUS_BAR_HEIGHT = 10
+local FRAME_HEIGHT = 15
+local STATUS_BAR_HEIGHT = 13
 local BELOW_BAR_HEIGHT = 30
 local OVERLAY_TEXT_HEIGHT = 11
 

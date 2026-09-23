@@ -86,7 +86,7 @@ local defaults = {
         y = 0
     },
     barPositions = {
-        [styleKey] = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 12},
+        [styleKey] = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
         [flatStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
         [circularStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
     },
