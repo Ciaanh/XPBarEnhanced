@@ -61,18 +61,51 @@ end
 
 -- Export option metadata for UI (still assigned elsewhere)
 
+-- Keys of defaults.lua that are not settings: profile bookkeeping and the
+-- static companion table sit beside the settings but are not a profile's to
+-- reset.
+local NON_SETTING_KEYS = {
+    profiles = true,
+    characterProfileKeys = true,
+    delveCompanions = true,
+}
+
+-- Preferred replacement, in order, for a secondary source this client lacks.
+local SECONDARY_SOURCE_FALLBACKS = {"reputation", "profession", "honor", "housing"}
+
+--- Replace a secondary source this client does not offer with one it does.
+--- Asks the flavor rather than the live probe: Retail housing only reports
+--- itself available once the housing service answers, and a Retail player's
+--- choice must not be migrated away before it does.
+local function NormalizeSecondarySource(settings)
+    local source = type(settings) == "table" and settings.secondaryBarSource
+    if not source or Addon:IsFeatureSupported(source) then
+        return
+    end
+    for _, candidate in ipairs(SECONDARY_SOURCE_FALLBACKS) do
+        if Addon:IsFeatureSupported(candidate) then
+            settings.secondaryBarSource = candidate
+            return
+        end
+    end
+end
+
 -------------------------------------------------------------------
 -- INITIALIZATION
 -------------------------------------------------------------------
 
 ---Initialize configuration state and migrate any classic settings
 function Config:Initialize()
-    -- Configuration is now managed by the Database module. Secondary sources
-    -- are activated by the resolved client feature profile, not by TOC layout
-    -- or module presence: every client now loads the same manifest.
-    local hasReputationSource = Addon:IsFeatureEnabled("reputation")
-    if not hasReputationSource and Addon.db and Addon.db.secondaryBarSource == "reputation" then
-        Addon.db.secondaryBarSource = "profession"
+    -- Secondary sources are activated by the resolved client feature profile,
+    -- not by TOC layout or module presence: every client loads the same
+    -- manifest. A source saved on a client that offered it (or by a build that
+    -- misdetected this one) is moved to one this client has, in Global and in
+    -- every profile.
+    NormalizeSecondarySource(Addon.db)
+    if Addon.db and type(Addon.db.profiles) == "table" then
+        for _, profile in pairs(Addon.db.profiles) do
+            NormalizeSecondarySource(profile)
+        end
     end
 
     -- Migrate single barPosition to per-style barPositions if needed
@@ -348,28 +381,21 @@ function Config:NotifyProfileChanged()
     if Addon.BarManager and Addon.BarManager.SetStyle then
         Addon.BarManager.currentStyle = nil
         Addon.BarManager:SetStyle(currentStyle)
-
-        local bar = Addon.BarManager.GetCurrentFrame and Addon.BarManager:GetCurrentFrame() or nil
-        if bar and bar.UpdatePositionMode and currentStyle == "classic" then
-            local newMode = self:GetOptionValue("classicBarDraggable") and "DRAGGABLE" or "STATIC"
-            bar:UpdatePositionMode(newMode)
-        end
-        if bar and bar.RestorePosition then
-            bar:RestorePosition()
-        elseif bar and bar.ApplyInitialPosition then
-            bar:ApplyInitialPosition()
-        end
-        if bar and bar.RepositionSegments then
-            bar:RepositionSegments()
-        end
     end
 
     if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
         Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
     end
 
-    if Addon.MinimapButton and Addon.MinimapButton.SetEnabled then
-        Addon.MinimapButton:SetEnabled(self:GetOptionValue("showMinimapButton") and true or false)
+    -- The bar frames are cached per style, so sizes, position mode, segments
+    -- and the minimap button keep the old profile's values until re-applied.
+    self:ReapplyVisualOptions()
+
+    local bar = Addon.BarManager and Addon.BarManager.GetCurrentFrame and Addon.BarManager:GetCurrentFrame()
+    if bar and bar.RestorePosition then
+        bar:RestorePosition()
+    elseif bar and bar.ApplyInitialPosition then
+        bar:ApplyInitialPosition()
     end
 
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
@@ -406,8 +432,12 @@ function Config:SelectProfile(profileName)
     end
 
     if oldProfile ~= self:GetActiveProfileName() then
+        -- Protected so an error while re-applying the profile cannot leave the
+        -- guard set and block every later switch.
         self._profileChangingInProgress = true
-        self:NotifyProfileChanged()
+        xpcall(function()
+            self:NotifyProfileChanged()
+        end, Addon.Utils.ReportError)
         self._profileChangingInProgress = false
     end
 
@@ -470,158 +500,220 @@ end
 -------------------------------------------------------------------
 -- SIDE EFFECTS
 -------------------------------------------------------------------
+-- Everything an option changes outside the config table lives here, so the
+-- options panel, readout presets, profile switches, resets and slash commands
+-- all get the same reaction from one write.
+
+local function PrimaryBar()
+    return Addon.BarManager and Addon.BarManager.GetCurrentFrame and Addon.BarManager:GetCurrentFrame()
+end
+
+local function SecondaryBar()
+    return Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame
+        and Addon.SecondaryBarManager:GetCurrentFrame()
+end
+
+local function CallOn(bar, method, ...)
+    if bar and bar[method] then
+        bar[method](bar, ...)
+    end
+end
+
+local function ResizeClassicBars()
+    CallOn(PrimaryBar(), "ResizeToConfiguredWidth")
+    CallOn(SecondaryBar(), "ResizeToConfiguredWidth")
+end
+
+local function ResizeScaledBars()
+    CallOn(PrimaryBar(), "ResizeToScale")
+    CallOn(SecondaryBar(), "ResizeToScale")
+end
+
+local function RepositionPrimarySegments()
+    CallOn(PrimaryBar(), "RepositionSegments")
+end
+
+local function RepositionRings()
+    CallOn(PrimaryBar(), "RepositionSegments")
+    CallOn(SecondaryBar(), "QueueReposition")
+end
+
+local function RepositionMinimapRing()
+    CallOn(PrimaryBar(), "QueueReposition")
+    CallOn(SecondaryBar(), "QueueReposition")
+end
+
+local function UpdateMinimapButtonCollection()
+    CallOn(PrimaryBar(), "UpdateButtonCollection", true)
+end
+
+-- Show/Hide rather than MinimapButton:SetEnabled, which writes the option and
+-- would re-enter this handler.
+local function UpdateMinimapButton()
+    local button = Addon.MinimapButton
+    if not (button and button.Show and button.Hide) then
+        return
+    end
+    if Config:GetOptionValue("showMinimapButton") then
+        button:Show()
+    else
+        button:Hide()
+    end
+end
+
+local function UpdateAnimationSettings()
+    if Addon.BarManager and Addon.BarManager.UpdateAnimationSettings then
+        Addon.BarManager:UpdateAnimationSettings()
+    end
+end
+
+local function UpdateMilestoneTicks()
+    local bar = PrimaryBar()
+    if not (bar and bar.UpdateMilestoneTicks and XPBarContextBuilder) then
+        return
+    end
+    local context = XPBarContextBuilder.BuildContext("CONFIG_UPDATED")
+    local ratio = 0
+    if context and context.xpMax and context.xpMax > 0 then
+        ratio = (context.currentXP or 0) / context.xpMax
+    end
+    bar:UpdateMilestoneTicks(ratio, context)
+end
+
+local function UpdateClassicPositionMode()
+    local bar = PrimaryBar()
+    if bar and bar.UpdatePositionMode and Addon.BarManager.currentStyle == Addon.StyleKeys.classic then
+        bar:UpdatePositionMode(Config:GetOptionValue("classicBarDraggable") and "DRAGGABLE" or "STATIC")
+    end
+end
+
+local function EmitSecondarySourceUpdates(features)
+    for _, feature in ipairs(features) do
+        if Addon:IsFeatureEnabled(feature, "EmitUpdate") then
+            Addon:GetFeatureModule(feature):EmitUpdate()
+        end
+    end
+end
+
+local function EmitReputationAndHousingUpdates()
+    EmitSecondarySourceUpdates({"reputation", "housing"})
+end
+
+local function EmitAllSecondarySourceUpdates()
+    EmitSecondarySourceUpdates({"reputation", "housing", "honor", "profession"})
+end
+
+local function RefreshSecondaryBarLayout()
+    if Addon.BarManager and Addon.BarManager.SetStyle then
+        Addon.BarManager.currentStyle = nil
+        Addon.BarManager:SetStyle(Config:GetOptionValue("barStyle"))
+    end
+    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
+        Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+    end
+end
+
+-- Time texts need played time; ask for it only if none has arrived yet.
+local function EnsureTimePlayedForTimeText()
+    if (Config:GetOptionValue("showLevelTimeText") or Config:GetOptionValue("showSessionTimeText"))
+        and Addon.Session and Addon.Session.EnsureTimePlayed then
+        Addon.Session:EnsureTimePlayed()
+    end
+end
+
+local function UpdateProfessionSource()
+    if Addon:IsFeatureEnabled("profession") then
+        if Addon.ProfessionSession.Snapshot then
+            Addon.ProfessionSession:Snapshot()
+        end
+        if Addon.ProfessionSession.EmitUpdate then
+            Addon.ProfessionSession:EmitUpdate()
+        end
+    end
+end
+
+local SIDE_EFFECTS = {
+    barStyle = function()
+        if Addon.BarManager and Addon.BarManager.SetStyle then
+            Addon.BarManager:SetStyle(Config:GetOptionValue("barStyle"))
+        end
+    end,
+    maxLevelPrimaryShowsSecondary = RefreshSecondaryBarLayout,
+    showSecondaryBar = RefreshSecondaryBarLayout,
+    hideCompanionOutsideDelve = EmitReputationAndHousingUpdates,
+    secondaryBarSource = EmitAllSecondarySourceUpdates,
+    professionSlot = UpdateProfessionSource,
+    circularSecondaryFullCircle = EmitReputationAndHousingUpdates,
+    minimapArcStartExpanded = EmitReputationAndHousingUpdates,
+    minimapArcDisplayAngle = EmitReputationAndHousingUpdates,
+    minimapArcIconAngle = EmitReputationAndHousingUpdates,
+    showLevelTimeText = EnsureTimePlayedForTimeText,
+    showSessionTimeText = EnsureTimePlayedForTimeText,
+    classicWidth = ResizeClassicBars,
+    classicSegments = ResizeClassicBars,
+    classicBarDraggable = UpdateClassicPositionMode,
+    flatSize = ResizeScaledBars,
+    verticalSize = ResizeScaledBars,
+    circularSize = RepositionRings,
+    circularScaleCenterText = RepositionRings,
+    circularSegments = RepositionPrimarySegments,
+    circularUseTexture = RepositionPrimarySegments,
+    minimapRingPadding = RepositionMinimapRing,
+    minimapRingSegments = RepositionMinimapRing,
+    minimapRingSegmentWidth = RepositionMinimapRing,
+    minimapRingSegmentHeight = RepositionMinimapRing,
+    minimapRingCollectButtons = UpdateMinimapButtonCollection,
+    showMinimapButton = UpdateMinimapButton,
+    enableAnimations = UpdateAnimationSettings,
+    flashOnGain = UpdateAnimationSettings,
+    twoPhaseOnLevelUp = UpdateAnimationSettings,
+    showMilestoneTicks = UpdateMilestoneTicks,
+}
+
+-- Re-applied wholesale when every setting may have changed at once (a profile
+-- switch or reset): the cached bar frames keep whatever size and mode they
+-- were built with until told otherwise.
+local VISUAL_REAPPLY = {
+    UpdateClassicPositionMode,
+    ResizeClassicBars,
+    ResizeScaledBars,
+    RepositionRings,
+    RepositionMinimapRing,
+    UpdateMinimapButtonCollection,
+    UpdateMinimapButton,
+    UpdateAnimationSettings,
+    UpdateMilestoneTicks,
+}
+
+local STATS_OPTIONS = {
+    showXPPerHourText = true,
+    showLevelTimeText = true,
+    showSessionTimeText = true,
+    showQuestXP = true,
+    abbreviateNumbers = true,
+    showPercentage = true,
+    showRemainingXP = true,
+}
 
 function Config:ApplyOptionSideEffects(key, suppressConfigEvent)
-    local function emitConfigUpdate()
-        if not suppressConfigEvent and Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-            Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
-        end
-    end
-
-    local function refreshSecondaryBarLayout()
-        if Addon.BarManager and Addon.BarManager.SetStyle then
-            Addon.BarManager.currentStyle = nil
-            Addon.BarManager:SetStyle(self:GetOptionValue("barStyle"))
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
-            Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
-        end
-    end
-
-    local function emitReputationAndHousingUpdates()
-        if Addon:IsFeatureEnabled("reputation", "EmitUpdate") then
-            Addon.ReputationSession:EmitUpdate()
-        end
-        if Addon:IsFeatureEnabled("housing", "EmitUpdate") then
-            Addon.HousingSession:EmitUpdate()
-        end
-    end
-
-    local dispatch = {
-        barStyle = function()
-            local newStyle = self:GetOptionValue("barStyle")
-            if Addon.BarManager and Addon.BarManager.SetStyle then
-                Addon.BarManager:SetStyle(newStyle)
-            end
-        end,
-        maxLevelPrimaryShowsSecondary = refreshSecondaryBarLayout,
-        showSecondaryBar = refreshSecondaryBarLayout,
-        hideCompanionOutsideDelve = emitReputationAndHousingUpdates,
-        secondaryBarSource = function()
-            if Addon:IsFeatureEnabled("reputation", "EmitUpdate") then
-                Addon.ReputationSession:EmitUpdate()
-            end
-            if Addon:IsFeatureEnabled("housing", "EmitUpdate") then
-                Addon.HousingSession:EmitUpdate()
-            end
-            if Addon:IsFeatureEnabled("honor", "EmitUpdate") then
-                Addon.HonorSession:EmitUpdate()
-            end
-            if Addon:IsFeatureEnabled("profession", "EmitUpdate") then
-                Addon.ProfessionSession:EmitUpdate()
-            end
-        end,
-        professionSlot = function()
-            if Addon:IsFeatureEnabled("profession") then
-                if Addon.ProfessionSession.Snapshot then
-                    Addon.ProfessionSession:Snapshot()
-                end
-                if Addon.ProfessionSession.EmitUpdate then
-                    Addon.ProfessionSession:EmitUpdate()
-                end
-            end
-        end,
-        circularSecondaryFullCircle = emitReputationAndHousingUpdates,
-        minimapArcStartExpanded = emitReputationAndHousingUpdates,
-        minimapArcDisplayAngle = emitReputationAndHousingUpdates,
-        minimapArcIconAngle = emitReputationAndHousingUpdates,
-        showLevelTimeText = function()
-            local session = Addon.Database and Addon.Database.GetSessionData and Addon.Database:GetSessionData()
-            if
-                session and (session.lastTimePlayedRequest or 0) == 0 and
-                    (self:GetOptionValue("showLevelTimeText") or self:GetOptionValue("showSessionTimeText"))
-            then
-                if Addon.Session and Addon.Session.RequestTimePlayed then
-                    Addon.Session:RequestTimePlayed()
-                end
-            end
-        end,
-        showSessionTimeText = function()
-            local session = Addon.Database and Addon.Database.GetSessionData and Addon.Database:GetSessionData()
-            if
-                session and (session.lastTimePlayedRequest or 0) == 0 and
-                    (self:GetOptionValue("showLevelTimeText") or self:GetOptionValue("showSessionTimeText"))
-            then
-                if Addon.Session and Addon.Session.RequestTimePlayed then
-                    Addon.Session:RequestTimePlayed()
-                end
-            end
-        end,
-        classicWidth = function()
-            if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-                local bar = Addon.BarManager:GetCurrentFrame()
-                if bar and bar.ResizeToConfiguredWidth then
-                    bar:ResizeToConfiguredWidth()
-                end
-            end
-            if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-                local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-                if secondaryBar and secondaryBar.ResizeToConfiguredWidth then
-                    secondaryBar:ResizeToConfiguredWidth()
-                end
-            end
-        end,
-        classicSegments = function()
-            if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-                local bar = Addon.BarManager:GetCurrentFrame()
-                if bar and bar.ResizeToConfiguredWidth then
-                    bar:ResizeToConfiguredWidth()
-                end
-            end
-            if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-                local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-                if secondaryBar and secondaryBar.ResizeToConfiguredWidth then
-                    secondaryBar:ResizeToConfiguredWidth()
-                end
-            end
-        end,
-        classicBarDraggable = function()
-            local currentStyle = self:GetOptionValue("barStyle")
-            if currentStyle == "classic" and Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-                local bar = Addon.BarManager:GetCurrentFrame()
-                if bar and bar.UpdatePositionMode then
-                    local newMode = self:GetOptionValue("classicBarDraggable") and "DRAGGABLE" or "STATIC"
-                    bar:UpdatePositionMode(newMode)
-                end
-            end
-        end,
-    }
-
-    local handler = dispatch[key]
+    local handler = SIDE_EFFECTS[key]
     if handler then
         handler()
     end
 
-    emitConfigUpdate()
+    if not suppressConfigEvent and Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
+        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, XPBarContextBuilder.BuildContext("CONFIG_UPDATED"))
+    end
 
-    local statsOptions = {
-        "showXPPerHourText",
-        "showLevelTimeText",
-        "showSessionTimeText",
-        "showQuestXP",
-        "abbreviateNumbers",
-        "showPercentage",
-        "showRemainingXP"
-    }
+    if STATS_OPTIONS[key] and Addon.Stats and Addon.Stats.Update then
+        Addon.Stats:Update()
+    end
+end
 
-    for _, optionKey in ipairs(statsOptions) do
-        if key == optionKey then
-            local stats = Addon.Stats
-            if stats and stats.Update then
-                stats:Update()
-            end
-            break
-        end
+--- Re-apply every option that shapes a bar frame. Callers emit CONFIG_UPDATED.
+function Config:ReapplyVisualOptions()
+    for _, apply in ipairs(VISUAL_REAPPLY) do
+        apply()
     end
 end
 
@@ -633,8 +725,17 @@ function Config:ApplyPendingOptionChanges()
 
     self._pendingOptionKeys = nil
 
+    -- Several keys share a handler (the three animation toggles, say); run
+    -- each handler once per batch.
+    local ran = {}
     for key in pairs(pendingKeys) do
-        self:ApplyOptionSideEffects(key, true)
+        local handler = SIDE_EFFECTS[key]
+        if not (handler and ran[handler]) then
+            if handler then
+                ran[handler] = true
+            end
+            self:ApplyOptionSideEffects(key, true)
+        end
     end
 
     if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
@@ -665,32 +766,22 @@ function Config:ShowHelp()
     print("  |cFFFFD700/xpbe style <" .. (#styleKeys > 0 and table.concat(styleKeys, "|") or "style") .. ">|r - Change bar style")
 end
 
-function Config:Reset()
-    -- Wipe saved-variables and reinitialize database
-    XPBarEnhancedDB = {}
-    if Addon.Database and Addon.Database.Initialize then
-        Addon.Database:Initialize()
-    end
-    -- Re-initialize session services (their cached _session tables point at
-    -- the discarded db) and re-drive the primary style to the new default.
-    for _, service in ipairs({"Session", "ReputationSession", "HousingSession", "HonorSession", "ProfessionSession"}) do
-        local svc = Addon[service]
-        if svc and svc.Initialize then
-            svc:Initialize()
+--- Restore the active profile's settings, colors and bar positions to their
+--- defaults. Other profiles, character profile assignments and tracked
+--- statistics are left alone.
+function Config:ResetActiveProfile()
+    local target = getWriteTargetTable()
+    for key, value in pairs(Addon.defaults or {}) do
+        if not NON_SETTING_KEYS[key] then
+            target[key] = Addon.Utils.Clone(value)
         end
     end
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        Addon.BarManager.currentStyle = nil
-        Addon.BarManager:SetStyle(self:GetOptionValue("barStyle"))
-    end
-    -- Emit config change so UI updates
-    if Addon.EventBus and Addon.EventBus.Emit and XPBarContextBuilder then
-        local ctx = XPBarContextBuilder.BuildContext("CONFIG_UPDATED")
-        Addon.EventBus:Emit(EventNames.CONFIG_UPDATED, ctx)
-    end
-    if Addon.Session and Addon.Session.EmitUpdate then
-        Addon.Session:EmitUpdate("XPBAR:BROADCAST_UPDATE")
-    end
+    -- Secondary bar positions have no default. An empty table rather than nil:
+    -- on a profile, nil would fall back to Global's positions.
+    target.secondaryBarPositions = {}
+    NormalizeSecondarySource(target)
+
+    self:NotifyProfileChanged()
 end
 
 function Config:ResetStats()
@@ -705,12 +796,15 @@ function Config:ResetStats()
     if Addon.ContextBuilder and Addon.ContextBuilder.ResetSession then
         Addon.ContextBuilder.ResetSession()
     end
-    -- Re-initialize every session service so their cached _session tables
-    -- point at the fresh stores.
-    for _, service in ipairs({"Session", "ReputationSession", "HousingSession", "HonorSession", "ProfessionSession"}) do
-        local svc = Addon[service]
-        if svc and svc.Initialize then
-            svc:Initialize()
+    -- Re-initialize the running session services so their cached _session
+    -- tables point at the fresh stores. Only the features this client runs:
+    -- a service that was never started (housing off Retail) stays off.
+    if Addon.Session and Addon.Session.Initialize then
+        Addon.Session:Initialize()
+    end
+    for _, feature in ipairs({"reputation", "housing", "honor", "profession"}) do
+        if Addon:IsFeatureEnabled(feature, "Initialize") then
+            Addon:GetFeatureModule(feature):Initialize()
         end
     end
     local stats = Addon.Stats

@@ -1,5 +1,11 @@
 # Classic bar: customizable width and segments
 
+> **Superseded art.** The border slicing of `legacy-border.tga` described below
+> was replaced by bundled Forever-style art (`classic-bar.tga`,
+> `classic-bar-fill.tga`; see `ClassicChrome.lua` and
+> `assets/raw/build_classic_bar.py`). The width and segment options still work
+> as described.
+
 2026-09-19 — 11 files modified, 1 added (284 insertions, 26 deletions, plus a
 246-line new file).
 

@@ -28,23 +28,24 @@ local function ResolveGlobalPath(path)
     return value
 end
 
-    local FEATURE_MODULES = {
-        reputation = "ReputationSession",
-        housing = "HousingSession",
-        honor = "HonorSession",
-        profession = "ProfessionSession",
-    }
+local FEATURE_MODULES = {
+    reputation = "ReputationSession",
+    housing = "HousingSession",
+    honor = "HonorSession",
+    profession = "ProfessionSession",
+}
 
-    local function ResolveAddonPath(path)
-        local value = Addon
-        for part in string.gmatch(path, "[^%.]+") do
-            if type(value) ~= "table" then
-                return nil
-            end
-            value = rawget(value, part)
+local function ResolveAddonPath(path)
+    local value = Addon
+    for part in string.gmatch(path, "[^%.]+") do
+        if type(value) ~= "table" then
+            return nil
         end
-        return value
+        value = rawget(value, part)
     end
+    return value
+end
+
 local function HousingServiceEnabled()
     local housing = rawget(_G, "C_Housing")
     if type(housing) ~= "table" or type(housing.IsHousingServiceEnabled) ~= "function" then
@@ -215,6 +216,23 @@ function Addon:IsFeatureEnabled(feature, requiredMethod)
     end
 
     return true
+end
+
+--- True when this client's flavor offers `feature` at all, whether or not it
+--- is usable this moment (Retail housing also waits on the housing service).
+---@param feature string
+---@return boolean
+function Addon:IsFeatureSupported(feature)
+    local definition = self.Features and self.Features[feature]
+    return definition == true or (type(definition) == "table" and definition.enabled == true)
+end
+
+--- The session module that implements `feature`, or nil.
+---@param feature string
+---@return table|nil
+function Addon:GetFeatureModule(feature)
+    local moduleName = FEATURE_MODULES[feature]
+    return moduleName and self[moduleName] or nil
 end
 
 -- Housing availability must be asked of the housing service itself and never

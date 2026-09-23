@@ -6,6 +6,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Added
 
+- **More clients**: one manifest now loads on Classic Era, the Forever beta, Burning Crusade, Wrath, Cataclysm and Mists Classic as well as Retail, replacing the separate Classic manifest. The client's build decides which features run, so a client never starts a feature it cannot serve.
 - **Classic bar width**: a slider (200-1400px) sets the Classic bar's width. The border's end caps keep a fixed size while the middle stretches, so the frame stays crisp instead of smearing.
 - **Classic segment count**: a slider (0-40) divides the Classic bar into evenly spaced segments, following Blizzard's new experience bar. 0 or 1 gives one unbroken bar, 10 matches the previous art, 20 matches Blizzard's wide bar.
 
@@ -15,9 +16,18 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - The bar style gallery draws premade previews instead of assembling each style from dozens of textures when the options open.
 - Rested XP that overflows the current level now fills the bar to its edge instead of hiding the rested overlay entirely, matching Blizzard's newer experience bar.
 - The rested marker now hides within 1% of either end of the bar, where it used to sit half off the frame.
+- **Reset Settings** now asks first and resets only the active profile's settings, colors and bar positions. It used to wipe every profile, every character's profile choice and all tracked statistics in one click. `/xpbe reset` does the same without the prompt.
+- Played time is requested once per login instead of on every loading screen.
 
 ### Fixed
 
+- Logging in on the Forever beta no longer drops the connection: housing, which that realm cannot serve, stays off there.
+- Characters on the Forever beta keep their profile and statistics between sessions.
+- Watching a paragon faction on Retail no longer stops the bars from loading.
+- A module that fails to start at login is reported without stopping the others, so the bars still appear.
+- Quest XP on the Classic clients counted no quest shown on the current map and dropped quests under a collapsed header.
+- The two "Time played" lines no longer print in chat when the addon asks for played time.
+- A secondary bar source the client does not offer is moved to one it does in every profile, not only in Global Settings.
 - The Classic bar's fill no longer spills past the rounded ends of its frame.
 - The Classic bar's fill and the Classic reputation bar no longer use Blizzard's pre-colored fill textures, which tinted custom colors or went blank on clients that lack them.
 

@@ -51,6 +51,7 @@ local PANEL_NAME = ResolveLocale("ADDON_NAME")
 local PROFILE_CREATE_POPUP = "XPBE_CREATE_PROFILE"
 local PROFILE_RENAME_POPUP = "XPBE_RENAME_PROFILE"
 local PROFILE_DELETE_POPUP = "XPBE_DELETE_PROFILE"
+local PROFILE_RESET_POPUP = "XPBE_RESET_PROFILE"
 
 -- Rows the active style cannot render, keyed by config key then style name, with
 -- the locale key of the muted reason to show. A style absent from a row's table
@@ -284,6 +285,23 @@ local function EnsureProfilePopups()
             OnAccept = function(_popup, data)
                 if Addon.Options and Addon.Options.AcceptDeleteProfileDialog then
                     Addon.Options:AcceptDeleteProfileDialog(data and data.profileName)
+                end
+            end,
+        }
+    end
+
+    if not StaticPopupDialogs[PROFILE_RESET_POPUP] then
+        StaticPopupDialogs[PROFILE_RESET_POPUP] = {
+            text = "%s",
+            button1 = ACCEPT,
+            button2 = CANCEL,
+            timeout = 0,
+            whileDead = 1,
+            hideOnEscape = 1,
+            preferredIndex = 3,
+            OnAccept = function()
+                if Addon.Options and Addon.Options.AcceptResetSettingsDialog then
+                    Addon.Options:AcceptResetSettingsDialog()
                 end
             end,
         }
@@ -954,9 +972,21 @@ function XPBarEnhancedOptionsMixin:RegisterCategory()
     end
 end
 
+-- Resets only the active profile, and only after confirmation: the button sits
+-- beside Reset Bar Position, and a misclick used to wipe every profile.
 function XPBarEnhancedOptionsMixin:OnResetSettingsClicked()
-    Config:Reset()
-    self:Refresh()
+    local profileName = Config:GetActiveProfileName() or ResolveLocale("OPT_PROFILE_GLOBAL")
+    EnsureProfilePopups()
+    if StaticPopup_Show and StaticPopupDialogs and StaticPopupDialogs[PROFILE_RESET_POPUP] then
+        StaticPopup_Show(PROFILE_RESET_POPUP, string.format(ResolveLocale("OPT_RESET_SETTINGS_DIALOG"), profileName))
+    end
+end
+
+function Options:AcceptResetSettingsDialog()
+    Config:ResetActiveProfile()
+    if self.frame and self.frame.Refresh then
+        self.frame:Refresh()
+    end
 end
 
 function XPBarEnhancedOptionsMixin:OnResetBarPositionClicked()
@@ -1732,135 +1762,10 @@ end
 
 -- Controller Methods
 
+--- A control changed `key`. Config:ApplyOptionSideEffects has already applied
+--- it to the bars (so presets, profile switches and slash commands get the
+--- same reaction); the panel only has to redraw.
 function Options:OnOptionChanged(key)
-    -- Handle specific option changes
-    if key == "barStyle" then
-        local value = (Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("barStyle")) or "classic"
-        if Addon.BarManager and Addon.BarManager.SetStyle then
-            Addon.BarManager:SetStyle(value)
-        end
-    elseif key == "barLocked" then
-    elseif key == "classicBarDraggable" then
-    elseif key == "showMinimapButton" then
-        local value = Config:GetOptionValue("showMinimapButton")
-        if Addon.MinimapButton and Addon.MinimapButton.SetEnabled then
-            Addon.MinimapButton:SetEnabled(value and true or false)
-        end
-        -- Handled by Config side effects - just refresh UI
-    elseif
-        key == "enableAnimations" or key == "flashOnGain" or key == "twoPhaseOnLevelUp"
-     then
-        if Addon.BarManager and Addon.BarManager.UpdateAnimationSettings then
-            Addon.BarManager:UpdateAnimationSettings()
-        end
-    elseif key == "circularSegments" then
-        -- Immediately reposition segments on the circular bar
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.RepositionSegments then
-                bar:RepositionSegments()
-            end
-        end
-    elseif key == "circularUseTexture" then
-        -- Update texture on segments and reposition
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.RepositionSegments then
-                bar:RepositionSegments()
-            end
-        end
-    elseif key == "flatSize" or key == "verticalSize" then
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.ResizeToScale then
-                bar:ResizeToScale()
-            end
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-            if secondaryBar and secondaryBar.ResizeToScale then
-                secondaryBar:ResizeToScale()
-            end
-        end
-    elseif key == "circularSize" then
-        -- Resize ring and reposition segments
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.RepositionSegments then
-                bar:RepositionSegments()
-            end
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-            if secondaryBar and secondaryBar.QueueReposition then
-                secondaryBar:QueueReposition()
-            end
-        end
-    elseif key == "circularScaleCenterText" then
-        -- Re-layout center text and CenterBG with new scale setting
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.RepositionSegments then
-                bar:RepositionSegments()
-            end
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-            if secondaryBar and secondaryBar.QueueReposition then
-                secondaryBar:QueueReposition()
-            end
-        end
-    elseif key == "terminalUseCustomColors" then
-        -- Terminal colors changed, refresh the bar rendering
-        -- (no specific bar method needed — Refresh will re-render with new colors)
-    elseif key == "minimapRingCollectButtons" then
-        -- Immediately collect or release buttons without waiting for an XP event
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.UpdateButtonCollection then
-                bar:UpdateButtonCollection(true)
-            end
-        end
-    elseif
-        key == "minimapRingPadding" or key == "minimapRingSegments" or
-        key == "minimapRingSegmentWidth" or key == "minimapRingSegmentHeight"
-    then
-        -- Reposition ring/arc immediately so the visual updates without waiting for an XP event
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.QueueReposition then
-                bar:QueueReposition()
-            end
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-            if secondaryBar and secondaryBar.QueueReposition then
-                secondaryBar:QueueReposition()
-            end
-        end
-    elseif
-        key == "showQuestXP" or key == "showQuestPercent" or
-            key == "showCompleteQuestOverlay" or
-            key == "showIncompleteQuestOverlay"
-     then
-    elseif key == "showMilestoneTicks" then
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.UpdateMilestoneTicks then
-                local context = nil
-                if XPBarContextBuilder and XPBarContextBuilder.BuildContext then
-                    context = XPBarContextBuilder.BuildContext("CONFIG_UPDATED")
-                end
-                local ratio = 0
-                if context and context.xpMax and context.xpMax > 0 then
-                    ratio = (context.currentXP or 0) / context.xpMax
-                end
-                bar:UpdateMilestoneTicks(ratio, context)
-            end
-        end
-    end
-
-    -- General refresh
     self:Refresh()
 end
 

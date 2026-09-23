@@ -35,61 +35,39 @@ function eventHandlers:OnAddonLoaded(name)
     print(Addon.L["ADDON_LOADED"])
 end
 
+-- Start one module on its own, so a failure in one of them (a client API that
+-- changed shape, say) is reported without stopping every module after it --
+-- the bars are initialized last and would otherwise never appear.
+local function InitializeModule(module)
+    if not (module and module.Initialize) then
+        return
+    end
+    local report = (Addon.Utils and Addon.Utils.ReportError) or geterrorhandler()
+    xpcall(function()
+        module:Initialize()
+    end, report)
+end
+
 function eventHandlers:OnPlayerLogin()
     if not Addon.enabled then
         return
     end
 
-    if Addon.Session and Addon.Session.Initialize then
-        Addon.Session:Initialize()
+    InitializeModule(Addon.Session)
+
+    for _, feature in ipairs({"reputation", "housing", "honor", "profession"}) do
+        if Addon:IsFeatureEnabled(feature, "Initialize") then
+            InitializeModule(Addon:GetFeatureModule(feature))
+        end
     end
 
-    if Addon:IsFeatureEnabled("reputation", "Initialize") then
-        Addon.ReputationSession:Initialize()
-    end
-
-    if Addon:IsFeatureEnabled("housing", "Initialize") then
-        Addon.HousingSession:Initialize()
-    end
-
-    if Addon:IsFeatureEnabled("honor", "Initialize") then
-        Addon.HonorSession:Initialize()
-    end
-
-    if Addon:IsFeatureEnabled("profession", "Initialize") then
-        Addon.ProfessionSession:Initialize()
-    end
-
-    if Addon.GoalTracker and Addon.GoalTracker.Initialize then
-        Addon.GoalTracker:Initialize()
-    end
-
-    if Addon.DataBrokerFeed and Addon.DataBrokerFeed.Initialize then
-        Addon.DataBrokerFeed:Initialize()
-    end
-
-    local stats = Addon.Stats
-    if stats and stats.Initialize then
-        stats:Initialize()
-    end
-
-    if Addon.BarManager and Addon.BarManager.Initialize then
-        Addon.BarManager:Initialize()
-    end
-
-    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.Initialize then
-        Addon.SecondaryBarManager:Initialize()
-    end
-
-    if Addon.MinimapButton and Addon.MinimapButton.Initialize then
-        Addon.MinimapButton:Initialize()
-    end
-
-    local options = Addon.Options
-    if options and options.Initialize then
-        options:Initialize()
-    end
-
+    InitializeModule(Addon.GoalTracker)
+    InitializeModule(Addon.DataBrokerFeed)
+    InitializeModule(Addon.Stats)
+    InitializeModule(Addon.BarManager)
+    InitializeModule(Addon.SecondaryBarManager)
+    InitializeModule(Addon.MinimapButton)
+    InitializeModule(Addon.Options)
 end
 
 function eventHandlers:OnPlayerLogout()

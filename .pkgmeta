@@ -19,6 +19,8 @@ ignore:
     - images
     - assets/raw
     - ROADMAP.md
+    - HANDOFF.md
+    - CLASSIC-BAR-CHANGES.md
     - CLAUDE.md
     - CHANGELOG.md
     - make-release.ps1

@@ -3,10 +3,14 @@
 
 local Addon = XPBarEnhanced
 local Config = Addon.Config
-local IS_CLASSIC_CLIENT = Addon:IsFeatureEnabled("classicClientBehavior")
--- Reputation is offered when the resolved client feature profile enables it.
--- Module presence is not a capability signal because all clients use one TOC.
-local HAS_REPUTATION = Addon:IsFeatureEnabled("reputation")
+-- A secondary source is offered when the resolved client feature profile
+-- supports it. Module presence is not a capability signal because all clients
+-- use one TOC, and the live probe is not either: Retail housing only reports
+-- itself available once the housing service answers, after this file loads.
+local HAS_REPUTATION = Addon:IsFeatureSupported("reputation")
+local HAS_HOUSING = Addon:IsFeatureSupported("housing")
+local HAS_HONOR = Addon:IsFeatureSupported("honor")
+local HAS_PROFESSION = Addon:IsFeatureSupported("profession")
 
 local optionDetails = {
     -- Declared as a dropdown so Config:SetOptionKey preserves the string value
@@ -400,10 +404,10 @@ local optionDetails = {
 -- Offer a secondary source only where its backing module can actually run.
 do
     local availableSources = {
-        profession = true,
+        profession = HAS_PROFESSION,
         reputation = HAS_REPUTATION,
-        housing = Addon:IsFeatureEnabled("housing"),
-        honor = Addon:IsFeatureEnabled("honor"),
+        housing = HAS_HOUSING,
+        honor = HAS_HONOR,
     }
 
     local sourceOptions = optionDetails.secondaryBarSource.options
@@ -486,10 +490,14 @@ do
         insertAt = insertAt + 1
     end
 
-    if not IS_CLASSIC_CLIENT then
+    if HAS_HOUSING then
         table.insert(colorOptionsList, insertAt, { key = "secondaryHousing", command = "secondaryhousing", aliases = {"housingfavor"}, label = Addon.L["COLOR_SECONDARY_HOUSING"], description = Addon.L["COLOR_SECONDARY_HOUSING_DESC"], preview = "statusbar" })
         insertAt = insertAt + 1
+    end
+
+    if HAS_HONOR then
         table.insert(colorOptionsList, insertAt, { key = "secondaryHonor", command = "secondaryhonor", aliases = {"honorbar"}, label = Addon.L["COLOR_SECONDARY_HONOR"], description = Addon.L["COLOR_SECONDARY_HONOR_DESC"], preview = "statusbar" })
+        insertAt = insertAt + 1
     end
 end
 

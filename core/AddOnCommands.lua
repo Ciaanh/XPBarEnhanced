@@ -68,7 +68,7 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFenable|r - Manually start the addon after login")
     print("  /xpbe |cFFFFFFFFdisable|r - Stop the addon until it is manually enabled again")
     print("  /xpbe |cFFFFFFFFstatus|r - Show startup state")
-    print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
+    print("  /xpbe |cFFFFFFFFreset|r - Reset the active profile to its defaults")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
     print("  /xpbe |cFFFFFFFFhelp|r - Show this help")
@@ -104,11 +104,14 @@ local function handleChangelog()
 end
 
 local function handleReset()
-    if Addon.Config and Addon.Config.Reset then
-        Addon.Config:Reset()
-    else
+    local config = Addon.Config
+    if not (config and config.ResetActiveProfile) then
         print("|cFFFF0000XP Bar Enhanced:|r Reset function not available")
+        return
     end
+    local profileName = config:GetActiveProfileName() or L["OPT_PROFILE_GLOBAL"]
+    config:ResetActiveProfile()
+    print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_SETTINGS_RESET"], profileName))
 end
 
 local function handleEnable()

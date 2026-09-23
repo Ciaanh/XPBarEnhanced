@@ -14,6 +14,8 @@ Changelog.entries = {
             "Redrew the Classic bar after Blizzard's newer experience bar, with all of its art bundled in the addon.",
             "Added build-based flavor mapping for Retail and supported Classic branches.",
             "Disabled unsupported feature services on clients that expose incompatible APIs, including Forever housing.",
+            "Reset Settings now asks first and resets only the active profile.",
+            "Fixed missing bars on Retail when watching a paragon faction, and quest XP on the Classic clients.",
         },
     },
     {

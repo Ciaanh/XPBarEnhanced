@@ -151,9 +151,16 @@ local function GetFactionSnapshot(factionID, factionType)
 
     elseif factionType == "paragon" then
         if not (C_Reputation and C_Reputation.GetFactionParagonInfo) then return nil end
-        local paragonData = C_Reputation.GetFactionParagonInfo(factionID)
-        if not paragonData then return nil end
-        -- Inject name (not included in paragon info)
+        -- Multiple returns, not a table:
+        -- currentValue, threshold, rewardQuestID, hasRewardPending, tooLowLevelForParagon
+        local currentValue, threshold, _, hasRewardPending = C_Reputation.GetFactionParagonInfo(factionID)
+        if not currentValue then return nil end
+        local paragonData = {
+            currentValue = currentValue,
+            threshold = threshold,
+            hasRewardPending = hasRewardPending,
+        }
+        -- The name is not part of the paragon info.
         if C_Reputation.GetFactionDataByID then
             local fd = C_Reputation.GetFactionDataByID(factionID)
             paragonData.name = (fd and fd.name) or ""

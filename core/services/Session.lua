@@ -329,12 +329,12 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
 
     updateSessionAccumTime(session)
 
-    -- Always refresh played time at login (keeps level-time math anchored to
-    -- fresh data); otherwise only request it when time text options need it
-    local Config = Addon.Config
-    if isInitialLogin
-        or (Config and (Config:GetOptionValue("showLevelTimeText") or Config:GetOptionValue("showSessionTimeText"))) then
+    -- Refresh played time once per login; every later zone change carries it
+    -- forward from wall-clock time instead of asking the server again.
+    if isInitialLogin then
         self:RequestTimePlayed()
+    else
+        self:EnsureTimePlayed()
     end
 end
 
@@ -519,12 +519,10 @@ function Session:OnTimePlayed(totalTime, levelTime)
     session.realLevelTime = levelTime or session.realLevelTime or 0
     session.lastTimePlayedRequest = time()
 
-    -- Clear the ticker but keep requestingTimePlayed true briefly so the
-    -- chat filter can suppress the system message that arrives in the same frame.
-    self:ClearTimePlayedRequest()
-    Addon.state.requestingTimePlayed = true
+    -- Hand TIME_PLAYED_MSG back to the chat frames on the next frame, once
+    -- every listener has seen this reply.
     C_Timer.After(0, function()
-        Addon.state.requestingTimePlayed = false
+        Session:ClearTimePlayedRequest()
     end)
 
     -- Notify Stats module (consolidated from defunct AddOnLifecycle handler)
@@ -621,51 +619,30 @@ end
 -- TIME PLAYED MANAGEMENT
 -------------------------------------------------------------------
 
--- Suppress the "Total time played" / "Time played this level" system messages
--- when *we* are the ones requesting the data. Installed once.
+-- The chat frames print TIME_PLAYED_MSG from their own event handler
+-- (ChatFrameUtil.DisplayTimePlayed calls AddMessage directly), so no chat
+-- message filter can hide it. While the addon's own request is in flight, the
+-- event is unregistered from the chat frames that listen for it, and handed
+-- back once the reply is in. A /played typed by the player is left alone.
+local mutedChatFrames = {}
 
--- Convert a Blizzard format string (e.g. TIME_PLAYED_TOTAL) into a Lua match
--- pattern. Handles both plain (%s/%d) and positional (%1$s/%2$d) specifiers,
--- which several non-enUS locales use.
-local function FormatToPattern(fmt)
-    if type(fmt) ~= "string" then
-        return nil
-    end
-    -- Swap format specifiers for sentinels before escaping magic characters,
-    -- then replace the sentinels with their patterns.
-    local STR, NUM = "\1", "\2"
-    local s = fmt:gsub("%%%d*%$?s", STR):gsub("%%%d*%$?d", NUM)
-    s = s:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
-    s = s:gsub(STR, ".+"):gsub(NUM, "%%d+")
-    return "^" .. s .. "$"
-end
-
-local timePlayedPatterns
-local function GetTimePlayedPatterns()
-    if not timePlayedPatterns then
-        timePlayedPatterns = {}
-        timePlayedPatterns[#timePlayedPatterns + 1] = FormatToPattern(TIME_PLAYED_TOTAL)
-        timePlayedPatterns[#timePlayedPatterns + 1] = FormatToPattern(TIME_PLAYED_LEVEL)
-    end
-    return timePlayedPatterns
-end
-
-local function TimePlayedChatFilter(_, _, msg, ...)
-    if not Addon.state.requestingTimePlayed then
-        return false
-    end
-    if type(msg) ~= "string" or (issecretvalue and issecretvalue(msg)) then
-        return false
-    end
-    -- Only block the actual played-time lines, never other system messages
-    for _, pattern in ipairs(GetTimePlayedPatterns()) do
-        if msg:find(pattern) then
-            return true -- block the message
+local function MuteTimePlayedChat()
+    local count = rawget(_G, "NUM_CHAT_WINDOWS") or 10
+    for i = 1, count do
+        local frame = rawget(_G, "ChatFrame" .. i)
+        if frame and frame.IsEventRegistered and frame:IsEventRegistered("TIME_PLAYED_MSG") then
+            frame:UnregisterEvent("TIME_PLAYED_MSG")
+            mutedChatFrames[#mutedChatFrames + 1] = frame
         end
     end
-    return false
 end
-ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", TimePlayedChatFilter)
+
+local function RestoreTimePlayedChat()
+    for i = #mutedChatFrames, 1, -1 do
+        mutedChatFrames[i]:RegisterEvent("TIME_PLAYED_MSG")
+        mutedChatFrames[i] = nil
+    end
+end
 
 function Session:ClearTimePlayedRequest()
     if timePlayedTicker then
@@ -673,6 +650,7 @@ function Session:ClearTimePlayedRequest()
         timePlayedTicker = nil
     end
     Addon.state.requestingTimePlayed = false
+    RestoreTimePlayedChat()
 end
 
 local timePlayedRequestToken = 0
@@ -688,9 +666,11 @@ function Session:RequestTimePlayed()
     local token = timePlayedRequestToken
 
     local function fireRequest()
+        timePlayedTicker = nil
+        MuteTimePlayedChat()
         RequestTimePlayed()
-        -- Safety timeout: if TIME_PLAYED_MSG never arrives, stop suppressing
-        -- system messages so a lost response can't filter chat forever.
+        -- Safety timeout: if TIME_PLAYED_MSG never arrives, give the chat
+        -- frames their event back so a lost reply can't mute /played for good.
         if C_Timer and C_Timer.After then
             C_Timer.After(5, function()
                 if token == timePlayedRequestToken and Addon.state.requestingTimePlayed then
@@ -700,12 +680,23 @@ function Session:RequestTimePlayed()
         end
     end
 
-    -- Use timer to avoid instant spam
+    -- Deferred so a burst of callers issues one request.
     if C_Timer and C_Timer.NewTimer then
         timePlayedTicker = C_Timer.NewTimer(0.5, fireRequest)
     else
         fireRequest()
     end
+end
+
+--- Request played time only when the session has none yet. Level and total
+--- time are carried forward from wall-clock time between replies, so one reply
+--- per login is enough.
+function Session:EnsureTimePlayed()
+    local session = self:GetCurrent()
+    if session and (session.realTotalTime or 0) > 0 then
+        return
+    end
+    self:RequestTimePlayed()
 end
 
 -------------------------------------------------------------------

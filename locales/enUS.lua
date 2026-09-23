@@ -201,6 +201,7 @@ L["OPT_CLASSIC_SEGMENTS_DESC"] = "Number of segments the Classic bar is divided 
 L["OPT_RESET_BAR_POSITION"] = "Reset Bar Position"
 L["OPT_RESET_BAR_POSITION_DESC"] = "Reset the Flat bar to its default position at the bottom center of the screen."
 L["OPT_RESET_SETTINGS"] = "Reset Settings"
+L["OPT_RESET_SETTINGS_DIALOG"] = "Reset %s to its default settings, colors and bar positions?\n\nOther profiles and your tracked statistics are kept."
 L["OPT_RESET_STATS"] = "Reset Statistics"
 
 -- Text Display Section Headers
@@ -417,7 +418,7 @@ L["MSG_STATS_UNAVAILABLE"] = "Stats feature is unavailable."
 L["MSG_OPTIONS_UNAVAILABLE"] = "Options panel is unavailable."
 L["MSG_RESET_UNAVAILABLE"] = "Unable to reset settings."
 L["MSG_RESET_STATS_UNAVAILABLE"] = "Unable to reset statistics."
-L["MSG_SETTINGS_RESET"] = "Settings reset to defaults"
+L["MSG_SETTINGS_RESET"] = "%s reset to its default settings."
 L["MSG_SESSION_RESET"] = "Session reset."
 L["MSG_USE_STATS_COMMAND"] = "Use /xpbe stats to open stats window."
 L["MSG_USE_OPTIONS_COMMAND"] = "Use /xpbe to open options."
