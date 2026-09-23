@@ -59,6 +59,9 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - Option descriptions show as tooltips, including the readout preset buttons.
 - The Stats window closes with Esc, and Enter and Esc work in the new- and rename-profile dialogs.
 - "Use textured segments" is available under the Minimap Ring style, which also uses it; the Advanced section opens by default for a Custom readout; the Colors tab no longer shows an empty "Other secondary sources" header on the Classic clients.
+- The addon no longer prints "Loaded!" in chat at every login.
+- Without a LibDataBroker display installed, the feed no longer checks for one every five seconds all session; it waits for an addon to load.
+- A party member's quest log changing no longer rebuilds your quest XP totals, and a quest turn-in scans the quest log once instead of twice.
 
 ### Removed
 
