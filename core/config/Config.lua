@@ -272,6 +272,24 @@ function Config:GetColor(key)
     return nil
 end
 
+--- True when the active write target (the profile, else Global) sets `key`
+--- itself rather than inheriting it.
+function Config:HasOwnColor(key)
+    local target = getWriteTargetTable()
+    return (target.colors ~= nil and target.colors[key] ~= nil) and true or false
+end
+
+--- Drop the active write target's own `key`, so it inherits again.
+function Config:ClearOwnColor(key, silent)
+    local target = getWriteTargetTable()
+    if target.colors then
+        target.colors[key] = nil
+    end
+    if not silent and Addon.EventBus and Addon.EventBus.Emit then
+        Addon.EventBus:Emit(EventNames.COLORS_UPDATED, { event = EventNames.COLORS_UPDATED })
+    end
+end
+
 function Config:GetDefaultColor(key)
     return Addon.defaults and Addon.defaults.colors and Addon.defaults.colors[key]
 end

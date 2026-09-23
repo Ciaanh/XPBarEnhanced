@@ -4,27 +4,21 @@
 -- A new player has no path from "I want a minimal bar" to the individual
 -- checkboxes that produce one. These presets give three such paths.
 --
--- Scope: a preset owns EVERY boolean scalar in defaults.lua (see PRESET_KEYS),
--- not just the readout ones, and "Custom" detection watches that same set.
--- Applying a preset therefore normalises the whole boolean surface to a known
--- state -- including settings the player may have tuned deliberately -- and
--- flipping any one of them switches the label to Custom. That is the documented
--- trade-off of whole-panel scope; the alternative was to own only the 13 readout
--- keys and let the other 22 drift independently.
---
--- The three presets differ only in the 13 readout keys. The remaining 22 are
--- pinned to their defaults.lua values in every preset, so switching preset never
--- silently hides the minimap button or unlocks the bar.
+-- Scope: a preset owns the 13 readout keys (see PRESET_KEYS) -- what the bar
+-- says -- and "Custom" detection watches that same set. Everything else a
+-- player tunes (lock, dragging, the secondary bar, the minimap button,
+-- animations) is left exactly as it was: presets used to own every boolean and
+-- pinned those to their defaults, so picking one unlocked the bar, re-showed
+-- the minimap button and hid the secondary bar, and toggling any of them
+-- flipped the label to Custom.
 
 local Addon = XPBarEnhanced
 
 Addon.ReadoutPresets = Addon.ReadoutPresets or {}
 local ReadoutPresets = Addon.ReadoutPresets
 
--- Every boolean scalar in defaults.lua. Presets write all of these; Custom
--- detection compares all of these. Keep in sync with defaults.lua.
+-- The readout keys. Presets write these; Custom detection compares these.
 local PRESET_KEYS = {
-    -- readout keys: the 13 the presets actually differ on
     "showLevelText",
     "showXPText",
     "showPercentage",
@@ -38,76 +32,11 @@ local PRESET_KEYS = {
     "showCompleteQuestOverlay",
     "showIncompleteQuestOverlay",
     "showRestedOverlay",
-    -- remaining boolean surface: identical in every preset
-    "showSecondaryBar",
-    "hideCompanionOutsideDelve",
-    "secondaryBarsAttached",
-    "maxLevelPrimaryShowsSecondary",
-    "barLocked",
-    "circularUseTexture",
-    "circularScaleCenterText",
-    "circularSecondaryFullCircle",
-    "minimapRingCollectButtons",
-    "minimapArcStartExpanded",
-    "showQuestXP",
-    "resetOnReload",
-    "abbreviateNumbers",
-    "enableAnimations",
-    "flashOnGain",
-    "twoPhaseOnLevelUp",
-    "levelUpCelebration",
-    "goalNotifications",
-    "enableDataBrokerFeed",
-    "classicBarDraggable",
-    "showMinimapButton",
-    "terminalUseCustomColors",
 }
-
--- PRESET_KEYS is every boolean scalar in defaults.lua. Enum and integer options
--- are out of scope by type: presets decide what the bar SAYS, not what one
--- style LOOKS like.
-
--- The 22 non-readout keys, pinned to their defaults.lua values.
-local SHARED = {
-    showSecondaryBar = false,
-    hideCompanionOutsideDelve = false,
-    secondaryBarsAttached = true,
-    maxLevelPrimaryShowsSecondary = false,
-    barLocked = false,
-    circularUseTexture = true,
-    circularScaleCenterText = false,
-    circularSecondaryFullCircle = false,
-    minimapRingCollectButtons = false,
-    minimapArcStartExpanded = false,
-    showQuestXP = true,
-    resetOnReload = false,
-    abbreviateNumbers = true,
-    enableAnimations = true,
-    flashOnGain = true,
-    twoPhaseOnLevelUp = true,
-    levelUpCelebration = true,
-    goalNotifications = true,
-    enableDataBrokerFeed = true,
-    classicBarDraggable = true,
-    showMinimapButton = true,
-    terminalUseCustomColors = false,
-}
-
---- Build a full preset from the shared base plus its readout overrides
-local function buildPreset(readout)
-    local preset = {}
-    for key, value in pairs(SHARED) do
-        preset[key] = value
-    end
-    for key, value in pairs(readout) do
-        preset[key] = value
-    end
-    return preset
-end
 
 local presets = {
     -- Percentage only: one number on the bar, nothing beneath it.
-    minimal = buildPreset({
+    minimal = {
         showLevelText = false,
         showXPText = false,
         showPercentage = true,
@@ -121,9 +50,9 @@ local presets = {
         showCompleteQuestOverlay = true,
         showIncompleteQuestOverlay = false,
         showRestedOverlay = true,
-    }),
+    },
     -- The shipped defaults, unchanged.
-    standard = buildPreset({
+    standard = {
         showLevelText = true,
         showXPText = true,
         showPercentage = true,
@@ -137,9 +66,9 @@ local presets = {
         showCompleteQuestOverlay = true,
         showIncompleteQuestOverlay = false,
         showRestedOverlay = true,
-    }),
+    },
     -- Standard plus milestone ticks and the incomplete-quest overlay.
-    leveller = buildPreset({
+    leveller = {
         showLevelText = true,
         showXPText = true,
         showPercentage = true,
@@ -153,7 +82,7 @@ local presets = {
         showCompleteQuestOverlay = true,
         showIncompleteQuestOverlay = true,
         showRestedOverlay = true,
-    }),
+    },
 }
 
 -- Display order for the preset buttons

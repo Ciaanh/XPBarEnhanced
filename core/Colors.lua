@@ -115,14 +115,14 @@ end
 
 ---Reset all colors to defaults
 function Colors:ResetAll()
-    -- Clear only the active write target (the profile when one is active,
-    -- otherwise the global table). Wiping both layers would destroy the
-    -- user's global customizations while they are only editing a profile.
+    -- Write the defaults into the active write target only (the profile when
+    -- one is active, otherwise Global), so Global's customizations survive a
+    -- reset made on a profile. Explicit defaults rather than nil: on a profile,
+    -- nil inherits Global's colors instead of the defaults.
     local target = Addon.Config and Addon.Config.GetSettingsStorage and Addon.Config:GetSettingsStorage()
+        or Addon.db
     if target then
-        target.colors = nil
-    elseif Addon.db then
-        Addon.db.colors = nil
+        target.colors = Addon.Utils.Clone(Addon.defaults.colors)
     end
 
     Colors:NotifyColorsChanged()

@@ -65,9 +65,6 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFprofile new <name>|r - Create and select a new profile")
     print("  /xpbe |cFFFFFFFFprofile rename <new name>|r - Rename the active profile")
     print("  /xpbe |cFFFFFFFFprofile delete [name]|r - Delete a profile")
-    print("  /xpbe |cFFFFFFFFenable|r - Manually start the addon after login")
-    print("  /xpbe |cFFFFFFFFdisable|r - Stop the addon until it is manually enabled again")
-    print("  /xpbe |cFFFFFFFFstatus|r - Show startup state")
     print("  /xpbe |cFFFFFFFFreset|r - Reset the active profile to its defaults")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -112,37 +109,6 @@ local function handleReset()
     local profileName = config:GetActiveProfileName() or L["OPT_PROFILE_GLOBAL"]
     config:ResetActiveProfile()
     print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_SETTINGS_RESET"], profileName))
-end
-
-local function handleEnable()
-    Addon.enabled = true
-    if Addon.Database and Addon.Database.Initialize then
-        Addon.Database:Initialize()
-    end
-
-    if Addon.ProfileManager and Addon.ProfileManager.Initialize then
-        Addon.ProfileManager:Initialize()
-    end
-
-    if Addon.Config and Addon.Config.Initialize then
-        Addon.Config:Initialize()
-    end
-
-    if Addon.LifecycleHandlers and Addon.LifecycleHandlers.OnPlayerLogin then
-        Addon.LifecycleHandlers:OnPlayerLogin()
-    end
-
-    if Addon.LifecycleHandlers and Addon.LifecycleHandlers.OnPlayerEnteringWorld then
-        Addon.LifecycleHandlers:OnPlayerEnteringWorld(true, false)
-    end
-end
-
-local function handleDisable()
-    Addon.enabled = false
-end
-
-local function handleStatus()
-    print(string.format("|cFF00FF00XP Bar Enhanced:|r startup is %s", Addon.enabled and "enabled" or "disabled"))
 end
 
 local function handleResetStats()
@@ -310,12 +276,6 @@ local function handleSlashCommand(message)
 
     if command == "" or command == "help" then
         showHelp()
-    elseif command == "enable" then
-        handleEnable()
-    elseif command == "disable" then
-        handleDisable()
-    elseif command == "status" then
-        handleStatus()
     elseif command == "stats" then
         handleStats()
     elseif command == "changelog" or command == "changes" or command == "news" then

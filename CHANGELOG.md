@@ -51,6 +51,18 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - The Vertical bar's percentage follows Blizzard's status-text setting like its other texts.
 - Classic on-bar texts are cut short on a narrow bar instead of wrapping out of it.
 - Secondary bar hints and the rested marker's tooltip are localized, and name the right panel for each source.
+- Readout presets change only what the bar shows. They used to reset unrelated settings too, so picking one could unlock the bar, re-show the minimap button or hide the secondary bar.
+- Options that other paths change (presets, profile switches, resets) now update the bars at once, like the matching checkbox or slider does.
+- Option dropdowns show the right value after a profile switch, reset or rename.
+- The opacity slider no longer runs backwards in the Classic clients' color picker, opening or cancelling a color no longer pins an inherited color onto a profile, and a second color opened from the picker starts at its own opacity.
+- `/xpbe resetcolors` on a profile resets to the default colors, not Global Settings' colors.
+- Option descriptions show as tooltips, including the readout preset buttons.
+- The Stats window closes with Esc, and Enter and Esc work in the new- and rename-profile dialogs.
+- "Use textured segments" is available under the Minimap Ring style, which also uses it; the Advanced section opens by default for a Custom readout; the Colors tab no longer shows an empty "Other secondary sources" header on the Classic clients.
+
+### Removed
+
+- `/xpbe enable`, `/xpbe disable` and `/xpbe status`. The disable command never stopped the addon and did not survive a reload; disable the addon from the AddOns list instead.
 - The Classic bar's fill no longer spills past the rounded ends of its frame.
 - The Classic bar's fill and the Classic reputation bar no longer use Blizzard's pre-colored fill textures, which tinted custom colors or went blank on clients that lack them.
 

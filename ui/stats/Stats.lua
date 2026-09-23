@@ -453,6 +453,10 @@ end
 
 function Stats:Initialize()
     local existing = _G["XPBarEnhancedStatsFrame"]
+    -- Esc closes the window, like the changelog.
+    if existing and UISpecialFrames and not tContains(UISpecialFrames, "XPBarEnhancedStatsFrame") then
+        tinsert(UISpecialFrames, "XPBarEnhancedStatsFrame")
+    end
     if existing and existing.OnLoad and not existing._xpbeInitialized then
         existing:OnLoad()
     end

@@ -71,6 +71,35 @@ local function SliderOnValueChanged(selfFrame, slider, key, value)
     end
 end
 
+--- Show `title` and `description` as a tooltip over each of `frames`. The
+--- option templates have no OnEnter of their own, so without this no option
+--- description (the *_DESC strings) was ever shown.
+---@param frames table Frames to hover
+---@param title string|nil
+---@param description string|nil
+function ControlHelpers.AttachTooltip(frames, title, description)
+    if not description or description == "" then
+        return
+    end
+    local function show(owner)
+        GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+        GameTooltip:SetText(title or "", 1, 1, 1)
+        GameTooltip:AddLine(description, nil, nil, nil, true)
+        GameTooltip:Show()
+    end
+    local function hide(owner)
+        if GameTooltip:GetOwner() == owner then
+            GameTooltip:Hide()
+        end
+    end
+    for _, frame in ipairs(frames) do
+        if frame and frame.HookScript then
+            frame:HookScript("OnEnter", show)
+            frame:HookScript("OnLeave", hide)
+        end
+    end
+end
+
 -- Initialize a checkbox contained inside a row container (two-column layout)
 function ControlHelpers.SetupTwoColumnCheckbox(selfFrame, row, key, detail)
     if not row or not row.Checkbox or not detail then
@@ -90,9 +119,7 @@ function ControlHelpers.SetupTwoColumnCheckbox(selfFrame, row, key, detail)
         checkbox.Text:Hide()
     end
 
-    -- Set tooltips
-    checkbox.tooltipText = detail.label
-    checkbox.tooltipRequirement = detail.description
+    ControlHelpers.AttachTooltip({row, checkbox}, detail.label, detail.description)
 
     -- Register click
     checkbox:SetScript("OnClick", function(btn) CheckboxOnClick(selfFrame, btn, key) end)
@@ -125,8 +152,7 @@ function ControlHelpers.SetupCheckbox(selfFrame, checkbox, key, detail)
         checkbox.Text:SetText(detail.label)
     end
 
-    checkbox.tooltipText = detail.label
-    checkbox.tooltipRequirement = detail.description
+    ControlHelpers.AttachTooltip({checkbox}, detail.label, detail.description)
 
     checkbox:SetScript("OnClick", function(btn) CheckboxOnClick(selfFrame, btn, key) end)
 
@@ -146,6 +172,12 @@ function ControlHelpers.SetupProperSlider(selfFrame, row, key, detail)
     -- Set label text
     if label and detail.label then
         label:SetText(detail.label)
+    end
+
+    if not row._xpbeTooltip then
+        row._xpbeTooltip = true
+        row:EnableMouse(true)
+        ControlHelpers.AttachTooltip({row}, detail.label, detail.description)
     end
 
     -- Set current value now (useful as initial value for Init)
@@ -275,6 +307,12 @@ function ControlHelpers.SetupProperDropdown(selfFrame, row, key, detail)
     -- Set label text
     if label and detail.label then
         label:SetText(detail.label)
+    end
+
+    if not row._xpbeTooltip then
+        row._xpbeTooltip = true
+        row:EnableMouse(true)
+        ControlHelpers.AttachTooltip({row}, detail.label, detail.description)
     end
 
     -- Get current value for initial text

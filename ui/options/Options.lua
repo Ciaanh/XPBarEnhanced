@@ -77,7 +77,7 @@ local ROW_OWNER_STYLE = {
     classicSegments             = "classic",
     circularSize                = "circular",
     circularSegments            = "circular",
-    circularUseTexture          = "circular",
+    circularUseTexture          = {"circular", "minimap_ring"},
     circularScaleCenterText     = "circular",
     circularSecondaryFullCircle = "circular",
     minimapRingPadding          = "minimap_ring",
@@ -96,7 +96,7 @@ local CLASSIC_HIDDEN_OPTIONS = {
     secondaryHousing = true,
     secondaryHonor = true,
 }
-if not Addon:IsFeatureEnabled("reputation") then
+if not Addon:IsFeatureSupported("reputation") then
     CLASSIC_HIDDEN_OPTIONS.secondaryReputation = true
 end
 
@@ -131,6 +131,17 @@ local DISCLOSURE_DEFAULT_OPEN = {
         return (presets and presets:Detect() == presets.CUSTOM) and true or false
     end,
 }
+
+--- The bar style on screen: the stored one, resolved the way BarManager
+--- resolves it, so a style this build cannot render still selects the one
+--- actually drawn.
+local function ResolvedBarStyle()
+    local style = Config:GetOptionValue("barStyle")
+    if Addon.BarManager and Addon.BarManager.ResolveStyleKey then
+        style = Addon.BarManager:ResolveStyleKey(style)
+    end
+    return style
+end
 
 --- Short display name of a bar style, from the barStyle option list.
 --- Short, not long: "— Circular only" reads better than
@@ -223,9 +234,18 @@ local function EnsureProfilePopups()
                 end
             end,
             EditBoxOnEnterPressed = function(editBox)
+                -- GameDialog (every current client) exposes its buttons through
+                -- GetButton1; popup.button1 is the older StaticPopup field.
                 local popup = editBox:GetParent()
-                if popup and popup.button1 and popup.button1:IsEnabled() then
-                    popup.button1:Click()
+                local accept = popup and ((popup.GetButton1 and popup:GetButton1()) or popup.button1)
+                if accept and accept:IsEnabled() then
+                    accept:Click()
+                end
+            end,
+            EditBoxOnEscapePressed = function(editBox)
+                local popup = editBox:GetParent()
+                if popup then
+                    popup:Hide()
                 end
             end,
             OnAccept = function(popup)
@@ -258,9 +278,18 @@ local function EnsureProfilePopups()
                 end
             end,
             EditBoxOnEnterPressed = function(editBox)
+                -- GameDialog (every current client) exposes its buttons through
+                -- GetButton1; popup.button1 is the older StaticPopup field.
                 local popup = editBox:GetParent()
-                if popup and popup.button1 and popup.button1:IsEnabled() then
-                    popup.button1:Click()
+                local accept = popup and ((popup.GetButton1 and popup:GetButton1()) or popup.button1)
+                if accept and accept:IsEnabled() then
+                    accept:Click()
+                end
+            end,
+            EditBoxOnEscapePressed = function(editBox)
+                local popup = editBox:GetParent()
+                if popup then
+                    popup:Hide()
                 end
             end,
             OnAccept = function(popup, data)
@@ -370,7 +399,8 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
             local disclosureOk = self:IsDisclosureExpanded(self:GetEffectiveDisclosureGroup(child))
             local requiredFeature = OPTION_FEATURES[child.configKey]
             local classicHidden = (child.configKey == "hideCompanionOutsideDelve" and Addon:IsFeatureEnabled("classicClientBehavior"))
-                or (requiredFeature and not Addon:IsFeatureEnabled(requiredFeature))
+                or (requiredFeature and not Addon:IsFeatureSupported(requiredFeature))
+                or (child.disclosureToggle == SECONDARY_COLOR_GROUP and not self:HasFoldedSecondaryColors())
             child:SetShown(tabMatch and disclosureOk and not classicHidden)
         end
     end
@@ -501,6 +531,11 @@ function XPBarEnhancedOptionsMixin:RefreshProfileControls()
     local activeProfile = Config:GetActiveProfileName()
     if controls.dropdown and controls.dropdown.SetDefaultText then
         controls.dropdown:SetDefaultText(GetProfileDisplayName(activeProfile))
+        -- Once its menu has been built the dropdown shows the selected item's
+        -- text, not the default text; rebuilding re-reads the selection.
+        if controls.dropdown.GenerateMenu then
+            controls.dropdown:GenerateMenu()
+        end
     end
 end
 
@@ -1007,7 +1042,7 @@ end
 function XPBarEnhancedOptionsMixin:UpdateColorControls()
     -- The style swatches paint their fills with the configured xpBar colour, so a
     -- colour change has to reach them too — not only the Colors tab's own rows.
-    self:RefreshStyleGallery(Config and Config:GetOptionValue("barStyle"))
+    self:RefreshStyleGallery(ResolvedBarStyle())
 
     if not Config or not Config.colorOptionsList then
         return
@@ -1076,6 +1111,14 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     local b = clamp01(color.b or color[3] or 1)
     local a = clamp01(color.a or color[4] or 1)
     local previousHex = Config:GetColorHex(colorKey)
+    -- Whether the active profile had its own value: a cancel must not leave an
+    -- override behind for a color that was only inherited.
+    local hadOwnColor = Config:HasOwnColor(colorKey)
+    -- The Classic-family picker's opacity slider runs the other way: its value
+    -- is transparency, which Blizzard's chat frames read as 1 - GetColorAlpha().
+    local invertOpacity = rawget(_G, "OpacitySliderFrame") ~= nil
+        and not (ColorPickerFrame and ColorPickerFrame.Content)
+    local pickerOpacity = invertOpacity and (1 - a) or a
 
     -- Called continuously as the user changes color/opacity
     local function applyColor(restore, ...)
@@ -1123,10 +1166,20 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
             if (opacity == nil) and OpacitySliderFrame and OpacitySliderFrame:IsShown() then
                 opacity = OpacitySliderFrame:GetValue()
             end
+
+            if opacity ~= nil and invertOpacity then
+                opacity = 1 - opacity
+            end
         end
 
         opacity = clamp01(opacity or 1)
         local hex = rgbToHex(pr, pg, pb, opacity)
+
+        -- The picker reports its starting color as it opens; writing that back
+        -- would pin an inherited color onto the profile before any change.
+        if hex == Config:GetColorHex(colorKey) then
+            return
+        end
 
         -- Save the new color
         Config:SetColor(colorKey, hex, true)
@@ -1145,8 +1198,12 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
 
     -- Called when user clicks Cancel - restore original color
     local function cancelColor(restore)
-        -- Restore to the original color
-        Config:SetColor(colorKey, previousHex, true)
+        -- Restore the original color, or the inheritance it came from
+        if hadOwnColor then
+            Config:SetColor(colorKey, previousHex, true)
+        else
+            Config:ClearOwnColor(colorKey, true)
+        end
         if Config.ApplyPendingOptionChanges then
             Config:ApplyPendingOptionChanges()
         end
@@ -1171,13 +1228,18 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
                 end,
                 cancelFunc = cancelColor,
                 hasOpacity = true,
-                opacity = a,
+                opacity = pickerOpacity,
                 r = r,
                 g = g,
                 b = b,
-                previousValues = {r = r, g = g, b = b, a = a}
+                previousValues = {r = r, g = g, b = b, a = pickerOpacity}
             }
         )
+        -- The Classic picker sets its slider in OnShow, which does not run when
+        -- a second swatch opens it while it is already showing.
+        if invertOpacity and OpacitySliderFrame and OpacitySliderFrame.SetValue then
+            OpacitySliderFrame:SetValue(pickerOpacity)
+        end
         -- Some Classic builds still invoke the legacy callback from the OK
         -- button even after the modern picker has been opened. The Classic
         -- XML specifically invokes swatchFunc() from the OK button.
@@ -1192,7 +1254,7 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
         ColorPickerFrame.cancelFunc = cancelColor
 
         ColorPickerFrame.hasOpacity = true
-        ColorPickerFrame.opacity = a
+        ColorPickerFrame.opacity = pickerOpacity
         ColorPickerFrame.previousValues = {r = r, g = g, b = b, a = a}
         ColorPickerFrame:SetColorRGB(r, g, b)
         ColorPickerFrame:Hide()
@@ -1234,6 +1296,34 @@ function XPBarEnhancedOptionsMixin:GetEffectiveDisclosureGroup(child)
         return nil
     end
     return group
+end
+
+--- True when the "other secondary sources" group has anything in it: a source
+--- this client supports that is not the active one. On the Classic clients
+--- profession is the only source, so the header would open onto nothing.
+function XPBarEnhancedOptionsMixin:HasFoldedSecondaryColors()
+    local activeKey = SECONDARY_SOURCE_COLOR[Config:GetOptionValue("secondaryBarSource")]
+    for source, key in pairs(SECONDARY_SOURCE_COLOR) do
+        if key ~= activeKey and Addon:IsFeatureSupported(source) then
+            return true
+        end
+    end
+    return false
+end
+
+--- Re-derive each disclosure group's starting state. Called at login: the
+--- panel's OnLoad runs when its XML loads, before saved settings exist, so a
+--- default that depends on them (Advanced opens for a Custom readout) can only
+--- be decided then.
+function XPBarEnhancedOptionsMixin:ApplyDisclosureDefaults()
+    self._disclosureExpanded = self._disclosureExpanded or {}
+    for group, defaultOpen in pairs(DISCLOSURE_DEFAULT_OPEN) do
+        self._disclosureExpanded[group] = defaultOpen() and true or false
+    end
+    self:RefreshDisclosureHeaders()
+    if self._activeTab then
+        self:SelectTab(self._activeTab)
+    end
 end
 
 --- True when rows in `group` should be shown. Rows with no group always show.
@@ -1401,8 +1491,11 @@ function XPBarEnhancedOptionsMixin:SetupPresetRow()
         if button then
             local upper = string.upper(name)
             button:SetText(ResolveLocale("OPT_READOUT_PRESET_" .. upper))
-            button.tooltipText = ResolveLocale("OPT_READOUT_PRESET_" .. upper)
-            button.tooltipRequirement = ResolveLocale("OPT_READOUT_PRESET_" .. upper .. "_DESC")
+            ControlHelpers.AttachTooltip(
+                {button},
+                ResolveLocale("OPT_READOUT_PRESET_" .. upper),
+                ResolveLocale("OPT_READOUT_PRESET_" .. upper .. "_DESC")
+            )
             button:SetScript("OnClick", function()
                 presets:Apply(name)
                 -- Choosing a preset means the details are handled; fold them away.
@@ -1515,12 +1608,21 @@ function XPBarEnhancedOptionsMixin:RefreshRowAvailability(barStyle)
         self:SetRowAvailability(key, localeKey == nil, localeKey and ResolveLocale(localeKey))
     end
 
-    for key, ownerStyle in pairs(ROW_OWNER_STYLE) do
-        local available = (ownerStyle == barStyle)
+    for key, owners in pairs(ROW_OWNER_STYLE) do
+        -- One owning style, or a list when several styles read the option.
+        if type(owners) ~= "table" then
+            owners = {owners}
+        end
+        local available = false
+        local labels = {}
+        for _, ownerStyle in ipairs(owners) do
+            available = available or (ownerStyle == barStyle)
+            labels[#labels + 1] = GetStyleLabel(ownerStyle)
+        end
         self:SetRowAvailability(
             key,
             available,
-            not available and string.format(ResolveLocale("OPT_UNAVAIL_STYLE_ONLY"), GetStyleLabel(ownerStyle)) or nil
+            not available and string.format(ResolveLocale("OPT_UNAVAIL_STYLE_ONLY"), table.concat(labels, " / ")) or nil
         )
     end
 end
@@ -1531,7 +1633,7 @@ function XPBarEnhancedOptionsMixin:Refresh()
     end
 
     -- Current barStyle drives row availability, not row visibility.
-    local barStyle = Config:GetOptionValue("barStyle")
+    local barStyle = ResolvedBarStyle()
 
     -- Refresh checkboxes
     for key, checkbox in pairs(self.controls) do
@@ -1593,6 +1695,12 @@ function XPBarEnhancedOptionsMixin:Refresh()
                     -- WowStyle1DropdownTemplate: Use SetDefaultText to update displayed text
                     if dropdown.SetDefaultText then
                         dropdown:SetDefaultText(labelText)
+                        -- The shown text is the selected item's once the menu
+                        -- has been built; rebuilding re-reads the selection
+                        -- (after a profile switch, say).
+                        if dropdown.GenerateMenu then
+                            dropdown:GenerateMenu()
+                        end
                     elseif dropdown.Button then
                         -- Old-style cycling button dropdown (classic)
                         dropdown.Button:SetText(labelText)
@@ -1704,6 +1812,9 @@ function Options:Initialize(controller)
         if panel.OnLoad then
             panel:OnLoad()
         end
+    end
+    if panel and panel.ApplyDisclosureDefaults then
+        panel:ApplyDisclosureDefaults()
     end
 
     return panel

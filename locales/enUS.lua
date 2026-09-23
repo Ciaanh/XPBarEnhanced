@@ -113,7 +113,7 @@ L["OPT_COLOR_ACTIVE"] = "(active)"
 -- Readout presets: named starting points for the boolean options
 L["OPT_READOUT_PRESET"] = "Readout preset"
 L["OPT_READOUT_PRESET_DESC"] =
-    "A starting point for every on/off setting. Changing any individual toggle switches this to Custom."
+    "A starting point for what the bar and the text beneath it show. Changing one of those toggles switches this to Custom; other settings are never touched."
 L["OPT_READOUT_PRESET_MINIMAL"] = "Minimal"
 L["OPT_READOUT_PRESET_MINIMAL_DESC"] = "Percentage only — nothing beneath the bar."
 L["OPT_READOUT_PRESET_STANDARD"] = "Standard"

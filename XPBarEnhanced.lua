@@ -60,11 +60,6 @@ Addon.state =
         defaultXPBarHidden = false
     }
 
--- Default to automatic startup. The addon should initialize on login unless the
--- user explicitly disables it for troubleshooting. The earlier startup gate was
--- blocking legitimate login initialization and made settings look like they were
--- not being saved.
-Addon.enabled = true
 -- Database reference
 Addon.db = Addon.db or {}
 

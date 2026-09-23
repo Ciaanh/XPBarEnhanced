@@ -12,10 +12,7 @@ function eventHandlers:OnAddonLoaded(name)
         return
     end
 
-    -- Always initialize saved-variable state first so profile/settings survive
-    -- logout/login even while startup is intentionally held off by the manual
-    -- enable gate. The UI should stay dormant until /xpbe enable, but config
-    -- data must still be present.
+    -- Saved-variable state first: everything after reads settings from it.
     assert(Addon.Database, "XPBarEnhanced: Database module not loaded (check .toc order)")
     assert(Addon.Config,   "XPBarEnhanced: Config module not loaded (check .toc order)")
     assert(Addon.ProfileManager, "XPBarEnhanced: ProfileManager module not loaded (check .toc order)")
@@ -23,10 +20,6 @@ function eventHandlers:OnAddonLoaded(name)
     Addon.Database:Initialize()
     Addon.ProfileManager:Initialize()
     Addon.Config:Initialize()
-
-    if not Addon.enabled then
-        return
-    end
 
     -- Get XP gain disabled state
     Addon.state.xpGainDisabled = Addon.Database:IsXPGainDisabled()
@@ -49,10 +42,6 @@ local function InitializeModule(module)
 end
 
 function eventHandlers:OnPlayerLogin()
-    if not Addon.enabled then
-        return
-    end
-
     InitializeModule(Addon.Session)
 
     for _, feature in ipairs({"reputation", "housing", "honor", "profession"}) do
@@ -77,10 +66,6 @@ function eventHandlers:OnPlayerLogout()
 end
 
 function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
-    if not Addon.enabled then
-        return
-    end
-
     if Addon.Session and Addon.Session.EmitUpdate then
         Addon.Session:EmitUpdate("PLAYER_ENTERING_WORLD")
     end
