@@ -580,9 +580,8 @@ function CircularBarStyleTemplate:UpdateGainedBar(currentRatio, context)
         self:SetCurrentRatio(currentRatio)
     end
 
-    if self.UpdateTexts then
-        self:UpdateTexts(context)
-    end
+    -- Texts are RenderBar's (and StartAnimation's) to update: RenderBar calls
+    -- this and then UpdateTexts, so updating them here too did it twice.
 
     -- Note: Overlays are handled inside SetArcProgress for circular bar
     -- SetArcProgress calculates segment types for: current XP, rested, quest complete, quest incomplete

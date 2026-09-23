@@ -60,15 +60,8 @@ local function SliderOnValueChanged(selfFrame, slider, key, value)
     if Config.ApplyPendingOptionChanges then
         Config:ApplyPendingOptionChanges()
     end
-    -- Get fresh reference to Options module (avoids stale upvalue issue)
-    local controller = Addon.Options
-    if controller and controller.OnOptionChanged then
-        controller:OnOptionChanged(key)
-    else
-        if selfFrame and selfFrame.Refresh then
-            selfFrame:Refresh()
-        end
-    end
+    -- No panel refresh: this fires on every step of a drag, the slider draws
+    -- its own value label, and no other row depends on a slider's value.
 end
 
 --- Show `title` and `description` as a tooltip over each of `frames`. The
