@@ -229,7 +229,7 @@ function BarManager:GetMaxLevelSecondaryContext()
         source = src.source,
         currentXP = curVal,
         xpMax = maxVal,
-        level = src.currentLevel or src.reactionLevel or 0,
+        level = src.currentLevel or 0,
         percent = src.percent,
         standingLabel = src.standingLabel,
         -- The on-bar "level" text shows the source's standing (e.g. "Renown 3",

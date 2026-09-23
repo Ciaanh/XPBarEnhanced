@@ -63,7 +63,8 @@ local function BuildHousingContext(self)
         return BuildUnavailableContext()
     end
 
-    if not C_Housing then
+    -- The housing service can go down mid-session.
+    if not C_Housing or not Addon.IsHousingAvailable() then
         return BuildUnavailableContext()
     end
 
@@ -122,7 +123,6 @@ local function BuildHousingContext(self)
         factionType = "housing",
         isCompanion = false,
         currentLevel = level,
-        reactionLevel = level,
         current = favor,
         min = minFavor,
         max = maxFavor,
@@ -147,6 +147,11 @@ function HousingSession:Initialize()
     session.sessionStart = session.sessionStart or time()
     session.lastUpdate = session.lastUpdate or time()
     session.sessionGained = tonumber(session.sessionGained) or 0
+
+    -- The house is shared across the warband while this store is per
+    -- character, so the saved favor may predate favor earned on an alt or
+    -- since logout. The first reply after loading is a baseline, not a gain.
+    self._rebaselineFavor = true
 
     self:RequestCurrentTrackedHouseFavor()
 end
@@ -332,7 +337,9 @@ function HousingSession:OnHouseLevelFavorUpdated(a1, a2, a3)
 
     -- Favor is a cumulative value across house levels, so the delta stays
     -- meaningful even when the house leveled up since the last update.
-    if session.lastHouseFavor ~= nil then
+    if self._rebaselineFavor then
+        self._rebaselineFavor = nil
+    elseif session.lastHouseFavor ~= nil then
         local gain = favor - (tonumber(session.lastHouseFavor) or favor)
         if gain > 0 then
             session.sessionGained = (session.sessionGained or 0) + gain

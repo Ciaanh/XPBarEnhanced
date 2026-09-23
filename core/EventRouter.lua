@@ -13,8 +13,17 @@ local CLASSIC_UNAVAILABLE_EVENTS = {
     HONOR_LEVEL_UPDATE = true,
 }
 
+-- Events that only exist, or only matter, where a feature is supported.
+local FEATURE_EVENTS = {
+    HOUSING_SERVICES_AVAILABILITY_UPDATED = "housing",
+}
+
 local function RegisterEventSafely(frame, eventName)
     if Addon:IsFeatureEnabled("classicClientBehavior") and CLASSIC_UNAVAILABLE_EVENTS[eventName] then
+        return
+    end
+    local feature = FEATURE_EVENTS[eventName]
+    if feature and not Addon:IsFeatureSupported(feature) then
         return
     end
 
@@ -32,6 +41,24 @@ end
 
 local function EmitHousingUpdate()
     if Addon:IsFeatureEnabled("housing", "EmitUpdate") and Addon.HousingSession._session then
+        Addon.HousingSession:EmitUpdate()
+    end
+end
+
+-- Retail's housing service may report itself unavailable at login and come up
+-- later; start the session the first time it is available.
+local function EnsureHousingSession()
+    local housing = Addon.HousingSession
+    if not housing._session and Addon:IsFeatureEnabled("housing", "Initialize") then
+        housing:Initialize()
+    end
+end
+
+local function DispatchHousingAvailabilityChanged()
+    EnsureHousingSession()
+    if Addon.HousingSession._session then
+        -- Rebuilt either way: BuildHousingContext reports the bar unavailable
+        -- while the service is down.
         Addon.HousingSession:EmitUpdate()
     end
 end
@@ -204,6 +231,7 @@ local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
         Addon.ReputationSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
+    EnsureHousingSession()
     if Addon:IsFeatureEnabled("housing", "OnEnteringWorld") and Addon.HousingSession._session then
         Addon.HousingSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
@@ -301,6 +329,9 @@ local ROUTER_DISPATCH = {
     end,
     HOUSE_LEVEL_CHANGED = function()
         DispatchHouseLevelChanged()
+    end,
+    HOUSING_SERVICES_AVAILABILITY_UPDATED = function()
+        DispatchHousingAvailabilityChanged()
     end,
     -- Housing activity events: fire when the player completes a task (e.g. adds
     -- decor). HOUSE_LEVEL_FAVOR_UPDATED is request-response only, so we must

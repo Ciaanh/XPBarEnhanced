@@ -37,6 +37,11 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - XP per hour waits a minute of data before showing, so a quest turned in right after login no longer reads as millions per hour.
 - The Stats window's time on level and time to level now advance while you play.
 - The rested percentage in the quest summary shows up to 150% instead of stopping at 100%.
+- Reputation gained per session no longer jumps by the whole standing when faction data is briefly unavailable, and a renown level-up no longer counts a phantom extra level.
+- Paragon reputation past the renown cap is tracked as paragon, and paragon gains are counted exactly across reward cycles.
+- The Classic and Terminal reputation bars show standing colors for regular factions, and the housing bar no longer takes standing colors from its house level.
+- Housing favor earned on another character, or while logged out, is no longer counted in this session.
+- On Retail, the housing bar and its favor tracking start once the housing service comes up, even when it was not ready at login.
 - The Classic bar's fill no longer spills past the rounded ends of its frame.
 - The Classic bar's fill and the Classic reputation bar no longer use Blizzard's pre-colored fill textures, which tinted custom colors or went blank on clients that lack them.
 
