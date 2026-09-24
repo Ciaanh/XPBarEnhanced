@@ -11,9 +11,17 @@
 -- Blizzard re-shows a container through UpdateShownState on every fade, bar
 -- change and Edit Mode exit. A post-hook there hides it again the moment
 -- Blizzard shows it; hiding once, as the managers used to, lost the container
--- to the next fade. A container the addon hid is handed back to
--- UpdateShownState, never force-shown, so Blizzard still decides whether it
--- has anything to show.
+-- to the next fade.
+--
+-- Taint: the containers are Edit Mode systems, and everything the addon calls
+-- on them runs tainted. Hide is safe -- Edit Mode's Lua override only reads
+-- fields on the way to the C Hide. UpdateShownState is not: it relays out the
+-- whole bottom bar stack and fires EditModeManager.UpdateBottomActionBarPositions,
+-- so calling it from here wrote tainted anchors into the action bars, and the
+-- next Edit Mode entry was blocked from TargetUnit and read party frame colors
+-- as secret values. A container the addon hid is therefore handed back with a
+-- plain Show, and only when Blizzard's own UpdateShownState would show it; the
+-- bar stack catches up on Blizzard's next layout pass.
 
 local Addon = XPBarEnhanced
 Addon.BlizzardBars = Addon.BlizzardBars or {}
@@ -78,6 +86,20 @@ end
 -- APPLYING
 -------------------------------------------------------------------
 
+-- The condition StatusTrackingBarContainerMixin:UpdateShownState shows a
+-- container on, read without running it (see the taint note above).
+local function BlizzardWouldShow(frame)
+    if roles[frame] ~= "container" then
+        return true
+    end
+    if frame.isInEditMode then
+        return true
+    end
+    local info = rawget(_G, "StatusTrackingBarInfo")
+    local bars = info and info.BarsEnum
+    return bars ~= nil and frame.shownBarIndex ~= nil and frame.shownBarIndex ~= bars.None
+end
+
 -- The containers may be protected on some clients, so visibility only changes
 -- out of combat; a change wanted during combat is applied when it ends.
 local function DeferUntilCombatEnds()
@@ -107,9 +129,7 @@ local function Apply(frame)
             return
         end
         hiddenByAddon[frame] = nil
-        if frame.UpdateShownState then
-            frame:UpdateShownState()
-        else
+        if not frame:IsShown() and BlizzardWouldShow(frame) then
             frame:Show()
         end
     end

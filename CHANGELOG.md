@@ -29,6 +29,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - The two "Time played" lines no longer print in chat when the addon asks for played time.
 - A secondary bar source the client does not offer is moved to one it does in every profile, not only in Global Settings.
 - Blizzard's own XP or reputation bar no longer reappears beside the addon's after Edit Mode, at the level cap, or on Retail while a house is tracked.
+- Opening Edit Mode no longer reports that XP Bar Enhanced tried to call the protected function `TargetUnit()`, and the party frames no longer error on entry. The addon handed Blizzard's bar back through a call that spread its taint into the action bars.
 - Turning off "Classic Bar Draggable" now survives a reload, and a fixed Classic bar keeps its configured width and sits where Blizzard's bar does.
 - Reset Bar Position leaves the Minimap Ring and a fixed Classic bar on their anchors instead of moving them to the middle of the screen.
 - Profiles keep their own secondary bar positions: resetting one on a profile no longer resets Global Settings' positions for other characters.
