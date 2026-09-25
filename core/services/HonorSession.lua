@@ -129,6 +129,10 @@ function HonorSession:Snapshot()
 end
 
 function HonorSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
+    if not Addon:IsFeatureEnabled("honor") or not (C_Honor or UnitHonor or UnitHonorLevel) then
+        return
+    end
+
     local session = self._session
     if session then
         if isInitialLogin then

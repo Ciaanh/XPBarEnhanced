@@ -1,23 +1,25 @@
 -- XP Bar Enhanced - Classic Secondary Bar Style
--- Displays the watched faction's reputation as a Blizzard-style bordered bar
--- with standing-color atlas fill.
+-- Displays the secondary source as a bar with the same chrome as the Classic
+-- XP bar, its neutral fill tinted with a standing or source color.
 
 local Addon = XPBarEnhanced
-local SharedStyleHelpers = nil
-local StyleHelpers = nil
+local SharedStyleHelpers = Addon and Addon.UI and Addon.UI.SharedStyleHelpers or {}
+local StyleHelpers = Addon and Addon.UI and Addon.UI.StyleHelpers or {}
 
-local function ResolveHelpers()
+local function EnsureHelpers()
     local ui = Addon and Addon.UI
-    if not ui then
-        return
+    if ui then
+        if not SharedStyleHelpers or not SharedStyleHelpers.GetSecondaryPositionConfigKey then
+            SharedStyleHelpers = ui.SharedStyleHelpers or SharedStyleHelpers
+        end
+        if not StyleHelpers or not StyleHelpers.GetFactionColor then
+            StyleHelpers = ui.StyleHelpers or StyleHelpers
+        end
     end
-
-    SharedStyleHelpers = ui.SharedStyleHelpers
-    StyleHelpers = ui.StyleHelpers
 end
 
 local function GetFactionColor(context)
-    ResolveHelpers()
+    EnsureHelpers()
     if StyleHelpers and StyleHelpers.GetFactionColor then
         return StyleHelpers.GetFactionColor(context)
     end
@@ -29,22 +31,29 @@ end
 XPBarClassicReputationMixin = {}
 local StyleMixin = {}
 
--- Standing-color atlases indexed by reaction level (1 = Hated, 8 = Exalted).
--- Matches Blizzard's own barAtlases table in ReputationBarOverrides.lua.
-local STANDING_ATLAS = {
-    "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Red",    -- 1 Hated
-    "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Red",    -- 2 Hostile
-    "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Orange", -- 3 Unfriendly
-    "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Yellow", -- 4 Neutral
-    "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Green",  -- 5 Friendly
-    "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Green",  -- 6 Honored
-    "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Green",  -- 7 Revered
-    "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Green",  -- 8 Exalted
+-- Standing tints indexed by reaction level (1 = Hated, 8 = Exalted), following
+-- Blizzard's barAtlases table in ReputationBarOverrides.lua. The values are the
+-- bright half of Blizzard's red/orange/yellow/green/blue fills, sampled by
+-- assets/raw/build_classic_bar.py, so the tinted neutral fill reproduces them
+-- without depending on the client's atlases.
+local RED = {r = 0.90, g = 0.34, b = 0.32}
+local ORANGE = {r = 0.96, g = 0.49, b = 0.22}
+local YELLOW = {r = 0.79, g = 0.61, b = 0.00}
+local GREEN = {r = 0.39, g = 0.89, b = 0.31}
+local BLUE = {r = 0.33, g = 0.45, b = 0.90}
+
+local STANDING_COLORS = {
+    RED,    -- 1 Hated
+    RED,    -- 2 Hostile
+    ORANGE, -- 3 Unfriendly
+    YELLOW, -- 4 Neutral
+    GREEN,  -- 5 Friendly
+    GREEN,  -- 6 Honored
+    GREEN,  -- 7 Revered
+    GREEN,  -- 8 Exalted
 }
 
-local BLUE_ATLAS = "UI-HUD-ExperienceBar-Fill-Reputation-Faction-Blue"
-
--- Explicitly enforce draw order so atlas/texture fill is never occluded:
+-- Explicitly enforce draw order so the fill is never occluded:
 -- background < status fill < border < label.
 local function ApplyFrameLayering(frame)
     if not frame or not frame.GetFrameLevel then
@@ -67,47 +76,33 @@ local function ApplyFrameLayering(frame)
     end
 end
 
--- Returns (atlasName, fallbackColor) for the given context.
--- atlasName is nil when a solid color fill should be used instead.
+-- Returns the tint for the given context's fill.
 local function GetBarFill(context)
     if context.isCompanion then
-        return nil, GetFactionColor(context)
+        return GetFactionColor(context)
     end
 
     if context.factionType == "major" or context.factionType == "paragon" then
-        return BLUE_ATLAS, nil
+        return BLUE
     end
 
     local level = context.reactionLevel
-    if level and STANDING_ATLAS[level] then
-        return STANDING_ATLAS[level], nil
+    if level and STANDING_COLORS[level] then
+        return STANDING_COLORS[level]
     end
 
-    return nil, GetFactionColor(context)
+    return GetFactionColor(context)
 end
 
--- Apply atlas texture to a StatusBar, falling back to a solid color fill.
-local function ApplyBarFill(bar, atlasName, fallbackColor)
-    if atlasName and C_Texture and C_Texture.GetAtlasInfo then
-        local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
-        if atlasInfo then
-            local barTex = bar:GetStatusBarTexture()
-            if barTex and barTex.SetAtlas then
-                barTex:SetAtlas(atlasName)
-                bar:SetStatusBarColor(1, 1, 1)
-                return
-            end
-        end
-    end
-
-    bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
-    local c = fallbackColor or GetFactionColor(nil)
+-- Tint the neutral fill texture set in ClassicSecondaryBarTemplate.xml.
+local function ApplyBarFill(bar, color)
+    local c = color or GetFactionColor(nil)
     bar:SetStatusBarColor(c.r, c.g, c.b)
 end
 
 
 function StyleMixin:GetPositionConfigKey()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.GetSecondaryPositionConfigKey then
         return SharedStyleHelpers.GetSecondaryPositionConfigKey()
     end
@@ -115,7 +110,7 @@ function StyleMixin:GetPositionConfigKey()
 end
 
 function StyleMixin:GetFallbackPosition()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.BuildConfiguredStyleOffsetFallback then
         return SharedStyleHelpers.BuildConfiguredStyleOffsetFallback("BOTTOM", 0, 34, 20)
     end
@@ -137,7 +132,7 @@ function StyleMixin:GetTextTickerContext()
 end
 
 function StyleMixin:OnTextTick(context)
-    ResolveHelpers()
+    EnsureHelpers()
     if context and self.LabelContainer then
         if SharedStyleHelpers and SharedStyleHelpers.BuildSecondaryLabel then
             self.LabelContainer.Label:SetText(SharedStyleHelpers.BuildSecondaryLabel(context))
@@ -148,7 +143,7 @@ function StyleMixin:OnTextTick(context)
 end
 
 function StyleMixin:GetBroadcastEventName()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.GetSecondaryBroadcastEventName then
         return SharedStyleHelpers.GetSecondaryBroadcastEventName()
     end
@@ -156,11 +151,11 @@ function StyleMixin:GetBroadcastEventName()
 end
 
 function StyleMixin:GetInitialContext()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.GetSecondaryInitialContext then
         return SharedStyleHelpers.GetSecondaryInitialContext()
     end
-    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
+    if Addon:IsFeatureEnabled("reputation", "GetCurrentContext") then
         return Addon.ReputationSession:GetCurrentContext()
     end
     return nil
@@ -168,7 +163,7 @@ end
 
 
 function StyleMixin:Render(context)
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.BeginSecondaryRender then
         if not SharedStyleHelpers.BeginSecondaryRender(self, context) then
             return
@@ -182,14 +177,13 @@ function StyleMixin:Render(context)
         self:SetAlpha(1)
     end
 
-    local atlas, color = GetBarFill(context)
     if SharedStyleHelpers and SharedStyleHelpers.ApplyStatusBarProgress then
         SharedStyleHelpers.ApplyStatusBarProgress(self.Bar, context, nil)
     else
         self.Bar:SetMinMaxValues(context.min or 0, context.max or 1)
         self.Bar:SetValue(context.current or 0)
     end
-    ApplyBarFill(self.Bar, atlas, color)
+    ApplyBarFill(self.Bar, GetBarFill(context))
     if self.LabelContainer then
         if SharedStyleHelpers and SharedStyleHelpers.BuildSecondaryLabel then
             self.LabelContainer.Label:SetText(SharedStyleHelpers.BuildSecondaryLabel(context))
@@ -200,7 +194,7 @@ function StyleMixin:Render(context)
 end
 
 function StyleMixin:OnEnter()
-    ResolveHelpers()
+    EnsureHelpers()
     if not self._lastContext then
         return
     end
@@ -213,7 +207,7 @@ function StyleMixin:OnEnter()
             GameTooltip:AddLine(context.name or "", 1, 1, 1)
         end
     end
-    GameTooltip:AddLine(Addon.L["TT_OPEN_REPUTATION"], 0.4, 0.4, 0.4)
+    GameTooltip:AddLine(Addon.UI.SharedStyleHelpers.GetOpenPanelHint(), 0.4, 0.4, 0.4)
     if SharedStyleHelpers and SharedStyleHelpers.AddSecondaryTooltipMoveHint then
         SharedStyleHelpers.AddSecondaryTooltipMoveHint(context)
     end
@@ -225,7 +219,7 @@ function StyleMixin:OnEnter()
 end
 
 function StyleMixin:OnLeave()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.HideTooltip then
         SharedStyleHelpers.HideTooltip()
     elseif GameTooltip then
@@ -234,7 +228,7 @@ function StyleMixin:OnLeave()
 end
 
 function StyleMixin:OnMouseUp(button)
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.HandleStandardSecondaryMouseUp then
         SharedStyleHelpers.HandleStandardSecondaryMouseUp(self, button, self.OnRightClick)
         return
@@ -245,7 +239,7 @@ function StyleMixin:OnMouseUp(button)
 end
 
 function StyleMixin:OnRightClick()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.OpenReputationPanel then
         SharedStyleHelpers.OpenReputationPanel()
     elseif ToggleCharacter then
@@ -255,23 +249,43 @@ end
 
 
 function StyleMixin:OnDragStart()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.BeginSecondaryShiftDrag then
         SharedStyleHelpers.BeginSecondaryShiftDrag(self)
     end
 end
 
 function StyleMixin:OnDragStop()
-    ResolveHelpers()
+    EnsureHelpers()
     if SharedStyleHelpers and SharedStyleHelpers.EndSecondaryDrag then
         SharedStyleHelpers.EndSecondaryDrag(self)
     end
 end
 
+--- Match the Classic primary bar's configured width. The secondary bar is
+--- anchored BOTTOM-to-TOP of the primary, so any mismatch reads immediately as
+--- two bars of different lengths stacked on each other.
+function StyleMixin:ResizeToConfiguredWidth()
+    local Chrome = Addon.UI and Addon.UI.ClassicChrome
+    if not Chrome then
+        return
+    end
+
+    -- The label fills LabelContainer, which fills the frame, so it follows the
+    -- new size without being told.
+    Chrome.LayoutBar(self, self.Bar)
+end
+
 function StyleMixin:OnSecondaryLoad()
-    ResolveHelpers()
+    EnsureHelpers()
     self:ConfigureDragSupport()
     ApplyFrameLayering(self)
+
+    local Chrome = Addon.UI and Addon.UI.ClassicChrome
+    if Chrome then
+        Chrome.BuildChrome(self, self.Bar, "Border")
+    end
+    self:ResizeToConfiguredWidth()
 end
 
 XPBarClassicReputationMixin = CreateFromMixins(XPBarSecondaryBaseMixin, StyleMixin)

@@ -7,7 +7,13 @@ local QuestXP = Addon.QuestXP
 local LegacyGetNumQuestLogEntries = rawget(_G, "GetNumQuestLogEntries")
 local LegacyGetQuestLogTitle = rawget(_G, "GetQuestLogTitle")
 local LegacyGetQuestLogIsComplete = rawget(_G, "GetQuestLogIsComplete")
+local LegacyIsQuestComplete = rawget(_G, "IsQuestComplete")
 local GetQuestLogRewardXPCompat = rawget(_G, "GetQuestLogRewardXP")
+
+-- Classic-family clients have no C_QuestLog.GetInfo and list only the entries
+-- the quest log currently shows, so quests under a collapsed header are absent
+-- from a scan there.
+local USES_LEGACY_QUEST_LOG = not (C_QuestLog and C_QuestLog.GetInfo)
 
 -------------------------------------------------------------------
 -- QUEST API HELPERS
@@ -31,8 +37,11 @@ local function getQuestInfo(index)
         return nil
     end
 
+    -- Return order as the Classic QuestLogFrame reads it. displayQuestID,
+    -- isOnMap and hasLocalPOI sit between startEvent and isTask; skipping them
+    -- shifts every later flag, so isOnMap would read as isTask.
     local title, level, suggestedGroup, isHeader, isCollapsed, isComplete,
-        frequency, questID, startEvent, isOnQuest, isTask, isBounty,
+        frequency, questID, _, _, _, _, isTask, isBounty,
         isStory, isHidden = LegacyGetQuestLogTitle(index)
     return {
         title = title,
@@ -43,7 +52,6 @@ local function getQuestInfo(index)
         isComplete = isComplete,
         frequency = frequency,
         questID = questID,
-        isOnQuest = isOnQuest,
         isTask = isTask,
         isBounty = isBounty,
         isStory = isStory,
@@ -93,19 +101,29 @@ local questCache = {
     TTL = 0.5,
 }
 
+-- Legacy logs only: quest IDs seen in an earlier scan, so a quest whose header
+-- the player collapses keeps counting. A quest picked up under an already
+-- collapsed header is still missed until its header is expanded once.
+local rememberedQuests = {}
+
 ---Build or refresh the quest cache
 local function buildQuestCache()
     local numEntries = getNumQuestLogEntries()
-
-    if numEntries <= 0 then
-        questCache.perQuest = {}
-        questCache.totals = {0, 0, 0}
-        questCache.timestamp = GetTime()
-        return questCache.totals
-    end
-
     local totalXP, completeXP, incompleteXP = 0, 0, 0
     local perQuest = {}
+
+    local function addQuest(key, xp, complete)
+        perQuest[key] = {
+            xp = xp,
+            complete = complete,
+        }
+        totalXP = totalXP + xp
+        if complete then
+            completeXP = completeXP + xp
+        else
+            incompleteXP = incompleteXP + xp
+        end
+    end
 
     for i = 1, numEntries do
         local info = getQuestInfo(i)
@@ -115,19 +133,28 @@ local function buildQuestCache()
 
             if not perQuest[key] then
                 local xp = getQuestXP(info)
-                local complete = isQuestComplete(info)
-
                 if xp > 0 then
-                    perQuest[key] = {
-                        xp = xp,
-                        complete = complete,
-                    }
-                    totalXP = totalXP + xp
-                    if complete then
-                        completeXP = completeXP + xp
-                    else
-                        incompleteXP = incompleteXP + xp
+                    addQuest(key, xp, isQuestComplete(info))
+                    if USES_LEGACY_QUEST_LOG and questID then
+                        rememberedQuests[questID] = true
                     end
+                end
+            end
+        end
+    end
+
+    if USES_LEGACY_QUEST_LOG then
+        local isOnQuest = C_QuestLog and C_QuestLog.IsOnQuest
+        for questID in pairs(rememberedQuests) do
+            local key = tostring(questID)
+            if not perQuest[key] then
+                if isOnQuest and isOnQuest(questID) then
+                    local xp = (GetQuestLogRewardXPCompat and GetQuestLogRewardXPCompat(questID)) or 0
+                    if xp > 0 then
+                        addQuest(key, xp, (LegacyIsQuestComplete and LegacyIsQuestComplete(questID)) and true or false)
+                    end
+                else
+                    rememberedQuests[questID] = nil
                 end
             end
         end
@@ -172,10 +199,10 @@ end
 function QuestXP:HandleRoutedEvent(event)
     self:InvalidateQuestCache()
 
+    -- QUEST_TURNED_IN is not routed here: Session:OnQuestTurnedIn calls
+    -- Rebuild itself once the quest's completed state has settled.
     if event == "PLAYER_ENTERING_WORLD" then
         scheduleRebuild(1.0)
-    elseif event == "QUEST_TURNED_IN" then
-        scheduleRebuild(0.1)
     else
         scheduleRebuild(0.5)
     end

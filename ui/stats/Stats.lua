@@ -453,6 +453,10 @@ end
 
 function Stats:Initialize()
     local existing = _G["XPBarEnhancedStatsFrame"]
+    -- Esc closes the window, like the changelog.
+    if existing and UISpecialFrames and not tContains(UISpecialFrames, "XPBarEnhancedStatsFrame") then
+        tinsert(UISpecialFrames, "XPBarEnhancedStatsFrame")
+    end
     if existing and existing.OnLoad and not existing._xpbeInitialized then
         existing:OnLoad()
     end
@@ -560,19 +564,11 @@ function Stats:UpdateLevelStats(statsFrame)
     -- Get session data for level time tracking
     local session = SessionService and SessionService.GetCurrent and SessionService:GetCurrent()
 
-    local levelTime = session and session.realLevelTime or 0
-
-    -- Calculate XP rate for THIS LEVEL (not just current session)
-    local levelXPRate = 0 -- XP per second for this level
-    if levelTime > 0 and currentXP > 0 then
-        levelXPRate = (currentXP / levelTime)
-    end
-
-    -- Calculate time to next level based on current level's XP rate
-    local timeToLevel = nil
-    if levelXPRate > 0 and remainingXP > 0 then
-        timeToLevel = remainingXP / levelXPRate -- in seconds
-    end
+    -- Level time carried forward to now, and the rate every other readout
+    -- uses, so this window's ETA matches the bar's.
+    local levelTime = SessionService and SessionService.GetLevelSeconds and SessionService:GetLevelSeconds() or 0
+    local xpPerHour = SessionService and SessionService.GetXPPerHour and SessionService:GetXPPerHour() or 0
+    local timeToLevel = TimeCalc and TimeCalc.CalculateTimeToLevel(remainingXP, xpPerHour) or nil
 
     -- Update current level and XP values using safe setters
     SetTextSafe(content.CurrentLevelValue, tostring(level))
@@ -636,8 +632,8 @@ function Stats:UpdateSessionStats(statsFrame)
     local sessionElapsed = TimeCalc and TimeCalc.SessionDuration(session.sessionStart) or (time() - (session.sessionStart or time()))
     local sessionXP = session.gainedXP or 0
 
-    -- Calculate XP per hour using TimeCalculations
-    local xpPerHour = TimeCalc and TimeCalc.CalculateXPPerHour(session.sessionStart, sessionXP) or 0
+    -- The same rate the bar shows
+    local xpPerHour = SessionService and SessionService.GetXPPerHour and SessionService:GetXPPerHour() or 0
 
     -- Levels gained this session (tracked via PLAYER_LEVEL_UP)
     local levelsGained = session.levelsGained or 0

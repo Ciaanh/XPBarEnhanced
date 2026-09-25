@@ -189,10 +189,8 @@ function TextFormatter:GetQuestSummaryText(completeXP, incompleteXP, totalXP, ma
 
     -- Rested
     if restedXP and restedXP > 0 and maxXP and maxXP > 0 then
-        local restedPercent = "0%"
-        if Addon.TextFormatter and Addon.TextFormatter.FormatPercent then
-            restedPercent = Addon.TextFormatter:FormatPercent(restedXP, maxXP, 0)
-        end
+        -- Rested XP runs to 150% of a level; FormatPercent clamps at 100.
+        local restedPercent = string.format("%d%%", math.floor(Addon.XPCalculations.RestedPercent(restedXP, maxXP) + 0.5))
         local restedText = colorText(restedPercent, Addon.Colors.Key.XpBarRested)
         table.insert(parts, string.format("%s: %s", L["TT_RESTED"], restedText))
     end

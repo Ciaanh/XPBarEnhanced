@@ -3,16 +3,43 @@
 
 local Addon = XPBarEnhanced
 
-local function GetSettingsTable(key, createIfMissing)
-	if Addon.Config and Addon.Config.GetSettingsTable then
-		return Addon.Config:GetSettingsTable(key, createIfMissing)
+local GetSettingsTable = Addon.Utils.GetSettingsTable
+
+local function NormalizePositionKey(key)
+	if type(key) ~= "string" then
+		return nil
 	end
 
-	Addon.db = Addon.db or {}
-	if Addon.db[key] == nil and createIfMissing then
-		Addon.db[key] = {}
+	local normalized = string.lower(key)
+	if string.sub(normalized, -3) == "bar" then
+		normalized = string.sub(normalized, 1, -4)
 	end
-	return Addon.db[key]
+	return normalized
+end
+
+local function GetSavedPosition(positions, positionKey)
+	if type(positions) ~= "table" then
+		return nil
+	end
+
+	local seen = {}
+	local keys = {
+		positionKey,
+		string.lower(positionKey or ""),
+		NormalizePositionKey(positionKey),
+	}
+
+	for _, key in ipairs(keys) do
+		if type(key) == "string" and key ~= "" and not seen[key] then
+			seen[key] = true
+			local value = positions[key]
+			if value and value.point then
+				return value
+			end
+		end
+	end
+
+	return nil
 end
 
 -------------------------------------------------------------------
@@ -79,8 +106,15 @@ function PositionMixin:InitializePosition()
 		self:SetSize(styleConfig.width, styleConfig.height)
 	end
 
-	-- Determine mode (default: STATIC)
-	local mode = positionConfig.mode or POSITION_MODE.STATIC
+	-- Determine mode (default: STATIC). A style whose mode is a player option
+	-- names it in modeOption, read here rather than when the style's file
+	-- loads: saved settings do not exist yet at file load.
+	local mode = positionConfig.mode
+	if positionConfig.modeOption and Addon.Config and Addon.Config.GetOptionValue then
+		local draggable = Addon.Config:GetOptionValue(positionConfig.modeOption)
+		mode = (draggable == false) and POSITION_MODE.STATIC or POSITION_MODE.DRAGGABLE
+	end
+	mode = mode or POSITION_MODE.STATIC
 	self.__position_mode = mode
 	self.__position_key = positionConfig.positionKey or "XPBar_Default"
 
@@ -108,9 +142,12 @@ function PositionMixin:ApplyStaticPosition()
 		if not container:IsShown() then
 			anchor = container:GetParent() or container
 		end
+		-- Centred on the bottom edge, where Blizzard's main bar sits, rather
+		-- than stretched between the anchor's top corners: stretching took the
+		-- anchor's width over the bar's own (so the Classic width option did
+		-- nothing to the frame) and, on Retail, put the bar in the upper slot.
 		self:ClearAllPoints()
-		self:SetPoint("TOPLEFT", anchor, "TOPLEFT", 0, 0)
-		self:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", 0, 0)
+		self:SetPoint("BOTTOM", anchor, "BOTTOM", 0, 0)
 		return
 	end
 
@@ -156,7 +193,7 @@ function PositionMixin:RestorePosition()
 		return
 	end
 
-	local savedPos = positions[self.__position_key]
+	local savedPos = GetSavedPosition(positions, self.__position_key)
 	if not savedPos or not savedPos.point then
 		-- No saved position for this key, use default
 		self:SetDefaultDraggablePosition()
@@ -176,6 +213,9 @@ function PositionMixin:SetDefaultDraggablePosition()
 
 	if Addon.defaults and Addon.defaults.barPositions and self.__position_key then
 		defaultPos = Addon.defaults.barPositions[self.__position_key]
+		if not defaultPos then
+			defaultPos = Addon.defaults.barPositions[NormalizePositionKey(self.__position_key)]
+		end
 	end
 
 	self:ClearAllPoints()
@@ -200,6 +240,10 @@ function PositionMixin:ClearSavedPosition()
 	local positions = GetSettingsTable("barPositions")
 	if positions then
 		positions[self.__position_key] = nil
+		local normalized = NormalizePositionKey(self.__position_key)
+		if normalized and normalized ~= self.__position_key then
+			positions[normalized] = nil
+		end
 	end
 end
 

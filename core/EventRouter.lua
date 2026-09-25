@@ -13,8 +13,17 @@ local CLASSIC_UNAVAILABLE_EVENTS = {
     HONOR_LEVEL_UPDATE = true,
 }
 
+-- Events that only exist, or only matter, where a feature is supported.
+local FEATURE_EVENTS = {
+    HOUSING_SERVICES_AVAILABILITY_UPDATED = "housing",
+}
+
 local function RegisterEventSafely(frame, eventName)
-    if Addon.IsClassicEra and CLASSIC_UNAVAILABLE_EVENTS[eventName] then
+    if Addon:IsFeatureEnabled("classicClientBehavior") and CLASSIC_UNAVAILABLE_EVENTS[eventName] then
+        return
+    end
+    local feature = FEATURE_EVENTS[eventName]
+    if feature and not Addon:IsFeatureSupported(feature) then
         return
     end
 
@@ -25,19 +34,37 @@ local function RegisterEventSafely(frame, eventName)
 end
 
 local function EmitReputationUpdate()
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.EmitUpdate then
+    if Addon:IsFeatureEnabled("reputation", "EmitUpdate") and Addon.ReputationSession._session then
         Addon.ReputationSession:EmitUpdate()
     end
 end
 
 local function EmitHousingUpdate()
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.EmitUpdate then
+    if Addon:IsFeatureEnabled("housing", "EmitUpdate") and Addon.HousingSession._session then
+        Addon.HousingSession:EmitUpdate()
+    end
+end
+
+-- Retail's housing service may report itself unavailable at login and come up
+-- later; start the session the first time it is available.
+local function EnsureHousingSession()
+    local housing = Addon.HousingSession
+    if not housing._session and Addon:IsFeatureEnabled("housing", "Initialize") then
+        housing:Initialize()
+    end
+end
+
+local function DispatchHousingAvailabilityChanged()
+    EnsureHousingSession()
+    if Addon.HousingSession._session then
+        -- Rebuilt either way: BuildHousingContext reports the bar unavailable
+        -- while the service is down.
         Addon.HousingSession:EmitUpdate()
     end
 end
 
 local function RequestHousingFavorRefresh()
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.RequestCurrentTrackedHouseFavor then
+    if Addon:IsFeatureEnabled("housing", "RequestCurrentTrackedHouseFavor") and Addon.HousingSession._session then
         Addon.HousingSession:RequestCurrentTrackedHouseFavor()
     else
         EmitHousingUpdate()
@@ -45,19 +72,19 @@ local function RequestHousingFavorRefresh()
 end
 
 local function DispatchUpdateFaction(factionID)
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
+    if Addon:IsFeatureEnabled("reputation", "OnFactionUpdate") and Addon.ReputationSession._session then
         Addon.ReputationSession:OnFactionUpdate()
     end
 end
 
 local function DispatchChatCombatFactionChange()
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnFactionUpdate then
+    if Addon:IsFeatureEnabled("reputation", "OnFactionUpdate") and Addon.ReputationSession._session then
         Addon.ReputationSession:OnFactionUpdate()
     end
 end
 
 local function DispatchRenownLevelChanged(...)
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnRenownLevelChanged then
+    if Addon:IsFeatureEnabled("reputation", "OnRenownLevelChanged") and Addon.ReputationSession._session then
         Addon.ReputationSession:OnRenownLevelChanged(...)
     end
 end
@@ -71,7 +98,7 @@ local function DispatchReputationVisibilityRefresh()
 end
 
 local function DispatchTrackedHouseChanged()
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnTrackedHouseChanged then
+    if Addon:IsFeatureEnabled("housing", "OnTrackedHouseChanged") and Addon.HousingSession._session then
         Addon.HousingSession:OnTrackedHouseChanged()
     else
         EmitHousingUpdate()
@@ -79,7 +106,7 @@ local function DispatchTrackedHouseChanged()
 end
 
 local function DispatchPlayerHouseListUpdated(list)
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnPlayerHouseListUpdated then
+    if Addon:IsFeatureEnabled("housing", "OnPlayerHouseListUpdated") and Addon.HousingSession._session then
         Addon.HousingSession:OnPlayerHouseListUpdated(list)
     else
         EmitHousingUpdate()
@@ -87,7 +114,7 @@ local function DispatchPlayerHouseListUpdated(list)
 end
 
 local function DispatchHouseLevelFavorUpdated(...)
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnHouseLevelFavorUpdated then
+    if Addon:IsFeatureEnabled("housing", "OnHouseLevelFavorUpdated") and Addon.HousingSession._session then
         Addon.HousingSession:OnHouseLevelFavorUpdated(...)
     else
         EmitHousingUpdate()
@@ -99,13 +126,13 @@ local function DispatchHouseLevelChanged()
 end
 
 local function DispatchHonorUpdate()
-    if Addon.HonorSession and Addon.HonorSession._session and Addon.HonorSession.OnHonorUpdate then
+    if Addon:IsFeatureEnabled("honor", "OnHonorUpdate") and Addon.HonorSession._session then
         Addon.HonorSession:OnHonorUpdate()
     end
 end
 
 local function DispatchProfessionUpdate()
-    if Addon.ProfessionSession and Addon.ProfessionSession._session and Addon.ProfessionSession.OnSkillUpdate then
+    if Addon:IsFeatureEnabled("profession", "OnSkillUpdate") and Addon.ProfessionSession._session then
         Addon.ProfessionSession:OnSkillUpdate()
     end
 end
@@ -200,19 +227,20 @@ local function DispatchPlayerEnteringWorld(isInitialLogin, isReloadingUI)
         Addon.Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if Addon.ReputationSession and Addon.ReputationSession._session and Addon.ReputationSession.OnEnteringWorld then
+    if Addon:IsFeatureEnabled("reputation", "OnEnteringWorld") and Addon.ReputationSession._session then
         Addon.ReputationSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if Addon.HousingSession and Addon.HousingSession._session and Addon.HousingSession.OnEnteringWorld then
+    EnsureHousingSession()
+    if Addon:IsFeatureEnabled("housing", "OnEnteringWorld") and Addon.HousingSession._session then
         Addon.HousingSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if Addon.HonorSession and Addon.HonorSession._session and Addon.HonorSession.OnEnteringWorld then
+    if Addon:IsFeatureEnabled("honor", "OnEnteringWorld") and Addon.HonorSession._session then
         Addon.HonorSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
-    if Addon.ProfessionSession and Addon.ProfessionSession._session and Addon.ProfessionSession.OnEnteringWorld then
+    if Addon:IsFeatureEnabled("profession", "OnEnteringWorld") and Addon.ProfessionSession._session then
         Addon.ProfessionSession:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
@@ -302,6 +330,9 @@ local ROUTER_DISPATCH = {
     HOUSE_LEVEL_CHANGED = function()
         DispatchHouseLevelChanged()
     end,
+    HOUSING_SERVICES_AVAILABILITY_UPDATED = function()
+        DispatchHousingAvailabilityChanged()
+    end,
     -- Housing activity events: fire when the player completes a task (e.g. adds
     -- decor). HOUSE_LEVEL_FAVOR_UPDATED is request-response only, so we must
     -- poll for new favor after each activity. Registered via RegisterEventSafely
@@ -327,8 +358,11 @@ local ROUTER_DISPATCH = {
     CHAT_MSG_SKILL = function()
         DispatchProfessionUpdate()
     end,
-    UNIT_QUEST_LOG_CHANGED = function()
-        DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")
+    UNIT_QUEST_LOG_CHANGED = function(unit)
+        -- Fires for every party member; only the player's log feeds quest XP.
+        if unit == "player" then
+            DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")
+        end
     end,
     QUEST_TURNED_IN = function(questID)
         DispatchSessionQuestTurnedIn(questID)

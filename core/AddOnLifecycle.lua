@@ -12,85 +12,45 @@ function eventHandlers:OnAddonLoaded(name)
         return
     end
 
-    -- Fail fast: core modules must be present; missing files indicate a load-order bug
+    -- Saved-variable state first: everything after reads settings from it.
     assert(Addon.Database, "XPBarEnhanced: Database module not loaded (check .toc order)")
     assert(Addon.Config,   "XPBarEnhanced: Config module not loaded (check .toc order)")
     assert(Addon.ProfileManager, "XPBarEnhanced: ProfileManager module not loaded (check .toc order)")
 
-    -- Initialize core systems
     Addon.Database:Initialize()
     Addon.ProfileManager:Initialize()
     Addon.Config:Initialize()
+end
 
-    -- Get XP gain disabled state
-    Addon.state.xpGainDisabled = Addon.Database:IsXPGainDisabled()
-
-    -- Print loaded message
-    print(Addon.L["ADDON_LOADED"])
+-- Start one module on its own, so a failure in one of them (a client API that
+-- changed shape, say) is reported without stopping every module after it --
+-- the bars are initialized last and would otherwise never appear.
+local function InitializeModule(module)
+    if not (module and module.Initialize) then
+        return
+    end
+    local report = (Addon.Utils and Addon.Utils.ReportError) or geterrorhandler()
+    xpcall(function()
+        module:Initialize()
+    end, report)
 end
 
 function eventHandlers:OnPlayerLogin()
-    -- Initialize session
-    if Addon.Session and Addon.Session.Initialize then
-        Addon.Session:Initialize()
+    InitializeModule(Addon.Session)
+
+    for _, feature in ipairs({"reputation", "housing", "honor", "profession"}) do
+        if Addon:IsFeatureEnabled(feature, "Initialize") then
+            InitializeModule(Addon:GetFeatureModule(feature))
+        end
     end
 
-    -- Initialize Reputation session
-    if Addon.ReputationSession and Addon.ReputationSession.Initialize then
-        Addon.ReputationSession:Initialize()
-    end
-
-    -- Initialize Housing session
-    if Addon.HousingSession and Addon.HousingSession.Initialize then
-        Addon.HousingSession:Initialize()
-    end
-
-    -- Initialize Honor session
-    if Addon.HonorSession and Addon.HonorSession.Initialize then
-        Addon.HonorSession:Initialize()
-    end
-
-    -- Initialize Profession session
-    if Addon.ProfessionSession and Addon.ProfessionSession.Initialize then
-        Addon.ProfessionSession:Initialize()
-    end
-
-    -- Initialize milestone notifications
-    if Addon.GoalTracker and Addon.GoalTracker.Initialize then
-        Addon.GoalTracker:Initialize()
-    end
-
-    -- Initialize the LibDataBroker feed (no-op when no LDB display is installed)
-    if Addon.DataBrokerFeed and Addon.DataBrokerFeed.Initialize then
-        Addon.DataBrokerFeed:Initialize()
-    end
-
-    -- Initialize features
-    local stats = Addon.Stats
-    if stats and stats.Initialize then
-        stats:Initialize()
-    end
-
-    -- Initialize XP bar manager / legacy XPBar shim.
-    if Addon.BarManager and Addon.BarManager.Initialize then
-        Addon.BarManager:Initialize()
-    end
-
-    -- Initialize Secondary Bar Manager
-    if Addon.SecondaryBarManager and Addon.SecondaryBarManager.Initialize then
-        Addon.SecondaryBarManager:Initialize()
-    end
-
-    -- Initialize Minimap Button
-    if Addon.MinimapButton and Addon.MinimapButton.Initialize then
-        Addon.MinimapButton:Initialize()
-    end
-
-    local options = Addon.Options
-    if options and options.Initialize then
-        options:Initialize()
-    end
-
+    InitializeModule(Addon.GoalTracker)
+    InitializeModule(Addon.DataBrokerFeed)
+    InitializeModule(Addon.Stats)
+    InitializeModule(Addon.BarManager)
+    InitializeModule(Addon.SecondaryBarManager)
+    InitializeModule(Addon.MinimapButton)
+    InitializeModule(Addon.Options)
 end
 
 function eventHandlers:OnPlayerLogout()
@@ -100,6 +60,10 @@ function eventHandlers:OnPlayerLogout()
 end
 
 function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
+    if Addon.Session and Addon.Session.EmitUpdate then
+        Addon.Session:EmitUpdate("PLAYER_ENTERING_WORLD")
+    end
+
     if not Addon._changelogChecked then
         Addon._changelogChecked = true
         if Addon.Changelog and Addon.Changelog.CheckForUpdates then
@@ -107,77 +71,33 @@ function eventHandlers:OnPlayerEnteringWorld(isInitialLogin, isReloadingUI)
         end
     end
 
-    if Addon.Session and Addon.Session.EmitUpdate then
-        Addon.Session:EmitUpdate("PLAYER_ENTERING_WORLD")
+end
+
+-- Re-drive the configured style: SetStyle itself falls back to Blizzard's
+-- bar at the level cap or while XP gain is off.
+local function RefreshConfiguredStyle()
+    local manager = Addon.BarManager
+    if manager and manager.SetStyle then
+        manager.currentStyle = nil
+        manager:SetStyle(Addon.Config:GetOptionValue("barStyle"))
     end
-
-    C_Timer.After(0, function()
-        if Addon.BarManager and Addon.BarManager.SetStyle then
-            local defaultStyle = (Addon.defaults and Addon.defaults.barStyle) or "classic"
-            local configuredStyle = defaultStyle
-            if Addon.Config and Addon.Config.GetOptionValue then
-                configuredStyle = Addon.Config:GetOptionValue("barStyle") or defaultStyle
-            else
-                local db = Addon.db or {}
-                configuredStyle = db.barStyle or defaultStyle
-            end
-            Addon.BarManager.currentStyle = nil
-            Addon.BarManager:SetStyle(configuredStyle)
-        end
-
-        if Addon.BarManager and Addon.BarManager.ApplyDefaultXPBarVisibility then
-            Addon.BarManager:ApplyDefaultXPBarVisibility()
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ApplyDefaultReputationBarVisibility then
-            Addon.SecondaryBarManager:ApplyDefaultReputationBarVisibility()
-        end
-    end)
 end
 
 function eventHandlers:OnPlayerMaxLevelUpdate()
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        local configuredStyle = "classic"
-        if Addon.Config and Addon.Config.GetOptionValue then
-            configuredStyle = Addon.Config:GetOptionValue("barStyle") or "classic"
-        else
-            local db = Addon.db or {}
-            configuredStyle = db.barStyle or "classic"
-        end
-        Addon.BarManager.currentStyle = nil
-        Addon.BarManager:SetStyle(configuredStyle)
-    end
+    RefreshConfiguredStyle()
 end
 
 function eventHandlers:OnEnableXPGain()
-    Addon.state.xpGainDisabled = false
-
-    if Addon.Database and Addon.Database.SetXPGainDisabled then
-        Addon.Database:SetXPGainDisabled(false)
-    end
-
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        local configuredStyle = "classic"
-        if Addon.Config and Addon.Config.GetOptionValue then
-            configuredStyle = Addon.Config:GetOptionValue("barStyle") or "classic"
-        else
-            local db = Addon.db or {}
-            configuredStyle = db.barStyle or "classic"
-        end
-        Addon.BarManager.currentStyle = nil
-        Addon.BarManager:SetStyle(configuredStyle)
-    end
+    RefreshConfiguredStyle()
 end
 
 function eventHandlers:OnDisableXPGain()
-    Addon.state.xpGainDisabled = true
-
-    if Addon.Database and Addon.Database.SetXPGainDisabled then
-        Addon.Database:SetXPGainDisabled(true)
-    end
-
-    if Addon.BarManager and Addon.BarManager.SetStyle then
-        Addon.BarManager.currentStyle = nil
-        Addon.BarManager:SetStyle("none")
+    -- Straight to Blizzard's bar rather than trusting IsXPUserDisabled to
+    -- report the new state already.
+    local manager = Addon.BarManager
+    if manager and manager.SetStyle then
+        manager.currentStyle = nil
+        manager:SetStyle("none")
     end
 end
 

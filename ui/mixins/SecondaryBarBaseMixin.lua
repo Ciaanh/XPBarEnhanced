@@ -14,17 +14,7 @@ local function GetOptionValue(key, fallback)
     return fallback
 end
 
-local function GetSettingsTable(key, createIfMissing)
-    if Addon.Config and Addon.Config.GetSettingsTable then
-        return Addon.Config:GetSettingsTable(key, createIfMissing)
-    end
-
-    Addon.db = Addon.db or {}
-    if Addon.db[key] == nil and createIfMissing then
-        Addon.db[key] = {}
-    end
-    return Addon.db[key]
-end
+local GetSettingsTable = Addon.Utils.GetSettingsTable
 
 ---@class XPBarSecondaryBaseMixin
 XPBarSecondaryBaseMixin = {}
@@ -402,7 +392,9 @@ function SecondaryBaseMixin:ResetPosition()
         return
     end
 
-    local positions = GetSettingsTable(configKey)
+    -- The write target, not a read: on a profile, a read falls back to Global's
+    -- table and would clear another character's position.
+    local positions = GetSettingsTable(configKey, true)
     if styleKey and positions then
         positions[styleKey] = nil
     else

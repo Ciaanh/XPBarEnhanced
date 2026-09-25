@@ -3,15 +3,24 @@
 
 local Addon = XPBarEnhanced
 
+local styleKey = (Addon.StyleKeys and Addon.StyleKeys.classic) or "classic"
+local flatStyleKey = (Addon.StyleKeys and Addon.StyleKeys.flat) or "flat"
+local circularStyleKey = (Addon.StyleKeys and Addon.StyleKeys.circular) or "circular"
+
 local defaults = {
-    barStyle = "classic",
+    barStyle = styleKey,
     showSecondaryBar = false,
-    secondaryBarSource = Addon.IsClassicEra and "profession" or "reputation",
+    secondaryBarSource = "reputation",
     professionSlot = "auto",
     hideCompanionOutsideDelve = false,
     secondaryBarsAttached = true,
     maxLevelPrimaryShowsSecondary = false,
     barLocked = false,
+    -- 566 and 10 are the dimensions the Classic templates were authored at, and
+    -- the legacy border art already paints nine dividers at exactly the ten-
+    -- segment positions -- so these defaults reproduce the pre-option bar.
+    classicWidth = 566,
+    classicSegments = 10,
     circularSize = "medium",
     flatSize = "default",
     verticalSize = "default",
@@ -69,28 +78,15 @@ local defaults = {
         secondaryHonor = {r = 0.80, g = 0.20, b = 0.20, a = 1},
         secondaryProfession = {r = 0.30, g = 0.65, b = 0.75, a = 1}
     },
-    barPosition = {
-        point = "CENTER",
-        relativeTo = "UIParent",
-        relativePoint = "CENTER",
-        x = 0,
-        y = 0
-    },
     barPositions = {
-        classic = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 12},
-        flat = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
-        circular = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
+        [styleKey] = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
+        [flatStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
+        [circularStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
     },
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,
     profiles = {},
     characterProfileKeys = {},
-    -- Known Delve companion factions (by faction ID).
-    -- Maps faction ID -> display name for locale-independent companion detection.
-    delveCompanions = {
-        [2640] = "Brann Bronzebeard",
-        [2744] = "Valeera Sanguinar"
-    }
 }
 
 Addon.defaults = defaults

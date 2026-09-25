@@ -147,40 +147,22 @@ function AnimationBase:SetCurrentRatio(ratio)
 	self._currentRatio = ratio
 end
 
---- Get animation configuration from database
--- Override in bar mixin if needed, or provide default config
+--- Animation configuration: the player's options, each of which the style's
+--- own config can only switch off. The style table used to take precedence,
+--- and every style sets it, so the player's options were never read here.
 -- @return table: { enableAnimations, flashOnGain, twoPhaseOnLevelUp, levelUpCelebration }
 function AnimationBase:GetAnimationConfig()
-	-- First check for frame-specific config
-	local frameConfig = self.__xpbar_config
-	if frameConfig and frameConfig.animation then
-		local anim = frameConfig.animation
-		return {
-			enableAnimations = anim.enableAnimations ~= false,
-			flashOnGain = anim.flashOnGain ~= false,
-			twoPhaseOnLevelUp = anim.twoPhaseOnLevelUp ~= false,
-			levelUpCelebration = anim.levelUpCelebration ~= false
-		}
+	local style = (self.__xpbar_config and self.__xpbar_config.animation) or {}
+	local Config = XPBarEnhanced and XPBarEnhanced.Config
+	local function option(key)
+		local chosen = not (Config and Config.GetOptionValue) or Config:GetOptionValue(key) ~= false
+		return chosen and style[key] ~= false
 	end
-
-	-- Fall back to global database
-	local Addon = XPBarEnhanced
-	if Addon and Addon.Config and Addon.Config.GetOptionValue then
-		local Config = Addon.Config
-		return {
-			enableAnimations = Config:GetOptionValue("enableAnimations") ~= false,
-			flashOnGain = Config:GetOptionValue("flashOnGain") ~= false,
-			twoPhaseOnLevelUp = Config:GetOptionValue("twoPhaseOnLevelUp") ~= false,
-			levelUpCelebration = Config:GetOptionValue("levelUpCelebration") ~= false
-		}
-	end
-
-	-- Fallback default config
 	return {
-		enableAnimations = true,
-		flashOnGain = true,
-		twoPhaseOnLevelUp = true,
-		levelUpCelebration = true
+		enableAnimations = option("enableAnimations"),
+		flashOnGain = option("flashOnGain"),
+		twoPhaseOnLevelUp = option("twoPhaseOnLevelUp"),
+		levelUpCelebration = option("levelUpCelebration"),
 	}
 end
 

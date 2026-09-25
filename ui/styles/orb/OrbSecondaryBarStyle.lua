@@ -4,12 +4,20 @@
 
 local Addon = XPBarEnhanced
 
+local FALLBACK_SHARED_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondarySharedHelpers and Addon.UI.StyleHelpers:GetDefaultSecondarySharedHelpers() or {}
+local FALLBACK_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondaryStyleHelpers and Addon.UI.StyleHelpers:GetDefaultSecondaryStyleHelpers() or {
+    GetFactionColor = function()
+        return {r = 0.7, g = 0.3, b = 0.85, a = 1}
+    end,
+}
+
 local function ResolveSharedStyleHelpers()
-    return Addon and Addon.UI and Addon.UI.SharedStyleHelpers
+    return Addon and Addon.UI and Addon.UI.SharedStyleHelpers or FALLBACK_SHARED_STYLE_HELPERS
 end
 
 local function ResolveStyleHelpers()
-    return Addon and Addon.UI and Addon.UI.StyleHelpers
+    local style = Addon and Addon.UI and Addon.UI.StyleHelpers
+    return style or FALLBACK_STYLE_HELPERS
 end
 
 local SharedStyleHelpers = setmetatable({}, {

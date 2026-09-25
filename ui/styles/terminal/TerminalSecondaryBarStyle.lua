@@ -11,73 +11,10 @@
 --   Major/Paragon  → blue          Companion  → cyan
 
 local Addon = XPBarEnhanced
-local FALLBACK_SHARED_STYLE_HELPERS = {
-    GetSecondaryPositionConfigKey = function()
-        return "secondaryBarPositions"
-    end,
-    BuildConfiguredStyleCenterFallback = function(x, y)
-        return {
-            point = "CENTER",
-            relativeTo = "UIParent",
-            relativePoint = "CENTER",
-            x = x or 0,
-            y = y or 0,
-        }
-    end,
-    GetSecondaryBroadcastEventName = function()
-        return (Addon.EventNames and Addon.EventNames.REPUTATION_BROADCAST_UPDATE) or "REPUTATION:BROADCAST_UPDATE"
-    end,
-    GetSecondaryInitialContext = function()
-        if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
-            return Addon.ReputationSession:GetCurrentContext()
-        end
-        return nil
-    end,
-    BeginSecondaryRender = function(frame, context)
-        frame._lastContext = context
-        if not context or not context.isAvailable then
-            frame:SetAlpha(0)
-            return false
-        end
-        frame:SetAlpha(1)
-        return true
-    end,
-    ShowSecondaryTooltip = function(frame, context, anchor)
-        if not GameTooltip then
-            return
-        end
-        GameTooltip:SetOwner(frame, anchor or "ANCHOR_TOP")
-        GameTooltip:AddLine((context and context.name) or "", 1, 1, 1)
-    end,
-    AddSecondaryTooltipMoveHint = function()
-    end,
-    FinishSecondaryTooltip = function()
-        if GameTooltip then
-            GameTooltip:Show()
-        end
-    end,
-    HideTooltip = function()
-        if GameTooltip then
-            GameTooltip:Hide()
-        end
-    end,
-    HandleStandardSecondaryMouseUp = function(frame, button, onRightClick)
-        if button == "RightButton" and onRightClick then
-            onRightClick(frame)
-        end
-    end,
-    OpenReputationPanel = function()
-        if ToggleCharacter then
-            ToggleCharacter("ReputationFrame")
-        end
-    end,
-    BeginSecondaryShiftDrag = function()
-        return false
-    end,
-    EndSecondaryDrag = function(frame)
-        if frame and frame.StopMovingOrSizing then
-            frame:StopMovingOrSizing()
-        end
+local FALLBACK_SHARED_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondarySharedHelpers and Addon.UI.StyleHelpers:GetDefaultSecondarySharedHelpers() or {}
+local FALLBACK_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondaryStyleHelpers and Addon.UI.StyleHelpers:GetDefaultSecondaryStyleHelpers() or {
+    GetFactionColor = function()
+        return {r = 0.7, g = 0.3, b = 0.85, a = 1}
     end,
 }
 
@@ -86,9 +23,20 @@ local function ResolveSharedStyleHelpers()
     return shared or FALLBACK_SHARED_STYLE_HELPERS
 end
 
+local function ResolveStyleHelpers()
+    local style = Addon and Addon.UI and Addon.UI.StyleHelpers
+    return style or FALLBACK_STYLE_HELPERS
+end
+
 local SharedStyleHelpers = setmetatable({}, {
     __index = function(_, key)
         return ResolveSharedStyleHelpers()[key]
+    end,
+})
+
+local StyleHelpers = setmetatable({}, {
+    __index = function(_, key)
+        return ResolveStyleHelpers()[key]
     end,
 })
 
@@ -108,7 +56,7 @@ local BASE_HEIGHT = 22
 
 -- Unicode block fill characters (UTF-8 byte sequences matching TerminalBarStyle)
 local CH_FULL  = "\226\150\136"  -- U+2588 █  FULL BLOCK  (filled)
-local CH_DARK  = "\226\150\147"  -- U+2593 ▓  DARK SHADE  
+local CH_DARK  = "\226\150\147"  -- U+2593 ▓  DARK SHADE
 local CH_EMPTY = "\226\150\145"  -- U+2591 ░  LIGHT SHADE (empty)
 
 local function Hex(r, g, b)
@@ -272,6 +220,18 @@ end
 -- LINE BUILDER
 -------------------------------------------------------------------
 
+--- `text` cut to at most `maxChars` characters, the last replaced by "~".
+local function TruncateUTF8(text, maxChars)
+    local chars = {}
+    for char in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do
+        chars[#chars + 1] = char
+    end
+    if #chars <= maxChars then
+        return text
+    end
+    return table.concat(chars, "", 1, maxChars - 1) .. "~"
+end
+
 local function GetFillColor(context)
     if context.isCompanion then
         return C_COMPANION
@@ -301,11 +261,10 @@ local function BuildRepLine(context)
         inner = inner .. C_EMPTY_COL .. string.rep(CH_EMPTY, BAR_CHARS - filled) .. "|r"
     end
 
-    -- Faction name (truncate to 22 chars to keep the line tight)
-    local name = context.name or "?"
-    if #name > 22 then
-        name = string.sub(name, 1, 21) .. "~"
-    end
+    -- Faction name (truncate to 22 characters to keep the line tight).
+    -- Counted in characters, not bytes: a byte cut splits multi-byte letters
+    -- (Cyrillic, CJK) and shortens those names far earlier.
+    local name = TruncateUTF8(context.name or "?", 22)
 
     -- Standing label or companion level
     local standing = ""

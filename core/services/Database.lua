@@ -6,18 +6,28 @@
 ---@field GetDB fun(self: Database): table Get the root saved-variables table
 ---@field GetSessionData fun(self: Database): table Get the session data table
 ---@field GetPlayerKey fun(self: Database): string Get the player-realm key
----@field IsXPGainDisabled fun(self: Database): boolean Check if XP gain is disabled
----@field SetXPGainDisabled fun(self: Database, disabled: boolean) Set XP gain disabled state
 
 local Addon = XPBarEnhanced
 Addon.Database = Addon.Database or {}
 
 local Database = Addon.Database
 
--- Resolve the player's name for the per-character storage key.
--- C_PlayerInfo.GetName REQUIRES a playerLocation argument; pcall-guarded
--- since a bad call here would take down all per-character storage.
+-- Resolve the player's character name for the per-character storage key.
+-- Forever is realmless and identifies characters by first + last name, so only
+-- that flavor uses UnitFullName. Other clients keep their normal UnitName path.
 local function GetSafePlayerName()
+    if Addon.Client == Addon.Clients.FOREVER and UnitFullName then
+        local fullName = UnitFullName("player")
+        if type(fullName) == "string" and fullName ~= "" then
+            return fullName
+        end
+    end
+
+    local unitName = UnitName and UnitName("player")
+    if type(unitName) == "string" and unitName ~= "" then
+        return unitName
+    end
+
     if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
         local ok, name = pcall(function()
             return C_PlayerInfo.GetName(PlayerLocation:CreateFromUnit("player"))
@@ -122,16 +132,21 @@ end
 local function getPerCharacterTable(db, storeKey)
     db[storeKey] = db[storeKey] or {}
     local store = db[storeKey]
+    db._migrationFlags = db._migrationFlags or {}
+    local migrations = db._migrationFlags
     local playerKey = Database:GetPlayerKey()
 
-    -- Legacy layout: session fields stored directly on the store table.
-    if store.sessionStart ~= nil or store.lastUpdate ~= nil then
-        local legacy = {}
-        for k, v in pairs(store) do
-            legacy[k] = v
-            store[k] = nil
+    if not migrations[storeKey] then
+        -- Legacy layout: session fields stored directly on the store table.
+        if store.sessionStart ~= nil or store.lastUpdate ~= nil then
+            local legacy = {}
+            for k, v in pairs(store) do
+                legacy[k] = v
+                store[k] = nil
+            end
+            store[playerKey] = legacy
         end
-        store[playerKey] = legacy
+        migrations[storeKey] = true
     end
 
     store[playerKey] = store[playerKey] or {}
@@ -172,26 +187,6 @@ function Database:GetPlayerKey()
         Addon.playerKey = string.format("%s-%s", playerName, realmName)
     end
     return Addon.playerKey
-end
-
--------------------------------------------------------------------
--- XP GAIN STATE
--------------------------------------------------------------------
-
----Return whether XP gain is currently disabled for the player
-function Database:IsXPGainDisabled()
-    -- Safe call to IsXPUserDisabled (may not exist in all versions)
-    local disabled = false
-    if IsXPUserDisabled then
-        disabled = IsXPUserDisabled()
-    end
-    Addon.state.xpGainDisabled = disabled
-    return disabled
-end
-
----Set whether XP gain is disabled
-function Database:SetXPGainDisabled(disabled)
-    Addon.state.xpGainDisabled = disabled
 end
 
 return Database

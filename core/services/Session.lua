@@ -43,7 +43,6 @@ local LAST_GAIN_MAX_AGE_SECONDS = 2
 
 -- Cap on the persisted gain history, and the block size it is trimmed by.
 local GAINS_HISTORY_CAP = 500
-local RECENT_GAINS_CAP = 20
 
 local function PurgeExpiredPendingQuestTurnIns(list, now)
     local i = 1
@@ -100,7 +99,8 @@ local function ensureSessionDefaults(session)
     session.levelsGained = session.levelsGained or 0
     session.gainsHistory = session.gainsHistory or {}
     session.levelUpTimestamps = session.levelUpTimestamps or {}
-    session.recentGains = session.recentGains or {}
+    -- Retired recent-gains window; drop what older versions stored.
+    session.recentGains = nil
     session.questXP = session.questXP or 0
     session.otherXP = session.otherXP or 0
 end
@@ -126,7 +126,6 @@ local function resetSessionProgress(session)
     session.lastUpdate = now
     session.gainsHistory = {}
     session.levelUpTimestamps = {}
-    session.recentGains = {}
     session.questXP = 0
     session.otherXP = 0
 end
@@ -173,9 +172,8 @@ end
 ---@param amount number XP to credit; non-positive amounts are ignored
 ---@param source string "quest" or "other"
 ---@param level number|nil Level stamped on the history entry
----@param trackRecent boolean Also append to the sliding recent-gains window
 ---@return table|nil entry The recorded history entry, or nil if nothing was credited
-local function creditGain(session, amount, source, level, trackRecent)
+local function creditGain(session, amount, source, level)
     if not session or not amount or amount <= 0 then
         return nil
     end
@@ -199,14 +197,6 @@ local function creditGain(session, amount, source, level, trackRecent)
     session.gainsHistory = session.gainsHistory or {}
     table.insert(session.gainsHistory, entry)
     trimHistory(session.gainsHistory, GAINS_HISTORY_CAP)
-
-    -- The level-up remainder path deliberately passes false here, preserving the
-    -- pre-existing behaviour that the sliding window tracks only ordinary gains.
-    if trackRecent then
-        session.recentGains = session.recentGains or {}
-        table.insert(session.recentGains, entry)
-        trimHistory(session.recentGains, RECENT_GAINS_CAP)
-    end
 
     return entry
 end
@@ -329,12 +319,12 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
 
     updateSessionAccumTime(session)
 
-    -- Always refresh played time at login (keeps level-time math anchored to
-    -- fresh data); otherwise only request it when time text options need it
-    local Config = Addon.Config
-    if isInitialLogin
-        or (Config and (Config:GetOptionValue("showLevelTimeText") or Config:GetOptionValue("showSessionTimeText"))) then
+    -- Refresh played time once per login; every later zone change carries it
+    -- forward from wall-clock time instead of asking the server again.
+    if isInitialLogin then
         self:RequestTimePlayed()
+    else
+        self:EnsureTimePlayed()
     end
 end
 
@@ -395,7 +385,7 @@ function Session:OnXPUpdate(suppressBroadcast)
     -- Track gain source and record in history
     if gained > 0 then
         local source = self:_ConsumePendingQuestTurnInForXPGain() and "quest" or "other"
-        creditGain(session, gained, source, currentLevel, true)
+        creditGain(session, gained, source, currentLevel)
     end
 
     -- Hand the delta to ContextBuilder. Must precede the broadcast below, which is
@@ -471,7 +461,7 @@ function Session:OnLevelUp(level)
 
     if creditedXP > 0 then
         local source = self:_ConsumePendingQuestTurnInForXPGain() and "quest" or "other"
-        creditGain(session, creditedXP, source, currentLevel, false)
+        creditGain(session, creditedXP, source, currentLevel)
     end
 
     -- Hand the delta to ContextBuilder ahead of this function's broadcast.
@@ -482,8 +472,16 @@ function Session:OnLevelUp(level)
     session.levelUpTimestamps = session.levelUpTimestamps or {}
     table.insert(session.levelUpTimestamps, time())
 
-    -- Reset level time
+    -- Level time restarts at the ding: carried forward from here, so the level
+    -- readouts keep running and the rate never counts the previous level's
+    -- time against this level's XP. The total takes the time since the last
+    -- reply first, since that anchor moves with it.
+    local now = time()
+    if (session.lastTimePlayedRequest or 0) > 0 then
+        session.realTotalTime = (session.realTotalTime or 0) + math.max(0, now - session.lastTimePlayedRequest)
+    end
     session.realLevelTime = 0
+    session.lastTimePlayedRequest = now
 
     -- Update current level state
     session.lastLevel = currentLevel
@@ -519,12 +517,10 @@ function Session:OnTimePlayed(totalTime, levelTime)
     session.realLevelTime = levelTime or session.realLevelTime or 0
     session.lastTimePlayedRequest = time()
 
-    -- Clear the ticker but keep requestingTimePlayed true briefly so the
-    -- chat filter can suppress the system message that arrives in the same frame.
-    self:ClearTimePlayedRequest()
-    Addon.state.requestingTimePlayed = true
+    -- Hand TIME_PLAYED_MSG back to the chat frames on the next frame, once
+    -- every listener has seen this reply.
     C_Timer.After(0, function()
-        Addon.state.requestingTimePlayed = false
+        Session:ClearTimePlayedRequest()
     end)
 
     -- Notify Stats module (consolidated from defunct AddOnLifecycle handler)
@@ -546,20 +542,6 @@ function Session:OnQuestTurnedIn(questID)
     self:_QueuePendingQuestTurnIn(questID)
 
     local function RefreshCompletedQuests()
-        -- Touch the API to ensure it's updated
-        local completed = false
-        if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
-            completed = C_QuestLog.IsQuestFlaggedCompleted(questID) or false
-        end
-
-        -- If the addon maintains a database/quest cache, try to update it.
-        -- Use existence checks to remain non-invasive if those APIs don't exist.
-        if Addon.Database and Addon.Database.UpdateQuestCompletion then
-            pcall(Addon.Database.UpdateQuestCompletion, Addon.Database, questID, completed)
-        elseif Addon.Database and Addon.Database.MarkQuestCompleted then
-            pcall(Addon.Database.MarkQuestCompleted, Addon.Database, questID, completed)
-        end
-
         -- Ensure session XP baseline is up-to-date (XP gains from quest may have triggered PLAYER_XP_UPDATE
         -- before the completed flag became available). Also ensure the centralized quest cache is invalidated
         -- so UI and other services can refresh based on the latest quest state.
@@ -571,15 +553,17 @@ function Session:OnQuestTurnedIn(questID)
             session.lastUpdate = time()
         end
 
-        -- Invalidate/rebuild the centralized QuestXP cache to ensure totals reflect the new quest state.
+        -- Rebuild the quest cache so totals reflect the new quest state. The
+        -- rebuild emits QUEST_LOG_UPDATE itself once the cache is fresh; a
+        -- broadcast here as well rebuilt the cache a second time, 0.1 s early.
         if Addon.QuestXP and Addon.QuestXP.Rebuild then
             xpcall(Addon.QuestXP.Rebuild, Utils.ReportError, Addon.QuestXP, 0.1)
-        elseif Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
-            xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
+        else
+            if Addon.QuestXP and Addon.QuestXP.InvalidateQuestCache then
+                xpcall(Addon.QuestXP.InvalidateQuestCache, Utils.ReportError, Addon.QuestXP)
+            end
+            Session:EmitUpdate("QUEST_LOG_UPDATE")
         end
-
-        -- Emit one coalesced update from the session owner after quest state changes.
-        Session:EmitUpdate("QUEST_LOG_UPDATE")
     end
 
     -- Small delay: the quest history/completed flag may not be instantly available.
@@ -621,51 +605,30 @@ end
 -- TIME PLAYED MANAGEMENT
 -------------------------------------------------------------------
 
--- Suppress the "Total time played" / "Time played this level" system messages
--- when *we* are the ones requesting the data. Installed once.
+-- The chat frames print TIME_PLAYED_MSG from their own event handler
+-- (ChatFrameUtil.DisplayTimePlayed calls AddMessage directly), so no chat
+-- message filter can hide it. While the addon's own request is in flight, the
+-- event is unregistered from the chat frames that listen for it, and handed
+-- back once the reply is in. A /played typed by the player is left alone.
+local mutedChatFrames = {}
 
--- Convert a Blizzard format string (e.g. TIME_PLAYED_TOTAL) into a Lua match
--- pattern. Handles both plain (%s/%d) and positional (%1$s/%2$d) specifiers,
--- which several non-enUS locales use.
-local function FormatToPattern(fmt)
-    if type(fmt) ~= "string" then
-        return nil
-    end
-    -- Swap format specifiers for sentinels before escaping magic characters,
-    -- then replace the sentinels with their patterns.
-    local STR, NUM = "\1", "\2"
-    local s = fmt:gsub("%%%d*%$?s", STR):gsub("%%%d*%$?d", NUM)
-    s = s:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
-    s = s:gsub(STR, ".+"):gsub(NUM, "%%d+")
-    return "^" .. s .. "$"
-end
-
-local timePlayedPatterns
-local function GetTimePlayedPatterns()
-    if not timePlayedPatterns then
-        timePlayedPatterns = {}
-        timePlayedPatterns[#timePlayedPatterns + 1] = FormatToPattern(TIME_PLAYED_TOTAL)
-        timePlayedPatterns[#timePlayedPatterns + 1] = FormatToPattern(TIME_PLAYED_LEVEL)
-    end
-    return timePlayedPatterns
-end
-
-local function TimePlayedChatFilter(_, _, msg, ...)
-    if not Addon.state.requestingTimePlayed then
-        return false
-    end
-    if type(msg) ~= "string" or (issecretvalue and issecretvalue(msg)) then
-        return false
-    end
-    -- Only block the actual played-time lines, never other system messages
-    for _, pattern in ipairs(GetTimePlayedPatterns()) do
-        if msg:find(pattern) then
-            return true -- block the message
+local function MuteTimePlayedChat()
+    local count = rawget(_G, "NUM_CHAT_WINDOWS") or 10
+    for i = 1, count do
+        local frame = rawget(_G, "ChatFrame" .. i)
+        if frame and frame.IsEventRegistered and frame:IsEventRegistered("TIME_PLAYED_MSG") then
+            frame:UnregisterEvent("TIME_PLAYED_MSG")
+            mutedChatFrames[#mutedChatFrames + 1] = frame
         end
     end
-    return false
 end
-ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", TimePlayedChatFilter)
+
+local function RestoreTimePlayedChat()
+    for i = #mutedChatFrames, 1, -1 do
+        mutedChatFrames[i]:RegisterEvent("TIME_PLAYED_MSG")
+        mutedChatFrames[i] = nil
+    end
+end
 
 function Session:ClearTimePlayedRequest()
     if timePlayedTicker then
@@ -673,6 +636,7 @@ function Session:ClearTimePlayedRequest()
         timePlayedTicker = nil
     end
     Addon.state.requestingTimePlayed = false
+    RestoreTimePlayedChat()
 end
 
 local timePlayedRequestToken = 0
@@ -688,9 +652,11 @@ function Session:RequestTimePlayed()
     local token = timePlayedRequestToken
 
     local function fireRequest()
+        timePlayedTicker = nil
+        MuteTimePlayedChat()
         RequestTimePlayed()
-        -- Safety timeout: if TIME_PLAYED_MSG never arrives, stop suppressing
-        -- system messages so a lost response can't filter chat forever.
+        -- Safety timeout: if TIME_PLAYED_MSG never arrives, give the chat
+        -- frames their event back so a lost reply can't mute /played for good.
         if C_Timer and C_Timer.After then
             C_Timer.After(5, function()
                 if token == timePlayedRequestToken and Addon.state.requestingTimePlayed then
@@ -700,12 +666,23 @@ function Session:RequestTimePlayed()
         end
     end
 
-    -- Use timer to avoid instant spam
+    -- Deferred so a burst of callers issues one request.
     if C_Timer and C_Timer.NewTimer then
         timePlayedTicker = C_Timer.NewTimer(0.5, fireRequest)
     else
         fireRequest()
     end
+end
+
+--- Request played time only when the session has none yet. Level and total
+--- time are carried forward from wall-clock time between replies, so one reply
+--- per login is enough.
+function Session:EnsureTimePlayed()
+    local session = self:GetCurrent()
+    if session and (session.realTotalTime or 0) > 0 then
+        return
+    end
+    self:RequestTimePlayed()
 end
 
 -------------------------------------------------------------------
@@ -737,106 +714,31 @@ function Session:GetTimeToLevel()
     return 0
 end
 
----Return XP per hour based on session or level-time fallback
+---Time played at the current level, carried forward to now (0 when unknown)
+---@return number levelSeconds
+function Session:GetLevelSeconds()
+    local session = self:GetCurrent()
+    if not session then
+        return 0
+    end
+    return Addon.TimeCalculations.AdjustedLevelTime(session.realLevelTime, session.lastTimePlayedRequest)
+end
+
+---Return XP per hour. Every XP/hour readout uses this, through
+---TimeCalc.CalculateXPPerHour, so bar, tooltip and Stats window agree.
 function Session:GetXPPerHour()
     local session = self:GetCurrent()
     if not session then
         return 0
     end
 
-    local duration = time() - (session.sessionStart or time())
-    local gainedXP = session.gainedXP or 0
-
-    -- Prefer session-derived rate when session is meaningful
-    if duration >= 10 and gainedXP > 0 then
-        return math.floor((gainedXP / duration) * 3600)
-    end
-
-    -- Then the sliding window of recent gains. It is a real measurement, so it
-    -- beats the level-time estimate below in the two windows where the session
-    -- path declines: a session's first 10 seconds, and a session that has
-    -- recorded no gains at all.
-    if self.GetRecentXPPerHour then
-        local recent = self:GetRecentXPPerHour()
-        if recent and recent > 0 then
-            return recent
-        end
-    end
-
-    -- Last resort: estimate from realLevelTime.
-    if session.realLevelTime and session.realLevelTime > 0 then
-        local levelTime = session.realLevelTime
-        if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-            local elapsed = time() - session.lastTimePlayedRequest
-            levelTime = levelTime + elapsed
-        end
-        -- Floor the divisor. This path divides a whole level's XP by the time
-        -- played at that level, and a handful of seconds there yields a
-        -- millions-per-hour reading -- which the circular centre ETA is derived
-        -- from, so the spike is visible, not just internal.
-        levelTime = math.max(60, levelTime)
-        local currentXP = UnitXP("player") or 0
-        if currentXP > 0 then
-            return math.floor((currentXP / levelTime) * 3600)
-        end
-    end
-
-    return 0
+    local rate = Addon.TimeCalculations.CalculateXPPerHour(
+        session.sessionStart,
+        session.gainedXP or 0,
+        self:GetLevelSeconds(),
+        UnitXP("player") or 0
+    )
+    return math.floor(rate)
 end
-
----Return XP per hour based on a sliding window of recent gains
----@return number xpPerHour Recent XP/hour rate
-function Session:GetRecentXPPerHour()
-    local session = self:GetCurrent()
-    if not session or not session.recentGains then
-        return 0
-    end
-    local TimeCalc = Addon.TimeCalculations
-    if not TimeCalc or not TimeCalc.RecentXPPerHour then
-        return 0
-    end
-    return TimeCalc.RecentXPPerHour(session.recentGains)
-end
--------------------------------------------------------------------
-
----Return a normalized stats table for the current session
-function Session:GetStats()
-    local session = self:GetCurrent()
-    if not session then
-        return {
-            duration = 0,
-            xpGained = 0,
-            xpPerHour = 0,
-            startTime = time()
-        }
-    end
-
-    -- Calculate session duration
-    local duration = time() - (session.sessionStart or time())
-
-    -- Calculate XP per hour
-    local xpPerHour = 0
-    if duration > 0 then
-        xpPerHour = (session.gainedXP or 0) / (duration / 3600)
-    end
-
-    return {
-        duration = duration,
-        xpGained = session.gainedXP or 0,
-        xpPerHour = xpPerHour,
-        startTime = session.sessionStart or time(),
-        realTotalTime = session.realTotalTime or 0,
-        realLevelTime = session.realLevelTime or 0,
-        recentXPPerHour = self:GetRecentXPPerHour(),
-        questXPGained = session.questXP or 0,
-        otherXP = session.otherXP or 0,
-        gainsCount = #(session.gainsHistory or {}),
-        levelUpTimestamps = session.levelUpTimestamps or {},
-    }
-end
-
--------------------------------------------------------------------
--- BACKWARD COMPATIBILITY
--------------------------------------------------------------------
 
 return Session

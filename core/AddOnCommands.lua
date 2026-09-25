@@ -5,7 +5,7 @@ local Addon = XPBarEnhanced
 local L = Addon.L
 
 local function printUnknown(command)
-    print("|cFFFF0000Unknown command:|r " .. (command or ""))
+    print("|cFFFF0000" .. L["MSG_UNKNOWN_COMMAND"] .. "|r " .. (command or ""))
     print("|cff33ff99XP Bar Enhanced|r - Use /xpbe help for commands")
 end
 
@@ -65,11 +65,7 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFprofile new <name>|r - Create and select a new profile")
     print("  /xpbe |cFFFFFFFFprofile rename <new name>|r - Rename the active profile")
     print("  /xpbe |cFFFFFFFFprofile delete [name]|r - Delete a profile")
-    print("  /xpbe |cFFFFFFFFreps|r - Export all faction IDs")
-    print("  /xpbe |cFFFFFFFFdebugevents [on|off|show|reset]|r - Toggle/show/reset EventBus counters")
-    print("  /xpbe |cFFFFFFFFtest celebration|r - Preview the level-up celebration (no real level-up)")
-    print("  /xpbe |cFFFFFFFFtest milestone|r - Preview a level-progress notification (no real milestone)")
-    print("  /xpbe |cFFFFFFFFreset|r - Reset all settings")
+    print("  /xpbe |cFFFFFFFFreset|r - Reset the active profile to its defaults")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
     print("  /xpbe |cFFFFFFFFhelp|r - Show this help")
@@ -80,20 +76,22 @@ local function handleStats()
     if stats and stats.Toggle then
         stats:Toggle()
     else
-        print("|cFFFF0000XP Bar Enhanced:|r Stats feature not available")
+        print("|cFFFF0000XP Bar Enhanced:|r " .. L["MSG_STATS_UNAVAILABLE"])
     end
 end
 
 local function handleOptions()
     if Addon and Addon.Options and Addon.Options.Open then
-		Addon.Options:Open()
-	elseif Settings and Settings.OpenToCategory then
-        local category = (Addon and Addon.Options and Addon.Options.category) or Addon.OptionsCategory
-        local id = category and ((category.GetID and category:GetID()) or category.ID or category)
-        if id then
-            Settings.OpenToCategory(id)
-        end
-	end
+        Addon.Options:Open()
+        return
+    end
+    local category = (Addon and Addon.Options and Addon.Options.category) or Addon.OptionsCategory
+    local id = category and ((category.GetID and category:GetID()) or category.ID or category)
+    if id and Settings and Settings.OpenToCategory then
+        Settings.OpenToCategory(id)
+    else
+        print("|cFFFF0000XP Bar Enhanced:|r " .. L["MSG_OPTIONS_UNAVAILABLE"])
+    end
 end
 
 local function handleChangelog()
@@ -105,18 +103,21 @@ local function handleChangelog()
 end
 
 local function handleReset()
-    if Addon.Config and Addon.Config.Reset then
-        Addon.Config:Reset()
-    else
-        print("|cFFFF0000XP Bar Enhanced:|r Reset function not available")
+    local config = Addon.Config
+    if not (config and config.ResetActiveProfile) then
+        print("|cFFFF0000XP Bar Enhanced:|r " .. L["MSG_RESET_UNAVAILABLE"])
+        return
     end
+    local profileName = config:GetActiveProfileName() or L["OPT_PROFILE_GLOBAL"]
+    config:ResetActiveProfile()
+    print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_SETTINGS_RESET"], profileName))
 end
 
 local function handleResetStats()
     if Addon.Config and Addon.Config.ResetStats then
         Addon.Config:ResetStats()
     else
-        print("|cFFFF0000XP Bar Enhanced:|r Reset stats function not available")
+        print("|cFFFF0000XP Bar Enhanced:|r " .. L["MSG_RESET_STATS_UNAVAILABLE"])
     end
 end
 
@@ -154,76 +155,6 @@ local function handleStyle(style)
     end
 end
 
-local function handleReps()
-    if Addon.ReputationSession and Addon.ReputationSession.ListAllFactions then
-        Addon.ReputationSession:ListAllFactions()
-    else
-        print("|cFFFF0000XP Bar Enhanced:|r Reputation module not available")
-    end
-end
-
-local function handleDebugEvents(arg)
-    local eventBus = Addon.EventBus
-    if not eventBus then
-        print("|cFFFF0000XP Bar Enhanced:|r EventBus unavailable")
-        return
-    end
-
-    local mode = string.lower((arg or ""):match("^%s*(%S*)") or "")
-    if mode == "" then
-        mode = "show"
-    end
-
-    if mode == "on" then
-        if eventBus.SetDebugCountersEnabled then
-            eventBus:SetDebugCountersEnabled(true)
-        end
-        print("|cFF00FF00XP Bar Enhanced:|r Event counters enabled")
-        return
-    end
-
-    if mode == "off" then
-        if eventBus.SetDebugCountersEnabled then
-            eventBus:SetDebugCountersEnabled(false)
-        end
-        print("|cFF00FF00XP Bar Enhanced:|r Event counters disabled")
-        return
-    end
-
-    if mode == "reset" then
-        if eventBus.ResetDebugCounters then
-            eventBus:ResetDebugCounters()
-        end
-        print("|cFF00FF00XP Bar Enhanced:|r Event counters reset")
-        return
-    end
-
-    if mode == "show" then
-        local enabled = eventBus.IsDebugCountersEnabled and eventBus:IsDebugCountersEnabled()
-        local status = enabled and "enabled" or "disabled"
-        print("|cFF00FF00XP Bar Enhanced:|r Event counters are " .. status)
-
-        if not eventBus.GetDebugCounters then
-            return
-        end
-
-        local rows = eventBus:GetDebugCounters(12)
-        if not rows or #rows == 0 then
-            print("|cFF00FF00XP Bar Enhanced:|r No EventBus emits recorded")
-            return
-        end
-
-        print("|cFF00FF00XP Bar Enhanced:|r Top EventBus emits:")
-        for i = 1, #rows do
-            local row = rows[i]
-            print(string.format("  %s x%d", tostring(row.event), tonumber(row.count) or 0))
-        end
-        return
-    end
-
-    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe debugevents [on|off|show|reset]")
-end
-
 local function handleProfile(arg)
     local config = Addon.Config
     if not config then
@@ -250,7 +181,7 @@ local function handleProfile(arg)
     if action == "global" or action == "clear" then
         local success, err = config:SelectProfile(nil)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Using global shared settings")
+            print("|cFF00FF00XP Bar Enhanced:|r " .. L["MSG_PROFILE_GLOBAL"])
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end
@@ -270,7 +201,7 @@ local function handleProfile(arg)
         end
         local success, err = config:SelectProfile(sanitized)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Active profile: " .. sanitized)
+            print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_PROFILE_SELECTED"], sanitized))
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end
@@ -290,7 +221,7 @@ local function handleProfile(arg)
         end
         local success, err = config:CreateProfile(sanitized, true)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Created profile: " .. sanitized)
+            print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_PROFILE_CREATED"], sanitized))
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end
@@ -300,7 +231,7 @@ local function handleProfile(arg)
     if action == "rename" then
         local active = config:GetActiveProfileName()
         if not active then
-            print("|cFFFF0000XP Bar Enhanced:|r Global settings cannot be renamed")
+            print("|cFFFF0000XP Bar Enhanced:|r " .. L["ERR_PROFILE_GLOBAL_RENAME"])
             return
         end
         if rest == "" then
@@ -315,7 +246,7 @@ local function handleProfile(arg)
         end
         local success, err = config:RenameProfile(active, sanitized)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Renamed profile to: " .. sanitized)
+            print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_PROFILE_RENAMED"], sanitized))
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end
@@ -325,12 +256,12 @@ local function handleProfile(arg)
     if action == "delete" or action == "remove" then
         local targetName = rest ~= "" and rest or config:GetActiveProfileName()
         if not targetName then
-            print("|cFFFF0000XP Bar Enhanced:|r No active profile to delete")
+            print("|cFFFF0000XP Bar Enhanced:|r " .. L["ERR_PROFILE_GLOBAL_DELETE"])
             return
         end
         local success, err = config:DeleteProfile(targetName)
         if success then
-            print("|cFF00FF00XP Bar Enhanced:|r Deleted profile: " .. targetName)
+            print("|cFF00FF00XP Bar Enhanced:|r " .. string.format(L["MSG_PROFILE_DELETED"], targetName))
         else
             print("|cFFFF0000XP Bar Enhanced:|r " .. tostring(err))
         end
@@ -339,41 +270,6 @@ local function handleProfile(arg)
 
     print("|cFFFF0000XP Bar Enhanced:|r Unknown profile command")
     print("Usage: /xpbe profile [global|use <name>|new <name>|rename <new name>|delete [name]]")
-end
-
--- Preview-only triggers for promo screenshots/GIFs: fire the visual effect
--- directly on the current bar/session state without mutating real XP data
--- or session totals.
-local function handleTest(arg)
-    arg = string.lower(arg or "")
-
-    if arg == "celebration" then
-        local manager = Addon.BarManager
-        local bar = manager and manager.GetCurrentFrame and manager:GetCurrentFrame()
-        local anim = Addon.AnimationManager
-        if bar and anim and anim.PlayLevelUpCelebration then
-            local config = bar.GetAnimationConfig and bar:GetAnimationConfig() or nil
-            anim:PlayLevelUpCelebration(bar, config)
-            print("|cff33ff99XP Bar Enhanced:|r Celebration preview triggered.")
-        else
-            print("|cFFFF0000XP Bar Enhanced:|r No active bar frame to preview on.")
-        end
-        return
-    elseif arg == "milestone" then
-        local tracker = Addon.GoalTracker
-        if tracker and tracker.PreviewMilestone then
-            -- Preview-only: does not touch persisted milestone state, so it
-            -- can't suppress or duplicate a real notification later.
-            local level = (UnitLevel and UnitLevel("player")) or 1
-            tracker:PreviewMilestone(75, level, 1800)
-            print("|cff33ff99XP Bar Enhanced:|r Milestone preview triggered (75%).")
-        else
-            print("|cFFFF0000XP Bar Enhanced:|r Milestone tracker unavailable.")
-        end
-        return
-    end
-
-    print("|cFFFF0000XP Bar Enhanced:|r Usage: /xpbe test <celebration|milestone>")
 end
 
 local function handleSlashCommand(message)
@@ -398,12 +294,6 @@ local function handleSlashCommand(message)
         handleStyle(arg)
     elseif command == "profile" or command == "profiles" then
         handleProfile(arg)
-    elseif command == "reps" then
-        handleReps()
-    elseif command == "debugevents" then
-        handleDebugEvents(arg)
-    elseif command == "test" then
-        handleTest(arg)
     else
         printUnknown(command)
     end

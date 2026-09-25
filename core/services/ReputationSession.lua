@@ -11,6 +11,16 @@ local RepSession = Addon.ReputationSession
 
 local MAX_HISTORY = 200
 
+-- Known Delve companion factions: faction ID -> display name, for
+-- locale-independent companion detection.
+local DELVE_COMPANIONS = {
+    [2640] = "Brann Bronzebeard",
+    [2744] = "Valeera Sanguinar",
+}
+
+-- Defined with the snapshot and update code below.
+local StoreBaseline, RenownGain
+
 local function NormalizeFactionName(name)
     -- Secret strings cannot be inspected with string operations.
     if issecretvalue and issecretvalue(name) then
@@ -25,11 +35,7 @@ end
 --- Checks if a watched faction is a known Delve companion.
 --- Uses faction ID lookup for locale-independent matching.
 local function IsKnownDelveCompanion(factionID, name)
-    local defaults = Addon.defaults
-    if not defaults then return false end
-
-    local companions = defaults.delveCompanions
-    if not companions then return false end
+    local companions = DELVE_COMPANIONS
 
     -- Faction ID lookup (preferred, locale-independent)
     if factionID and companions[factionID] then
@@ -112,16 +118,30 @@ end
 -- INTERNAL HELPERS
 -------------------------------------------------------------------
 
+local function HasMaximumRenown(factionID)
+    if C_MajorFactions and C_MajorFactions.HasMaximumRenown then
+        return C_MajorFactions.HasMaximumRenown(factionID) and true or false
+    end
+    local data = C_MajorFactions and C_MajorFactions.GetMajorFactionData and C_MajorFactions.GetMajorFactionData(factionID)
+    return (data and data.renownLevel and data.maxLevel and data.renownLevel >= data.maxLevel) and true or false
+end
+
 --- Detect the reputation type for a given faction ID.
 --- Returns "major", "paragon", "friendship", or "standard".
 ---@param factionID number
 ---@return string factionType
 local function DetectFactionType(factionID)
     if not factionID then return "standard" end
+    local isParagon = C_Reputation and C_Reputation.IsFactionParagonForCurrentPlayer
+        and C_Reputation.IsFactionParagonForCurrentPlayer(factionID)
     if C_Reputation and C_Reputation.IsMajorFaction and C_Reputation.IsMajorFaction(factionID) then
+        -- Past the renown cap, progress continues as paragon cycles.
+        if isParagon and HasMaximumRenown(factionID) then
+            return "paragon"
+        end
         return "major"
     end
-    if C_Reputation and C_Reputation.IsFactionParagonForCurrentPlayer and C_Reputation.IsFactionParagonForCurrentPlayer(factionID) then
+    if isParagon then
         return "paragon"
     end
     if C_GossipInfo and C_GossipInfo.GetFriendshipReputation then
@@ -151,9 +171,16 @@ local function GetFactionSnapshot(factionID, factionType)
 
     elseif factionType == "paragon" then
         if not (C_Reputation and C_Reputation.GetFactionParagonInfo) then return nil end
-        local paragonData = C_Reputation.GetFactionParagonInfo(factionID)
-        if not paragonData then return nil end
-        -- Inject name (not included in paragon info)
+        -- Multiple returns, not a table:
+        -- currentValue, threshold, rewardQuestID, hasRewardPending, tooLowLevelForParagon
+        local currentValue, threshold, _, hasRewardPending = C_Reputation.GetFactionParagonInfo(factionID)
+        if not currentValue then return nil end
+        local paragonData = {
+            currentValue = currentValue,
+            threshold = threshold,
+            hasRewardPending = hasRewardPending,
+        }
+        -- The name is not part of the paragon info.
         if C_Reputation.GetFactionDataByID then
             local fd = C_Reputation.GetFactionDataByID(factionID)
             paragonData.name = (fd and fd.name) or ""
@@ -220,6 +247,7 @@ local function BuildReputationContext(repSession)
         ratio              = info.ratio or 0,
         percent            = info.percent or 0,
         isMaxed            = info.isMaxed or false,
+        reactionLevel      = info.reactionLevel,
         sessionGained      = info.sessionGained or 0,
         repPerHour         = (stats and stats.repPerHour) or 0,
         timeToNextStanding = stats and stats.timeToNextStanding,
@@ -238,9 +266,6 @@ function RepSession:Initialize()
     session.sessionStart    = session.sessionStart    or time()
     session.lastUpdate      = session.lastUpdate      or time()
     session.watchedFactionType = session.watchedFactionType or "standard"
-    session.lastStanding    = session.lastStanding    or 0
-    session.lastMin         = session.lastMin         or 0
-    session.lastMax         = session.lastMax         or 0
     session.factionTotals   = session.factionTotals   or {}
 
     self:_SnapshotWatchedFaction()
@@ -249,6 +274,17 @@ end
 -------------------------------------------------------------------
 -- SNAPSHOT
 -------------------------------------------------------------------
+
+-- The values the next update's gain is measured from. With no snapshot the
+-- baseline is unknown (nil), not 0: a 0 baseline credits the whole standing
+-- as session gain on the next update.
+function StoreBaseline(session, snapshot)
+    session.lastStanding = snapshot and snapshot.current
+    session.lastMin      = snapshot and snapshot.min
+    session.lastMax      = snapshot and snapshot.max
+    session.lastLevel    = snapshot and snapshot.level
+    session.lastTotal    = snapshot and snapshot.total
+end
 
 function RepSession:_SnapshotWatchedFaction()
     if not (C_Reputation and C_Reputation.GetWatchedFactionData) then return end
@@ -269,14 +305,29 @@ function RepSession:_SnapshotWatchedFaction()
     session.watchedFactionID   = factionID
     session.watchedFactionName = watchedData.name
     session.watchedFactionType = factionType
-    session.lastStanding       = snapshot and snapshot.current or 0
-    session.lastMin            = snapshot and snapshot.min     or 0
-    session.lastMax            = snapshot and snapshot.max     or 0
+    StoreBaseline(session, snapshot)
 end
 
 -------------------------------------------------------------------
 -- FACTION UPDATE
 -------------------------------------------------------------------
+
+-- Renown progress resets at each level. Judged by the level itself, so the
+-- order UPDATE_FACTION and MAJOR_FACTION_RENOWN_LEVEL_CHANGED arrive in no
+-- longer matters: a level crossed since the baseline credits the rest of the
+-- old level plus the progress into the new one, and an update at the same
+-- level credits only the difference.
+function RenownGain(snapshot, session)
+    local RepCalc = Addon.ReputationCalculations
+    local level, lastLevel = snapshot.level, session.lastLevel
+    if level and lastLevel then
+        if level > lastLevel then
+            return math.max(0, (session.lastMax or 0) - (session.lastStanding or 0)) + math.max(0, snapshot.current or 0)
+        end
+        return RepCalc.ComputeGain(snapshot.current, session.lastStanding)
+    end
+    return RepCalc.ComputeWrappedGain(snapshot.current, session.lastStanding, session.lastMax)
+end
 
 function RepSession:OnFactionUpdate()
     if not self._session then return end
@@ -289,9 +340,7 @@ function RepSession:OnFactionUpdate()
         session.watchedFactionID   = nil
         session.watchedFactionName = nil
         session.watchedFactionType = nil
-        session.lastStanding       = 0
-        session.lastMin            = 0
-        session.lastMax            = 0
+        StoreBaseline(session, nil)
         if Addon.EventBus and Addon.EventNames then
             Addon.EventBus:Emit(Addon.EventNames.REPUTATION_BROADCAST_UPDATE, self:_BuildContext())
         end
@@ -324,23 +373,18 @@ function RepSession:OnFactionUpdate()
 
     local RepCalc = Addon.ReputationCalculations
     local gain
-    if factionType ~= session.watchedFactionType then
-        -- Reputation scale changed (e.g. renown cap rolling into paragon) —
-        -- baselines are not comparable, so re-baseline without recording a gain.
+    if session.lastStanding == nil or factionType ~= session.watchedFactionType then
+        -- No comparable baseline: the last snapshot was unavailable, or the
+        -- scale changed (the renown cap rolling into paragon). Re-baseline
+        -- without recording a gain.
         gain = 0
-    elseif factionType == "major" or factionType == "paragon" then
-        -- Renown levels and paragon cycles wrap current back towards 0;
-        -- credit the remainder of the previous cycle when that happens.
-        -- When a renown level-up was just signalled, the cycle wrapped even
-        -- if the new value landed at or above the old one.
-        if session._renownJustLeveled and (snapshot.current or 0) >= (session.lastStanding or 0) then
-            local lastMax = session.lastMax or 0
-            local remainder = math.max(0, lastMax - (session.lastStanding or 0))
-            gain = remainder + math.max(0, snapshot.current or 0)
-        else
-            gain = RepCalc.ComputeWrappedGain(snapshot.current, session.lastStanding, session.lastMax)
-        end
-        session._renownJustLeveled = nil
+    elseif factionType == "major" then
+        gain = RenownGain(snapshot, session)
+    elseif factionType == "paragon" and snapshot.total and session.lastTotal then
+        -- Paragon's cumulative value never wraps, unlike its per-cycle progress.
+        gain = math.max(0, snapshot.total - session.lastTotal)
+    elseif factionType == "paragon" then
+        gain = RepCalc.ComputeWrappedGain(snapshot.current, session.lastStanding, session.lastMax)
     else
         gain = RepCalc.ComputeGain(snapshot.current, session.lastStanding)
     end
@@ -362,9 +406,7 @@ function RepSession:OnFactionUpdate()
         end
     end
 
-    session.lastStanding       = snapshot.current
-    session.lastMin            = snapshot.min
-    session.lastMax            = snapshot.max
+    StoreBaseline(session, snapshot)
     session.watchedFactionType = factionType
     session.lastUpdate         = time()
 
@@ -378,10 +420,7 @@ function RepSession:OnRenownLevelChanged(factionID, newRenownLevel, oldRenownLev
     local session = self._session
     if factionID == session.watchedFactionID then
         -- Route through the gain-aware update so rep earned across the renown
-        -- level-up is credited (wrap-aware) instead of re-baselined away.
-        -- Flag the crossing: a big award can land above the old value, which
-        -- the value-drop heuristic alone would miss.
-        session._renownJustLeveled = true
+        -- level-up is credited instead of re-baselined away.
         self:OnFactionUpdate()
     end
 end
@@ -431,7 +470,8 @@ end
 
 function RepSession:GetTimeToNextStanding()
     local session = self._session
-    if not session then return nil end
+    -- No estimate while the baseline is unknown (faction data unavailable).
+    if not session or not session.lastStanding or not session.lastMax then return nil end
     local remaining = Addon.ReputationCalculations.ComputeRemaining(session.lastStanding, session.lastMax)
     local repPerHour = self:GetRepPerHour()
     if repPerHour <= 0 then return nil end
@@ -493,37 +533,6 @@ function RepSession:GetStats()
         timeToNextStanding = self:GetTimeToNextStanding(),
         watchedFactionInfo = self:GetWatchedFactionInfo(),
     }
-end
-
--------------------------------------------------------------------
--- FACTION LISTING (for exports)
--------------------------------------------------------------------
-
---- Print all factions and their IDs for export.
-function RepSession:ListAllFactions()
-    if not (C_Reputation and C_Reputation.GetNumFactions and C_Reputation.GetFactionDataByIndex) then
-        print("|cFFFF0000XP Bar Enhanced:|r C_Reputation API not available")
-        return
-    end
-
-    print("|cFF00FF00XP Bar Enhanced - Reputation Export|r")
-    print("All factions (name: ID):")
-    print("-----------------------------------------")
-
-    local numFactions = C_Reputation.GetNumFactions()
-    for i = 1, numFactions do
-        local fdata = C_Reputation.GetFactionDataByIndex(i)
-        if fdata then
-            if fdata.isHeader then
-                print("|cFFFFFF00" .. (fdata.name or "?") .. "|r")
-            else
-                local name = fdata.name or "Unknown"
-                local id = fdata.factionID or 0
-                print(string.format("  %s: %d", name, id))
-            end
-        end
-    end
-    print("-----------------------------------------")
 end
 
 -------------------------------------------------------------------

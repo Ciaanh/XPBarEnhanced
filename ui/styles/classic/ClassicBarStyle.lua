@@ -1,6 +1,6 @@
 -- XP Bar Enhanced - Classic Bar Style
--- Blizzard-style XP bar with border frame and atlas textures
--- Static positioning (anchored to Blizzard's MainStatusTrackingBarContainer)
+-- Blizzard-style XP bar: a chamfered frame over a tinted neutral fill, drawn
+-- entirely from the addon's own textures (see ClassicChrome.lua).
 
 -------------------------------------------------------------------
 -- DEPENDENCIES
@@ -12,71 +12,102 @@ if not XPBarStyleBuilder or not XPBarMixinBase then
     )
 end
 
+local Addon = XPBarEnhanced
+
+-- ClassicChrome.lua is listed ahead of this file in ClassicBarTemplate.xml.
+local function GetChrome()
+    return Addon.UI and Addon.UI.ClassicChrome
+end
+
 -------------------------------------------------------------------
--- ATLAS CONFIGURATION
+-- TEMPLATE GEOMETRY
 -------------------------------------------------------------------
 
--- Blizzard atlas names for the XP bar fill with TGA file fallbacks.
--- Atlas textures are resolution-independent and scale better than custom TGAs.
-local ATLAS_CONFIG = {
-    barFill = {
-        atlas = "UI-HUD-ExperienceBar-Fill-XP",
-        fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
-    },
-    restedOverlay = {
-        -- Keep this on a neutral texture so the configured rested color is not
-        -- multiplied by Blizzard's baked rested tint/shading.
-        atlas = nil,
-        fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
-    },
-    questComplete = {
-        atlas = nil, -- No Blizzard atlas for quest overlays; use file texture
-        fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
-    },
-    questIncomplete = {
-        atlas = nil,
-        fallback = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
-    }
-}
+-- Frame and fill heights come from ClassicChrome so the secondary bar matches.
+-- The on-bar text fields are scaled against BASE_WIDTH so a wider bar gets
+-- proportionally more room for level/XP/percent rather than three clusters
+-- marooned at the default insets.
+local BASE_WIDTH = 566
+local BELOW_BAR_HEIGHT = 30
+local BELOW_BAR_OFFSET_Y = -4
+local QUEST_SUMMARY_OFFSET_Y = -14
+local OVERLAY_TEXT_HEIGHT = 11
+
+local BASE_LEVEL_TEXT_WIDTH = 120
+local BASE_XP_TEXT_WIDTH = 280
+local BASE_PERCENT_TEXT_WIDTH = 120
 
 -------------------------------------------------------------------
 -- STYLE TEMPLATE
 -------------------------------------------------------------------
 
--- Classic Bar style template: follows  composition pattern
+-- The fill and the rested/quest overlays all use classic-bar-fill.tga, set in
+-- ClassicBarTemplate.xml. It is a neutral grey, so the configured colors come
+-- through as chosen instead of being multiplied into a baked hue.
 local ClassicBarStyleTemplate = {}
 
---- Apply atlas textures after BuildVisuals aliases all XML elements.
---- Called from OnLoad chain via mixin composition.
-function ClassicBarStyleTemplate:ApplyAtlasTextures()
-    if not self.ApplyBarAtlasOrTexture then
-        return -- PaintMixin not available
+-------------------------------------------------------------------
+-- SIZING
+-------------------------------------------------------------------
+
+local function ScaleTextWidth(fontString, baseWidth, width)
+    if fontString and fontString.SetWidth then
+        fontString:SetWidth(math.floor(baseWidth / BASE_WIDTH * width))
     end
-
-    -- Main bar fill: prefer atlas over custom TGA
-    local cfg = ATLAS_CONFIG.barFill
-    self:ApplyBarAtlasOrTexture(cfg.atlas, cfg.fallback)
-
-    -- Rested overlay
-    if self.RestedOverlay then
-        cfg = ATLAS_CONFIG.restedOverlay
-        if self.ApplyAtlasOrTexture then
-            self:ApplyAtlasOrTexture(self.RestedOverlay, cfg.atlas, cfg.fallback)
-        end
-    end
-
-    -- Quest overlays (no atlas available, keep file textures)
-    -- These are already set in XML, no action needed
 end
 
---- Override ApplyStyle to also apply atlas textures after base style setup
-function ClassicBarStyleTemplate:ApplyStyle(styleConfig)
-    -- Call parent ApplyStyle (from PaintMixin)
-    if XPBarPaintMixin and XPBarPaintMixin.ApplyStyle then
-        XPBarPaintMixin.ApplyStyle(self, styleConfig)
+--- Resize the whole bar to the configured Classic width and re-space the
+--- segment dividers. Safe to call repeatedly; the overlay/quest/rested geometry
+--- is derived from the live StatusBar width on the next render, so nothing else
+--- needs to be told about the new size.
+function ClassicBarStyleTemplate:ResizeToConfiguredWidth()
+    local Chrome = GetChrome()
+    if not Chrome then
+        return
     end
-    -- Apply atlas textures (with fallback to TGA if unavailable)
-    self:ApplyAtlasTextures()
+
+    local width = Chrome.LayoutBar(self, self.StatusBar)
+
+    local overlay = self.OverlayFrameTextContainer
+    if overlay and overlay.SetSize then
+        overlay:SetSize(width + Chrome.OVERLAY_TEXT_INSET, OVERLAY_TEXT_HEIGHT)
+        ScaleTextWidth(overlay.LevelText, BASE_LEVEL_TEXT_WIDTH, width)
+        ScaleTextWidth(overlay.XPText, BASE_XP_TEXT_WIDTH, width)
+        ScaleTextWidth(overlay.PercentText, BASE_PERCENT_TEXT_WIDTH, width)
+    end
+
+    -- XPBarBaseTemplate's container, placed where Classic has always put it:
+    -- 4px under the frame, the quest summary on its own row.
+    local below = self.BelowBarTextContainer
+    if below and below.SetSize then
+        below:SetSize(width + Chrome.BELOW_TEXT_INSET, BELOW_BAR_HEIGHT)
+        below:ClearAllPoints()
+        below:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, BELOW_BAR_OFFSET_Y)
+        if below.QuestSummaryText then
+            below.QuestSummaryText:ClearAllPoints()
+            below.QuestSummaryText:SetPoint("TOP", below, "TOP", 0, QUEST_SUMMARY_OFFSET_Y)
+        end
+    end
+end
+
+-------------------------------------------------------------------
+-- LIFECYCLE OVERRIDES
+-------------------------------------------------------------------
+
+--- Override BuildVisuals to texture the chrome and apply the configured width
+--- once the base has aliased the XML elements.
+function ClassicBarStyleTemplate:BuildVisuals()
+    if XPBarPaintMixin and XPBarPaintMixin.BuildVisuals then
+        XPBarPaintMixin.BuildVisuals(self)
+    end
+
+    local Chrome = GetChrome()
+    if Chrome then
+        Chrome.BuildChrome(self, self.StatusBar)
+        Chrome.StylePip(self.ExhaustionTick)
+    end
+
+    self:ResizeToConfiguredWidth()
 end
 
 -------------------------------------------------------------------
@@ -88,12 +119,6 @@ end
 -------------------------------------------------------------------
 
 local function GetClassicBarConfig()
-    local Addon = XPBarEnhanced
-    local isDraggable = Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("classicBarDraggable")
-    if isDraggable == nil then
-        isDraggable = true -- Default to draggable
-    end
-
     return {
         interaction = {enabled = true},
         tooltip = {enabled = true},
@@ -102,8 +127,10 @@ local function GetClassicBarConfig()
             flashOnGain = true
         },
         position = {
-            mode = isDraggable and "DRAGGABLE" or "STATIC",
-            positionKey = "ClassicBar"
+            -- Read by PositionMixin when the frame is built, once saved
+            -- settings exist; this table is built at file load.
+            modeOption = "classicBarDraggable",
+            positionKey = Addon.StyleKeys.classic
         },
         style = {},
         capabilities = {

@@ -420,9 +420,18 @@ function BaseMixin:HandleImmediateUpdate(context, forceRender)
 		end
 	end
 
-	if not (self.animation and self.animation.isAnimating) then
-		self:RenderBar(context)
+	if self.animation and self.animation.isAnimating then
+		-- The fill is mid-animation and RenderBar would snap it, but the rest of
+		-- this update (a quest turned in, rested XP changing) must not be lost:
+		-- apply overlays and texts now, and hand the context to the animation
+		-- for the styles that paint overlays per frame.
+		self.animation.eventContext = context
+		self:UpdateOverlays(context)
+		self:UpdateAllText(context)
+		return
 	end
+
+	self:RenderBar(context)
 end
 
 --- Single entry point for all bar updates

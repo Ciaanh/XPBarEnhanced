@@ -57,28 +57,7 @@ local function ensureStorage()
 end
 
 local function getCharacterKey(characterKey)
-    if characterKey then
-        return characterKey
-    end
-
-    if Addon.Database and Addon.Database.GetPlayerKey then
-        return Addon.Database:GetPlayerKey()
-    end
-
-    -- Use C_PlayerInfo.GetName (REQUIRES a playerLocation) to avoid secret
-    -- value issues in 12.0.0+; pcall-guarded with a UnitName fallback.
-    local playerName
-    if C_PlayerInfo and C_PlayerInfo.GetName and PlayerLocation and PlayerLocation.CreateFromUnit then
-        local ok, name = pcall(function()
-            return C_PlayerInfo.GetName(PlayerLocation:CreateFromUnit("player"))
-        end)
-        if ok and type(name) == "string" and name ~= "" then
-            playerName = name
-        end
-    end
-    playerName = playerName or UnitName("player") or "Unknown"
-    local realmName = GetRealmName() or "Unknown"
-    return string.format("%s-%s", playerName, realmName)
+    return characterKey or Addon.Database:GetPlayerKey()
 end
 
 local function getSettingsSnapshot(source)
@@ -94,6 +73,11 @@ local function getSettingsSnapshot(source)
             snapshot[key] = cloneValue(value)
         end
     end
+
+    -- Secondary bar positions have no default, so the loop above skips them,
+    -- but a profile needs its own copy: without one, every read falls back to
+    -- Global's positions and every reset clears Global's.
+    snapshot.secondaryBarPositions = cloneValue(source.secondaryBarPositions or {})
 
     return snapshot
 end
@@ -116,6 +100,9 @@ local function getEffectiveSettingsSnapshot()
         end
     end
 
+    local positions = config and config.GetSettingsTable and config:GetSettingsTable("secondaryBarPositions")
+    snapshot.secondaryBarPositions = cloneValue(positions or {})
+
     return snapshot
 end
 
@@ -131,13 +118,6 @@ function ProfileManager:Initialize()
         if type(playerKey) ~= "string" or type(profileName) ~= "string" or type(db.profiles[profileName]) ~= "table" then
             db.characterProfileKeys[playerKey] = nil
         end
-    end
-
-    -- Backward-compatible migration from older single key experiments.
-    if db.activeProfile ~= nil then
-        local playerKey = getCharacterKey()
-        db.characterProfileKeys[playerKey] = db.activeProfile
-        db.activeProfile = nil
     end
 end
 
@@ -230,11 +210,11 @@ function ProfileManager:SetAssignedProfileKey(profileName, silent)
 
     local normalized = self:NormalizeProfileName(profileName)
     if profileName ~= nil and not normalized then
-        return false, "Invalid profile name"
+        return false, Addon.L["ERR_PROFILE_INVALID_NAME"]
     end
 
     if normalized and not db.profiles[normalized] then
-        return false, "Profile does not exist"
+        return false, Addon.L["ERR_PROFILE_MISSING"]
     end
 
     local oldProfile = db.characterProfileKeys[playerKey]
@@ -259,12 +239,12 @@ end
 function ProfileManager:CreateProfile(name, source)
     local normalized = self:NormalizeProfileName(name)
     if not normalized then
-        return false, "Invalid profile name"
+        return false, Addon.L["ERR_PROFILE_INVALID_NAME"]
     end
 
     local db = ensureStorage()
     if db.profiles[normalized] then
-        return false, "Profile already exists"
+        return false, Addon.L["ERR_PROFILE_EXISTS"]
     end
 
     local sourceTable = source
@@ -288,15 +268,15 @@ function ProfileManager:RenameProfile(oldName, newName)
     local newKey = self:NormalizeProfileName(newName)
 
     if not oldKey or not newKey then
-        return false, "Invalid profile name"
+        return false, Addon.L["ERR_PROFILE_INVALID_NAME"]
     end
 
     local db = ensureStorage()
     if not db.profiles[oldKey] then
-        return false, "Profile does not exist"
+        return false, Addon.L["ERR_PROFILE_MISSING"]
     end
     if db.profiles[newKey] then
-        return false, "Profile already exists"
+        return false, Addon.L["ERR_PROFILE_EXISTS"]
     end
 
     db.profiles[newKey] = db.profiles[oldKey]
@@ -321,12 +301,12 @@ end
 function ProfileManager:DeleteProfile(name)
     local key = self:NormalizeProfileName(name)
     if not key then
-        return false, "Invalid profile name"
+        return false, Addon.L["ERR_PROFILE_INVALID_NAME"]
     end
 
     local db = ensureStorage()
     if not db.profiles[key] then
-        return false, "Profile does not exist"
+        return false, Addon.L["ERR_PROFILE_MISSING"]
     end
 
     db.profiles[key] = nil

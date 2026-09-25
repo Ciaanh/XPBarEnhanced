@@ -90,13 +90,6 @@ Addon.ContextBuilder = ContextBuilder
 
 ContextBuilder._contextCache = ContextBuilder._contextCache or {}
 ContextBuilder._contextCacheFlushPending = false
-ContextBuilder._debugStats = ContextBuilder._debugStats or {
-	fullBuilds = 0,
-	fullHits = 0,
-	textBuilds = 0,
-	textHits = 0,
-	lastLogAt = 0,
-}
 
 local function GetFrameToken()
 	if GetTimePreciseSec then
@@ -122,53 +115,6 @@ local function BuildContextCacheKey(event, ...)
 	return table.concat({ tostring(event or "UNKNOWN"), tostring(arg1), tostring(arg2) }, "|")
 end
 
-local function IsContextDebugEnabled()
-	if not GetCVar then
-		return false
-	end
-
-	local value = GetCVar("XPBE_DEBUG_CONTEXT")
-	return value == "1"
-end
-
-local function RecordDebugStat(statKey)
-	local stats = ContextBuilder._debugStats
-	if not stats then
-		return
-	end
-
-	stats[statKey] = (stats[statKey] or 0) + 1
-
-	if not IsContextDebugEnabled() then
-		return
-	end
-
-	local now = GetTime and GetTime() or 0
-	if (now - (stats.lastLogAt or 0)) < 10 then
-		return
-	end
-
-	stats.lastLogAt = now
-	local fullBuilds = stats.fullBuilds or 0
-	local fullHits = stats.fullHits or 0
-	local textBuilds = stats.textBuilds or 0
-	local textHits = stats.textHits or 0
-	local fullTotal = fullBuilds + fullHits
-	local textTotal = textBuilds + textHits
-	local fullHitRate = fullTotal > 0 and math.floor((fullHits / fullTotal) * 100 + 0.5) or 0
-	local textHitRate = textTotal > 0 and math.floor((textHits / textTotal) * 100 + 0.5) or 0
-
-	print(string.format(
-		"XPBE ContextCache full b=%d h=%d hit=%d%% | text b=%d h=%d hit=%d%%",
-		fullBuilds,
-		fullHits,
-		fullHitRate,
-		textBuilds,
-		textHits,
-		textHitRate
-	))
-end
-
 -------------------------------------------------------------------
 -- INTERNAL HELPERS
 -------------------------------------------------------------------
@@ -181,7 +127,7 @@ function ContextBuilder.GetCoreState()
 	local restedXP = GetXPExhaustion() or 0
 	local isResting = IsResting()
 	local hasRestedXP = restedXP > 0
-	local isFullyRested = restedXP >= (1.5 * xpMax)
+	local isFullyRested = Addon.XPCalculations.IsFullyRested(restedXP, xpMax)
 	return {
 		currentXP = currentXP,
 		xpMax = xpMax,
@@ -281,11 +227,12 @@ end
 -- context.xpGained is what decides the gain flash, they disagreed visibly.
 -- Session:ConsumeLastGain is now the single source; see BuildContext below.
 
--- Update session tracking with a gain and return session snapshot
-function ContextBuilder.UpdateSessionWithGain(xpGained)
+-- Session snapshot for an event context. The rate is Session:GetXPPerHour,
+-- the same one the text ticker and Stats window read.
+function ContextBuilder.UpdateSessionWithGain()
 	local sessionStart = time()
 	local sessionXP = 0
-	local realLevelTime = 0
+	local xpPerHour = 0
 
 	if Addon and Addon.Session then
 		local session = Addon.Session:GetCurrent()
@@ -296,20 +243,13 @@ function ContextBuilder.UpdateSessionWithGain(xpGained)
 			if session.gainedXP then
 				sessionXP = session.gainedXP
 			end
-			if session.realLevelTime then
-				realLevelTime = session.realLevelTime
-				if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-					local elapsed = time() - session.lastTimePlayedRequest
-					realLevelTime = realLevelTime + elapsed
-				end
-			end
+		end
+		if Addon.Session.GetXPPerHour then
+			xpPerHour = Addon.Session:GetXPPerHour()
 		end
 	end
 
 	local sessionDuration = time() - sessionStart
-	local currentXP = UnitXP("player") or 0
-	local xpPerHour = ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
-
 	return sessionStart, sessionXP, sessionDuration, xpPerHour
 end
 
@@ -322,7 +262,6 @@ function ContextBuilder.BuildCoreContext(coreState)
 	local levelSeconds = 0
 	local questXPGained = 0
 	local otherXP = 0
-	local recentXPPerHour = 0
 
 	if Addon and Addon.Session then
 		local session = Addon.Session:GetCurrent()
@@ -333,18 +272,9 @@ function ContextBuilder.BuildCoreContext(coreState)
 			if session.gainedXP then
 				sessionXP = session.gainedXP
 			end
-			if session.realLevelTime and session.realLevelTime > 0 then
-				levelSeconds = session.realLevelTime
-				if session.lastTimePlayedRequest and session.lastTimePlayedRequest > 0 then
-					local elapsed = time() - session.lastTimePlayedRequest
-					levelSeconds = levelSeconds + elapsed
-				end
-			end
+			levelSeconds = Addon.Session:GetLevelSeconds()
 			questXPGained = session.questXP or 0
 			otherXP       = session.otherXP  or 0
-		end
-		if Addon.Session.GetRecentXPPerHour then
-			recentXPPerHour = Addon.Session:GetRecentXPPerHour()
 		end
 	end
 
@@ -363,7 +293,6 @@ function ContextBuilder.BuildCoreContext(coreState)
 		levelSeconds = levelSeconds,
 		questXPGained   = questXPGained,
 		otherXP         = otherXP,
-		recentXPPerHour = recentXPPerHour,
 	}
 end
 
@@ -388,7 +317,6 @@ function XPBarContextBuilder.BuildContext(event, ...)
 	local cacheKey = BuildContextCacheKey(event, unpack(args))
 	local cached = ContextBuilder._contextCache[cacheKey]
 	if cached and cached.frameToken == frameToken and cached.context then
-		RecordDebugStat("fullHits")
 		return cached.context
 	end
 
@@ -414,7 +342,7 @@ function XPBarContextBuilder.BuildContext(event, ...)
 		preLevelMax = (session and session.maxXP) or coreState.xpMax
 	end
 
-	local sessionStart, sessionXP, sessionDuration, xpPerHour = ContextBuilder.UpdateSessionWithGain(xpGained)
+	local sessionStart, sessionXP, sessionDuration, xpPerHour = ContextBuilder.UpdateSessionWithGain()
 
 	local hasGainedXP = (xpGained and xpGained > 0) or false
 
@@ -490,7 +418,6 @@ function XPBarContextBuilder.BuildContext(event, ...)
 		frameToken = frameToken,
 		context = context,
 	}
-	RecordDebugStat("fullBuilds")
 	ScheduleCacheFlush()
 
 	return context
@@ -499,11 +426,6 @@ end
 -------------------------------------------------------------------
 -- SESSION CALCULATION METHODS
 -------------------------------------------------------------------
-
-function ContextBuilder.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
-	local TimeCalc = XPBarEnhanced.TimeCalculations
-	return TimeCalc.CalculateXPPerHour(sessionStart, sessionXP, realLevelTime, currentXP)
-end
 
 function ContextBuilder.CalculateTimeToLevel(currentXP, maxXP, xpPerHour)
 	local TimeCalc = XPBarEnhanced.TimeCalculations
@@ -521,25 +443,11 @@ function ContextBuilder.Initialize()
 	-- copy here would leave dead state that reads as authoritative.
 	ContextBuilder._contextCache = {}
 	ContextBuilder._contextCacheFlushPending = false
-	ContextBuilder._debugStats = {
-		fullBuilds = 0,
-		fullHits = 0,
-		textBuilds = 0,
-		textHits = 0,
-		lastLogAt = 0,
-	}
 end
 
 function ContextBuilder.ResetSession()
 	ContextBuilder._contextCache = {}
 	ContextBuilder._contextCacheFlushPending = false
-	ContextBuilder._debugStats = {
-		fullBuilds = 0,
-		fullHits = 0,
-		textBuilds = 0,
-		textHits = 0,
-		lastLogAt = 0,
-	}
 	-- Session's baseline is reset by Session:OnEnteringWorld / resetSessionProgress.
 end
 
@@ -556,7 +464,6 @@ function XPBarContextBuilder.BuildTextRefreshContext(event)
 	local cacheKey = BuildContextCacheKey("TEXT_REFRESH", event)
 	local cached = ContextBuilder._contextCache[cacheKey]
 	if cached and cached.frameToken == frameToken and cached.context then
-		RecordDebugStat("textHits")
 		return cached.context
 	end
 
@@ -603,7 +510,6 @@ function XPBarContextBuilder.BuildTextRefreshContext(event)
 		frameToken = frameToken,
 		context = context,
 	}
-	RecordDebugStat("textBuilds")
 	ScheduleCacheFlush()
 
 	return context

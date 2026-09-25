@@ -1,11 +1,17 @@
 -- XP Bar Enhanced - Bar style gallery
 --
--- Draws one miniature per bar style for the options panel, from the same texture
--- files the real bars use, so a player can tell Terminal from Orb without
--- applying each style in turn.
+-- Shows one miniature per bar style in the options panel, so a player can tell
+-- Terminal from Orb without applying each style in turn.
+--
+-- The miniatures are premade: assets/style-previews.tga holds every style's
+-- preview, rendered offline from the textures the styles draw by
+-- assets/raw/build_style_previews.py. A swatch is at most three textures from
+-- that sheet -- the art under the fill, the fill, and the art over it -- and
+-- only the fill is tinted, so a preview still follows the configured XP color.
+-- Re-run the script after changing a style's art.
 --
 -- The grid is derived from Config.optionDetails.barStyle.options: adding a style
--- to that list adds a swatch here, and only a preview builder has to follow.
+-- to that list adds a swatch here, and only its preview cells have to follow.
 -- barStyle itself is unchanged — the swatches write the same saved values the
 -- dropdown wrote, so /xpbe style <name> is unaffected.
 
@@ -25,35 +31,38 @@ local CELL_HEIGHT = 78
 local CELL_GAP_X = 4
 local CELL_GAP_Y = 6
 
--- Every miniature shows the same progress so shape, not value, is what differs.
-local FILL_RATIO = 0.65
-
--- Texture paths, all of them already drawn by the styles they preview.
-local TEX_SOLID = "Interface\\Buttons\\WHITE8X8"
-local TEX_XP_BAR = "Interface\\AddOns\\XPBarEnhanced\\assets\\xp-bar"
-local TEX_LEGACY_BG = "Interface\\AddOns\\XPBarEnhanced\\assets\\legacy-background"
-local TEX_LEGACY_BORDER = "Interface\\AddOns\\XPBarEnhanced\\assets\\legacy-border"
-local TEX_RING_BORDER = "Interface\\AddOns\\XPBarEnhanced\\assets\\border"
-local TEX_RING_CENTER = "Interface\\AddOns\\XPBarEnhanced\\assets\\center"
-local TEX_ORB_RING = "Interface\\AddOns\\XPBarEnhanced\\assets\\orb_ring"
-local TEX_ORB_GLASS = "Interface\\AddOns\\XPBarEnhanced\\assets\\orb_glass"
-local TEX_CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
-local TEX_MINIMAP_BG = "Interface\\Minimap\\UI-Minimap-Background"
-
--- Terminal draws text, not textures, so its preview needs the same font and the
--- same block characters as ui/styles/terminal/TerminalBarStyle.lua.
-local TERMINAL_FONT = "Interface\\AddOns\\XPBarEnhanced\\fonts\\DejaVuSansMono.ttf"
-local CH_FULL = "\226\150\136" -- U+2588 FULL BLOCK
-local CH_EMPTY = "\226\150\145" -- U+2591 LIGHT SHADE
-local TERMINAL_CELLS = 13
-
 -- The selection ring is the addon's own default xpBar purple rather than
 -- Blizzard's selection blue, so a selected swatch reads as "XP Bar Enhanced".
 local RING_COLOR = {r = 0.58, g = 0.0, b = 0.55}
 
-local TRACK_COLOR = {r = 0.10, g = 0.10, b = 0.11, a = 0.9}
-local EMPTY_SEGMENT_COLOR = {r = 0.28, g = 0.28, b = 0.30, a = 0.7}
-local OUTLINE_COLOR = {r = 0.42, g = 0.42, b = 0.45, a = 0.8}
+-------------------------------------------------------------------
+-- PREVIEW SHEET
+-------------------------------------------------------------------
+
+local PREVIEW_SHEET = "Interface\\AddOns\\XPBarEnhanced\\assets\\style-previews"
+local SHEET_WIDTH, SHEET_HEIGHT = 2048, 256
+
+-- One cell is the 112x52 swatch canvas at 2x, packed left to right.
+local PREVIEW_CELL_WIDTH, PREVIEW_CELL_HEIGHT = 224, 104
+local PREVIEW_COLUMNS = math.floor(SHEET_WIDTH / PREVIEW_CELL_WIDTH)
+
+-- Cell index of each layer, as printed by build_style_previews.py.
+local PREVIEW_CELLS = {
+    none = {under = 0},
+    classic = {under = 1, fill = 2, over = 3},
+    flat = {under = 4, fill = 5},
+    vertical = {under = 6, fill = 7},
+    circular = {under = 8, fill = 9, over = 10},
+    minimap_ring = {under = 11, fill = 12},
+    terminal = {under = 13},
+    orb = {under = 14, fill = 15, over = 16},
+}
+
+local PREVIEW_LAYERS = {
+    {key = "under", drawLayer = "BACKGROUND"},
+    {key = "fill", drawLayer = "ARTWORK"},
+    {key = "over", drawLayer = "OVERLAY"},
+}
 
 -------------------------------------------------------------------
 -- HELPERS
@@ -70,227 +79,57 @@ local function FillColor()
     return RING_COLOR.r, RING_COLOR.g, RING_COLOR.b
 end
 
-local function Paint(texture, color)
-    texture:SetVertexColor(color.r, color.g, color.b, color.a or 1)
-end
+---A texture covering the whole preview canvas, showing one sheet cell.
+local function AddPreviewLayer(canvas, drawLayer, cellIndex)
+    local column = cellIndex % PREVIEW_COLUMNS
+    local row = math.floor(cellIndex / PREVIEW_COLUMNS)
+    local left = column * PREVIEW_CELL_WIDTH
+    local top = row * PREVIEW_CELL_HEIGHT
 
----A texture on the canvas, already sized and textured.
-local function Add(canvas, layer, file, width, height)
-    local texture = canvas:CreateTexture(nil, layer or "ARTWORK")
-    texture:SetTexture(file or TEX_SOLID)
-    texture:SetSize(width, height)
+    local texture = canvas:CreateTexture(nil, drawLayer)
+    texture:SetAllPoints(canvas)
+    texture:SetTexture(PREVIEW_SHEET)
+    texture:SetTexCoord(
+        left / SHEET_WIDTH,
+        (left + PREVIEW_CELL_WIDTH) / SHEET_WIDTH,
+        top / SHEET_HEIGHT,
+        (top + PREVIEW_CELL_HEIGHT) / SHEET_HEIGHT
+    )
     return texture
-end
-
----One edge of a hollow rectangle, used for the "no bar" outline.
-local function AddEdge(canvas, width, height, point, x, y)
-    local edge = Add(canvas, "ARTWORK", TEX_SOLID, width, height)
-    edge:SetPoint(point, canvas, "CENTER", x, y)
-    Paint(edge, OUTLINE_COLOR)
-    return edge
-end
-
----A ring of small segments, the shape both circular styles draw.
----Mirrors the placement in CircularBarStyle:RepositionSegments — start at
----6 o'clock and run clockwise — so the miniature fills the same way as the bar.
----@return table filled Segments that carry the xpBar colour
-local function AddSegmentRing(canvas, count, radius, segWidth, segHeight)
-    local filled = {}
-    local filledCount = math.floor(count * FILL_RATIO + 0.5)
-    local startAngle = math.pi / 2
-    local clockwise = -1
-
-    for i = 1, count do
-        local angle = startAngle + ((i - 1) / count) * (2 * math.pi)
-        local segment = Add(canvas, "ARTWORK", TEX_XP_BAR, segWidth, segHeight)
-        segment:SetPoint(
-            "CENTER",
-            canvas,
-            "CENTER",
-            math.cos(angle) * radius,
-            math.sin(angle) * radius * clockwise
-        )
-        if segment.SetRotation then
-            segment:SetRotation((clockwise * angle) + startAngle)
-        end
-        if i <= filledCount then
-            filled[#filled + 1] = segment
-        else
-            Paint(segment, EMPTY_SEGMENT_COLOR)
-        end
-    end
-
-    return filled
-end
-
--------------------------------------------------------------------
--- PREVIEW BUILDERS
--------------------------------------------------------------------
--- Each builder draws one style onto a 112x52 canvas and returns the textures
--- that carry the xpBar colour, so Repaint can follow a colour change without
--- rebuilding the art.
-
-local Builders = {}
-
---- No bar: an empty outline where the bar would be.
-function Builders.none(canvas)
-    local width, height = 88, 16
-    AddEdge(canvas, width, 1, "TOP", 0, height / 2)
-    AddEdge(canvas, width, 1, "BOTTOM", 0, -height / 2)
-    AddEdge(canvas, 1, height, "LEFT", -width / 2, 0)
-    AddEdge(canvas, 1, height, "RIGHT", width / 2, 0)
-
-    local dash = canvas:CreateFontString(nil, "OVERLAY", "GameFontDisable")
-    dash:SetPoint("CENTER")
-    dash:SetText("\226\128\148") -- em dash
-    return {}
-end
-
---- Flat: a solid track with a solid fill, exactly what FlatBarTemplate draws.
-function Builders.flat(canvas)
-    local width, height = 88, 12
-    local track = Add(canvas, "BACKGROUND", TEX_SOLID, width, height)
-    track:SetPoint("CENTER")
-    Paint(track, TRACK_COLOR)
-
-    local fill = Add(canvas, "ARTWORK", TEX_SOLID, width * FILL_RATIO, height)
-    fill:SetPoint("LEFT", track, "LEFT")
-    return {fill}
-end
-
---- Classic: legacy background, gradient xp-bar fill, legacy border on top.
-function Builders.classic(canvas)
-    local width, height = 92, 18
-    local background = Add(canvas, "BACKGROUND", TEX_LEGACY_BG, width, height)
-    background:SetPoint("CENTER")
-
-    local inner = width - 8
-    local fill = Add(canvas, "ARTWORK", TEX_XP_BAR, inner * FILL_RATIO, 10)
-    fill:SetPoint("LEFT", background, "LEFT", 4, 0)
-
-    local border = Add(canvas, "OVERLAY", TEX_LEGACY_BORDER, width, height)
-    border:SetPoint("CENTER")
-    return {fill}
-end
-
---- Vertical: the same solid track stood on its end, filling upward.
-function Builders.vertical(canvas)
-    local width, height = 14, 42
-    local track = Add(canvas, "BACKGROUND", TEX_SOLID, width, height)
-    track:SetPoint("CENTER")
-    Paint(track, TRACK_COLOR)
-
-    local fill = Add(canvas, "ARTWORK", TEX_SOLID, width, height * FILL_RATIO)
-    fill:SetPoint("BOTTOM", track, "BOTTOM")
-    return {fill}
-end
-
---- Circular: segment ring with the addon's own centre disc and border ring.
-function Builders.circular(canvas)
-    local center = Add(canvas, "BACKGROUND", TEX_RING_CENTER, 20, 20)
-    center:SetPoint("CENTER")
-
-    local filled = AddSegmentRing(canvas, 16, 17, 4, 7)
-
-    local ring = Add(canvas, "OVERLAY", TEX_RING_BORDER, 46, 46)
-    ring:SetPoint("CENTER")
-    return filled
-end
-
---- Minimap ring: the same segment ring, but hugging the minimap itself.
-function Builders.minimap_ring(canvas)
-    local minimap = Add(canvas, "BACKGROUND", TEX_MINIMAP_BG, 30, 30)
-    minimap:SetPoint("CENTER")
-    minimap:SetVertexColor(0.55, 0.55, 0.55, 1)
-
-    return AddSegmentRing(canvas, 18, 19, 4, 5)
-end
-
---- Terminal: real mono font, real block characters, phosphor green.
-function Builders.terminal(canvas)
-    local background = Add(canvas, "BACKGROUND", TEX_SOLID, 104, 34)
-    background:SetPoint("CENTER")
-    background:SetVertexColor(0.02, 0.02, 0.02, 0.95)
-
-    local filled = math.floor(TERMINAL_CELLS * FILL_RATIO + 0.5)
-    local blocks = string.rep(CH_FULL, filled) .. string.rep(CH_EMPTY, TERMINAL_CELLS - filled)
-
-    local line = canvas:CreateFontString(nil, "OVERLAY")
-    if not line:SetFont(TERMINAL_FONT, 10, "MONOCHROME") then
-        -- The bundled font is the whole point of this preview, but a swatch with
-        -- no text at all would read as a broken style rather than a missing file.
-        line:SetFontObject("GameFontHighlightSmall")
-    end
-    line:SetPoint("CENTER", canvas, "CENTER", 0, 5)
-    line:SetText("|cFF00A600[|r|cFF00FF00" .. blocks .. "|r|cFF00A600]|r")
-
-    local stats = canvas:CreateFontString(nil, "OVERLAY")
-    if not stats:SetFont(TERMINAL_FONT, 9, "MONOCHROME") then
-        stats:SetFontObject("GameFontHighlightSmall")
-    end
-    stats:SetPoint("CENTER", canvas, "CENTER", 0, -7)
-    stats:SetText("|cFF007A0065.0%  Lv.23|r")
-    return {}
-end
-
---- Orb: a solid fill clipped to a circle, under the orb's own ring and glass.
-function Builders.orb(canvas)
-    local size = 38
-
-    local shell = Add(canvas, "BACKGROUND", TEX_SOLID, size, size)
-    shell:SetPoint("CENTER")
-    shell:SetVertexColor(0.08, 0.08, 0.10, 0.9)
-
-    local fill = Add(canvas, "ARTWORK", TEX_SOLID, size, size * FILL_RATIO)
-    fill:SetPoint("BOTTOM", shell, "BOTTOM")
-
-    -- One mask over the orb's full square clips both the shell and the partial
-    -- fill to the same circle, which is how OrbBarTemplate gets its shape.
-    local mask = canvas:CreateMaskTexture()
-    mask:SetTexture(TEX_CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    mask:SetSize(size, size)
-    mask:SetPoint("CENTER")
-    shell:AddMaskTexture(mask)
-    fill:AddMaskTexture(mask)
-
-    local glass = Add(canvas, "ARTWORK", TEX_ORB_GLASS, size, size)
-    glass:SetPoint("CENTER")
-    glass:SetDrawLayer("ARTWORK", 2)
-
-    local ring = Add(canvas, "OVERLAY", TEX_ORB_RING, size + 6, size + 6)
-    ring:SetPoint("CENTER")
-    return {fill}
 end
 
 -------------------------------------------------------------------
 -- SWATCHES
 -------------------------------------------------------------------
 
----Draw a style's miniature once and remember what to recolour later.
----Entries are usually textures (SetVertexColor); a Cooldown-based element is
----tinted through SetSwipeColor instead.
+---Re-apply the configured colour to a swatch's fill.
 local function RepaintSwatch(swatch)
     if not swatch.__fills then
         return
     end
     local r, g, b = FillColor()
     for _, element in ipairs(swatch.__fills) do
-        if element.SetVertexColor then
-            element:SetVertexColor(r, g, b, 1)
-        elseif element.SetSwipeColor then
-            element:SetSwipeColor(r, g, b, 1)
-        end
+        element:SetVertexColor(r, g, b, 1)
     end
 end
 
 local function BuildPreview(swatch, styleValue)
-    local builder = Builders[styleValue]
-    if not builder or swatch.__built then
+    local cells = PREVIEW_CELLS[styleValue]
+    if not cells or swatch.__built then
         return
     end
     swatch.__built = true
-    swatch.__fills = builder(swatch.Preview) or {}
-    -- Paint immediately: builders leave fills untinted, and a swatch drawn white
+    swatch.__fills = {}
+    for _, layer in ipairs(PREVIEW_LAYERS) do
+        local cellIndex = cells[layer.key]
+        if cellIndex then
+            local texture = AddPreviewLayer(swatch.Preview, layer.drawLayer, cellIndex)
+            if layer.key == "fill" then
+                swatch.__fills[#swatch.__fills + 1] = texture
+            end
+        end
+    end
+    -- Paint immediately: the fill cell is untinted, and a swatch drawn white
     -- for one frame before the first Refresh is a visible flash.
     RepaintSwatch(swatch)
 end

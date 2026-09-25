@@ -2,10 +2,10 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail and Classic Era** · Retail Interface 120100 · Classic Interface 11509 · Version 1.2.6
+**Retail and Classic branches** · Vanilla 1.15 · Forever 1.60 · Burning Crusade 2.xx · Wrath 3.xx · Cataclysm 4.xx · Mists 5.xx · Retail 12.xx · Version 1.3.0
 
-XP Bar Enhanced supports both World of Warcraft Retail and Classic Era 1.15.9.
-The addon selects the appropriate game-version manifest and API behavior at load time.
+XP Bar Enhanced uses one manifest. The client interface build is resolved to a
+product flavor, and that flavor activates the supported feature set.
 
 ## Features
 
@@ -60,10 +60,7 @@ The addon selects the appropriate game-version manifest and API behavior at load
 | `/xpbe profile new <name>` | Create and select a new profile |
 | `/xpbe profile rename <name>` | Rename the active profile |
 | `/xpbe profile delete [name]` | Delete a profile |
-| `/xpbe reps` | Export all faction IDs |
-| `/xpbe debugevents [on\|off\|show\|reset]` | Toggle and inspect EventBus emit counters |
-| `/xpbe test <celebration\|milestone>` | Preview the level-up celebration or a progress notification |
-| `/xpbe reset` | Reset all settings |
+| `/xpbe reset` | Reset the active profile's settings |
 | `/xpbe resetstats` | Reset session statistics |
 | `/xpbe resetcolors` | Reset colors to defaults |
 | `/xpbe help` | Show available commands |

@@ -105,15 +105,6 @@ function Utils.FormatDuration(seconds)
     return TimeCalc.FormatSmart(seconds)
 end
 
----Format seconds into a user-friendly time string (e.g. "1h 2m")
----Uses centralized TimeCalculations module
----@param seconds number Duration in seconds
----@return string formatted User-friendly time string
-function Utils.FormatTime(seconds)
-    local TimeCalc = Addon.TimeCalculations
-    return TimeCalc.FormatHMS(seconds)
-end
-
 ---Get a configuration option value with profile-aware fallback
 ---Delegates to Config:GetOptionValue when available, returns fallback otherwise
 ---@param key string Configuration key name
@@ -144,55 +135,4 @@ function Utils.GetSettingsTable(key, createIfMissing)
         Addon.db[key] = {}
     end
     return Addon.db[key]
-end
-
----Safely hide a Blizzard container, deferring to after combat if necessary.
----Prevents taint violations by deferring hide operations during combat lockdown.
----A single shared frame services all pending deferrals (frames can never be
----destroyed, so allocating one per call would leak). When provided,
----shouldStillHide is re-evaluated at combat end so a stale request cannot
----hide a container that should be visible again.
----@param container Frame The Blizzard frame to hide
----@param shouldStillHide? fun(): boolean Optional predicate re-checked at combat end
-function Utils.SafeHideContainer(container, shouldStillHide)
-    if not container then return end
-
-    if not InCombatLockdown() then
-        container:Hide()
-        return
-    end
-
-    Utils._pendingContainerHides = Utils._pendingContainerHides or {}
-    Utils._pendingContainerHides[container] = shouldStillHide or true
-
-    local f = Utils._containerHideFrame
-    if not f then
-        f = CreateFrame("Frame")
-        Utils._containerHideFrame = f
-        f:SetScript("OnEvent", function()
-            f:UnregisterAllEvents()
-            local queue = Utils._pendingContainerHides
-            Utils._pendingContainerHides = nil
-            if not queue then return end
-            for target, predicate in pairs(queue) do
-                if (predicate == true or predicate()) and target:IsShown() then
-                    target:Hide()
-                end
-            end
-        end)
-    end
-    f:RegisterEvent("PLAYER_REGEN_ENABLED")
-end
-
----Convert RGB components to WoW hex color escape sequence
----Used for terminal color rendering and other styled text output
----@param r number Red component (0-1)
----@param g number Green component (0-1)
----@param b number Blue component (0-1)
----@return string escape Hex color escape sequence (e.g. "|cFFRRGGBB")
-function Utils.Hex(r, g, b)
-    r = math.floor((r or 0) * 255)
-    g = math.floor((g or 0) * 255)
-    b = math.floor((b or 0) * 255)
-    return string.format("|cFF%02X%02X%02X", r, g, b)
 end

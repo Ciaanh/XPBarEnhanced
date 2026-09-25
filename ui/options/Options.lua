@@ -51,6 +51,7 @@ local PANEL_NAME = ResolveLocale("ADDON_NAME")
 local PROFILE_CREATE_POPUP = "XPBE_CREATE_PROFILE"
 local PROFILE_RENAME_POPUP = "XPBE_RENAME_PROFILE"
 local PROFILE_DELETE_POPUP = "XPBE_DELETE_PROFILE"
+local PROFILE_RESET_POPUP = "XPBE_RESET_PROFILE"
 
 -- Rows the active style cannot render, keyed by config key then style name, with
 -- the locale key of the muted reason to show. A style absent from a row's table
@@ -72,9 +73,11 @@ local ROW_OWNER_STYLE = {
     showMilestoneTicks          = "flat",
     verticalSize                = "vertical",
     classicBarDraggable         = "classic",
+    classicWidth                = "classic",
+    classicSegments             = "classic",
     circularSize                = "circular",
     circularSegments            = "circular",
-    circularUseTexture          = "circular",
+    circularUseTexture          = {"circular", "minimap_ring"},
     circularScaleCenterText     = "circular",
     circularSecondaryFullCircle = "circular",
     minimapRingPadding          = "minimap_ring",
@@ -86,17 +89,26 @@ local ROW_OWNER_STYLE = {
     terminalUseCustomColors     = "terminal",
 }
 
+-- Rows hidden by client feature policy. Reputation is conditional independently
+-- of the broad classic-client behavior flag because flavor profiles can differ.
 local CLASSIC_HIDDEN_OPTIONS = {
     hideCompanionOutsideDelve = true,
-    secondaryReputation = true,
     secondaryHousing = true,
     secondaryHonor = true,
 }
+if not Addon:IsFeatureSupported("reputation") then
+    CLASSIC_HIDDEN_OPTIONS.secondaryReputation = true
+end
 
 -- The Colors tab carries one swatch per secondary-bar source, but only one source
 -- is ever on screen. The active source's swatch stays out in the open; the other
 -- three fold into a disclosure and read as inactive.
 local SECONDARY_COLOR_GROUP = "othersources"
+local OPTION_FEATURES = {
+    secondaryReputation = "reputation",
+    secondaryHousing = "housing",
+    secondaryHonor = "honor",
+}
 local SECONDARY_SOURCE_COLOR = {
     reputation = "secondaryReputation",
     housing = "secondaryHousing",
@@ -119,6 +131,17 @@ local DISCLOSURE_DEFAULT_OPEN = {
         return (presets and presets:Detect() == presets.CUSTOM) and true or false
     end,
 }
+
+--- The bar style on screen: the stored one, resolved the way BarManager
+--- resolves it, so a style this build cannot render still selects the one
+--- actually drawn.
+local function ResolvedBarStyle()
+    local style = Config:GetOptionValue("barStyle")
+    if Addon.BarManager and Addon.BarManager.ResolveStyleKey then
+        style = Addon.BarManager:ResolveStyleKey(style)
+    end
+    return style
+end
 
 --- Short display name of a bar style, from the barStyle option list.
 --- Short, not long: "— Circular only" reads better than
@@ -211,9 +234,18 @@ local function EnsureProfilePopups()
                 end
             end,
             EditBoxOnEnterPressed = function(editBox)
+                -- GameDialog (every current client) exposes its buttons through
+                -- GetButton1; popup.button1 is the older StaticPopup field.
                 local popup = editBox:GetParent()
-                if popup and popup.button1 and popup.button1:IsEnabled() then
-                    popup.button1:Click()
+                local accept = popup and ((popup.GetButton1 and popup:GetButton1()) or popup.button1)
+                if accept and accept:IsEnabled() then
+                    accept:Click()
+                end
+            end,
+            EditBoxOnEscapePressed = function(editBox)
+                local popup = editBox:GetParent()
+                if popup then
+                    popup:Hide()
                 end
             end,
             OnAccept = function(popup)
@@ -246,9 +278,18 @@ local function EnsureProfilePopups()
                 end
             end,
             EditBoxOnEnterPressed = function(editBox)
+                -- GameDialog (every current client) exposes its buttons through
+                -- GetButton1; popup.button1 is the older StaticPopup field.
                 local popup = editBox:GetParent()
-                if popup and popup.button1 and popup.button1:IsEnabled() then
-                    popup.button1:Click()
+                local accept = popup and ((popup.GetButton1 and popup:GetButton1()) or popup.button1)
+                if accept and accept:IsEnabled() then
+                    accept:Click()
+                end
+            end,
+            EditBoxOnEscapePressed = function(editBox)
+                local popup = editBox:GetParent()
+                if popup then
+                    popup:Hide()
                 end
             end,
             OnAccept = function(popup, data)
@@ -273,6 +314,23 @@ local function EnsureProfilePopups()
             OnAccept = function(_popup, data)
                 if Addon.Options and Addon.Options.AcceptDeleteProfileDialog then
                     Addon.Options:AcceptDeleteProfileDialog(data and data.profileName)
+                end
+            end,
+        }
+    end
+
+    if not StaticPopupDialogs[PROFILE_RESET_POPUP] then
+        StaticPopupDialogs[PROFILE_RESET_POPUP] = {
+            text = "%s",
+            button1 = ACCEPT,
+            button2 = CANCEL,
+            timeout = 0,
+            whileDead = 1,
+            hideOnEscape = 1,
+            preferredIndex = 3,
+            OnAccept = function()
+                if Addon.Options and Addon.Options.AcceptResetSettingsDialog then
+                    Addon.Options:AcceptResetSettingsDialog()
                 end
             end,
         }
@@ -339,8 +397,10 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
             -- RefreshRowAvailability, which enables or disables instead.
             local tabMatch = (childTab == tabId)
             local disclosureOk = self:IsDisclosureExpanded(self:GetEffectiveDisclosureGroup(child))
-            local classicHidden = Addon.IsClassicEra
-                and CLASSIC_HIDDEN_OPTIONS[child.configKey]
+            local requiredFeature = OPTION_FEATURES[child.configKey]
+            local classicHidden = (child.configKey == "hideCompanionOutsideDelve" and Addon:IsFeatureEnabled("classicClientBehavior"))
+                or (requiredFeature and not Addon:IsFeatureSupported(requiredFeature))
+                or (child.disclosureToggle == SECONDARY_COLOR_GROUP and not self:HasFoldedSecondaryColors())
             child:SetShown(tabMatch and disclosureOk and not classicHidden)
         end
     end
@@ -471,6 +531,11 @@ function XPBarEnhancedOptionsMixin:RefreshProfileControls()
     local activeProfile = Config:GetActiveProfileName()
     if controls.dropdown and controls.dropdown.SetDefaultText then
         controls.dropdown:SetDefaultText(GetProfileDisplayName(activeProfile))
+        -- Once its menu has been built the dropdown shows the selected item's
+        -- text, not the default text; rebuilding re-reads the selection.
+        if controls.dropdown.GenerateMenu then
+            controls.dropdown:GenerateMenu()
+        end
     end
 end
 
@@ -812,7 +877,7 @@ function XPBarEnhancedOptionsMixin:BuildOptionCheckboxes()
     local container = self.ContentFrame.OptionsContainer
     local childFrames = CollectChildrenByConfigKey(container)
 
-    if Addon.IsClassicEra then
+    if Addon:IsFeatureEnabled("classicClientBehavior") then
         for key in pairs(CLASSIC_HIDDEN_OPTIONS) do
             if childFrames[key] then
                 childFrames[key]:Hide()
@@ -841,15 +906,6 @@ function XPBarEnhancedOptionsMixin:BuildOptionCheckboxes()
             elseif frame.Checkbox and frame.Label then
                 -- Two-column checkbox template (ConfigCheckboxTemplate)
                 ControlHelpers.SetupTwoColumnCheckbox(self, frame, key, detail)
-            elseif detail.type == "slider" then
-                -- Old-style slider (dynamically created)
-                ControlHelpers.SetupSlider(self, frame, key, detail)
-            elseif detail.type == "dropdown" and detail.options and #detail.options > 2 then
-                -- Old-style cycling button dropdown
-                ControlHelpers.SetupDropdown(self, frame, key, detail)
-            elseif detail.type == "dropdown" then
-                -- Old-style radio group
-                ControlHelpers.SetupRadioGroup(self, frame, key, detail)
             else
                 -- Default to checkbox
                 ControlHelpers.SetupCheckbox(self, frame, key, detail)
@@ -887,7 +943,7 @@ function XPBarEnhancedOptionsMixin:BuildColorControls()
         end
     end
 
-    if Addon.IsClassicEra then
+    if Addon:IsFeatureEnabled("classicClientBehavior") then
         for key in pairs(CLASSIC_HIDDEN_OPTIONS) do
             local row = rowsByKey[key]
             if row then
@@ -897,28 +953,6 @@ function XPBarEnhancedOptionsMixin:BuildColorControls()
     end
 
     self:UpdateColorControls()
-end
-
-function XPBarEnhancedOptionsMixin:UpdateContentHeight(bottomAnchor)
-    local contentFrame = self.ContentFrame
-    if not contentFrame then
-        return
-    end
-
-    local top = contentFrame:GetTop()
-    local bottom = bottomAnchor and bottomAnchor.valueText and bottomAnchor.valueText:GetBottom()
-
-    local resetBtn = self.ResetSettingsButton
-    if not bottom and resetBtn and resetBtn.GetBottom then
-        bottom = resetBtn:GetBottom()
-    end
-
-    if top and bottom then
-        local height = (top - bottom) + 80
-        if height > contentFrame:GetHeight() then
-            contentFrame:SetHeight(height)
-        end
-    end
 end
 
 function XPBarEnhancedOptionsMixin:RegisterCategory()
@@ -942,25 +976,32 @@ function XPBarEnhancedOptionsMixin:RegisterCategory()
     end
 end
 
+-- Resets only the active profile, and only after confirmation: the button sits
+-- beside Reset Bar Position, and a misclick used to wipe every profile.
 function XPBarEnhancedOptionsMixin:OnResetSettingsClicked()
-    Config:Reset()
-    self:Refresh()
+    local profileName = Config:GetActiveProfileName() or ResolveLocale("OPT_PROFILE_GLOBAL")
+    EnsureProfilePopups()
+    if StaticPopup_Show and StaticPopupDialogs and StaticPopupDialogs[PROFILE_RESET_POPUP] then
+        StaticPopup_Show(PROFILE_RESET_POPUP, string.format(ResolveLocale("OPT_RESET_SETTINGS_DIALOG"), profileName))
+    end
+end
+
+function Options:AcceptResetSettingsDialog()
+    Config:ResetActiveProfile()
+    if self.frame and self.frame.Refresh then
+        self.frame:Refresh()
+    end
 end
 
 function XPBarEnhancedOptionsMixin:OnResetBarPositionClicked()
-    -- Prefer BarManager wrapper or direct view call for reset position; fallback to old shim
     if Addon.BarManager and Addon.BarManager.ResetBarPosition then
         Addon.BarManager:ResetBarPosition()
     end
-    -- Clear persisted secondary bar positions so bars return to default anchors
-    -- Use profile-aware API instead of direct Addon.db access
-    if Addon.Config and Addon.Config.GetSettingsStorage then
-        local storage = Addon.Config:GetSettingsStorage()
-        if storage then
-            storage.secondaryBarPositions = nil
-        end
-    elseif Addon.db then
-        Addon.db.secondaryBarPositions = nil
+    -- Only the active profile's own positions: an empty table rather than nil,
+    -- which on a profile would fall back to Global's.
+    local storage = Config:GetSettingsStorage()
+    if storage then
+        storage.secondaryBarPositions = {}
     end
     if Addon.SecondaryBarManager and Addon.SecondaryBarManager.ResetBarPositions then
         Addon.SecondaryBarManager:ResetBarPositions()
@@ -970,7 +1011,7 @@ end
 function XPBarEnhancedOptionsMixin:UpdateColorControls()
     -- The style swatches paint their fills with the configured xpBar colour, so a
     -- colour change has to reach them too — not only the Colors tab's own rows.
-    self:RefreshStyleGallery(Config and Config:GetOptionValue("barStyle"))
+    self:RefreshStyleGallery(ResolvedBarStyle())
 
     if not Config or not Config.colorOptionsList then
         return
@@ -1039,6 +1080,14 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
     local b = clamp01(color.b or color[3] or 1)
     local a = clamp01(color.a or color[4] or 1)
     local previousHex = Config:GetColorHex(colorKey)
+    -- Whether the active profile had its own value: a cancel must not leave an
+    -- override behind for a color that was only inherited.
+    local hadOwnColor = Config:HasOwnColor(colorKey)
+    -- The Classic-family picker's opacity slider runs the other way: its value
+    -- is transparency, which Blizzard's chat frames read as 1 - GetColorAlpha().
+    local invertOpacity = rawget(_G, "OpacitySliderFrame") ~= nil
+        and not (ColorPickerFrame and ColorPickerFrame.Content)
+    local pickerOpacity = invertOpacity and (1 - a) or a
 
     -- Called continuously as the user changes color/opacity
     local function applyColor(restore, ...)
@@ -1086,10 +1135,20 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
             if (opacity == nil) and OpacitySliderFrame and OpacitySliderFrame:IsShown() then
                 opacity = OpacitySliderFrame:GetValue()
             end
+
+            if opacity ~= nil and invertOpacity then
+                opacity = 1 - opacity
+            end
         end
 
         opacity = clamp01(opacity or 1)
         local hex = rgbToHex(pr, pg, pb, opacity)
+
+        -- The picker reports its starting color as it opens; writing that back
+        -- would pin an inherited color onto the profile before any change.
+        if hex == Config:GetColorHex(colorKey) then
+            return
+        end
 
         -- Save the new color
         Config:SetColor(colorKey, hex, true)
@@ -1108,8 +1167,12 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
 
     -- Called when user clicks Cancel - restore original color
     local function cancelColor(restore)
-        -- Restore to the original color
-        Config:SetColor(colorKey, previousHex, true)
+        -- Restore the original color, or the inheritance it came from
+        if hadOwnColor then
+            Config:SetColor(colorKey, previousHex, true)
+        else
+            Config:ClearOwnColor(colorKey, true)
+        end
         if Config.ApplyPendingOptionChanges then
             Config:ApplyPendingOptionChanges()
         end
@@ -1134,13 +1197,18 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
                 end,
                 cancelFunc = cancelColor,
                 hasOpacity = true,
-                opacity = a,
+                opacity = pickerOpacity,
                 r = r,
                 g = g,
                 b = b,
-                previousValues = {r = r, g = g, b = b, a = a}
+                previousValues = {r = r, g = g, b = b, a = pickerOpacity}
             }
         )
+        -- The Classic picker sets its slider in OnShow, which does not run when
+        -- a second swatch opens it while it is already showing.
+        if invertOpacity and OpacitySliderFrame and OpacitySliderFrame.SetValue then
+            OpacitySliderFrame:SetValue(pickerOpacity)
+        end
         -- Some Classic builds still invoke the legacy callback from the OK
         -- button even after the modern picker has been opened. The Classic
         -- XML specifically invokes swatchFunc() from the OK button.
@@ -1155,7 +1223,7 @@ function XPBarEnhancedOptionsMixin:OpenColorPicker(colorKey)
         ColorPickerFrame.cancelFunc = cancelColor
 
         ColorPickerFrame.hasOpacity = true
-        ColorPickerFrame.opacity = a
+        ColorPickerFrame.opacity = pickerOpacity
         ColorPickerFrame.previousValues = {r = r, g = g, b = b, a = a}
         ColorPickerFrame:SetColorRGB(r, g, b)
         ColorPickerFrame:Hide()
@@ -1197,6 +1265,34 @@ function XPBarEnhancedOptionsMixin:GetEffectiveDisclosureGroup(child)
         return nil
     end
     return group
+end
+
+--- True when the "other secondary sources" group has anything in it: a source
+--- this client supports that is not the active one. On the Classic clients
+--- profession is the only source, so the header would open onto nothing.
+function XPBarEnhancedOptionsMixin:HasFoldedSecondaryColors()
+    local activeKey = SECONDARY_SOURCE_COLOR[Config:GetOptionValue("secondaryBarSource")]
+    for source, key in pairs(SECONDARY_SOURCE_COLOR) do
+        if key ~= activeKey and Addon:IsFeatureSupported(source) then
+            return true
+        end
+    end
+    return false
+end
+
+--- Re-derive each disclosure group's starting state. Called at login: the
+--- panel's OnLoad runs when its XML loads, before saved settings exist, so a
+--- default that depends on them (Advanced opens for a Custom readout) can only
+--- be decided then.
+function XPBarEnhancedOptionsMixin:ApplyDisclosureDefaults()
+    self._disclosureExpanded = self._disclosureExpanded or {}
+    for group, defaultOpen in pairs(DISCLOSURE_DEFAULT_OPEN) do
+        self._disclosureExpanded[group] = defaultOpen() and true or false
+    end
+    self:RefreshDisclosureHeaders()
+    if self._activeTab then
+        self:SelectTab(self._activeTab)
+    end
 end
 
 --- True when rows in `group` should be shown. Rows with no group always show.
@@ -1364,8 +1460,11 @@ function XPBarEnhancedOptionsMixin:SetupPresetRow()
         if button then
             local upper = string.upper(name)
             button:SetText(ResolveLocale("OPT_READOUT_PRESET_" .. upper))
-            button.tooltipText = ResolveLocale("OPT_READOUT_PRESET_" .. upper)
-            button.tooltipRequirement = ResolveLocale("OPT_READOUT_PRESET_" .. upper .. "_DESC")
+            ControlHelpers.AttachTooltip(
+                {button},
+                ResolveLocale("OPT_READOUT_PRESET_" .. upper),
+                ResolveLocale("OPT_READOUT_PRESET_" .. upper .. "_DESC")
+            )
             button:SetScript("OnClick", function()
                 presets:Apply(name)
                 -- Choosing a preset means the details are handled; fold them away.
@@ -1478,12 +1577,21 @@ function XPBarEnhancedOptionsMixin:RefreshRowAvailability(barStyle)
         self:SetRowAvailability(key, localeKey == nil, localeKey and ResolveLocale(localeKey))
     end
 
-    for key, ownerStyle in pairs(ROW_OWNER_STYLE) do
-        local available = (ownerStyle == barStyle)
+    for key, owners in pairs(ROW_OWNER_STYLE) do
+        -- One owning style, or a list when several styles read the option.
+        if type(owners) ~= "table" then
+            owners = {owners}
+        end
+        local available = false
+        local labels = {}
+        for _, ownerStyle in ipairs(owners) do
+            available = available or (ownerStyle == barStyle)
+            labels[#labels + 1] = GetStyleLabel(ownerStyle)
+        end
         self:SetRowAvailability(
             key,
             available,
-            not available and string.format(ResolveLocale("OPT_UNAVAIL_STYLE_ONLY"), GetStyleLabel(ownerStyle)) or nil
+            not available and string.format(ResolveLocale("OPT_UNAVAIL_STYLE_ONLY"), table.concat(labels, " / ")) or nil
         )
     end
 end
@@ -1494,7 +1602,7 @@ function XPBarEnhancedOptionsMixin:Refresh()
     end
 
     -- Current barStyle drives row availability, not row visibility.
-    local barStyle = Config:GetOptionValue("barStyle")
+    local barStyle = ResolvedBarStyle()
 
     -- Refresh checkboxes
     for key, checkbox in pairs(self.controls) do
@@ -1556,6 +1664,12 @@ function XPBarEnhancedOptionsMixin:Refresh()
                     -- WowStyle1DropdownTemplate: Use SetDefaultText to update displayed text
                     if dropdown.SetDefaultText then
                         dropdown:SetDefaultText(labelText)
+                        -- The shown text is the selected item's once the menu
+                        -- has been built; rebuilding re-reads the selection
+                        -- (after a profile switch, say).
+                        if dropdown.GenerateMenu then
+                            dropdown:GenerateMenu()
+                        end
                     elseif dropdown.Button then
                         -- Old-style cycling button dropdown (classic)
                         dropdown.Button:SetText(labelText)
@@ -1668,6 +1782,9 @@ function Options:Initialize(controller)
             panel:OnLoad()
         end
     end
+    if panel and panel.ApplyDisclosureDefaults then
+        panel:ApplyDisclosureDefaults()
+    end
 
     return panel
 end
@@ -1720,135 +1837,10 @@ end
 
 -- Controller Methods
 
+--- A control changed `key`. Config:ApplyOptionSideEffects has already applied
+--- it to the bars (so presets, profile switches and slash commands get the
+--- same reaction); the panel only has to redraw.
 function Options:OnOptionChanged(key)
-    -- Handle specific option changes
-    if key == "barStyle" then
-        local value = (Addon.Config and Addon.Config.GetOptionValue and Addon.Config:GetOptionValue("barStyle")) or "classic"
-        if Addon.BarManager and Addon.BarManager.SetStyle then
-            Addon.BarManager:SetStyle(value)
-        end
-    elseif key == "barLocked" then
-    elseif key == "classicBarDraggable" then
-    elseif key == "showMinimapButton" then
-        local value = Config:GetOptionValue("showMinimapButton")
-        if Addon.MinimapButton and Addon.MinimapButton.SetEnabled then
-            Addon.MinimapButton:SetEnabled(value and true or false)
-        end
-        -- Handled by Config side effects - just refresh UI
-    elseif
-        key == "enableAnimations" or key == "flashOnGain" or key == "twoPhaseOnLevelUp"
-     then
-        if Addon.BarManager and Addon.BarManager.UpdateAnimationSettings then
-            Addon.BarManager:UpdateAnimationSettings()
-        end
-    elseif key == "circularSegments" then
-        -- Immediately reposition segments on the circular bar
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.RepositionSegments then
-                bar:RepositionSegments()
-            end
-        end
-    elseif key == "circularUseTexture" then
-        -- Update texture on segments and reposition
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.RepositionSegments then
-                bar:RepositionSegments()
-            end
-        end
-    elseif key == "flatSize" or key == "verticalSize" then
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.ResizeToScale then
-                bar:ResizeToScale()
-            end
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-            if secondaryBar and secondaryBar.ResizeToScale then
-                secondaryBar:ResizeToScale()
-            end
-        end
-    elseif key == "circularSize" then
-        -- Resize ring and reposition segments
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.RepositionSegments then
-                bar:RepositionSegments()
-            end
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-            if secondaryBar and secondaryBar.QueueReposition then
-                secondaryBar:QueueReposition()
-            end
-        end
-    elseif key == "circularScaleCenterText" then
-        -- Re-layout center text and CenterBG with new scale setting
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.RepositionSegments then
-                bar:RepositionSegments()
-            end
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-            if secondaryBar and secondaryBar.QueueReposition then
-                secondaryBar:QueueReposition()
-            end
-        end
-    elseif key == "terminalUseCustomColors" then
-        -- Terminal colors changed, refresh the bar rendering
-        -- (no specific bar method needed — Refresh will re-render with new colors)
-    elseif key == "minimapRingCollectButtons" then
-        -- Immediately collect or release buttons without waiting for an XP event
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.UpdateButtonCollection then
-                bar:UpdateButtonCollection(true)
-            end
-        end
-    elseif
-        key == "minimapRingPadding" or key == "minimapRingSegments" or
-        key == "minimapRingSegmentWidth" or key == "minimapRingSegmentHeight"
-    then
-        -- Reposition ring/arc immediately so the visual updates without waiting for an XP event
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.QueueReposition then
-                bar:QueueReposition()
-            end
-        end
-        if Addon.SecondaryBarManager and Addon.SecondaryBarManager.GetCurrentFrame then
-            local secondaryBar = Addon.SecondaryBarManager:GetCurrentFrame()
-            if secondaryBar and secondaryBar.QueueReposition then
-                secondaryBar:QueueReposition()
-            end
-        end
-    elseif
-        key == "showQuestXP" or key == "showQuestPercent" or
-            key == "showCompleteQuestOverlay" or
-            key == "showIncompleteQuestOverlay"
-     then
-    elseif key == "showMilestoneTicks" then
-        if Addon.BarManager and Addon.BarManager.GetCurrentFrame then
-            local bar = Addon.BarManager:GetCurrentFrame()
-            if bar and bar.UpdateMilestoneTicks then
-                local context = nil
-                if XPBarContextBuilder and XPBarContextBuilder.BuildContext then
-                    context = XPBarContextBuilder.BuildContext("CONFIG_UPDATED")
-                end
-                local ratio = 0
-                if context and context.xpMax and context.xpMax > 0 then
-                    ratio = (context.currentXP or 0) / context.xpMax
-                end
-                bar:UpdateMilestoneTicks(ratio, context)
-            end
-        end
-    end
-
-    -- General refresh
     self:Refresh()
 end
 

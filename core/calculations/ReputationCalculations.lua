@@ -143,6 +143,9 @@ function RepCalc.NormalizeRepData(factionType, rawData)
 
     local L = Addon.L
     local current, min, max, ratio, percent, name, standingLabel, isMaxed
+    -- reactionLevel: standing 1 (Hated) .. 8 (Exalted), standard factions only.
+    -- level: renown level. total: cumulative paragon value (current wraps).
+    local reactionLevel, level, total
 
     if factionType == "standard" then
         current = rawData.currentStanding or 0
@@ -150,6 +153,7 @@ function RepCalc.NormalizeRepData(factionType, rawData)
         max = rawData.nextReactionThreshold or 0
         name = rawData.name or ""
         isMaxed = (rawData.reaction == 8)
+        reactionLevel = rawData.reaction
         local gender = UnitSex and UnitSex("player") or 1
         standingLabel = (rawData.reaction and GetText("FACTION_STANDING_LABEL" .. rawData.reaction, gender)) or ""
         ratio = RepCalc.ComputeRatio(current, min, max)
@@ -178,6 +182,7 @@ function RepCalc.NormalizeRepData(factionType, rawData)
         max = rawData.renownLevelThreshold or 0
         name = rawData.name or ""
         isMaxed = (rawData.renownLevel and rawData.maxLevel and rawData.renownLevel >= rawData.maxLevel) or false
+        level = rawData.renownLevel
         standingLabel = L and string.format(L["REP_STANDING_RENOWN"], rawData.renownLevel or 0)
             or ("Renown " .. (rawData.renownLevel or 0))
         ratio = RepCalc.ComputeRenownProgress(current, max)
@@ -189,6 +194,7 @@ function RepCalc.NormalizeRepData(factionType, rawData)
             threshold = 1
         end
         current = (rawData.currentValue or 0) % threshold
+        total = rawData.currentValue or 0
         min = 0
         max = threshold
         name = rawData.name or ""
@@ -211,6 +217,9 @@ function RepCalc.NormalizeRepData(factionType, rawData)
         standingLabel = standingLabel,
         factionType = factionType,
         isMaxed = isMaxed,
+        reactionLevel = reactionLevel,
+        level = level,
+        total = total,
     }
 end
 

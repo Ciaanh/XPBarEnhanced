@@ -411,7 +411,7 @@ function CircularBarStyleTemplate:SetArcProgress(progress, context, overlayAlpha
     -- GetDisplaySegmentCount is a full profile-chain read and can even write on a
     -- migration path, so it must not be called twice per frame)
     local hasRestedXP = context.hasRestedXP == true
-    self:UpdateSegmentColors(hasRestedXP, overlayAlpha, totalSegments)
+    self:UpdateSegmentColors(hasRestedXP, overlayAlpha, totalSegments, context._secondaryColor)
 end
 
 --- Build (or reuse) the segment colour table for the current render.
@@ -420,8 +420,9 @@ end
 --- and keyed on hasRestedXP, so a rested flip mid-animation still recolours.
 -- @param hasRestedXP boolean: Whether player has rested XP available
 -- @return table: Colour table consumed by ApplySegmentTypeColor
-function CircularBarStyleTemplate:GetRenderColors(hasRestedXP)
-    if self._renderColors and self._renderColorsRested == hasRestedXP then
+function CircularBarStyleTemplate:GetRenderColors(hasRestedXP, secondaryColor)
+    if self._renderColors and self._renderColorsRested == hasRestedXP
+        and self._renderColorsSecondary == secondaryColor then
         return self._renderColors
     end
 
@@ -429,7 +430,8 @@ function CircularBarStyleTemplate:GetRenderColors(hasRestedXP)
     local shared = GetSharedStyleHelpers()
     local currentXPColor = nil
     if shared and shared.GetXPBarColor then
-        currentXPColor = shared.GetXPBarColor({hasRestedXP = hasRestedXP})
+        -- _secondaryColor: the source's color in the max-level secondary mode
+        currentXPColor = shared.GetXPBarColor({hasRestedXP = hasRestedXP, _secondaryColor = secondaryColor})
     end
     if not currentXPColor or not currentXPColor.r then
         local key = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
@@ -443,6 +445,7 @@ function CircularBarStyleTemplate:GetRenderColors(hasRestedXP)
         questIncomplete = Colors:Get(Colors.Key.QuestIncomplete),
     }
     self._renderColorsRested = hasRestedXP
+    self._renderColorsSecondary = secondaryColor
 
     -- Fresh colours invalidate the paint diff: every visible segment needs
     -- rewriting even where its type is unchanged.
@@ -457,9 +460,9 @@ end
 -- @param hasRestedXP boolean: Whether player has rested XP available
 -- @param overlayAlpha number|nil: Alpha multiplier for overlay segments
 -- @param totalSegments number|nil: Visible segment count, resolved by the caller
-function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha, totalSegments)
+function CircularBarStyleTemplate:UpdateSegmentColors(hasRestedXP, overlayAlpha, totalSegments, secondaryColor)
     local shared = GetSharedStyleHelpers()
-    local colors = self:GetRenderColors(hasRestedXP)
+    local colors = self:GetRenderColors(hasRestedXP, secondaryColor)
 
     overlayAlpha = overlayAlpha or 1.0
     totalSegments = totalSegments or self:GetDisplaySegmentCount()
@@ -577,9 +580,8 @@ function CircularBarStyleTemplate:UpdateGainedBar(currentRatio, context)
         self:SetCurrentRatio(currentRatio)
     end
 
-    if self.UpdateTexts then
-        self:UpdateTexts(context)
-    end
+    -- Texts are RenderBar's (and StartAnimation's) to update: RenderBar calls
+    -- this and then UpdateTexts, so updating them here too did it twice.
 
     -- Note: Overlays are handled inside SetArcProgress for circular bar
     -- SetArcProgress calculates segment types for: current XP, rested, quest complete, quest incomplete
@@ -662,9 +664,9 @@ function CircularBarStyleTemplate:UpdateLevelText(context)
         return
     end
 
-    -- v1 shows just the level number, not "Level XX"
-    local level = (context and context.level) or UnitLevel("player")
-    self.LevelText:SetText(tostring(level))
+    -- The bare level number, not "Level XX"; the source's level or standing in
+    -- the max-level secondary mode.
+    self.LevelText:SetText(GetSharedStyleHelpers().GetLevelText(context, true))
 end
 
 function CircularBarStyleTemplate:UpdatePercentText(context)
@@ -732,17 +734,16 @@ end
 -- data in its own tooltip and handles reputation click actions.
 -------------------------------------------------------------------
 
-local function GetReputationContext()
-    if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
-        local ctx = Addon.ReputationSession:GetCurrentContext()
-        if ctx and ctx.isAvailable then
-            return ctx
-        end
+local function GetSecondaryContext()
+    local shared = GetSharedStyleHelpers()
+    local ctx = shared and shared.GetSecondaryInitialContext and shared.GetSecondaryInitialContext()
+    if ctx and ctx.isAvailable then
+        return ctx
     end
     return nil
 end
 
-local function IsReputationSecondaryActive()
+local function IsAttachedSecondaryActive()
     if not Addon.SecondaryBarManager or Addon.SecondaryBarManager._currentStyle ~= "circular" then
         return false
     end
@@ -759,70 +760,44 @@ local function IsReputationSecondaryActive()
     return true
 end
 
-local function OpenReputationPanel()
-    if ToggleCharacter then
-        ToggleCharacter("ReputationFrame")
-    end
-end
-
---- Append reputation section to the in-progress GameTooltip.
---- Called after the XP tooltip has already been opened and populated.
-function CircularBarStyleTemplate:AppendReputationToTooltip()
-    local repCtx = GetReputationContext()
-    if not repCtx then
+--- Append the attached secondary source's section to the XP tooltip.
+function CircularBarStyleTemplate:AppendSecondaryToTooltip()
+    local ctx = GetSecondaryContext()
+    local shared = GetSharedStyleHelpers()
+    if not ctx or not (shared and shared.AddSecondaryTooltipLines) then
         return
     end
-
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine(repCtx.name or "", 1, 0.82, 0)
-
-    if repCtx.isCompanion and repCtx.currentLevel and repCtx.currentLevel > 0 then
-        GameTooltip:AddLine(string.format("Level: %d", repCtx.currentLevel), 0.7, 0.7, 0.7)
-    elseif repCtx.standingLabel and repCtx.standingLabel ~= "" then
-        GameTooltip:AddLine(repCtx.standingLabel, 0.7, 0.7, 0.7)
-    end
-
-    local StyleHelpers = Addon.UI.StyleHelpers
-    GameTooltip:AddLine(
-        string.format("Rep: %s", StyleHelpers.BuildTooltipProgressText(repCtx)),
-        0.7, 1, 0.7
-    )
-
-    local fmt = Addon.TextFormatter
-    if not repCtx.isMaxed and fmt then
-        local cur = fmt:FormatNumber(repCtx.current or 0, false)
-        local max = fmt:FormatNumber(repCtx.max or 0, false)
-        GameTooltip:AddDoubleLine("Current:", cur .. " / " .. max, 0.7, 0.7, 0.7, 0.7, 0.9, 1)
-    end
-    if repCtx.sessionGained and repCtx.sessionGained > 0 and fmt then
-        GameTooltip:AddDoubleLine("Gained:", "+" .. fmt:FormatNumber(repCtx.sessionGained, false), 0.7, 0.7, 0.7, 0.5, 1, 0.5)
-    end
-    if repCtx.repPerHour and repCtx.repPerHour > 0 and fmt then
-        GameTooltip:AddDoubleLine("Rate:", fmt:FormatNumber(repCtx.repPerHour, false) .. "/hr", 0.7, 0.7, 0.7, 0.5, 0.8, 1)
-    end
-    if repCtx.timeToNextLevel and repCtx.timeToNextLevel > 0 and fmt then
-        GameTooltip:AddDoubleLine("Next:", fmt:FormatTime(repCtx.timeToNextLevel, true), 0.7, 0.7, 0.7, 0.8, 0.8, 0.5)
-    end
+    shared.AddSecondaryTooltipLines(ctx)
 end
 
---- Override OnEnter: show XP tooltip then append reputation section.
+--- Override OnEnter: show the XP tooltip, then the attached secondary source.
 function CircularBarStyleTemplate:OnEnter()
     -- Base tooltip (XP data, session, hints)
     XPBarTooltipMixin.OnEnter(self)
 
-    -- Append reputation section if the circular secondary bar is active
-    if not IsReputationSecondaryActive() then
+    -- Only extend a tooltip the base actually opened for this bar (it declines
+    -- when tooltips are off), and not the max-level one, which already shows
+    -- the source.
+    if not (GameTooltip:IsShown() and GameTooltip:GetOwner() == self) then
+        return
+    end
+    local manager = Addon.BarManager
+    if manager and manager.ShouldRepurposePrimaryAtMaxLevel and manager:ShouldRepurposePrimaryAtMaxLevel() then
+        return
+    end
+    if not IsAttachedSecondaryActive() then
         return
     end
 
-    self:AppendReputationToTooltip()
+    self:AppendSecondaryToTooltip()
     GameTooltip:Show()
 end
 
---- Override OnRightClick: open Reputation panel when secondary bar is active.
+--- Override OnRightClick: open the attached secondary source's panel.
 function CircularBarStyleTemplate:OnRightClick()
-    if IsReputationSecondaryActive() then
-        OpenReputationPanel()
+    if IsAttachedSecondaryActive() then
+        GetSharedStyleHelpers().OpenReputationPanel()
     end
 end
 
@@ -842,9 +817,9 @@ function CircularBarStyleTemplate:GetHintText()
     table.insert(hints, L["TT_HINT_ALT_OPTIONS"])
     table.insert(hints, L["TT_HINT_CTRL_STATS"])
 
-    -- Reputation hint: right-click opens the Reputation panel
-    if IsReputationSecondaryActive() then
-        table.insert(hints, "Right-click: open Reputation")
+    -- Right-click opens the attached secondary source's panel
+    if IsAttachedSecondaryActive() then
+        table.insert(hints, GetSharedStyleHelpers().GetOpenPanelHint())
     end
 
     return table.concat(hints, "\n")
@@ -1009,7 +984,7 @@ local DefaultConfig = {
         enableAnimations = true,
         flashOnGain = true
     },
-    position = {mode = "DRAGGABLE", positionKey = "CircularBar"},
+    position = {mode = "DRAGGABLE", positionKey = Addon.StyleKeys.circular},
     style = {},
     capabilities = {
         statusBar      = false,

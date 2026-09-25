@@ -118,15 +118,18 @@ function XPBarExhaustionTickMixin:OnEnter()
     if not tt then
         return
     end
+    local L = Addon.L
     tt:SetOwner(self, "ANCHOR_TOP")
     if ctx and ctx.restedXP and ctx.restedXP > 0 then
         local maxXP = ctx.xpMax or 1
         local percent = (ctx.restedXP / maxXP) * 100
-        tt:AddLine("Rested XP", 1, 1, 1)
-        tt:AddDoubleLine("Amount:", tostring(ctx.restedXP), 0.8, 0.8, 0.8, 1, 1, 1)
-        tt:AddDoubleLine("Percent:", string.format("%.1f%%", percent), 0.8, 0.8, 0.8, 1, 1, 1)
+        local amount = Addon.TextFormatter and Addon.TextFormatter:FormatNumber(ctx.restedXP, false)
+            or tostring(ctx.restedXP)
+        tt:AddLine(L["TT_RESTED_XP"], 1, 1, 1)
+        tt:AddDoubleLine(L["TT_AMOUNT"] .. ":", amount, 0.8, 0.8, 0.8, 1, 1, 1)
+        tt:AddDoubleLine(L["TT_PERCENT"] .. ":", string.format("%.1f%%", percent), 0.8, 0.8, 0.8, 1, 1, 1)
     else
-        tt:AddLine("Rested: None", 0.8, 0.8, 0.8)
+        tt:AddLine(L["TT_RESTED"] .. ": " .. L["TT_NONE"], 0.8, 0.8, 0.8)
     end
     tt:Show()
 end

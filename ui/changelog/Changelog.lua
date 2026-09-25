@@ -8,6 +8,18 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.3.0",
+        notes = {
+            "Now runs on Retail, Classic Era, the Forever beta, and Burning Crusade, Wrath, Cataclysm and Mists Classic.",
+            "New Classic bar look, matching Blizzard's newer experience bar, with adjustable width and segment count.",
+            "Reset Settings now asks first and only resets the profile you are using.",
+            "XP per hour shows the same number everywhere and stays right after a level-up.",
+            "Blizzard's own XP bar no longer reappears next to the addon's after Edit Mode.",
+            "Fixed a disconnect at login on the Forever beta, missing bars on Retail while watching a paragon faction, and quest XP on Classic.",
+            "Many more fixes to reputation, housing, bar styles and the options panel.",
+        },
+    },
+    {
         version = "1.2.6",
         notes = {
             "Improved recovery from malformed saved settings and profile data.",

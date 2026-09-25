@@ -3,53 +3,8 @@
 
 local Addon = XPBarEnhanced
 local Config = Addon.Config
-local FALLBACK_SHARED_STYLE_HELPERS = {
-    GetSecondaryPositionConfigKey = function()
-        return "secondaryBarPositions"
-    end,
-    GetSecondaryBroadcastEventName = function()
-        return (Addon.EventNames and Addon.EventNames.REPUTATION_BROADCAST_UPDATE) or "REPUTATION:BROADCAST_UPDATE"
-    end,
-    GetSecondaryInitialContext = function()
-        if Addon.ReputationSession and Addon.ReputationSession.GetCurrentContext then
-            return Addon.ReputationSession:GetCurrentContext()
-        end
-        return nil
-    end,
-    BeginSecondaryRender = function(frame, context)
-        frame._lastContext = context
-        if not context or not context.isAvailable then
-            frame:SetAlpha(0)
-            return false
-        end
-        frame:SetAlpha(1)
-        return true
-    end,
-    ShowSecondaryTooltip = function(frame, context, anchor)
-        if not GameTooltip then
-            return
-        end
-        GameTooltip:SetOwner(frame, anchor or "ANCHOR_TOP")
-        GameTooltip:AddLine((context and context.name) or "", 1, 1, 1)
-    end,
-    FinishSecondaryTooltip = function()
-        if GameTooltip then
-            GameTooltip:Show()
-        end
-    end,
-    HideTooltip = function()
-        if GameTooltip then
-            GameTooltip:Hide()
-        end
-    end,
-    OpenReputationPanel = function()
-        if ToggleCharacter then
-            ToggleCharacter("ReputationFrame")
-        end
-    end,
-}
-
-local FALLBACK_STYLE_HELPERS = {
+local FALLBACK_SHARED_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondarySharedHelpers and Addon.UI.StyleHelpers:GetDefaultSecondarySharedHelpers() or {}
+local FALLBACK_STYLE_HELPERS = Addon and Addon.UI and Addon.UI.StyleHelpers and Addon.UI.StyleHelpers.GetDefaultSecondaryStyleHelpers and Addon.UI.StyleHelpers:GetDefaultSecondaryStyleHelpers() or {
     GetFactionColor = function()
         return {r = 0.7, g = 0.3, b = 0.85, a = 1}
     end,
@@ -530,7 +485,7 @@ function StyleMixin:OnEnter()
     end
 
     GameTooltip:AddLine("Left-click: Toggle arc", 0.4, 0.4, 0.4)
-    GameTooltip:AddLine("Right-click: open Reputation", 0.4, 0.4, 0.4)
+    GameTooltip:AddLine(Addon.UI.SharedStyleHelpers.GetOpenPanelHint(), 0.4, 0.4, 0.4)
     GameTooltip:AddLine("Drag: rotate icon around minimap", 0.4, 0.4, 0.4)
     SharedStyleHelpers.FinishSecondaryTooltip()
 end

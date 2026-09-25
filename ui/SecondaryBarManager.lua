@@ -16,17 +16,7 @@ local function GetOptionValue(key, fallback)
     return fallback
 end
 
-local function GetSettingsTable(key, createIfMissing)
-    if Addon.Config and Addon.Config.GetSettingsTable then
-        return Addon.Config:GetSettingsTable(key, createIfMissing)
-    end
-
-    Addon.db = Addon.db or {}
-    if Addon.db[key] == nil and createIfMissing then
-        Addon.db[key] = {}
-    end
-    return Addon.db[key]
-end
+local GetSettingsTable = Addon.Utils.GetSettingsTable
 
 -- Maps each primary bar style key to its secondary bar template name.
 -- Add entries here as new secondary styles are implemented.
@@ -54,6 +44,11 @@ local function DeriveSecondaryStyle()
     -- style. Use db.barStyle (user preference) rather than the runtime style so
     -- the secondary bar remains visible at max level even when the primary hides.
     local primaryStyle = GetOptionValue("barStyle", "none")
+    -- Resolved the way the primary bar resolves it, so a stored style this
+    -- build cannot render still gets the secondary bar of the style shown.
+    if Addon.BarManager and Addon.BarManager.ResolveStyleKey then
+        primaryStyle = Addon.BarManager:ResolveStyleKey(primaryStyle)
+    end
     if TEMPLATE_MAP[primaryStyle] then
         return primaryStyle
     end
@@ -68,44 +63,6 @@ local function SetDetachedInteractionState(frame, detached)
     if frame and frame.SetDetachedInteractionEnabled then
         frame:SetDetachedInteractionEnabled(detached)
     end
-end
-
--- Returns true when our secondary bar is active at max level and Blizzard
--- would otherwise promote the reputation bar into the main status bar container.
-local function ShouldSuppressMainContainer()
-    local barManagerStyle = Addon.BarManager and Addon.BarManager.currentStyle
-    local barManagerIdle = not barManagerStyle or barManagerStyle == "none"
-    return IsCustomStyle(Manager._currentStyle) and barManagerIdle
-end
-
-function Manager:ShouldSuppressMainContainer()
-    return ShouldSuppressMainContainer()
-end
-
--- Predicates re-checked when a combat-deferred hide fires, so disabling the
--- secondary bar mid-combat cannot hide Blizzard's bars once combat ends.
-local function ShouldHideSecondaryContainer()
-    return IsCustomStyle(Manager._currentStyle)
-end
-
--- Any reason the main container must stay hidden (either manager). Deferred
--- hides for a container are keyed per container, so both managers must agree
--- on one main-container predicate.
-local function ShouldHideMainContainer()
-    local barManager = Addon.BarManager
-    if barManager and barManager.IsCustomStyle and barManager:IsCustomStyle(barManager.currentStyle) then
-        return true
-    end
-    return ShouldSuppressMainContainer()
-end
-
--- Safely hide a Blizzard container, deferring to after combat if in lockdown.
-local function SafeHideContainer(container)
-    local predicate = ShouldHideMainContainer
-    if container == _G.SecondaryStatusTrackingBarContainer then
-        predicate = ShouldHideSecondaryContainer
-    end
-    Addon.Utils.SafeHideContainer(container, predicate)
 end
 
 -------------------------------------------------------------------
@@ -161,8 +118,6 @@ end
 -------------------------------------------------------------------
 
 function Manager:Initialize()
-    self:InstallBlizzardBarHooks()
-
     self:RefreshForPrimaryStyleChange()
 
     Addon.EventBus:Register(
@@ -239,63 +194,17 @@ function Manager:GetCurrentFrame()
     return self._frames and self._frames[style] or nil
 end
 
-function Manager:ApplyDefaultReputationBarVisibility()
-    local hasCustomReputationStyle = IsCustomStyle(self._currentStyle)
-
-    if hasCustomReputationStyle then
-        SafeHideContainer(_G.SecondaryStatusTrackingBarContainer)
-        -- At max level Blizzard promotes the reputation bar to the main container.
-        -- Suppress it there too so only our secondary bar is visible.
-        if ShouldSuppressMainContainer() then
-            SafeHideContainer(_G.MainStatusTrackingBarContainer)
-        end
-    else
-        if _G.SecondaryStatusTrackingBarContainer then
-            _G.SecondaryStatusTrackingBarContainer:Show()
-        end
-    end
+--- True while one of the addon's secondary bars is showing.
+function Manager:IsActive()
+    return IsCustomStyle(self._currentStyle) and true or false
 end
 
-function Manager:InstallBlizzardBarHooks()
-    if self._blizzardHooksInstalled then
-        return
+-- See BlizzardBars: it hides Blizzard's container for whatever bar this one
+-- stands in for, and hands it back when this bar goes away.
+function Manager:ApplyDefaultReputationBarVisibility()
+    if Addon.BlizzardBars then
+        Addon.BlizzardBars:Refresh()
     end
-
-    local secondaryContainer = _G.SecondaryStatusTrackingBarContainer
-    if secondaryContainer and secondaryContainer.Show then
-        hooksecurefunc(secondaryContainer, "Show", function()
-            if IsCustomStyle(self._currentStyle) then
-                SafeHideContainer(secondaryContainer)
-            end
-        end)
-    end
-    if secondaryContainer and secondaryContainer.SetShown then
-        hooksecurefunc(secondaryContainer, "SetShown", function(_, shown)
-            if shown and IsCustomStyle(self._currentStyle) then
-                SafeHideContainer(secondaryContainer)
-            end
-        end)
-    end
-
-    -- At max level Blizzard promotes the watched reputation bar into the main
-    -- status bar container. Hook it so we can suppress it when our own bar is active.
-    local mainContainer = _G.MainStatusTrackingBarContainer
-    if mainContainer and mainContainer.Show then
-        hooksecurefunc(mainContainer, "Show", function()
-            if ShouldSuppressMainContainer() then
-                SafeHideContainer(mainContainer)
-            end
-        end)
-    end
-    if mainContainer and mainContainer.SetShown then
-        hooksecurefunc(mainContainer, "SetShown", function(_, shown)
-            if shown and ShouldSuppressMainContainer() then
-                SafeHideContainer(mainContainer)
-            end
-        end)
-    end
-
-    self._blizzardHooksInstalled = true
 end
 
 function Manager:SetSecondaryStyle(style)
@@ -306,7 +215,8 @@ end
 function Manager:ResetBarPositions()
     local configKey = "secondaryBarPositions"
     local style = GetOptionValue("barStyle")
-    local positions = GetSettingsTable(configKey)
+    -- The write target: a plain read falls back to Global's table on a profile.
+    local positions = GetSettingsTable(configKey, true)
 
     if positions and style then
         positions[style] = nil

@@ -65,11 +65,11 @@ function ConfigHelper.GetAbbreviateNumbers(context)
 end
 
 function ConfigHelper.GetShowRemainingXP(context)
-    return ConfigHelper.GetBooleanValue(context, "showRemainingXP", false)
+    return ConfigHelper.GetBooleanValue(context, "showRemainingXP", true)
 end
 
 function ConfigHelper.GetShowQuestPercent(context)
-    return ConfigHelper.GetBooleanValue(context, "showQuestPercent", false)
+    return ConfigHelper.GetBooleanValue(context, "showQuestPercent", true)
 end
 
 Addon.ConfigHelper = ConfigHelper

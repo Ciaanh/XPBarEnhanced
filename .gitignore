@@ -13,3 +13,6 @@ assets/refs
 
 refs
 .build
+
+# Retired assets kept locally for reference, never committed or packaged
+_archive

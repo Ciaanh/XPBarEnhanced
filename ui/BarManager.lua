@@ -19,27 +19,54 @@ local function GetOptionValue(key, fallback)
     return fallback
 end
 
-local function ShouldSecondarySuppressMainContainer()
-    local manager = Addon.SecondaryBarManager
-    if manager and manager.ShouldSuppressMainContainer then
-        return manager:ShouldSuppressMainContainer()
-    end
-    return false
-end
-
 local StyleTemplateNameMap = {
-    classic  = "ClassicBarTemplate",
-    flat     = "FlatBarTemplate",
-    vertical = "VerticalBarTemplate",
-    circular = "CircularBarTemplate",
-    minimap_ring = "MinimapRingBarTemplate",
-    terminal = "TerminalBarTemplate",
-    orb      = "OrbBarTemplate",
+    [Addon.StyleKeys.classic] = "ClassicBarTemplate",
+    [Addon.StyleKeys.flat] = "FlatBarTemplate",
+    [Addon.StyleKeys.vertical] = "VerticalBarTemplate",
+    [Addon.StyleKeys.circular] = "CircularBarTemplate",
+    [Addon.StyleKeys.minimap_ring] = "MinimapRingBarTemplate",
+    [Addon.StyleKeys.terminal] = "TerminalBarTemplate",
+    [Addon.StyleKeys.orb] = "OrbBarTemplate",
 }
 
 -- Helper: true if style key corresponds to a custom addon style (not Blizzard's bar)
 function BarManager:IsCustomStyle(style)
     return style and StyleTemplateNameMap[style] ~= nil
+end
+
+local function SafeCall(fn, ...)
+    if type(fn) ~= "function" then
+        return nil
+    end
+    return fn(...)
+end
+
+local function SafeIsXPUserDisabled()
+    return SafeCall(IsXPUserDisabled) == true
+end
+
+-- Real implementation must be declared before this wrapper: a `local function`
+-- declared later in the file is not visible to code above it, so an earlier
+-- wrapper referencing the same name by mistake would silently close over the
+-- (nonexistent) global instead and always report false.
+local function IsPlayerAtMaxLevel(currentLevel)
+    local level = tonumber(currentLevel)
+    if not level then
+        level = tonumber(UnitLevel("player")) or 0
+    end
+
+    local maxLevel = tonumber((GetMaxPlayerLevel and GetMaxPlayerLevel()) or 80) or 80
+    if level <= 0 then
+        return false
+    end
+
+    -- Use an explicit level comparison only. Effective-max APIs can transiently
+    -- report true during login/level transitions and incorrectly force style "none".
+    return level >= maxLevel
+end
+
+local function SafeIsPlayerAtMaxLevel(currentLevel)
+    return SafeCall(IsPlayerAtMaxLevel, currentLevel) == true
 end
 
 -- True if this build can actually put the style on screen. "none" always can --
@@ -51,7 +78,7 @@ local function IsRenderableStyle(style)
     if type(style) ~= "string" then
         return false
     end
-    if style == "none" then
+    if style == Addon.StyleKeys.none then
         return true
     end
     if not StyleTemplateNameMap[style] then
@@ -76,7 +103,7 @@ function BarManager:ResolveStyleKey(style)
         return style
     end
 
-    local fallback = (Addon.defaults and Addon.defaults.barStyle) or "classic"
+    local fallback = (Addon.defaults and Addon.defaults.barStyle) or Addon.StyleKeys.classic
     if IsRenderableStyle(fallback) then
         return fallback
     end
@@ -92,9 +119,6 @@ function BarManager:Initialize()
     local configuredStyle = GetOptionValue("barStyle", defaultStyle)
     local style = self:ResolveStyleKey(configuredStyle)
 
-    -- Install hooks before SetStyle so they are in place when bars are hidden
-    self:InstallBlizzardBarHooks()
-
     self:SetStyle(style)
 
     -- Repair the stored value once the bar is up, so everything else that reads
@@ -107,9 +131,6 @@ function BarManager:Initialize()
     -- through ApplyOptionSideEffects, and by this point that call sees its own
     -- style already current and early-returns. Doing it first would recurse.
     if style ~= configuredStyle then
-        print(string.format(
-            "|cFFFF0000XP Bar Enhanced:|r bar style '%s' is not available in this version — switched to '%s'.",
-            tostring(configuredStyle), style))
         if Addon.Config and Addon.Config.SetOptionKey then
             Addon.Config:SetOptionKey("barStyle", style)
         end
@@ -141,28 +162,12 @@ function BarManager:Initialize()
     end
 end
 
-local function IsPlayerAtMaxLevel(currentLevel)
-    local level = tonumber(currentLevel)
-    if not level then
-        level = tonumber(UnitLevel("player")) or 0
-    end
-
-    local maxLevel = tonumber((GetMaxPlayerLevel and GetMaxPlayerLevel()) or 80) or 80
-    if level <= 0 then
-        return false
-    end
-
-    -- Use an explicit level comparison only. Effective-max APIs can transiently
-    -- report true during login/level transitions and incorrectly force style "none".
-    return level >= maxLevel
-end
-
 -- True when the primary bar should be repurposed to display the selected
 -- secondary source at max level: the option is on, the player is at max level,
 -- a custom style is configured, the secondary bar is enabled, and the active
 -- source has data to show.
 function BarManager:ShouldRepurposePrimaryAtMaxLevel()
-    if not IsPlayerAtMaxLevel() then
+    if not SafeIsPlayerAtMaxLevel() then
         return false
     end
     if not GetOptionValue("maxLevelPrimaryShowsSecondary", false) then
@@ -185,7 +190,7 @@ end
 -- If max-level repurpose eligibility no longer matches the shown style,
 -- re-drive SetStyle. No-ops once stable, so it cannot loop.
 function BarManager:RefreshMaxLevelRepurpose()
-    if not IsPlayerAtMaxLevel() then
+    if not SafeIsPlayerAtMaxLevel() then
         return
     end
     local shouldRepurpose = self:ShouldRepurposePrimaryAtMaxLevel()
@@ -224,7 +229,7 @@ function BarManager:GetMaxLevelSecondaryContext()
         source = src.source,
         currentXP = curVal,
         xpMax = maxVal,
-        level = src.currentLevel or src.reactionLevel or 0,
+        level = src.currentLevel or 0,
         percent = src.percent,
         standingLabel = src.standingLabel,
         -- The on-bar "level" text shows the source's standing (e.g. "Renown 3",
@@ -261,7 +266,7 @@ function BarManager:AdjustContextForMaxLevel(context)
         return context
     end
 
-    if not IsPlayerAtMaxLevel(context.level) then
+    if not SafeIsPlayerAtMaxLevel(context.level) then
         return context
     end
 
@@ -270,57 +275,12 @@ function BarManager:AdjustContextForMaxLevel(context)
     return self:GetMaxLevelSecondaryContext()
 end
 
--- True while the Blizzard main container must stay hidden. Re-checked when a
--- combat-deferred hide fires, so switching to style "none" mid-combat cannot
--- leave the player without any XP bar.
-local function ShouldHideMainContainer()
-    return BarManager:IsCustomStyle(BarManager.currentStyle) or ShouldSecondarySuppressMainContainer()
-end
-
--- Safely hide a Blizzard container, deferring to after combat if in lockdown.
-local function SafeHideContainer(container)
-    Utils.SafeHideContainer(container, ShouldHideMainContainer)
-end
-
+-- Blizzard's own bars are kept out of the way by BlizzardBars, which judges
+-- each container by the bar it holds and hides it again whenever Blizzard
+-- shows it. Called on every style change.
 function BarManager:ApplyDefaultXPBarVisibility()
-    -- Hide only the Blizzard XP bar container when a custom XP style is active.
-    -- Secondary/reputation tracking is managed independently by SecondaryBarManager.
-    if self:IsCustomStyle(self.currentStyle) then
-        SafeHideContainer(_G.MainStatusTrackingBarContainer)
-    else
-        -- Otherwise, restore Blizzard XP bar visibility.
-        if _G.MainStatusTrackingBarContainer then
-            if ShouldSecondarySuppressMainContainer() then
-                SafeHideContainer(_G.MainStatusTrackingBarContainer)
-            else
-                _G.MainStatusTrackingBarContainer:Show()
-            end
-        end
-    end
-end
-
--- Install hooksecurefunc hooks to prevent Blizzard's bar from re-showing
--- while a custom style is active. Called once during Initialize().
-function BarManager:InstallBlizzardBarHooks()
-    local containers = {
-        _G.MainStatusTrackingBarContainer,
-    }
-
-    for _, container in ipairs(containers) do
-        if container and container.Show then
-            hooksecurefunc(container, "Show", function()
-                if self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer() then
-                    SafeHideContainer(container)
-                end
-            end)
-        end
-        if container and container.SetShown then
-            hooksecurefunc(container, "SetShown", function(_, shown)
-                if shown and (self:IsCustomStyle(self.currentStyle) or ShouldSecondarySuppressMainContainer()) then
-                    SafeHideContainer(container)
-                end
-            end)
-        end
+    if Addon.BlizzardBars then
+        Addon.BlizzardBars:Refresh()
     end
 end
 
@@ -345,9 +305,9 @@ function BarManager:SetStyle(nextStyle)
     -- XP-disabled and max-level modes normally use Blizzard's default bar,
     -- unless the max-level "primary shows secondary source" mode is active —
     -- then keep the configured custom style so it can render the source.
-    if IsXPUserDisabled and IsXPUserDisabled() then
+    if SafeIsXPUserDisabled() then
         nextStyle = "none"
-    elseif IsPlayerAtMaxLevel() and not self:ShouldRepurposePrimaryAtMaxLevel() then
+    elseif SafeIsPlayerAtMaxLevel() and not self:ShouldRepurposePrimaryAtMaxLevel() then
         nextStyle = "none"
     end
 
@@ -429,11 +389,13 @@ function BarManager:GetCurrentStyle()
     return self.currentStyle
 end
 
+-- Each frame resets itself: a fixed-position bar re-anchors to Blizzard's bar
+-- (or, for the minimap ring, to the minimap) instead of being dropped at a
+-- draggable default it never uses.
 function BarManager:ResetBarPosition()
-    for key, value in pairs(self.barFrames) do
-        if value.ClearSavedPosition and value.SetDefaultDraggablePosition then
-            value:ClearSavedPosition()
-            value:SetDefaultDraggablePosition()
+    for _, frame in pairs(self.barFrames or {}) do
+        if frame.ResetPosition then
+            frame:ResetPosition()
         end
     end
 end
@@ -473,9 +435,9 @@ function BarManager:OnLevelUp(newLevel)
     local level = newLevel or (UnitLevel("player") or 0)
     local userStyle = GetOptionValue("barStyle", "classic")
 
-    if (IsXPUserDisabled and IsXPUserDisabled()) then
+    if SafeIsXPUserDisabled() then
         self:SetStyle("none")
-    elseif IsPlayerAtMaxLevel(level) and not self:ShouldRepurposePrimaryAtMaxLevel() then
+    elseif SafeIsPlayerAtMaxLevel(level) and not self:ShouldRepurposePrimaryAtMaxLevel() then
         -- Ding to max with no repurpose: the bar is about to hide, so no
         -- celebration (UIFrameFlash would force-Show the hidden frame).
         self:SetStyle("none")
