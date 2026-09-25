@@ -27,10 +27,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      # A tag with a suffix (v1.3.0-beta1, v1.3.0-alpha2) is a pre-release: the
+      # packager uploads it to CurseForge as Beta or Alpha, and its notes are the
+      # section of the version it previews (## [1.3.0]). Pre-release tags are
+      # never taken as the previous release, so the final v1.3.0 still publishes
+      # everything since v1.2.6.
       - name: Trim changelog to everything since the previous release
         run: |
           version="${GITHUB_REF_NAME#v}"
-          prev="$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
+          prerelease=""
+          case "$version" in
+            *-*) prerelease="${version#*-}"; version="${version%%-*}" ;;
+          esac
+          prev="$(git describe --tags --abbrev=0 --match 'v*' --exclude 'v*-*' "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
           prev="${prev#v}"
 
           awk -v stop="## [$prev]" '
@@ -49,6 +58,15 @@ jobs:
 
           if [ -n "$prev" ] && ! grep -qF "## [$prev]" CHANGELOG.md; then
             echo "::warning::previous release v$prev has no CHANGELOG.md section; published notes cover the whole file"
+          fi
+
+          if [ -n "$prerelease" ]; then
+            {
+              echo "> **Test version ($prerelease).** This build previews $version and follows the Forever beta, so things may still change before the full release."
+              echo
+              cat release-changelog.md
+            } > release-changelog.tmp
+            mv release-changelog.tmp release-changelog.md
           fi
 
           echo "Publishing notes since ${prev:-<first release>}:"
