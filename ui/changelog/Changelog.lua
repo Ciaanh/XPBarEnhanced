@@ -10,12 +10,13 @@ Changelog.entries = {
     {
         version = "1.3.0",
         notes = {
-            "Added configurable Classic bar width and segment count with crisp, resizable chrome.",
-            "Redrew the Classic bar after Blizzard's newer experience bar, with all of its art bundled in the addon.",
-            "Added build-based flavor mapping for Retail and supported Classic branches.",
-            "Disabled unsupported feature services on clients that expose incompatible APIs, including Forever housing.",
-            "Reset Settings now asks first and resets only the active profile.",
-            "Fixed missing bars on Retail when watching a paragon faction, and quest XP on the Classic clients.",
+            "Now runs on Retail, Classic Era, the Forever beta, and Burning Crusade, Wrath, Cataclysm and Mists Classic.",
+            "New Classic bar look, matching Blizzard's newer experience bar, with adjustable width and segment count.",
+            "Reset Settings now asks first and only resets the profile you are using.",
+            "XP per hour shows the same number everywhere and stays right after a level-up.",
+            "Blizzard's own XP bar no longer reappears next to the addon's after Edit Mode.",
+            "Fixed a disconnect at login on the Forever beta, missing bars on Retail while watching a paragon faction, and quest XP on Classic.",
+            "Many more fixes to reputation, housing, bar styles and the options panel.",
         },
     },
     {

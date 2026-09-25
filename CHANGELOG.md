@@ -6,69 +6,84 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Added
 
-- **More clients**: one manifest now loads on Classic Era, the Forever beta, Burning Crusade, Wrath, Cataclysm and Mists Classic as well as Retail, replacing the separate Classic manifest. The client's build decides which features run, so a client never starts a feature it cannot serve.
-- **Classic bar width**: a slider (200-1400px) sets the Classic bar's width. The border's end caps keep a fixed size while the middle stretches, so the frame stays crisp instead of smearing.
-- **Classic segment count**: a slider (0-40) divides the Classic bar into evenly spaced segments, following Blizzard's new experience bar. 0 or 1 gives one unbroken bar, 10 matches the previous art, 20 matches Blizzard's wide bar.
+- **More game versions**: XP Bar Enhanced now runs on Retail, Classic Era, the Forever beta, and Burning Crusade, Wrath, Cataclysm and Mists Classic. Features a game version doesn't have, such as housing on Classic, are switched off automatically.
+- **Classic bar width**: a new slider (200-1400 px) makes the Classic bar as narrow or as wide as you like. The border stays sharp at any width.
+- **Classic segment count**: a new slider (0-40) splits the Classic bar into segments. Use 0 or 1 for one continuous bar, 10 for the old look, or 20 to match Blizzard's new wide bar.
 
 ### Changed
 
-- **Classic bar art**: redrawn after Blizzard's newer experience bar, with a chamfered frame, a two-tone fill in your chosen color, and new dividers and rested marker. The Classic reputation bar uses the same frame, so the two bars stay identical when stacked. All of it ships with the addon, so a Blizzard art change can no longer alter or blank the bar.
-- The bar style gallery draws premade previews instead of assembling each style from dozens of textures when the options open.
-- Rested XP that overflows the current level now fills the bar to its edge instead of hiding the rested overlay entirely, matching Blizzard's newer experience bar.
-- The rested marker now hides within 1% of either end of the bar, where it used to sit half off the frame.
-- **Reset Settings** now asks first and resets only the active profile's settings, colors and bar positions. It used to wipe every profile, every character's profile choice and all tracked statistics in one click. `/xpbe reset` does the same without the prompt.
-- Played time is requested once per login instead of on every loading screen.
+- **New Classic bar look**: redrawn to match Blizzard's newer experience bar, with a new frame, a two-tone fill in your chosen color, and new dividers and rested marker. The Classic reputation bar matches it, so the two line up when stacked. The art ships with the addon, so a Blizzard patch can no longer change it or leave it blank.
+- Rested XP that goes past the end of your current level now fills the bar to the edge, like Blizzard's bar, instead of disappearing.
+- The rested marker hides when it sits right at either end of the bar instead of hanging off the frame.
+- **Reset Settings** now asks for confirmation and only resets the profile you are using (its settings, colors and bar positions). It used to wipe every profile and all your statistics at once. `/xpbe reset` does the same without asking.
+- The style gallery in the options opens faster, and dragging option sliders is smoother.
+- The addon no longer prints "Loaded!" in chat at every login, or the two "Time played" lines when it checks your played time.
 
 ### Fixed
 
-- Logging in on the Forever beta no longer drops the connection: housing, which that realm cannot serve, stays off there.
-- Characters on the Forever beta keep their profile and statistics between sessions.
-- Watching a paragon faction on Retail no longer stops the bars from loading.
-- A module that fails to start at login is reported without stopping the others, so the bars still appear.
-- Quest XP on the Classic clients counted no quest shown on the current map and dropped quests under a collapsed header.
-- The two "Time played" lines no longer print in chat when the addon asks for played time.
-- A secondary bar source the client does not offer is moved to one it does in every profile, not only in Global Settings.
-- Blizzard's own XP or reputation bar no longer reappears beside the addon's after Edit Mode, at the level cap, or on Retail while a house is tracked.
-- Opening Edit Mode no longer reports that XP Bar Enhanced tried to call the protected function `TargetUnit()`, and the party frames no longer error on entry. The addon handed Blizzard's bar back through a call that spread its taint into the action bars.
-- Turning off "Classic Bar Draggable" now survives a reload, and a fixed Classic bar keeps its configured width and sits where Blizzard's bar does.
-- Reset Bar Position leaves the Minimap Ring and a fixed Classic bar on their anchors instead of moving them to the middle of the screen.
-- Profiles keep their own secondary bar positions: resetting one on a profile no longer resets Global Settings' positions for other characters.
-- XP per hour is one figure everywhere: the bar, its tooltip and the Stats window no longer show different rates, and the bar text no longer flips between two values every few seconds.
-- The time-on-level readout keeps running after a level-up instead of vanishing until the next loading screen, and XP per hour no longer drops by about half after a ding.
-- XP per hour waits a minute of data before showing, so a quest turned in right after login no longer reads as millions per hour.
-- The Stats window's time on level and time to level now advance while you play.
-- The rested percentage in the quest summary shows up to 150% instead of stopping at 100%.
-- Reputation gained per session no longer jumps by the whole standing when faction data is briefly unavailable, and a renown level-up no longer counts a phantom extra level.
-- Paragon reputation past the renown cap is tracked as paragon, and paragon gains are counted exactly across reward cycles.
-- The Classic and Terminal reputation bars show standing colors for regular factions, and the housing bar no longer takes standing colors from its house level.
-- Housing favor earned on another character, or while logged out, is no longer counted in this session.
-- On Retail, the housing bar and its favor tracking start once the housing service comes up, even when it was not ready at login.
-- With "primary shows secondary source" at max level, the Circular and Minimap Ring fills take the source's color, and Circular, Vertical and Terminal show the source's standing or level instead of "0".
-- A second XP gain during the two-step level-up animation no longer drains the bar back down and leaves it short of your real XP.
-- Quest and rested overlays update when a quest is turned in during a gain animation instead of staying stale until the next XP gain.
-- The Minimap Ring picks up color and profile changes immediately, and its hover area no longer blocks the minimap's zoom and tracking buttons.
-- The Circular bar's tooltip and right-click follow the attached secondary source (honor, housing, profession) instead of always showing reputation.
-- Terminal: its session and level timers keep running while idle, it respects the Quest XP master toggle, its tooltip labels rested XP "rested" rather than a leftover legend line, and long faction names in Cyrillic or East Asian scripts are shortened cleanly.
-- The Vertical bar's percentage follows Blizzard's status-text setting like its other texts.
-- Classic on-bar texts are cut short on a narrow bar instead of wrapping out of it.
-- Secondary bar hints and the rested marker's tooltip are localized, and name the right panel for each source.
-- Readout presets change only what the bar shows. They used to reset unrelated settings too, so picking one could unlock the bar, re-show the minimap button or hide the secondary bar.
-- Options that other paths change (presets, profile switches, resets) now update the bars at once, like the matching checkbox or slider does.
-- Option dropdowns show the right value after a profile switch, reset or rename.
-- The opacity slider no longer runs backwards in the Classic clients' color picker, opening or cancelling a color no longer pins an inherited color onto a profile, and a second color opened from the picker starts at its own opacity.
-- `/xpbe resetcolors` on a profile resets to the default colors, not Global Settings' colors.
-- Option descriptions show as tooltips, including the readout preset buttons.
-- The Stats window closes with Esc, and Enter and Esc work in the new- and rename-profile dialogs.
-- "Use textured segments" is available under the Minimap Ring style, which also uses it; the Advanced section opens by default for a Custom readout; the Colors tab no longer shows an empty "Other secondary sources" header on the Classic clients.
-- The addon no longer prints "Loaded!" in chat at every login.
-- Without a LibDataBroker display installed, the feed no longer checks for one every five seconds all session; it waits for an addon to load.
-- A party member's quest log changing no longer rebuilds your quest XP totals, and a quest turn-in scans the quest log once instead of twice.
+**Game versions**
+
+- Logging in on the Forever beta no longer disconnects you.
+- Characters on the Forever beta now keep their profile and statistics between sessions.
+- On Retail, the bars no longer fail to load while you are watching a paragon faction.
+- On Classic, quest XP now includes quests on your current map and quests under a collapsed header.
+- If your game version doesn't offer the chosen secondary bar source, every profile now switches to one it does, not only Global Settings.
+- If one part of the addon fails to start, the bars still appear.
+
+**Blizzard's bars and bar positions**
+
+- Blizzard's own XP or reputation bar no longer reappears next to the addon's after Edit Mode, at max level, or on Retail while you track a house.
+- Turning off "Classic bar draggable" now sticks after a reload, and the fixed Classic bar sits where Blizzard's bar does.
+- Reset Bar Position no longer moves the Minimap Ring or a fixed Classic bar to the middle of the screen.
+- Each profile keeps its own secondary bar position: resetting it on one profile no longer moves it for your other characters.
+
+**XP per hour and timers**
+
+- XP per hour now shows the same number on the bar, in its tooltip and in the Stats window, and the bar text no longer flickers between two values.
+- After a level-up, XP per hour no longer drops by about half, and the time-on-level readout keeps running instead of disappearing until your next loading screen.
+- XP per hour waits about a minute before showing, so a quest turned in right after login no longer reads as millions per hour.
+- The Stats window's time on level and time to level now count up while you play.
+- The rested percentage in the quest summary can now go up to 150% instead of stopping at 100%.
+
+**Reputation and housing**
+
+- Session reputation no longer jumps by a huge amount when faction data briefly fails to load, and a renown level-up no longer counts an extra level.
+- Reputation past the renown cap is now tracked as paragon, and paragon gains are counted correctly when you earn a reward.
+- The Classic and Terminal reputation bars now use standing colors (Friendly, Honored, and so on) for regular factions, and the housing bar no longer takes them from your house level.
+- Housing favor earned on another character, or while you were offline, no longer counts toward this session.
+- On Retail, the housing bar now starts working even when housing wasn't ready yet at login.
+
+**Bar styles**
+
+- With "Use main bar at max level", the Circular and Minimap Ring bars take the secondary source's color, and Circular, Vertical and Terminal show its standing or level instead of "0".
+- Gaining XP again during the level-up animation no longer leaves the bar showing less XP than you really have.
+- Quest and rested overlays update as soon as you turn in a quest, even during the XP animation.
+- The Minimap Ring updates right away when you change colors or profiles, and no longer blocks the minimap's zoom and tracking buttons.
+- The Circular bar's tooltip and right-click now follow the secondary source you picked (honor, housing, profession) instead of always showing reputation.
+- Terminal: its timers keep running while you are idle, it respects the Quest XP switch, its tooltip labels rested XP correctly, and long faction names in languages such as Russian, Chinese or Korean are shortened cleanly.
+- The Vertical bar's percentage now follows Blizzard's Status Text setting, like its other texts.
+- Text on a narrow Classic bar is shortened instead of spilling out of it.
+- The Classic bar's fill no longer spills past the rounded ends of its frame, and your custom colors are no longer tinted by Blizzard's textures or lost on game versions that don't have them.
+- Secondary bar hints now point to the right options panel for each source.
+
+**Options**
+
+- Readout presets now change only what the bar shows. Before, picking one could also unlock the bar, bring back the minimap button or hide the secondary bar.
+- Changes made by presets, profile switches and resets now show on the bars immediately.
+- Dropdowns show the right value after you switch, reset or rename a profile.
+- Color picker: the opacity slider no longer works backwards on Classic, opening or cancelling a color no longer saves it to your profile, and each color opens with its own opacity.
+- `/xpbe resetcolors` on a profile now restores the default colors instead of copying Global Settings' colors.
+- Option descriptions, including those of the readout preset buttons, now show as tooltips.
+- Esc closes the Stats window, and Enter and Esc work in the new and rename profile dialogs.
+- "Use textured segments" is now also offered for the Minimap Ring style, the Advanced section opens by itself for a Custom readout, and Classic no longer shows an empty "Other secondary sources" header in the Colors tab.
+
+**Performance**
+
+- The addon does less work in the background, especially when party members' quests change, when you turn in a quest, and when no data display addon (Titan Panel, Bazooka, ElvUI datatexts) is installed.
 
 ### Removed
 
-- `/xpbe enable`, `/xpbe disable` and `/xpbe status`. The disable command never stopped the addon and did not survive a reload; disable the addon from the AddOns list instead.
-- The Classic bar's fill no longer spills past the rounded ends of its frame.
-- The Classic bar's fill and the Classic reputation bar no longer use Blizzard's pre-colored fill textures, which tinted custom colors or went blank on clients that lack them.
+- The `/xpbe reps`, `/xpbe debugevents` and `/xpbe test` commands, which were meant for development.
 
 ## [1.2.6] - 2026-09-11
 

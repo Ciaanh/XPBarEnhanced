@@ -60,7 +60,7 @@ product flavor, and that flavor activates the supported feature set.
 | `/xpbe profile new <name>` | Create and select a new profile |
 | `/xpbe profile rename <name>` | Rename the active profile |
 | `/xpbe profile delete [name]` | Delete a profile |
-| `/xpbe reset` | Reset all settings |
+| `/xpbe reset` | Reset the active profile's settings |
 | `/xpbe resetstats` | Reset session statistics |
 | `/xpbe resetcolors` | Reset colors to defaults |
 | `/xpbe help` | Show available commands |
