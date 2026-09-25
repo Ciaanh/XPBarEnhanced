@@ -2,7 +2,7 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
-## [1.3.0] - 2026-09-19
+## [1.3.0] - 2026-09-25
 
 ### Added
 

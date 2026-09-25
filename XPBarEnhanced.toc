@@ -15,7 +15,7 @@
 ## X-WoWI-ID: 27090
 ## X-License: MIT
 ## X-Localizations: enUS
-## X-Compatibility: Retail, Classic Era, Forever
+## X-Compatibility: Retail, Classic Era, Forever, Burning Crusade Classic, Wrath Classic, Cataclysm Classic, Mists Classic
 ## X-Embeds: LibStub, AceLocale-3.0
 ## DefaultState: enabled
 

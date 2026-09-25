@@ -536,37 +536,6 @@ function RepSession:GetStats()
 end
 
 -------------------------------------------------------------------
--- FACTION LISTING (for exports)
--------------------------------------------------------------------
-
---- Print all factions and their IDs for export.
-function RepSession:ListAllFactions()
-    if not (C_Reputation and C_Reputation.GetNumFactions and C_Reputation.GetFactionDataByIndex) then
-        print("|cFFFF0000XP Bar Enhanced:|r C_Reputation API not available")
-        return
-    end
-
-    print("|cFF00FF00XP Bar Enhanced - Reputation Export|r")
-    print("All factions (name: ID):")
-    print("-----------------------------------------")
-
-    local numFactions = C_Reputation.GetNumFactions()
-    for i = 1, numFactions do
-        local fdata = C_Reputation.GetFactionDataByIndex(i)
-        if fdata then
-            if fdata.isHeader then
-                print("|cFFFFFF00" .. (fdata.name or "?") .. "|r")
-            else
-                local name = fdata.name or "Unknown"
-                local id = fdata.factionID or 0
-                print(string.format("  %s: %d", name, id))
-            end
-        end
-    end
-    print("-----------------------------------------")
-end
-
--------------------------------------------------------------------
 -- ENTERING WORLD
 -------------------------------------------------------------------
 
