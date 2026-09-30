@@ -3,27 +3,18 @@ enable-nolib-creation: no
 
 manual-changelog: CHANGELOG.md
 
-# Keep in sync with make-release.ps1's whitelist: ship only the TOC/lua,
-# LICENSE, README, core/fonts/libs/locales/ui, and assets root files.
+# Keep in sync with make-release.ps1's $includes: ship only the TOC, XPBarEnhanced.lua, LICENSE,
+# README.md, core/, fonts/, libs/, locales/, ui/ and the files at the root of assets/.
 #
-# The two mechanisms are opposites -- this is a blacklist, make-release.ps1 is a
-# whitelist -- so anything added at the top level is shipped by this file by
-# default and dropped by that one. Everything the whitelist omits is therefore
-# listed here explicitly, including the dot-directories: .github alone is ~990 KB
-# of agent and API-reference markdown, larger than the addon it would ride along
-# with, and .claude/settings.local.json is local editor state.
+# The two mechanisms are opposites -- this is a blacklist, $includes is a whitelist -- so a new
+# top-level file is shipped by this one by default and dropped by that one. Everything $includes
+# omits is listed here. Dotfiles and dot-directories (.github, .gitattributes, ...) are skipped by
+# the packager on its own.
 ignore:
-    - refs
-    - .build
-    - _archive
     - images
     - assets/raw
-    - ROADMAP.md
-    - HANDOFF.md
-    - CLASSIC-BAR-CHANGES.md
-    - CLAUDE.md
     - CHANGELOG.md
+    - CLASSIC-BAR-CHANGES.md
+    - HANDOFF.md
+    - CLAUDE.md
     - make-release.ps1
-    - .github
-    - .claude
-    - .gitignore

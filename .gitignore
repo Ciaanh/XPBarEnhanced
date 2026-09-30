@@ -16,3 +16,6 @@ refs
 
 # Retired assets kept locally for reference, never committed or packaged
 _archive
+
+# make-release.ps1 staging folder
+XPBarEnhanced/

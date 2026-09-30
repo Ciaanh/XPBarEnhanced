@@ -1,6 +1,10 @@
 # make-release.ps1
 # Packages addon files from the project root into XPBarEnhanced-v<version>.zip
 # Usage: .\make-release.ps1 [-OutDir <path>]
+#
+# PowerShell 7+: Windows PowerShell 5.1's Compress-Archive writes "\" as the path separator
+# inside the zip, which addon hosts and non-Windows extractors do not treat as folders.
+#Requires -Version 7
 
 param(
     [string]$OutDir = (Join-Path $PSScriptRoot ".build")
@@ -26,6 +30,8 @@ $zipPath  = Join-Path $OutDir $zipName
 $stageDir = Join-Path $projectRoot "XPBarEnhanced"
 
 # --- Files and folders to include in the release ----------------------------
+# Keep in sync with .pkgmeta's ignore list, which the CI release (.github/workflows) packages
+# from instead: a file added here must not be ignored there, and vice versa.
 $includes = @(
     "XPBarEnhanced.lua",
     "XPBarEnhanced.toc",
