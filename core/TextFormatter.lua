@@ -234,12 +234,17 @@ function TextFormatter:GetSessionTimeText(sessionSeconds, label)
     return timeStr
 end
 
-function TextFormatter:GetLevelTimeText(levelSeconds, label)
+--- Level time for the bar's text line; `exact` false marks it as a lower
+--- bound ("1h 12m+").
+function TextFormatter:GetLevelTimeText(levelSeconds, label, exact)
     local s = tonumber(levelSeconds) or 0
     if s <= 0 then
         return ""
     end
     local timeStr = self:FormatTime(s, true)
+    if exact == false then
+        timeStr = string.format(L["TIME_AT_LEAST_SHORT"], timeStr)
+    end
     if label and label ~= "" then
         return string.format("%s: %s", label, timeStr)
     end

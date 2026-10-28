@@ -175,6 +175,11 @@ local optionDetails = {
         label = Addon.L["OPT_LEVEL_TIME"],
         description = Addon.L["OPT_LEVEL_TIME_DESC"]
     },
+    requestPlayedTime = {
+        key = "requestPlayedTime",
+        label = Addon.L["OPT_REQUEST_PLAYED_TIME"],
+        description = Addon.L["OPT_REQUEST_PLAYED_TIME_DESC"]
+    },
     showSessionTimeText = {
         key = "showSessionTimeText",
         label = Addon.L["OPT_SESSION_TIME"],
@@ -403,6 +408,7 @@ local optionOrder = {
     "showRemainingXP",
     "showXPPerHourText",
     "showLevelTimeText",
+    "requestPlayedTime",
     "showSessionTimeText",
     "resetOnReload",
     "showTimeToLevelText",

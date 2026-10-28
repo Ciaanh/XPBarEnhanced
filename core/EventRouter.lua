@@ -188,6 +188,9 @@ local function DispatchPlayerLogin()
 end
 
 local function DispatchPlayerLogout()
+    if Addon.Session and Addon.Session.OnLogout then
+        Addon.Session:OnLogout()
+    end
     local handlers = Addon.LifecycleHandlers
     if handlers and handlers.OnPlayerLogout then
         handlers:OnPlayerLogout()

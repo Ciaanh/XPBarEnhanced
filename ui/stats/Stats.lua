@@ -566,7 +566,10 @@ function Stats:UpdateLevelStats(statsFrame)
 
     -- Level time carried forward to now, and the rate every other readout
     -- uses, so this window's ETA matches the bar's.
-    local levelTime = SessionService and SessionService.GetLevelSeconds and SessionService:GetLevelSeconds() or 0
+    local levelTime, levelTimeExact = 0, true
+    if SessionService and SessionService.GetLevelSeconds then
+        levelTime, levelTimeExact = SessionService:GetLevelSeconds()
+    end
     local xpPerHour = SessionService and SessionService.GetXPPerHour and SessionService:GetXPPerHour() or 0
     local timeToLevel = TimeCalc and TimeCalc.CalculateTimeToLevel(remainingXP, xpPerHour) or nil
 
@@ -600,7 +603,11 @@ function Stats:UpdateLevelStats(statsFrame)
     -- Update time on this level
     if content.LevelTimeValue then
         if levelTime > 0 then
-            SetTextSafe(content.LevelTimeValue, Utils.FormatDuration(levelTime))
+            local duration = Utils.FormatDuration(levelTime)
+            if not levelTimeExact then
+                duration = string_format(L["TIME_AT_LEAST"], duration)
+            end
+            SetTextSafe(content.LevelTimeValue, duration)
         else
             SetTextSafe(content.LevelTimeValue, L["TT_NA"])
         end

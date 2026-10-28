@@ -264,6 +264,7 @@ function XPBarTextMixin:UpdateSessionText(context)
 
 	local sessionSeconds = 0
 	local levelSeconds = 0
+	local levelTimeExact = true
 
 	-- Check which times to show based on individual settings; prefer context flags when present, default to true
 	local showSessionTime = Addon.ConfigHelper.GetShowSessionTimeText(context)
@@ -280,7 +281,7 @@ function XPBarTextMixin:UpdateSessionText(context)
 			end
 			-- Level time: from the last TIME_PLAYED_MSG, or the ding, carried forward
 			if showLevelTime then
-				levelSeconds = Addon.Session:GetLevelSeconds()
+				levelSeconds, levelTimeExact = Addon.Session:GetLevelSeconds()
 			end
 		end
 	end
@@ -301,7 +302,7 @@ function XPBarTextMixin:UpdateSessionText(context)
 	if showLevelTime then
 		if levelSeconds > 0 then
 			local levelLabel = L["TT_LEVEL_TIME"]
-			local levelPart = Addon.TextFormatter:GetLevelTimeText(levelSeconds, levelLabel)
+			local levelPart = Addon.TextFormatter:GetLevelTimeText(levelSeconds, levelLabel, levelTimeExact)
 			if levelPart ~= "" then
 				table.insert(parts, levelPart)
 			end

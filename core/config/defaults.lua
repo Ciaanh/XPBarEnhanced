@@ -51,6 +51,8 @@ local defaults = {
     xpRateWindow = "1h",
     showLevelTimeText = true,
     showSessionTimeText = true,
+    -- Ask the server for played time at login while the level time is a lower bound.
+    requestPlayedTime = false,
     resetOnReload = false,
     showTimeToLevelText = true,
     abbreviateNumbers = true,

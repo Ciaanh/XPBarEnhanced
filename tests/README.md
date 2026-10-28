@@ -39,7 +39,8 @@ H.Done()
   `H.RunTimers()` runs the ones due now.
 - **Sessions**: `H.Login()` (first login), `H.Reload()` (`PLAYER_LOGOUT`, SavedVariables copied,
   addon loaded again, `PLAYER_ENTERING_WORLD(false, true)`), `H.Restart(true, offlineSeconds)`
-  (logout, time offline, login).
+  (logout, time offline, login). `H.ResetUI()` drops the running UI so a test can `H.Load` other
+  SavedVariables (an older version's, say).
 - **Played time**: `RequestTimePlayed` counts in `H.playedRequests` and answers nothing;
   `H.AnswerPlayed(total, thisLevel)` fires `TIME_PLAYED_MSG` as the server's reply does. Chat
   frames `ChatFrame1..3` listen for it like Blizzard's: `H.chatPlayedLines` counts the replies
@@ -55,3 +56,4 @@ H.Done()
 | --- | --- |
 | `load.lua` | The addon loads, logs in, counts an XP gain and survives a `/reload` without an error |
 | `xp_rate.lua` | `CalculateXPPerHour` (windows, "This session", the 5-minute floor, the fallback before anything is measured) and `LevelRate`; through real events: gains merged within 5 s (never across sources or levels), the 1000-entry cap, the `xpRateWindow` setting, a burst of quest XP right after a ding adding only its XP to the hour |
+| `played_time.lua` | Level time counted by the addon: a lower bound ("+") from a login, exact from a ding or any played time reply, carried across `/reload` and logout (offline time left out), reset when the level changed with the addon off; `requestPlayedTime` off never asks, on asks once 5 s after a login while not exact, with the reply kept out of chat and the chat frames' event handed back (also when the reply is lost); a secret reply changes nothing; 1.3.0 SavedVariables read as a lower bound |

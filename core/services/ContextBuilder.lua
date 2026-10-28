@@ -260,6 +260,7 @@ function ContextBuilder.BuildCoreContext(coreState)
 	local sessionStart = time()
 	local sessionXP = 0
 	local levelSeconds = 0
+	local levelTimeExact = false
 	local questXPGained = 0
 	local otherXP = 0
 
@@ -272,7 +273,7 @@ function ContextBuilder.BuildCoreContext(coreState)
 			if session.gainedXP then
 				sessionXP = session.gainedXP
 			end
-			levelSeconds = Addon.Session:GetLevelSeconds()
+			levelSeconds, levelTimeExact = Addon.Session:GetLevelSeconds()
 			questXPGained = session.questXP or 0
 			otherXP       = session.otherXP  or 0
 		end
@@ -291,6 +292,7 @@ function ContextBuilder.BuildCoreContext(coreState)
 		sessionStart = sessionStart,
 		sessionXP = sessionXP,
 		levelSeconds = levelSeconds,
+		levelTimeExact = levelTimeExact,
 		questXPGained   = questXPGained,
 		otherXP         = otherXP,
 	}

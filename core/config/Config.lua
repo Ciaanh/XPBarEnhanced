@@ -616,10 +616,9 @@ local function RefreshSecondaryBarLayout()
     end
 end
 
--- Time texts need played time; ask for it only if none has arrived yet.
-local function EnsureTimePlayedForTimeText()
-    if (Config:GetOptionValue("showLevelTimeText") or Config:GetOptionValue("showSessionTimeText"))
-        and Addon.Session and Addon.Session.EnsureTimePlayed then
+-- Turning requestPlayedTime on asks once, if the level time is not exact yet.
+local function EnsureTimePlayed()
+    if Addon.Session and Addon.Session.EnsureTimePlayed then
         Addon.Session:EnsureTimePlayed()
     end
 end
@@ -650,8 +649,7 @@ local SIDE_EFFECTS = {
     minimapArcStartExpanded = EmitReputationAndHousingUpdates,
     minimapArcDisplayAngle = EmitReputationAndHousingUpdates,
     minimapArcIconAngle = EmitReputationAndHousingUpdates,
-    showLevelTimeText = EnsureTimePlayedForTimeText,
-    showSessionTimeText = EnsureTimePlayedForTimeText,
+    requestPlayedTime = EnsureTimePlayed,
     classicWidth = ResizeClassicBars,
     classicSegments = ResizeClassicBars,
     classicBarDraggable = UpdateClassicPositionMode,

@@ -478,9 +478,7 @@ end
 function H.Restart(login, offlineSeconds)
     H.Fire("PLAYER_LOGOUT")
     local saved = H.Copy(XPBarEnhancedDB)
-    H.frames, H.timers = {}, {}
-    UIParent = CreateFrame("Frame", "UIParent")
-    for i = 1, NUM_CHAT_WINDOWS do table.insert(H.frames, _G["ChatFrame" .. i]) end
+    H.ResetUI()
     if offlineSeconds then H.epoch = H.epoch + offlineSeconds end
     local ns = H.Load(saved)
     H.Fire("PLAYER_LOGIN")
@@ -491,6 +489,14 @@ function H.Restart(login, offlineSeconds)
     end
     H.RunTimers()
     return ns
+end
+
+-- Drop every frame and timer of the running UI (the chat frames stay, as the client's own), so
+-- the next H.Load starts a new UI session.
+function H.ResetUI()
+    H.frames, H.timers = {}, {}
+    UIParent = CreateFrame("Frame", "UIParent")
+    for i = 1, NUM_CHAT_WINDOWS do table.insert(H.frames, _G["ChatFrame" .. i]) end
 end
 
 function H.Copy(value)

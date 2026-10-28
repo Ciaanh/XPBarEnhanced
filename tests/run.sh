@@ -27,7 +27,7 @@ run() {
 }
 
 echo "-- tests --"
-for t in load xp_rate; do
+for t in load xp_rate played_time; do
     run "$t" "tests/$t.lua" .
 done
 
