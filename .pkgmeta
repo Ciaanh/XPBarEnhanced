@@ -18,3 +18,4 @@ ignore:
     - HANDOFF.md
     - CLAUDE.md
     - make-release.ps1
+    - tests
