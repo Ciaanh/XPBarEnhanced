@@ -12,7 +12,8 @@ product flavor, and that flavor activates the supported feature set.
 - **Multiple Bar Styles** — None (Blizzard default), Classic, Flat, Vertical, Circular, Minimap Ring, Terminal, and Orb
 - **Quest XP Overlay** — See pending and completed quest XP directly on the bar
 - **Session Tracking** — Track XP gained, time played, levels gained, and XP/hour rate
-- **Session Breakdown & Rate Smoothing** — Session stats include quest XP vs other XP totals, with a rolling recent XP/hour rate for faster responsiveness
+- **Session Breakdown & Rate Window** — Session stats include quest XP vs other XP totals; XP/hour and the time to level are measured over the last 15 minutes, the last hour (default) or the whole session
+- **Level Time Without /played** — Time on the current level is counted by the addon from your level-up and kept across reloads and logouts; until it is exact it shows as "1h 12m+". The server is only asked for played time if you turn that on, and its reply stays out of chat
 - **Statistics Window & Session Charts** — Detailed breakdown of your leveling progress, with an XP/hour histogram and a quest-vs-other split chart
 - **Profile System** — Create, rename, delete, and switch between named settings profiles; Blizzard-style dropdown with inline actions and a global shared profile option
 - **Bar Size Presets** — Scale the Flat and Vertical bars to Small, Default, Large, or Huge without distorting text or overlays

@@ -2,6 +2,21 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **XP/hour measured over**: a new option (Text tab, Advanced) picks what XP/hour and the time to next level are worked out over: the last 15 minutes, the last hour (the default) or the whole session.
+- **Ask the game for played time at login**: a new option (Text tab, Advanced), off by default. When on, the addon asks once after login while your level time isn't exact yet, and keeps the reply out of chat.
+
+### Changed
+
+- XP/hour now follows how fast you are levelling right now. It used to average your whole time on the level, so it was slow to notice a change of pace and kept an AFK break for the rest of the level.
+- XP/hour starts low and rises over the first minutes of a session instead of starting high, so the time to next level is never too short.
+- Handing in quests right after a level-up no longer makes XP/hour jump to a huge number.
+- The addon counts your time on the level itself, from your level-up, and keeps it across reloads and logouts. It no longer asks the game for your played time at every login.
+- When the addon hasn't seen your level-up (after installing it, or after levelling with it off), the level time shows with a "+" ("1h 12m+", "at least" in the Stats window). Level up or type /played once and it becomes exact.
+
 ## [1.3.0] - 2026-10-13
 
 ### Added
