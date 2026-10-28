@@ -527,6 +527,17 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_xpRateWindow" inherits="ConfigDropdownTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="xpRateWindow" type="string"/>
+                                            <KeyValue key="layoutIndex" value="37.1" type="number"/>
+                                            <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- <TextMiddleLabelHeader commented out in original, omitted -->
 
                                     <Frame parentKey="TextRightLabelHeader">

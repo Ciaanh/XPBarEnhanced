@@ -47,6 +47,8 @@ local defaults = {
     showQuestXP = true,
     showQuestPercent = true,
     showXPPerHourText = true,
+    -- "15m", "1h" or "session": what XP/hour and the time to level are measured over.
+    xpRateWindow = "1h",
     showLevelTimeText = true,
     showSessionTimeText = true,
     resetOnReload = false,

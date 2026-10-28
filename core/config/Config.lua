@@ -690,6 +690,7 @@ local VISUAL_REAPPLY = {
 
 local STATS_OPTIONS = {
     showXPPerHourText = true,
+    xpRateWindow = true,
     showLevelTimeText = true,
     showSessionTimeText = true,
     showQuestXP = true,

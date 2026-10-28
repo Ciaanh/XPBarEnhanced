@@ -159,6 +159,17 @@ local optionDetails = {
         label = Addon.L["OPT_XP_HOUR"],
         description = Addon.L["OPT_XP_HOUR_DESC"]
     },
+    xpRateWindow = {
+        key = "xpRateWindow",
+        type = "dropdown",
+        label = Addon.L["OPT_XP_RATE_WINDOW"],
+        description = Addon.L["OPT_XP_RATE_WINDOW_DESC"],
+        options = {
+            {value = "15m", label = Addon.L["OPT_XP_RATE_WINDOW_15M"]},
+            {value = "1h", label = Addon.L["OPT_XP_RATE_WINDOW_1H"]},
+            {value = "session", label = Addon.L["OPT_XP_RATE_WINDOW_SESSION"]},
+        }
+    },
     showLevelTimeText = {
         key = "showLevelTimeText",
         label = Addon.L["OPT_LEVEL_TIME"],
@@ -395,6 +406,7 @@ local optionOrder = {
     "showSessionTimeText",
     "resetOnReload",
     "showTimeToLevelText",
+    "xpRateWindow",
     "abbreviateNumbers",
     "enableAnimations",
     "flashOnGain",

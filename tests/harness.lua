@@ -186,17 +186,36 @@ H.frames = {}
 H.unknownEvents = {}
 
 local frameMethods = {}
+
+-- Only names shaped like a widget method get the do-nothing fallback, so an unset field
+-- (self._timer, self.Text) still reads as nil, as it would in game.
+local METHOD_VERBS = { "Set", "Get", "Is", "Has", "Can", "Enable", "Disable", "Register", "Unregister",
+    "Create", "Clear", "Start", "Stop", "Play", "Pause", "Finish", "Restart", "Lock", "Unlock", "Raise",
+    "Lower", "Add", "Remove", "Adjust", "Scroll", "Release", "Acquire" }
+
+local function MethodVerb(key)
+    if realType(key) ~= "string" then return nil end
+    for _, verb in ipairs(METHOD_VERBS) do
+        if key == verb or (key:sub(1, #verb) == verb and key:sub(#verb + 1, #verb + 1):match("%u")) then
+            return verb
+        end
+    end
+    return nil
+end
+
 local frameMeta = {
     __index = function(self, key)
         local method = frameMethods[key]
         if method then return method end
-        if realType(key) == "string" and (key:match("^Is") or key:match("^Has") or key:match("^Can")) then
+        local verb = MethodVerb(key)
+        if verb == "Is" or verb == "Has" or verb == "Can" then
             return function() return false end
-        end
-        if realType(key) == "string" and key:match("^Get") then
+        elseif verb == "Get" then
             return function() return 0 end
+        elseif verb then
+            return function() return nil end
         end
-        return function() return nil end
+        return nil
     end,
 }
 
@@ -364,6 +383,12 @@ function GetScreenWidth() return 1920 end
 function GetScreenHeight() return 1080 end
 function PlaySound() end
 function hooksecurefunc() end
+-- WoW's xpcall passes its extra arguments to the function; Lua 5.1's does not.
+local luaXpcall = xpcall
+function xpcall(fn, handler, ...)
+    local args, n = { ... }, select("#", ...)
+    return luaXpcall(function() return fn(unpack(args, 1, n)) end, handler)
+end
 function securecallfunction(fn, ...) return fn(...) end
 function geterrorhandler() return function(err) table.insert(H.errors, tostring(err)) end end
 function CallErrorHandler(err) table.insert(H.errors, tostring(err)) end

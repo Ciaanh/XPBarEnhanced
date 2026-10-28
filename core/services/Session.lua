@@ -41,8 +41,11 @@ local PENDING_QUEST_TURNIN_WINDOW_SECONDS = 3
 -- style switch or a colour change minutes later.
 local LAST_GAIN_MAX_AGE_SECONDS = 2
 
--- Cap on the persisted gain history, and the block size it is trimmed by.
-local GAINS_HISTORY_CAP = 500
+-- Cap on the persisted gain history. Gains closer together than
+-- GAIN_MERGE_SECONDS share one entry, so an hour is at most 720 entries and
+-- the 1h rate window always fits.
+local GAINS_HISTORY_CAP = 1000
+local GAIN_MERGE_SECONDS = 5
 
 local function PurgeExpiredPendingQuestTurnIns(list, now)
     local i = 1
@@ -168,6 +171,11 @@ end
 --- This is the single writer of `session.sessionXP`. That field is a
 --- SavedVariables-compatibility alias of `gainedXP` and used to be assigned in
 --- four separate places -- four chances for the two to drift apart.
+---
+--- A gain within GAIN_MERGE_SECONDS of the last entry, from the same source at
+--- the same level, is added to that entry instead of starting one: the source
+--- split the Stats chart draws stays exact, and a fast pull doesn't fill the
+--- history with one entry per kill.
 ---@param session SessionData
 ---@param amount number XP to credit; non-positive amounts are ignored
 ---@param source string "quest" or "other"
@@ -187,14 +195,24 @@ local function creditGain(session, amount, source, level)
         session.otherXP = (session.otherXP or 0) + amount
     end
 
+    local now = time()
+    level = level or UnitLevel("player") or 1
+    session.gainsHistory = session.gainsHistory or {}
+
+    local last = session.gainsHistory[#session.gainsHistory]
+    if last and last.source == source and last.level == level
+        and now - (last.timestamp or 0) < GAIN_MERGE_SECONDS then
+        last.amount = (last.amount or 0) + amount
+        return last
+    end
+
     local entry = {
-        timestamp = time(),
+        timestamp = now,
         amount = amount,
         source = source,
-        level = level or UnitLevel("player") or 1,
+        level = level,
     }
 
-    session.gainsHistory = session.gainsHistory or {}
     table.insert(session.gainsHistory, entry)
     trimHistory(session.gainsHistory, GAINS_HISTORY_CAP)
 
@@ -726,17 +744,23 @@ end
 
 ---Return XP per hour. Every XP/hour readout uses this, through
 ---TimeCalc.CalculateXPPerHour, so bar, tooltip and Stats window agree.
+---Measured over the xpRateWindow setting; until the session has something to
+---measure, the rate over the level so far stands in.
 function Session:GetXPPerHour()
     local session = self:GetCurrent()
     if not session then
         return 0
     end
 
-    local rate = Addon.TimeCalculations.CalculateXPPerHour(
+    local TimeCalc = Addon.TimeCalculations
+    local window = Addon.Config and Addon.Config:GetOptionValue("xpRateWindow")
+    local fallback = TimeCalc.LevelRate(UnitXP("player") or 0, self:GetLevelSeconds())
+    local rate = TimeCalc.CalculateXPPerHour(
+        session.gainsHistory,
         session.sessionStart,
         session.gainedXP or 0,
-        self:GetLevelSeconds(),
-        UnitXP("player") or 0
+        window,
+        fallback
     )
     return math.floor(rate)
 end

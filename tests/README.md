@@ -28,8 +28,10 @@ H.Done()
 ```
 
 - **XML is skipped.** The harness has no template system, so the toc's XML files are not loaded.
-  Frames accept any method: `Get*` returns 0, `Is*` / `Has*` / `Can*` false, the rest does
-  nothing. The bars' drawing is not under test; the services behind them are.
+  Frames accept any method named like a widget method (`Set*`, `Get*`, `Is*`, `Create*`, ...):
+  `Get*` returns 0, `Is*` / `Has*` / `Can*` false, the rest does nothing; any other unset field
+  reads as nil. The bars' drawing is not under test; the services behind them are.
+- **WoW's `xpcall`**: extra arguments reach the function, as in the client.
 - **State, not redefinition.** The unit and XP apis read `H.player` (`level`, `xp`, `max`,
   `rested`, `resting`, `maxLevel`); `GetBuildInfo` reads `H.interface`.
 - **Time only passes when a test says so.** `time()` is `H.epoch`, `GetTime()` is `H.clock`.
@@ -52,3 +54,4 @@ H.Done()
 | File | Covers |
 | --- | --- |
 | `load.lua` | The addon loads, logs in, counts an XP gain and survives a `/reload` without an error |
+| `xp_rate.lua` | `CalculateXPPerHour` (windows, "This session", the 5-minute floor, the fallback before anything is measured) and `LevelRate`; through real events: gains merged within 5 s (never across sources or levels), the 1000-entry cap, the `xpRateWindow` setting, a burst of quest XP right after a ding adding only its XP to the hour |
