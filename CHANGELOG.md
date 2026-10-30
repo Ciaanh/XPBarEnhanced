@@ -2,12 +2,14 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
-## [Unreleased]
+## [1.3.1] - 2026-10-30
 
 ### Added
 
 - **XP/hour measured over**: a new option (Text tab, Advanced) picks what XP/hour and the time to next level are worked out over: the last 15 minutes, the last hour (the default) or the whole session.
 - **Ask the game for played time at login**: a new option (Text tab, Advanced), off by default. When on, the addon asks once after login while your level time isn't exact yet, and keeps the reply out of chat.
+- **Kills to level**: the bar tooltip, the Stats window and the LibDataBroker tooltip show how many kills you still need to level, from the average XP of your last 20 kills (only this level's once you have 3, before that those of the last two levels), with rested XP counted. Quest, gathering and exploration XP are left out. A new option (Text tab, Advanced), off by default, adds it to the rate text under the bar; the Leveller preset turns it on. It works in every game language.
+- **Gradient fill**: a new option (Visual tab) for the Flat, Vertical and Classic bars paints the XP fill and the rested and quest overlays as one gradient across the bar, from a darker to a lighter shade of their colors.
 
 ### Changed
 
@@ -15,7 +17,14 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 - XP/hour starts low and rises over the first minutes of a session instead of starting high, so the time to next level is never too short.
 - Handing in quests right after a level-up no longer makes XP/hour jump to a huge number.
 - The addon counts your time on the level itself, from your level-up, and keeps it across reloads and logouts. It no longer asks the game for your played time at every login.
+- `/xpbe resetstats` keeps your level and played time, which come from the game, and also clears the kills behind Kills to level.
 - When the addon hasn't seen your level-up (after installing it, or after levelling with it off), the level time shows with a "+" ("1h 12m+", "at least" in the Stats window). Level up or type /played once and it becomes exact.
+
+### Fixed
+
+- Changing a setting in the options no longer folds the Advanced section away, so you can change several settings in a row.
+- The secondary bar no longer catches clicks while it has nothing to show (no watched faction, for example): it used to sit invisible over the strip above the main bar.
+- The bar no longer flickers for one frame while it holds at 100% during the level-up animation.
 
 ## [1.3.0] - 2026-10-13
 
