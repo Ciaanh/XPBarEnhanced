@@ -27,6 +27,9 @@ local BASE_HEIGHT = 300
 
 local VerticalBarStyleTemplate = {}
 
+-- The fill gradient runs bottom to top, as the bar fills.
+VerticalBarStyleTemplate.gradientOrientation = "VERTICAL"
+
 -------------------------------------------------------------------
 -- INITIALIZATION
 -------------------------------------------------------------------
@@ -114,8 +117,7 @@ function VerticalBarStyleTemplate:UpdateBarColors(context, barName)
     end
     color = color or {r = 1, g = 1, b = 1, a = 1}
 
-    -- Use SetStatusBarColor for StatusBar widget
-    self.StatusBar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
+    shared.PaintStatusBarFill(self, self.StatusBar, color)
 end
 
 --- Override quest complete overlay layout for vertical orientation
@@ -148,6 +150,7 @@ function VerticalBarStyleTemplate:UpdateQuestCompleteBarLayout(context, overlayN
             local currentRatio = currentXP / maxXP
             local yOffset = barHeight * currentRatio -- Start at top of current XP
             local height = barHeight * ratio
+            overlay._xpbeSpanFrom, overlay._xpbeSpanTo = currentRatio, currentRatio + ratio
 
             overlay:ClearAllPoints()
             overlay:SetPoint("BOTTOMLEFT", self.StatusBar, "BOTTOMLEFT", 0, yOffset)
@@ -203,6 +206,7 @@ function VerticalBarStyleTemplate:UpdateQuestIncompleteBarLayout(context, overla
             local startRatio = startXP / maxXP
             local yOffset = barHeight * startRatio
             local height = barHeight * ratio
+            overlay._xpbeSpanFrom, overlay._xpbeSpanTo = startRatio, startRatio + ratio
 
             overlay:ClearAllPoints()
             overlay:SetPoint("BOTTOMLEFT", self.StatusBar, "BOTTOMLEFT", 0, yOffset)
@@ -262,6 +266,7 @@ function VerticalBarStyleTemplate:UpdateRestedBarLayout(context)
         if totalRatio >= 0.01 then
             local barHeight = self:GetHeight()
             local height = barHeight * totalRatio
+            self.RestedOverlay._xpbeSpanFrom, self.RestedOverlay._xpbeSpanTo = 0, totalRatio
 
             self.RestedOverlay:ClearAllPoints()
             self.RestedOverlay:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 0, 0)
@@ -324,6 +329,7 @@ local DefaultConfig = {
     style = {},
     capabilities = {
         textBelowBar = false,
+        fillGradient = true,
         -- Same shape as circular: RateText lives on the bar, not below it, and
         -- shows time-to-level, so it needs the periodic tick to stay honest.
         timeReadout  = true,

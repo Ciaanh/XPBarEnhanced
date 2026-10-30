@@ -195,6 +195,16 @@ local optionDetails = {
         label = Addon.L["OPT_TIME_TO_LEVEL"],
         description = Addon.L["OPT_TIME_TO_LEVEL_DESC"]
     },
+    showKillsToLevelText = {
+        key = "showKillsToLevelText",
+        label = Addon.L["OPT_KILLS_TO_LEVEL"],
+        description = Addon.L["OPT_KILLS_TO_LEVEL_DESC"]
+    },
+    fillGradient = {
+        key = "fillGradient",
+        label = Addon.L["OPT_FILL_GRADIENT"],
+        description = Addon.L["OPT_FILL_GRADIENT_DESC"]
+    },
     abbreviateNumbers = {
         key = "abbreviateNumbers",
         label = Addon.L["OPT_ABBREVIATE_NUMBERS"],
@@ -396,6 +406,7 @@ local optionOrder = {
     "barLocked",
     "classicBarDraggable",
     "showMinimapButton",
+    "fillGradient",
     "showRestedOverlay",
     "showQuestXP",
     "showCompleteQuestOverlay",
@@ -412,6 +423,7 @@ local optionOrder = {
     "showSessionTimeText",
     "resetOnReload",
     "showTimeToLevelText",
+    "showKillsToLevelText",
     "xpRateWindow",
     "abbreviateNumbers",
     "enableAnimations",

@@ -55,6 +55,10 @@ local defaults = {
     requestPlayedTime = false,
     resetOnReload = false,
     showTimeToLevelText = true,
+    -- Kills to level on the rate line, from the last kills' average XP.
+    showKillsToLevelText = false,
+    -- Flat, Vertical and Classic: paint the fill and overlays as one gradient.
+    fillGradient = false,
     abbreviateNumbers = true,
     showRemainingXP = true,
     showLevelText = true,

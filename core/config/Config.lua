@@ -767,14 +767,37 @@ function Config:ResetActiveProfile()
     self:NotifyProfileChanged()
 end
 
+-- The level and total played times are the game's figures, not statistics:
+-- emptied, the level time read N/A until the next ding or /played.
+local PLAYED_TIME_FIELDS = {
+    "realTotalTime", "realLevelTime", "lastTimePlayedRequest", "levelTimeExact", "levelTimeLevel",
+}
+
+---@param sessionData table|nil The per-character session store
+---@return table store Each character's played times, nothing else
+local function KeepPlayedTimes(sessionData)
+    local kept = {}
+    for characterKey, session in pairs(sessionData or {}) do
+        if type(session) == "table" then
+            local entry = {}
+            for _, field in ipairs(PLAYED_TIME_FIELDS) do
+                entry[field] = session[field]
+            end
+            kept[characterKey] = entry
+        end
+    end
+    return kept
+end
+
 function Config:ResetStats()
     if Addon and Addon.db then
-        Addon.db.sessionData            = {}
+        Addon.db.sessionData            = KeepPlayedTimes(Addon.db.sessionData)
         Addon.db.stats                  = {}
         Addon.db.reputationSessionData  = {}
         Addon.db.housingSessionData     = {}
         Addon.db.honorSessionData       = {}
         Addon.db.professionSessionData  = {}
+        Addon.db.killXPData             = {}
     end
     if Addon.ContextBuilder and Addon.ContextBuilder.ResetSession then
         Addon.ContextBuilder.ResetSession()

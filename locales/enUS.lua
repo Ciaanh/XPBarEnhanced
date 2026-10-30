@@ -44,6 +44,8 @@ L["TT_QUESTS_INCOMPLETE"] = "Incomplete Quests: %s"
 L["TT_NONE"] = "None"
 L["TT_NA"] = "N/A"
 L["TT_LEVELING_IN"] = "Leveling in"
+L["TT_KILLS_TO_LEVEL"] = "Kills to level"
+L["TT_KILLS_SHORT"] = "Kills: %s"
 L["TT_RESTED_FMT"] = "%s (%.1f%%)"
 L["TT_RESTING"] = "Resting"
 
@@ -88,7 +90,7 @@ L["OPT_READOUT_PRESET_MINIMAL_DESC"] = "Percentage only — nothing beneath the 
 L["OPT_READOUT_PRESET_STANDARD"] = "Standard"
 L["OPT_READOUT_PRESET_STANDARD_DESC"] = "Level, XP, percentage, and the session readouts."
 L["OPT_READOUT_PRESET_LEVELLER"] = "Leveller"
-L["OPT_READOUT_PRESET_LEVELLER_DESC"] = "Standard plus milestone ticks and incomplete quest XP."
+L["OPT_READOUT_PRESET_LEVELLER_DESC"] = "Standard plus milestone ticks, incomplete quest XP and kills to level."
 L["OPT_READOUT_PRESET_CUSTOM"] = "Custom"
 L["OPT_READOUT_PRESET_RESET"] = "Reset to Standard"
 
@@ -144,6 +146,12 @@ L["OPT_RESET_ON_RELOAD_DESC"] = "When enabled, UI reload starts a fresh XP sessi
 L["OPT_TIME_TO_LEVEL"] = "Show time to next level"
 L["OPT_TIME_TO_LEVEL_DESC"] =
     "Display estimated time remaining to reach next level (based on current XP/hour rate) as text beneath the XP bar."
+L["OPT_KILLS_TO_LEVEL"] = "Show kills to next level"
+L["OPT_KILLS_TO_LEVEL_DESC"] =
+    "Add the kills still needed to level to the rate text beneath the XP bar, from the average XP of your last kills (rested XP counted). Quest, gathering and exploration XP are left out."
+L["OPT_FILL_GRADIENT"] = "Gradient fill"
+L["OPT_FILL_GRADIENT_DESC"] =
+    "Paint the XP fill and the rested and quest overlays as one gradient across the bar, from a darker to a lighter shade of their colors."
 L["OPT_ABBREVIATE_NUMBERS"] = "Abbreviate numbers"
 L["OPT_ABBREVIATE_NUMBERS_DESC"] = "Use abbreviated number format (K, M, B) instead of full numbers in all displays."
 
@@ -273,6 +281,7 @@ L["LDB_CALCULATING"] = "XP: calculating..."
 L["LDB_MAX_LEVEL"] = "Max level"
 L["LDB_TT_SESSION_XP"] = "Session XP:"
 L["LDB_TT_RATE"] = "XP per hour:"
+L["LDB_TT_KILLS"] = "Kills to level:"
 L["LDB_TT_CLICK"] = "Click to toggle the stats window"
 
 -- Session chart (Stats window)
@@ -299,6 +308,8 @@ L["STATS_LABEL_XP_TO_LEVEL"] = "XP to Level:"
 L["STATS_LABEL_RESTED_XP"] = "Rested XP:"
 L["STATS_LABEL_QUEST_XP"] = "Quest XP:"
 L["STATS_LABEL_TIME_ON_LEVEL"] = "Time on Level:"
+L["STATS_LABEL_KILLS_TO_LEVEL"] = "Kills to Level:"
+L["STATS_KILLS_FMT"] = "%s (%s XP each)"
 L["STATS_LABEL_STARTED"] = "Started:"
 
 -- Minimap button

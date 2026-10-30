@@ -57,6 +57,7 @@ core\config\ReadoutPresets.lua
 core\services\Database.lua
 core\services\ProfileManager.lua
 core\services\Session.lua
+core\services\KillXP.lua
 core\services\ReputationSession.lua
 core\services\HousingSession.lua
 core\services\HonorSession.lua

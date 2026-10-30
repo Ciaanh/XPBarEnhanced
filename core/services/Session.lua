@@ -344,16 +344,7 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
     if isInitialLogin or isReloadingUI then
-        session.lastXP = UnitXP("player")
-        session.maxXP = UnitXPMax("player")
-        session.lastLevel = UnitLevel("player") or 1
-        self._pendingQuestTurnIns = {}
-        -- Belt-and-braces. Both already die with the UI session because they live
-        -- on the module rather than in the SavedVariables-backed session table,
-        -- but the rebaseline invalidates them either way: a boundary or gain
-        -- recorded against the old baseline means nothing against this one.
-        self._pendingLevelBoundary = nil
-        self._lastGain = nil
+        self:_Rebaseline(session)
     end
 
     updateSessionAccumTime(session)
@@ -364,6 +355,35 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     if isInitialLogin then
         self:EnsureTimePlayed(TIME_PLAYED_LOGIN_DELAY)
     end
+end
+
+---@param session SessionData
+function Session:_Rebaseline(session)
+    session.lastXP = UnitXP("player")
+    session.maxXP = UnitXPMax("player")
+    session.lastLevel = UnitLevel("player") or 1
+    self._pendingQuestTurnIns = {}
+    -- Belt-and-braces. Both already die with the UI session because they live
+    -- on the module rather than in the SavedVariables-backed session table,
+    -- but the rebaseline invalidates them either way: a boundary or gain
+    -- recorded against the old baseline means nothing against this one.
+    self._pendingLevelBoundary = nil
+    self._lastGain = nil
+end
+
+--- Start a new session now (the minimap button's Shift+click): progress, rate
+--- history and the XP baseline. The level and total times keep counting from
+--- their anchor: they are the game's figures, not the session's. Going through
+--- the login path instead moved the anchor to now and dropped the time since.
+function Session:ResetProgress()
+    local session = self:GetCurrent()
+    if not session then
+        return
+    end
+    resetSessionProgress(session)
+    self:_Rebaseline(session)
+    updateSessionAccumTime(session)
+    self:EmitUpdate()
 end
 
 --- The saved level time belongs to the level it was counted at. A different
@@ -388,16 +408,21 @@ end
 
 --- Carry the level and total times forward to now and move the anchor here.
 --- PLAYER_LOGOUT fires on /reload too, so the times also survive a reload
---- and a logout without any TIME_PLAYED_MSG.
+--- and a logout without any TIME_PLAYED_MSG. An anchor of 0 is a store that
+--- has none yet (a fresh character, or one emptied by hand): there is nothing
+--- to carry, and `now - 0` would add the whole epoch.
 function Session:OnLogout()
     local session = self:GetCurrent()
     if not session then
         return
     end
     local now = time()
-    local since = math.max(0, now - (session.lastTimePlayedRequest or now))
-    session.realLevelTime = (session.realLevelTime or 0) + since
-    session.realTotalTime = (session.realTotalTime or 0) + since
+    local anchor = session.lastTimePlayedRequest or 0
+    if anchor > 0 then
+        local since = math.max(0, now - anchor)
+        session.realLevelTime = (session.realLevelTime or 0) + since
+        session.realTotalTime = (session.realTotalTime or 0) + since
+    end
     session.lastTimePlayedRequest = now
 end
 

@@ -305,6 +305,7 @@ local FIELD_LABELS = {
     RestedXPLabel = "STATS_LABEL_RESTED_XP",
     QuestXPLabel = "STATS_LABEL_QUEST_XP",
     LevelTimeLabel = "STATS_LABEL_TIME_ON_LEVEL",
+    KillsToLevelLabel = "STATS_LABEL_KILLS_TO_LEVEL",
     SessionStartLabel = "STATS_LABEL_STARTED",
 }
 
@@ -610,6 +611,20 @@ function Stats:UpdateLevelStats(statsFrame)
             SetTextSafe(content.LevelTimeValue, duration)
         else
             SetTextSafe(content.LevelTimeValue, L["TT_NA"])
+        end
+    end
+
+    -- Kills to level at the last kills' average
+    if content.KillsToLevelValue then
+        local kills, average
+        if Addon.KillXP then
+            kills, average = Addon.KillXP:GetKillsToLevel()
+        end
+        if kills then
+            SetTextSafe(content.KillsToLevelValue,
+                string_format(L["STATS_KILLS_FMT"], FormatNumber(kills), FormatNumber(math.floor(average + 0.5))))
+        else
+            SetTextSafe(content.KillsToLevelValue, L["TT_NA"])
         end
     end
 

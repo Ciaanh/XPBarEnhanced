@@ -47,7 +47,8 @@ function XPBarTextMixin:UpdateTextVisibility(context)
 	if self.RateText then
 		local showXPPerHour = Addon.ConfigHelper.GetShowXPPerHourText(context)
 		local showTimeToLevel = Addon.ConfigHelper.GetShowTimeToLevelText(context)
-		local showRate = showXPPerHour or showTimeToLevel
+		local showKills = Addon.ConfigHelper.GetShowKillsToLevelText(context)
+		local showRate = showXPPerHour or showTimeToLevel or showKills
 		self.RateText:SetShown(showRate)
 	end
 
@@ -238,6 +239,13 @@ function XPBarTextMixin:UpdateRateText(context)
 				local label = L["TT_LEVELING_IN"] or L["TT_TIME_TO_LEVEL"]
 				table.insert(parts, string.format("%s: %s", label, timePart))
 			end
+		end
+	end
+
+	if Addon.ConfigHelper.GetShowKillsToLevelText(context) and Addon.KillXP then
+		local kills = Addon.KillXP:GetKillsToLevel()
+		if kills then
+			table.insert(parts, string.format(L["TT_KILLS_SHORT"], Addon.TextFormatter:FormatNumber(kills, false)))
 		end
 	end
 

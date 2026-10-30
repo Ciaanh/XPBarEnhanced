@@ -46,6 +46,9 @@ XPBarStyleBuilder.Capabilities = {
 	-- (time-to-level, XP/hour) needs the tick or the value freezes whenever the
 	-- player is not gaining XP, which is exactly when an ETA gets read.
 	timeReadout    = "timeReadout",
+	-- Paints the fill and the overlays as one gradient when the fillGradient
+	-- option is on (Flat, Vertical, Classic).
+	fillGradient   = "fillGradient",
 }
 
 -- Default capabilities for standard horizontal bars
@@ -59,6 +62,7 @@ local DEFAULT_CAPABILITIES = {
 	-- Deliberately false: defaulting this true would hand every existing style a
 	-- 2.5s refresh it never asked for. Styles that need it opt in explicitly.
 	timeReadout    = false,
+	fillGradient   = false,
 }
 
 -------------------------------------------------------------------

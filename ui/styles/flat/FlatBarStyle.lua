@@ -215,7 +215,10 @@ local DefaultConfig = {
 		flashOnGain = true
 	},
 	position = {mode = "DRAGGABLE", positionKey = Addon.StyleKeys.flat},
-	style = {}
+	style = {},
+	capabilities = {
+		fillGradient = true,
+	}
 }
 
 -------------------------------------------------------------------

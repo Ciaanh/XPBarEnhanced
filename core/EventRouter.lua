@@ -161,6 +161,12 @@ local function DispatchSessionQuestTurnedIn(questID)
     end
 end
 
+local function DispatchKillXP(text)
+    if Addon.KillXP and Addon.KillXP.OnCombatXPGain then
+        Addon.KillXP:OnCombatXPGain(text)
+    end
+end
+
 local function DispatchSessionQuestLogUpdate()
     if Addon.Session and Addon.Session.RefreshSessionTimes then
         Addon.Session:RefreshSessionTimes()
@@ -369,6 +375,9 @@ local ROUTER_DISPATCH = {
     end,
     QUEST_TURNED_IN = function(questID)
         DispatchSessionQuestTurnedIn(questID)
+    end,
+    CHAT_MSG_COMBAT_XP_GAIN = function(text)
+        DispatchKillXP(text)
     end,
     UPDATE_EXHAUSTION = function()
         DispatchSessionRestedChanged()

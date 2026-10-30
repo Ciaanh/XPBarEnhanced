@@ -44,6 +44,10 @@ function ConfigHelper.GetShowTimeToLevelText(context)
     return ConfigHelper.GetBooleanValue(context, "showTimeToLevelText", true)
 end
 
+function ConfigHelper.GetShowKillsToLevelText(context)
+    return ConfigHelper.GetBooleanValue(context, "showKillsToLevelText", false)
+end
+
 function ConfigHelper.GetShowLevelTimeText(context)
     return ConfigHelper.GetBooleanValue(context, "showLevelTimeText", true)
 end

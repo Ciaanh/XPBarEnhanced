@@ -115,6 +115,44 @@ H.Advance(60)
 H.Check("and still adds up", (Seconds(Addon)), seconds + 60)
 H.CheckNoErrors("no error")
 
+H.Section("Shift+click on the minimap button")
+H.AnswerPlayed(100000, 3600)
+H.player.xp = H.player.xp + 500
+H.Fire("PLAYER_XP_UPDATE", "player")
+H.Advance(1800)
+H.Check("a gain in the session", Addon.Session:GetCurrent().gainedXP > 0, true)
+local button = _G.XPBarEnhancedMinimapButton
+local shiftKey = IsShiftKeyDown
+IsShiftKeyDown = function() return true end
+button:GetScript("OnClick")(button, "LeftButton")
+IsShiftKeyDown = shiftKey
+H.Check("a new session", Addon.Session:GetCurrent().gainedXP, 0)
+seconds, exact = Seconds(Addon)
+H.Check("the level time kept", seconds, 5400)
+H.Check("and exact", exact, true)
+H.Advance(600)
+Addon = H.Reload()
+H.Check("carried across a /reload", (Seconds(Addon)), 6000)
+H.CheckNoErrors("no error")
+
+H.Section("/xpbe resetstats")
+Addon.Config:ResetStats()
+seconds, exact = Seconds(Addon)
+H.Check("the level time kept", seconds, 6000)
+H.Check("and exact", exact, true)
+H.Advance(60)
+Addon = H.Reload()
+seconds = Seconds(Addon)
+H.Check("a /reload after it adds the minute played, not the epoch", seconds, 6060)
+H.CheckNoErrors("no error")
+
+H.Section("A store with no anchor")
+local stored = Addon.Database:GetSessionData()
+stored.lastTimePlayedRequest, stored.realLevelTime = 0, 0
+Addon = H.Reload()
+H.Check("a /reload carries nothing from it", (Seconds(Addon)), 0)
+H.CheckNoErrors("no error")
+
 H.Section("SavedVariables from 1.3.0")
 -- The level time of the last reply, never carried to the logout, and no levelTimeLevel.
 H.player.level = 30

@@ -65,6 +65,7 @@ end
 --
 -- H.player: what the unit and XP apis report. rested = nil means no rested XP (GetXPExhaustion
 -- returns nil, as the game does).
+-- xpDisabled: IsXPUserDisabled() (XP turned off at an NPC).
 -- H.interface: the client's interface version (select(4, GetBuildInfo())).
 --------------------------------------------------------------------------------
 
@@ -369,7 +370,7 @@ function UnitFactionGroup() return "Alliance", "Alliance" end
 function GetXPExhaustion() return H.player.rested end
 function IsResting() return H.player.resting end
 function GetRestState() return 1, "Rested", 2 end
-function IsXPUserDisabled() return false end
+function IsXPUserDisabled() return H.player.xpDisabled and true or false end
 function GetMaxPlayerLevel() return H.player.maxLevel end
 function GetMaxLevelForPlayerExpansion() return H.player.maxLevel end
 function IsPlayerAtEffectiveMaxLevel() return H.player.level >= H.player.maxLevel end
@@ -417,7 +418,8 @@ end
 function CreateFromMixins(...) return Mixin({}, ...) end
 function CreateColor(r, g, b, a)
     return { r = r, g = g, b = b, a = a, GetRGB = function(c) return c.r, c.g, c.b end,
-        GetRGBA = function(c) return c.r, c.g, c.b, c.a end }
+        GetRGBA = function(c) return c.r, c.g, c.b, c.a end,
+        SetRGBA = function(c, nr, ng, nb, na) c.r, c.g, c.b, c.a = nr, ng, nb, na end }
 end
 function wipe(t) for k in pairs(t) do t[k] = nil end return t end
 table.wipe = wipe
@@ -458,6 +460,26 @@ function H.Load(db)
     H.ns = ns
     H.Fire("ADDON_LOADED", H.ADDON)
     return ns
+end
+
+-- Run the Lua files the toc's XML files list (<Script file="..."/>: the styles, Stats, Options),
+-- in the toc's order, as the client does while loading the XML. The XML itself (templates, frames)
+-- is still not built, so a test builds its frames from the mixins these files define.
+function H.LoadXMLScripts()
+    for line in io.lines(H.ROOT .. "/" .. H.ADDON .. ".toc") do
+        line = line:gsub("%s+$", "")
+        if line ~= "" and not line:match("^#") and not line:match("^libs") and line:match("%.xml$") then
+            local xml = line:gsub("\\", "/")
+            local dir = xml:match("^(.*)/") or "."
+            local file = assert(io.open(H.ROOT .. "/" .. xml))
+            local text = file:read("*a")
+            file:close()
+            for script in text:gmatch('<Script%s+file="([^"]+)"') do
+                local chunk = assert(loadfile(H.ROOT .. "/" .. dir .. "/" .. script:gsub("\\", "/")))
+                chunk(H.ADDON, H.ns)
+            end
+        end
+    end
 end
 
 -- A first login: PLAYER_LOGIN, then PLAYER_ENTERING_WORLD(true, false), then the timers due now.

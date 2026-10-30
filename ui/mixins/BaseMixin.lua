@@ -407,20 +407,29 @@ function BaseMixin:HandleAnimatedUpdate(context)
 	self:StartAnimation(targetRatio, context, config)
 end
 
+-- The level-up hold (the fill at 100% before phase 2) is animating too:
+-- isAnimating is off for it, and a render there snapped the fill to the new
+-- level for one frame before phase 2 started from 0.
+local function IsAnimating(anim)
+	return anim and (anim.isAnimating or anim.holdStartTime or anim.pendingSecondPhase) and true or false
+end
+
 --- Handle immediate (non-animated) render path
 ---@param context table Immutable context
 ---@param forceRender boolean Whether to interrupt running animations
 function BaseMixin:HandleImmediateUpdate(context, forceRender)
-	if self.animation and self.animation.isAnimating and forceRender then
+	if IsAnimating(self.animation) and forceRender then
 		if self.CleanupAnimation then
 			self:CleanupAnimation()
 		end
 		if self.animation then
 			self.animation.isAnimating = false
+			self.animation.holdStartTime = nil
+			self.animation.pendingSecondPhase = nil
 		end
 	end
 
-	if self.animation and self.animation.isAnimating then
+	if IsAnimating(self.animation) then
 		-- The fill is mid-animation and RenderBar would snap it, but the rest of
 		-- this update (a quest turned in, rested XP changing) must not be lost:
 		-- apply overlays and texts now, and hand the context to the animation

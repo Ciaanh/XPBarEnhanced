@@ -69,6 +69,7 @@ local UNAVAILABLE_BY_STYLE = {
 -- scroll height stay constant across all eight styles and the player learns that
 -- e.g. Segment count belongs to Circular instead of finding it simply absent.
 local ROW_OWNER_STYLE = {
+    fillGradient                = {"flat", "vertical", "classic"},
     flatSize                    = "flat",
     showMilestoneTicks          = "flat",
     verticalSize                = "vertical",
@@ -806,8 +807,8 @@ function XPBarEnhancedOptionsMixin:OnLoad()
     end
     Addon.EventBus:Register(EventNames.COLORS_UPDATED, observerId, colorHandler)
     Addon.EventBus:Register(EventNames.PROFILE_CHANGED, observerId .. "_profile_changed", function()
-        if self and self.Refresh then
-            self:Refresh()
+        if self and self.OnProfileChanged then
+            self:OnProfileChanged()
         end
     end)
     Addon.EventBus:Register(EventNames.PROFILES_UPDATED, observerId .. "_profiles_updated", function()
@@ -815,6 +816,13 @@ function XPBarEnhancedOptionsMixin:OnLoad()
             self:Refresh()
         end
     end)
+end
+
+--- Another profile is active: fold Advanced as a login onto its readout
+--- would, then show its values.
+function XPBarEnhancedOptionsMixin:OnProfileChanged()
+    self:ApplyDisclosureDefaults()
+    self:Refresh()
 end
 
 function XPBarEnhancedOptionsMixin:OnPanelShow()
@@ -988,6 +996,10 @@ end
 
 function Options:AcceptResetSettingsDialog()
     Config:ResetActiveProfile()
+    -- Back on the Standard readout: Advanced folds as it would at a login.
+    if self.frame and self.frame.ApplyDisclosureDefaults then
+        self.frame:ApplyDisclosureDefaults()
+    end
     if self.frame and self.frame.Refresh then
         self.frame:Refresh()
     end
@@ -1782,7 +1794,11 @@ function Options:Initialize(controller)
             panel:OnLoad()
         end
     end
-    if panel and panel.ApplyDisclosureDefaults then
+    -- Once, at login (the first call, from OnPlayerLogin). Every option change
+    -- comes back through here via Refresh, and re-deriving then folded Advanced
+    -- away after each change that left the readout on a preset.
+    if panel and panel.ApplyDisclosureDefaults and not panel._disclosureDefaultsApplied then
+        panel._disclosureDefaultsApplied = true
         panel:ApplyDisclosureDefaults()
     end
 

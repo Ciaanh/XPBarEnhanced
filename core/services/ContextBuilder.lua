@@ -59,6 +59,7 @@ local function BuildDBConfig()
 	setIfPresent("showLevelTimeText")
 	setIfPresent("showXPPerHourText")
 	setIfPresent("showTimeToLevelText")
+	setIfPresent("showKillsToLevelText")
 	setIfPresent("showRemainingXP")
 	setIfPresent("showQuestPercent")
 
@@ -502,6 +503,7 @@ function XPBarContextBuilder.BuildTextRefreshContext(event)
 		timeToLevel = timeToLevel,
 		showXPPerHourText = getOptionValue("showXPPerHourText"),
 		showTimeToLevelText = getOptionValue("showTimeToLevelText"),
+		showKillsToLevelText = getOptionValue("showKillsToLevelText"),
 		showSessionTimeText = getOptionValue("showSessionTimeText"),
 		showLevelTimeText = getOptionValue("showLevelTimeText"),
 		abbreviateNumbers = getOptionValue("abbreviateNumbers"),
