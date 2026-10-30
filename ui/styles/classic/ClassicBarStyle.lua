@@ -135,6 +135,7 @@ local function GetClassicBarConfig()
         style = {},
         capabilities = {
             exhaustionTick = true,
+            fillGradient = true,
         }
     }
 end

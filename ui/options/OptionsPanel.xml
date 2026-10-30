@@ -134,6 +134,15 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_fillGradient" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="fillGradient" type="string"/>
+                                            <KeyValue key="layoutIndex" value="5.1" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Classic Bar ==================== -->
 
                                     <Frame parentKey="Row_classicWidth" inherits="ConfigSliderTemplate">
@@ -527,6 +536,28 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <Frame parentKey="Row_showKillsToLevelText" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="showKillsToLevelText" type="string"/>
+                                            <KeyValue key="layoutIndex" value="37.05" type="number"/>
+                                            <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_xpRateWindow" inherits="ConfigDropdownTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="xpRateWindow" type="string"/>
+                                            <KeyValue key="layoutIndex" value="37.1" type="number"/>
+                                            <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- <TextMiddleLabelHeader commented out in original, omitted -->
 
                                     <Frame parentKey="TextRightLabelHeader">
@@ -576,6 +607,17 @@
                                         <KeyValues>
                                             <KeyValue key="configKey" value="showLevelTimeText" type="string"/>
                                             <KeyValue key="layoutIndex" value="40.1" type="number"/>
+                                            <KeyValue key="optionTab" value="text" type="string"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="leftPadding" value="16" type="number"/>
+                                            <KeyValue key="disclosureGroup" value="advanced" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_requestPlayedTime" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="requestPlayedTime" type="string"/>
+                                            <KeyValue key="layoutIndex" value="40.2" type="number"/>
                                             <KeyValue key="optionTab" value="text" type="string"/>
                                             <KeyValue key="expand" value="true" type="boolean"/>
                                             <KeyValue key="leftPadding" value="16" type="number"/>

@@ -7,6 +7,11 @@ XPBarPaintMixin = {}
 local Addon = XPBarEnhanced
 Addon.UI.Mixins.Paint = XPBarPaintMixin
 
+-- SharedStyleHelpers loads after the mixins.
+local function Shared()
+	return Addon.UI.SharedStyleHelpers
+end
+
 -------------------------------------------------------------------
 -- COLOR APPLICATION METHODS
 -------------------------------------------------------------------
@@ -33,7 +38,7 @@ function XPBarPaintMixin:UpdateBarColors(context, barName)
 		local colorKey = hasRestedXP and Addon.Colors.Key.XpBarRested or Addon.Colors.Key.XpBar
 		color = Addon.Colors:Get(colorKey)
 	end
-	bar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
+	Shared().PaintStatusBarFill(self, bar, color)
 end
 
 --- Update rested overlay color
@@ -48,7 +53,7 @@ function XPBarPaintMixin:UpdateRestedBarColor(overlayName)
 	end
 
 	local color = Addon.Colors:Get(Addon.Colors.Key.Rested)
-	overlay:SetVertexColor(color.r, color.g, color.b, color.a)
+	Shared().PaintSpan(self, overlay, color, overlay._xpbeSpanFrom, overlay._xpbeSpanTo)
 end
 
 --- Update completed quest overlay color
@@ -62,7 +67,7 @@ function XPBarPaintMixin:UpdateQuestCompleteBarColor(overlayName)
 	end
 
 	local color = Addon.Colors:Get(Addon.Colors.Key.QuestComplete)
-	overlay:SetVertexColor(color.r, color.g, color.b, color.a)
+	Shared().PaintSpan(self, overlay, color, overlay._xpbeSpanFrom, overlay._xpbeSpanTo)
 end
 
 --- Update incomplete quest overlay color
@@ -76,7 +81,7 @@ function XPBarPaintMixin:UpdateQuestIncompleteBarColor(overlayName)
 	end
 
 	local color = Addon.Colors:Get(Addon.Colors.Key.QuestIncomplete)
-	overlay:SetVertexColor(color.r, color.g, color.b, color.a)
+	Shared().PaintSpan(self, overlay, color, overlay._xpbeSpanFrom, overlay._xpbeSpanTo)
 end
 
 -------------------------------------------------------------------
@@ -224,20 +229,18 @@ end
 --- Initialize all colors from user configuration
 ---  Architecture: Called once during BuildVisuals to override XML defaults
 function XPBarPaintMixin:InitializeColors()
-	-- Initialize overlay colors (read from user config, not XML)
+	-- Initialize overlay colors (read from user config, not XML). Flat here: the
+	-- layout paints each overlay's stretch of the gradient once it is placed.
 	if self.RestedOverlay then
-		local color = Addon.Colors:Get(Addon.Colors.Key.Rested)
-		self.RestedOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
+		Shared().PaintSpan(self, self.RestedOverlay, Addon.Colors:Get(Addon.Colors.Key.Rested))
 	end
 
 	if self.QuestOverlayComplete then
-		local color = Addon.Colors:Get(Addon.Colors.Key.QuestComplete)
-		self.QuestOverlayComplete:SetVertexColor(color.r, color.g, color.b, color.a)
+		Shared().PaintSpan(self, self.QuestOverlayComplete, Addon.Colors:Get(Addon.Colors.Key.QuestComplete))
 	end
 
 	if self.QuestOverlayIncomplete then
-		local color = Addon.Colors:Get(Addon.Colors.Key.QuestIncomplete)
-		self.QuestOverlayIncomplete:SetVertexColor(color.r, color.g, color.b, color.a)
+		Shared().PaintSpan(self, self.QuestOverlayIncomplete, Addon.Colors:Get(Addon.Colors.Key.QuestIncomplete))
 	end
 
 	-- Note: StatusBar color (XpBar/XpBarRested) is set dynamically in UpdateBarColors based on rested state

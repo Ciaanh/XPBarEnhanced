@@ -143,11 +143,11 @@ local function OnClick(self, mouseButton)
 
     if mouseButton == "LeftButton" then
         if IsShiftKeyDown() then
-            -- Reset session: reuse the full login-reset path so every session
-            -- field (quest/other XP, history, levels, accum time) is cleared
-            -- and a broadcast refreshes the UI.
-            if Addon.Session and Addon.Session.OnEnteringWorld then
-                Addon.Session:OnEnteringWorld(true, false)
+            -- Reset session: every session field (quest/other XP, history,
+            -- levels, accum time) is cleared and a broadcast refreshes the UI;
+            -- the level time keeps counting.
+            if Addon.Session and Addon.Session.ResetProgress then
+                Addon.Session:ResetProgress()
                 print("|cff00ff00" .. L["ADDON_NAME"] .. ":|r " .. L["MSG_SESSION_RESET"])
             end
         else

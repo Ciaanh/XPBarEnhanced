@@ -9,9 +9,11 @@
 ---@field lastXP number Last recorded current XP
 ---@field maxXP number Last recorded max XP for level
 ---@field lastLevel number Last recorded player level (baseline for XP gain computation)
----@field realTotalTime number Total time played on character (from TIME_PLAYED_MSG)
----@field realLevelTime number Time played at current level (from TIME_PLAYED_MSG)
----@field lastTimePlayedRequest number Timestamp of last TIME_PLAYED_MSG
+---@field realTotalTime number Total time played on character, as of lastTimePlayedRequest
+---@field realLevelTime number Time played at current level, as of lastTimePlayedRequest
+---@field lastTimePlayedRequest number Anchor the two times above are carried forward from: the last TIME_PLAYED_MSG, ding, login or logout
+---@field levelTimeExact boolean|nil realLevelTime is the game's own figure (a TIME_PLAYED_MSG or a ding seen), not a lower bound
+---@field levelTimeLevel number|nil The level realLevelTime belongs to
 ---@field lastUpdate number Timestamp of last session update
 ---@field startLevel number Player level when session started
 ---@field levelsGained number Number of levels gained this session
@@ -34,6 +36,20 @@ local Utils = Addon.Utils
 local timePlayedTicker
 local PENDING_QUEST_TURNIN_WINDOW_SECONDS = 3
 
+-- Seconds after a login before the opt-in played-time request goes out.
+local TIME_PLAYED_LOGIN_DELAY = 5
+
+local function IsSecret(value)
+    return (issecretvalue and issecretvalue(value)) and true or false
+end
+
+local function SafeNumber(value)
+    if IsSecret(value) then
+        return nil
+    end
+    return tonumber(value)
+end
+
 -- How long a recorded gain stays consumable by ContextBuilder. OnQuestTurnedIn's
 -- delayed OnXPUpdate(true) records a gain whose broadcast is suppressed, so a
 -- record can outlive the event that produced it; without this bound that gain
@@ -41,8 +57,11 @@ local PENDING_QUEST_TURNIN_WINDOW_SECONDS = 3
 -- style switch or a colour change minutes later.
 local LAST_GAIN_MAX_AGE_SECONDS = 2
 
--- Cap on the persisted gain history, and the block size it is trimmed by.
-local GAINS_HISTORY_CAP = 500
+-- Cap on the persisted gain history. Gains closer together than
+-- GAIN_MERGE_SECONDS share one entry, so an hour is at most 720 entries and
+-- the 1h rate window always fits.
+local GAINS_HISTORY_CAP = 1000
+local GAIN_MERGE_SECONDS = 5
 
 local function PurgeExpiredPendingQuestTurnIns(list, now)
     local i = 1
@@ -168,6 +187,11 @@ end
 --- This is the single writer of `session.sessionXP`. That field is a
 --- SavedVariables-compatibility alias of `gainedXP` and used to be assigned in
 --- four separate places -- four chances for the two to drift apart.
+---
+--- A gain within GAIN_MERGE_SECONDS of the last entry, from the same source at
+--- the same level, is added to that entry instead of starting one: the source
+--- split the Stats chart draws stays exact, and a fast pull doesn't fill the
+--- history with one entry per kill.
 ---@param session SessionData
 ---@param amount number XP to credit; non-positive amounts are ignored
 ---@param source string "quest" or "other"
@@ -187,14 +211,24 @@ local function creditGain(session, amount, source, level)
         session.otherXP = (session.otherXP or 0) + amount
     end
 
+    local now = time()
+    level = level or UnitLevel("player") or 1
+    session.gainsHistory = session.gainsHistory or {}
+
+    local last = session.gainsHistory[#session.gainsHistory]
+    if last and last.source == source and last.level == level
+        and now - (last.timestamp or 0) < GAIN_MERGE_SECONDS then
+        last.amount = (last.amount or 0) + amount
+        return last
+    end
+
     local entry = {
-        timestamp = time(),
+        timestamp = now,
         amount = amount,
         source = source,
-        level = level or UnitLevel("player") or 1,
+        level = level,
     }
 
-    session.gainsHistory = session.gainsHistory or {}
     table.insert(session.gainsHistory, entry)
     trimHistory(session.gainsHistory, GAINS_HISTORY_CAP)
 
@@ -284,11 +318,16 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
         return
     end
 
+    -- Before the rebaseline below overwrites lastLevel, which names the level
+    -- of SavedVariables older than levelTimeLevel.
+    if isInitialLogin or isReloadingUI then
+        self:_CheckLevelTimeLevel(session)
+    end
+
     if isInitialLogin then
         resetSessionProgress(session)
-        -- lastTimePlayedRequest persists across logout; reset it so wall-clock
-        -- deltas derived from it only count the current play session, not
-        -- offline time (a fresh TIME_PLAYED_MSG is requested below).
+        -- The level and total times were brought up to the logout by
+        -- OnLogout; move the anchor to now so the time offline is not counted.
         session.lastTimePlayedRequest = time()
     elseif isReloadingUI then
         if Addon.Config and Addon.Config:GetOptionValue("resetOnReload") then
@@ -305,27 +344,86 @@ function Session:OnEnteringWorld(isInitialLogin, isReloadingUI)
     end
 
     if isInitialLogin or isReloadingUI then
-        session.lastXP = UnitXP("player")
-        session.maxXP = UnitXPMax("player")
-        session.lastLevel = UnitLevel("player") or 1
-        self._pendingQuestTurnIns = {}
-        -- Belt-and-braces. Both already die with the UI session because they live
-        -- on the module rather than in the SavedVariables-backed session table,
-        -- but the rebaseline invalidates them either way: a boundary or gain
-        -- recorded against the old baseline means nothing against this one.
-        self._pendingLevelBoundary = nil
-        self._lastGain = nil
+        self:_Rebaseline(session)
     end
 
     updateSessionAccumTime(session)
 
-    -- Refresh played time once per login; every later zone change carries it
-    -- forward from wall-clock time instead of asking the server again.
+    -- Played time is only asked for with requestPlayedTime on, once a login,
+    -- while the level time is not exact; every other answer (the player's own
+    -- /played, another addon's request) is taken as it comes.
     if isInitialLogin then
-        self:RequestTimePlayed()
-    else
-        self:EnsureTimePlayed()
+        self:EnsureTimePlayed(TIME_PLAYED_LOGIN_DELAY)
     end
+end
+
+---@param session SessionData
+function Session:_Rebaseline(session)
+    session.lastXP = UnitXP("player")
+    session.maxXP = UnitXPMax("player")
+    session.lastLevel = UnitLevel("player") or 1
+    self._pendingQuestTurnIns = {}
+    -- Belt-and-braces. Both already die with the UI session because they live
+    -- on the module rather than in the SavedVariables-backed session table,
+    -- but the rebaseline invalidates them either way: a boundary or gain
+    -- recorded against the old baseline means nothing against this one.
+    self._pendingLevelBoundary = nil
+    self._lastGain = nil
+end
+
+--- Start a new session now (the minimap button's Shift+click): progress, rate
+--- history and the XP baseline. The level and total times keep counting from
+--- their anchor: they are the game's figures, not the session's. Going through
+--- the login path instead moved the anchor to now and dropped the time since.
+function Session:ResetProgress()
+    local session = self:GetCurrent()
+    if not session then
+        return
+    end
+    resetSessionProgress(session)
+    self:_Rebaseline(session)
+    updateSessionAccumTime(session)
+    self:EmitUpdate()
+end
+
+--- The saved level time belongs to the level it was counted at. A different
+--- level now means levels were gained with the addon off, or on another
+--- machine: count again from here, as a lower bound. SavedVariables from
+--- before levelTimeLevel existed name their level through lastLevel, and
+--- their level time was never carried to the logout, so it is a lower bound
+--- too.
+---@param session SessionData
+function Session:_CheckLevelTimeLevel(session)
+    local level = UnitLevel("player") or 1
+    local savedLevel = session.levelTimeLevel or session.lastLevel
+    if session.levelTimeLevel == nil then
+        session.levelTimeExact = false
+    end
+    if savedLevel ~= level then
+        session.realLevelTime = 0
+        session.levelTimeExact = false
+    end
+    session.levelTimeLevel = level
+end
+
+--- Carry the level and total times forward to now and move the anchor here.
+--- PLAYER_LOGOUT fires on /reload too, so the times also survive a reload
+--- and a logout without any TIME_PLAYED_MSG. An anchor of 0 is a store that
+--- has none yet (a fresh character, or one emptied by hand): there is nothing
+--- to carry, and `now - 0` would add the whole epoch.
+function Session:OnLogout()
+    local session = self:GetCurrent()
+    if not session then
+        return
+    end
+    local now = time()
+    local anchor = session.lastTimePlayedRequest or 0
+    if anchor > 0 then
+        local since = math.max(0, now - anchor)
+        session.realLevelTime = (session.realLevelTime or 0) + since
+        session.realTotalTime = (session.realTotalTime or 0) + since
+    end
+    session.lastTimePlayedRequest = now
 end
 
 function Session:OnXPUpdate(suppressBroadcast)
@@ -482,6 +580,9 @@ function Session:OnLevelUp(level)
     end
     session.realLevelTime = 0
     session.lastTimePlayedRequest = now
+    -- Counted from the ding itself: exact without asking the server.
+    session.levelTimeExact = true
+    session.levelTimeLevel = currentLevel
 
     -- Update current level state
     session.lastLevel = currentLevel
@@ -513,9 +614,24 @@ function Session:OnTimePlayed(totalTime, levelTime)
         return
     end
 
-    session.realTotalTime = totalTime or session.realTotalTime or 0
-    session.realLevelTime = levelTime or session.realLevelTime or 0
-    session.lastTimePlayedRequest = time()
+    -- Stored and added to later: never a secret. A reply without a readable
+    -- level time changes nothing, so the count since the anchor is not lost.
+    totalTime, levelTime = SafeNumber(totalTime), SafeNumber(levelTime)
+    if levelTime then
+        local now = time()
+        if totalTime then
+            session.realTotalTime = totalTime
+        else
+            session.realTotalTime = (session.realTotalTime or 0)
+                + math.max(0, now - (session.lastTimePlayedRequest or now))
+        end
+        session.realLevelTime = levelTime
+        session.lastTimePlayedRequest = now
+        -- Whoever asked (our opt-in request, the player's /played, another
+        -- addon), the reply is the game's own figure.
+        session.levelTimeExact = true
+        session.levelTimeLevel = UnitLevel("player") or session.levelTimeLevel
+    end
 
     -- Hand TIME_PLAYED_MSG back to the chat frames on the next frame, once
     -- every listener has seen this reply.
@@ -641,7 +757,9 @@ end
 
 local timePlayedRequestToken = 0
 
-function Session:RequestTimePlayed()
+--- Ask the server for played time, with the reply kept out of chat.
+---@param delay number|nil Seconds before the request goes out (default 0.5)
+function Session:RequestTimePlayed(delay)
     if Addon.state.requestingTimePlayed then
         return
     end
@@ -668,21 +786,26 @@ function Session:RequestTimePlayed()
 
     -- Deferred so a burst of callers issues one request.
     if C_Timer and C_Timer.NewTimer then
-        timePlayedTicker = C_Timer.NewTimer(0.5, fireRequest)
+        timePlayedTicker = C_Timer.NewTimer(delay or 0.5, fireRequest)
     else
         fireRequest()
     end
 end
 
---- Request played time only when the session has none yet. Level and total
---- time are carried forward from wall-clock time between replies, so one reply
---- per login is enough.
-function Session:EnsureTimePlayed()
-    local session = self:GetCurrent()
-    if session and (session.realTotalTime or 0) > 0 then
+--- Request played time only when the player opted in (requestPlayedTime) and
+--- the level time is not exact yet. The level time is counted by the addon
+--- from the ding, carried across /reload and logout, and set by any played
+--- time reply, so with the option off nothing is ever requested.
+---@param delay number|nil Seconds before the request goes out
+function Session:EnsureTimePlayed(delay)
+    if not (Addon.Config and Addon.Config:GetOptionValue("requestPlayedTime")) then
         return
     end
-    self:RequestTimePlayed()
+    local session = self:GetCurrent()
+    if session and session.levelTimeExact then
+        return
+    end
+    self:RequestTimePlayed(delay)
 end
 
 -------------------------------------------------------------------
@@ -714,29 +837,41 @@ function Session:GetTimeToLevel()
     return 0
 end
 
----Time played at the current level, carried forward to now (0 when unknown)
+---Time played at the current level, carried forward to now (0 when unknown),
+---and whether that is the game's own figure. When it is not, the time is a
+---lower bound: counted since the addon last saw a ding or a played time reply.
 ---@return number levelSeconds
+---@return boolean exact
 function Session:GetLevelSeconds()
     local session = self:GetCurrent()
     if not session then
-        return 0
+        return 0, false
     end
-    return Addon.TimeCalculations.AdjustedLevelTime(session.realLevelTime, session.lastTimePlayedRequest)
+    local seconds = Addon.TimeCalculations.AdjustedLevelTime(session.realLevelTime, session.lastTimePlayedRequest)
+    return seconds, session.levelTimeExact == true
 end
 
 ---Return XP per hour. Every XP/hour readout uses this, through
 ---TimeCalc.CalculateXPPerHour, so bar, tooltip and Stats window agree.
+---Measured over the xpRateWindow setting; until the session has something to
+---measure, the rate over the level so far stands in, but only when the level
+---time is exact: a lower bound would make it read high.
 function Session:GetXPPerHour()
     local session = self:GetCurrent()
     if not session then
         return 0
     end
 
-    local rate = Addon.TimeCalculations.CalculateXPPerHour(
+    local TimeCalc = Addon.TimeCalculations
+    local window = Addon.Config and Addon.Config:GetOptionValue("xpRateWindow")
+    local levelSeconds, exact = self:GetLevelSeconds()
+    local fallback = exact and TimeCalc.LevelRate(UnitXP("player") or 0, levelSeconds) or 0
+    local rate = TimeCalc.CalculateXPPerHour(
+        session.gainsHistory,
         session.sessionStart,
         session.gainedXP or 0,
-        self:GetLevelSeconds(),
-        UnitXP("player") or 0
+        window,
+        fallback
     )
     return math.floor(rate)
 end

@@ -17,56 +17,77 @@ local TimeCalc = Addon.TimeCalculations
 -- profession trackers use.
 TimeCalc.MIN_RATE_SECONDS = 60
 
---- Calculate XP per hour from session data and level time.
---- The single XP/hour formula: bar texts, the text ticker, tooltips and the
---- Stats window all come through here, so they cannot disagree.
---- Detects when level time includes significant idle time and prefers the
---- session rate then.
----@param sessionStart number Session start timestamp (from time())
----@param sessionXP number Total XP gained in session
----@param levelSeconds number|nil Time played at this level, carried forward to now (optional)
----@param currentXP number|nil Current XP for level-time based calculation (optional)
+-- The time divided by never goes under this. A rate taken over the first
+-- minutes of a session, a window or a level then reads low rather than high:
+-- a burst of quest turn-ins right after a ding no longer reads as 200k XP an
+-- hour with a time to level of minutes.
+TimeCalc.RATE_FLOOR_SECONDS = 300
+
+-- Seconds of gains each xpRateWindow choice covers. "session" is not listed:
+-- it divides the whole session's XP by the session's length.
+TimeCalc.RATE_WINDOWS = {
+    ["15m"] = 900,
+    ["1h"] = 3600,
+}
+TimeCalc.DEFAULT_RATE_WINDOW = "1h"
+
+--- XP per hour over the level so far: XP into this level divided by the time
+--- played at it. 0 below MIN_RATE_SECONDS of level time or with no XP yet.
+---@param currentXP number XP into the current level
+---@param levelSeconds number|nil Time played at this level
+---@return number xpPerHour
+function TimeCalc.LevelRate(currentXP, levelSeconds)
+    if not levelSeconds or levelSeconds < TimeCalc.MIN_RATE_SECONDS or not currentXP or currentXP <= 0 then
+        return 0
+    end
+    return currentXP / math.max(levelSeconds, TimeCalc.RATE_FLOOR_SECONDS) * 3600
+end
+
+--- Calculate XP per hour from the session's gains.
+--- The single XP/hour formula: bar texts, the text ticker, tooltips, the
+--- Stats window, the data broker feed and the level notifications all come
+--- through here, so they cannot disagree.
+---
+--- With a window ("15m", "1h"), the gains since the window's start (or the
+--- session's, if later) divided by the time they cover; with "session", the
+--- session's XP divided by its length. Either divisor is floored at
+--- RATE_FLOOR_SECONDS. Before the session has MIN_RATE_SECONDS behind it, or
+--- before its first gain, there is nothing to measure: `fallbackRate` (the
+--- caller's level rate when it trusts the level time, else 0) is returned.
+---@param gains table|nil The session's gain history ({ timestamp, amount } entries, oldest first)
+---@param sessionStart number|nil Session start timestamp (from time())
+---@param sessionXP number|nil Total XP gained in session
+---@param window string|nil "15m", "1h" or "session"; anything else reads as the default
+---@param fallbackRate number|nil Rate to return while the session has nothing to measure
+---@param now number|nil Current time (from time()); defaults to time()
 ---@return number xpPerHour XP gained per hour
-function TimeCalc.CalculateXPPerHour(sessionStart, sessionXP, levelSeconds, currentXP)
-    local now = time()
-    local elapsed = now - (sessionStart or now)
+function TimeCalc.CalculateXPPerHour(gains, sessionStart, sessionXP, window, fallbackRate, now)
+    now = now or time()
+    sessionStart = sessionStart or now
+    local elapsed = now - sessionStart
 
-    -- Calculate both rates and compare them
-    local sessionRate = 0
-    local levelRate = 0
-
-    if elapsed >= TimeCalc.MIN_RATE_SECONDS and sessionXP and sessionXP > 0 then
-        sessionRate = (sessionXP / elapsed) * 3600
+    if elapsed < TimeCalc.MIN_RATE_SECONDS or not sessionXP or sessionXP <= 0 then
+        return fallbackRate or 0
     end
 
-    if levelSeconds and levelSeconds >= TimeCalc.MIN_RATE_SECONDS and currentXP and currentXP > 0 then
-        levelRate = (currentXP / levelSeconds) * 3600
+    if window == "session" then
+        return sessionXP / math.max(elapsed, TimeCalc.RATE_FLOOR_SECONDS) * 3600
     end
 
-    -- If we have both rates, compare them
-    -- If session rate is significantly higher (2.5x+), it indicates level time includes idle time
-    -- In that case, prefer session-based calculation for more accurate estimates
-    if sessionRate > 0 and levelRate > 0 then
-        if sessionRate >= levelRate * 2.5 then
-            -- Session rate is much higher: level time has significant idle time
-            return sessionRate
-        else
-            -- Rates are similar: trust level time
-            return levelRate
+    local span = TimeCalc.RATE_WINDOWS[window] or TimeCalc.RATE_WINDOWS[TimeCalc.DEFAULT_RATE_WINDOW]
+    local from = math.max(now - span, sessionStart)
+    local sum = 0
+    if gains then
+        -- Newest last: walk back until the window's start.
+        for i = #gains, 1, -1 do
+            local gain = gains[i]
+            if (gain.timestamp or 0) < from then
+                break
+            end
+            sum = sum + (gain.amount or 0)
         end
     end
-
-    -- If we only have level time, use it
-    if levelRate > 0 then
-        return levelRate
-    end
-
-    -- Fall back to session-based calculation
-    if sessionRate > 0 then
-        return sessionRate
-    end
-
-    return 0
+    return sum / math.max(now - from, TimeCalc.RATE_FLOOR_SECONDS) * 3600
 end
 
 --- Calculate time to level at current XP rate

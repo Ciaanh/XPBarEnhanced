@@ -185,6 +185,26 @@ function TooltipMixin:AddXPSection(content, context, cfg)
 			rightB = 0
 		}
 	)
+
+	-- Kills to level, once a kill has been seen. Here rather than with the
+	-- session: the kills are kept across sessions, and the session section
+	-- stays empty until this session has gained enough XP.
+	local kills = Addon.KillXP and Addon.KillXP:GetKillsToLevel()
+	if kills then
+		table.insert(
+			content.lines,
+			{
+				left = (L["TT_KILLS_TO_LEVEL"]) .. ":",
+				right = self:FormatNumber(kills),
+				leftR = leftR,
+				leftG = leftG,
+				leftB = leftB,
+				rightR = 1,
+				rightG = 0.8,
+				rightB = 0
+			}
+		)
+	end
 end
 
 -- Rested

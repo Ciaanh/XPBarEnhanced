@@ -2,7 +2,7 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail and Classic branches** · Vanilla 1.15 · Forever 1.60 · Burning Crusade 2.xx · Wrath 3.xx · Cataclysm 4.xx · Mists 5.xx · Retail 12.xx · Version 1.3.0
+**Retail and Classic branches** · Vanilla 1.15 · Forever 1.60 · Burning Crusade 2.xx · Wrath 3.xx · Cataclysm 4.xx · Mists 5.xx · Retail 12.xx · Version 1.3.1
 
 XP Bar Enhanced uses one manifest. The client interface build is resolved to a
 product flavor, and that flavor activates the supported feature set.
@@ -12,7 +12,9 @@ product flavor, and that flavor activates the supported feature set.
 - **Multiple Bar Styles** — None (Blizzard default), Classic, Flat, Vertical, Circular, Minimap Ring, Terminal, and Orb
 - **Quest XP Overlay** — See pending and completed quest XP directly on the bar
 - **Session Tracking** — Track XP gained, time played, levels gained, and XP/hour rate
-- **Session Breakdown & Rate Smoothing** — Session stats include quest XP vs other XP totals, with a rolling recent XP/hour rate for faster responsiveness
+- **Session Breakdown & Rate Window** — Session stats include quest XP vs other XP totals; XP/hour and the time to level are measured over the last 15 minutes, the last hour (default) or the whole session
+- **Kills to Level** — How many kills you still need to level, from the average XP of your last kills with rested XP counted, in the tooltip, the Stats window, the LibDataBroker tooltip and optionally under the bar; works in every game language
+- **Level Time Without /played** — Time on the current level is counted by the addon from your level-up and kept across reloads and logouts; until it is exact it shows as "1h 12m+". The server is only asked for played time if you turn that on, and its reply stays out of chat
 - **Statistics Window & Session Charts** — Detailed breakdown of your leveling progress, with an XP/hour histogram and a quest-vs-other split chart
 - **Profile System** — Create, rename, delete, and switch between named settings profiles; Blizzard-style dropdown with inline actions and a global shared profile option
 - **Bar Size Presets** — Scale the Flat and Vertical bars to Small, Default, Large, or Huge without distorting text or overlays
@@ -20,7 +22,7 @@ product flavor, and that flavor activates the supported feature set.
 - **Secondary Source Selector** — Choose `Reputation`, `Housing Favor`, `Honor`, or `Profession` as the secondary bar source (with a first/second/auto profession selector)
 - **Main Bar at Max Level** — Optionally repurpose the main bar to display the selected secondary source once you reach max level
 - **Style-Aware Secondary Bars** — Secondary progress display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar, companion Orb)
-- **Color Customization** — Full control over bar and overlay colors
+- **Color Customization** — Full control over bar and overlay colors, with an optional gradient fill on the Flat, Vertical and Classic bars
 - **Minimap Button** — Quick access to options and stats
 - **Animations & Celebration** — Smooth fill, flash-on-gain, two-phase level-up animations, and an optional golden-glow level-up celebration
 - **Level Progress Notifications** — Announces 25%/50%/75% level progress with the estimated time to ding
@@ -83,12 +85,13 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 
 ## Requirements
 
-- World of Warcraft Retail or Classic Era 1.15.9
+- World of Warcraft Retail 12.x, Classic Era 1.15, Forever 1.60, or Burning Crusade, Wrath,
+  Cataclysm or Mists Classic
 - No external dependencies
 
-### Classic Era support
+### Classic support
 
-Classic Era includes the main XP bar, quest XP overlays, rested XP, session tracking,
+The Classic versions include the main XP bar, quest XP overlays, rested XP, session tracking,
 statistics, profiles, colors, minimap access, notifications, LibDataBroker support,
 and all compatible bar styles: Classic, Flat, Vertical, Circular, Minimap Ring,
 Terminal, and Orb.

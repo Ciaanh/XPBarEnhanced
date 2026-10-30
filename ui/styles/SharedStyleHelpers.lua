@@ -26,6 +26,20 @@ function Shared.BeginSecondaryRender(frame, context)
     local isAvailable = context.isAvailable
     frame._lastContext = context
 
+    -- An alpha-0 frame still takes clicks: the hidden bar would swallow them
+    -- (and open the reputation panel) over the strip it covers. Only what
+    -- this turned off is turned back on; a style that keeps its mouse off
+    -- (Circular attached) stays as it set it.
+    if not isAvailable then
+        if frame.IsMouseEnabled and frame:IsMouseEnabled() then
+            frame._xpbeMouseOffWhileHidden = true
+            frame:EnableMouse(false)
+        end
+    elseif frame._xpbeMouseOffWhileHidden then
+        frame._xpbeMouseOffWhileHidden = nil
+        frame:EnableMouse(true)
+    end
+
     if wasAvailable and not isAvailable then
         frame:FadeToAlpha(0)
         return false
@@ -74,6 +88,138 @@ function Shared.GetXPBarColor(context)
     local hasRestedXP = context and (context.hasRestedXP or ((context.restedXP or 0) > 0))
     local colorKey = hasRestedXP and Colors.Key.XpBarRested or Colors.Key.XpBar
     return Colors:Get(colorKey)
+end
+
+-------------------------------------------------------------------
+-- FILL GRADIENT (styles declaring the fillGradient capability)
+-------------------------------------------------------------------
+
+-- The gradient spans the whole bar, from a darker shade of the colour at the
+-- empty end to a lighter one at the full end. A texture covering [from, to] of
+-- the bar takes the colours the bar has at those two points, so the colours
+-- stay where they are as the bar fills, and the overlays continue the fill.
+local GRADIENT_DARK = 0.6   -- the empty end: the colour times this
+local GRADIENT_LIGHT = 0.35 -- the full end: this far from the colour towards white
+
+-- Set when SetGradient raised: flat colours for the rest of the session.
+local gradientFailed = false
+
+local function GradientColorAt(color, t)
+    t = math.min(1, math.max(0, t or 0))
+    local function channel(c)
+        local dark = c * GRADIENT_DARK
+        local light = c + (1 - c) * GRADIENT_LIGHT
+        return dark + (light - dark) * t
+    end
+    return channel(color.r or 1), channel(color.g or 1), channel(color.b or 1)
+end
+Shared.GradientColorAt = GradientColorAt
+
+---Whether this bar paints its fill and overlays as a gradient: the style
+---declares the fillGradient capability and the option is on.
+function Shared.UsesFillGradient(frame)
+    if gradientFailed or type(CreateColor) ~= "function" then
+        return false
+    end
+    local caps = frame and frame.__xpbar_capabilities
+    if not (caps and caps.fillGradient == true) then
+        return false
+    end
+    return Addon.Config and Addon.Config.GetOptionValue
+        and Addon.Config:GetOptionValue("fillGradient") == true or false
+end
+
+-- Whether a vertex colour and a gradient replace each other or multiply is
+-- the engine's business; painting never depends on it. Before its first
+-- gradient, a texture's vertex colour goes to white (neutral when they
+-- multiply), and from then on its flat colour is a two-stop gradient of one
+-- colour rather than a vertex colour, so a gradient left behind never tints it.
+-- Every colour write on the fill and the overlays goes through here.
+
+-- Reused for every call, the fill being repainted on every animation frame;
+-- SetGradient copies the values.
+local fromColor, toColor
+
+local function SetTextureGradient(frame, texture, r1, g1, b1, r2, g2, b2, a)
+    if not fromColor then
+        fromColor, toColor = CreateColor(0, 0, 0, 1), CreateColor(0, 0, 0, 1)
+    end
+    fromColor:SetRGBA(r1, g1, b1, a)
+    toColor:SetRGBA(r2, g2, b2, a)
+    local ok = pcall(texture.SetGradient, texture, frame.gradientOrientation or "HORIZONTAL", fromColor, toColor)
+    if not ok then
+        gradientFailed = true
+    end
+    return ok
+end
+
+-- Paint texture as the stretch [from, to] of the bar's gradient. False when it
+-- could not (no gradient for this bar, no span, or SetGradient refused).
+-- bar: the StatusBar whose fill texture is, so its colour is the one reset.
+local function ApplySpanGradient(frame, texture, color, from, to, bar)
+    if not (from and to and texture and texture.SetGradient) or not Shared.UsesFillGradient(frame) then
+        return false
+    end
+    if not texture._xpbeGradient then
+        if bar then
+            bar:SetStatusBarColor(1, 1, 1, 1)
+        else
+            texture:SetVertexColor(1, 1, 1, 1)
+        end
+        texture._xpbeGradient = true
+    end
+    local r1, g1, b1 = GradientColorAt(color, from)
+    local r2, g2, b2 = GradientColorAt(color, to)
+    return SetTextureGradient(frame, texture, r1, g1, b1, r2, g2, b2, color.a or 1)
+end
+
+-- Paint texture one flat colour. A texture that took a gradient keeps taking
+-- them, even after another refused one: its gradient must be replaced.
+local function PaintFlat(frame, texture, color, bar)
+    local a = color.a or 1
+    if texture and texture._xpbeGradient
+        and SetTextureGradient(frame, texture, color.r, color.g, color.b, color.r, color.g, color.b, a) then
+        return
+    end
+    if bar then
+        bar:SetStatusBarColor(color.r, color.g, color.b, a)
+    elseif texture then
+        texture:SetVertexColor(color.r, color.g, color.b, a)
+    end
+end
+
+---Colour an overlay texture: its stretch of the bar's gradient when the bar
+---has one, else the flat colour.
+---@param frame table The bar
+---@param texture table The overlay
+---@param color table {r, g, b, a}
+---@param from number|nil Where the overlay starts on the bar (0..1); nil paints flat
+---@param to number|nil Where it ends
+function Shared.PaintSpan(frame, texture, color, from, to)
+    if not texture then
+        return
+    end
+    if not ApplySpanGradient(frame, texture, color, from, to) then
+        PaintFlat(frame, texture, color)
+    end
+end
+
+---Colour a StatusBar's fill: [0, its value] of the bar's gradient, else the
+---flat colour. Call it after the value is set.
+function Shared.PaintStatusBarFill(frame, bar, color)
+    if not bar then
+        return
+    end
+    local texture = bar.GetStatusBarTexture and bar:GetStatusBarTexture()
+    if texture and Shared.UsesFillGradient(frame) then
+        local low, high = bar:GetMinMaxValues()
+        local value = bar:GetValue() or 0
+        local to = (low and high and high > low) and ((value - low) / (high - low)) or 0
+        if ApplySpanGradient(frame, texture, color, 0, to, bar) then
+            return
+        end
+    end
+    PaintFlat(frame, texture, color, bar)
 end
 
 function Shared.GetBarScale(configKey)

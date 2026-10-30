@@ -4,7 +4,7 @@
 -- A new player has no path from "I want a minimal bar" to the individual
 -- checkboxes that produce one. These presets give three such paths.
 --
--- Scope: a preset owns the 13 readout keys (see PRESET_KEYS) -- what the bar
+-- Scope: a preset owns the 14 readout keys (see PRESET_KEYS) -- what the bar
 -- says -- and "Custom" detection watches that same set. Everything else a
 -- player tunes (lock, dragging, the secondary bar, the minimap button,
 -- animations) is left exactly as it was: presets used to own every boolean and
@@ -28,6 +28,7 @@ local PRESET_KEYS = {
     "showLevelTimeText",
     "showSessionTimeText",
     "showTimeToLevelText",
+    "showKillsToLevelText",
     "showMilestoneTicks",
     "showCompleteQuestOverlay",
     "showIncompleteQuestOverlay",
@@ -46,6 +47,7 @@ local presets = {
         showLevelTimeText = false,
         showSessionTimeText = false,
         showTimeToLevelText = false,
+        showKillsToLevelText = false,
         showMilestoneTicks = false,
         showCompleteQuestOverlay = true,
         showIncompleteQuestOverlay = false,
@@ -62,12 +64,13 @@ local presets = {
         showLevelTimeText = true,
         showSessionTimeText = true,
         showTimeToLevelText = true,
+        showKillsToLevelText = false,
         showMilestoneTicks = false,
         showCompleteQuestOverlay = true,
         showIncompleteQuestOverlay = false,
         showRestedOverlay = true,
     },
-    -- Standard plus milestone ticks and the incomplete-quest overlay.
+    -- Standard plus milestone ticks, the incomplete-quest overlay and kills to level.
     leveller = {
         showLevelText = true,
         showXPText = true,
@@ -78,6 +81,7 @@ local presets = {
         showLevelTimeText = true,
         showSessionTimeText = true,
         showTimeToLevelText = true,
+        showKillsToLevelText = true,
         showMilestoneTicks = true,
         showCompleteQuestOverlay = true,
         showIncompleteQuestOverlay = true,

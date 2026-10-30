@@ -44,6 +44,8 @@ L["TT_QUESTS_INCOMPLETE"] = "Incomplete Quests: %s"
 L["TT_NONE"] = "None"
 L["TT_NA"] = "N/A"
 L["TT_LEVELING_IN"] = "Leveling in"
+L["TT_KILLS_TO_LEVEL"] = "Kills to level"
+L["TT_KILLS_SHORT"] = "Kills: %s"
 L["TT_RESTED_FMT"] = "%s (%.1f%%)"
 L["TT_RESTING"] = "Resting"
 
@@ -88,7 +90,7 @@ L["OPT_READOUT_PRESET_MINIMAL_DESC"] = "Percentage only — nothing beneath the 
 L["OPT_READOUT_PRESET_STANDARD"] = "Standard"
 L["OPT_READOUT_PRESET_STANDARD_DESC"] = "Level, XP, percentage, and the session readouts."
 L["OPT_READOUT_PRESET_LEVELLER"] = "Leveller"
-L["OPT_READOUT_PRESET_LEVELLER_DESC"] = "Standard plus milestone ticks and incomplete quest XP."
+L["OPT_READOUT_PRESET_LEVELLER_DESC"] = "Standard plus milestone ticks, incomplete quest XP and kills to level."
 L["OPT_READOUT_PRESET_CUSTOM"] = "Custom"
 L["OPT_READOUT_PRESET_RESET"] = "Reset to Standard"
 
@@ -123,8 +125,20 @@ L["OPT_REMAINING_XP"] = "Show remaining XP"
 L["OPT_REMAINING_XP_DESC"] = "Display how much XP is needed to level as text beneath the XP bar."
 L["OPT_XP_HOUR"] = "Show XP/hour"
 L["OPT_XP_HOUR_DESC"] = "Display experience gained per hour as text beneath the XP bar."
+L["OPT_XP_RATE_WINDOW"] = "XP/hour measured over"
+L["OPT_XP_RATE_WINDOW_DESC"] =
+    "The time XP/hour and the time to next level are worked out over. The last 15 minutes follows a change of pace quickly; the whole session is the steadiest."
+L["OPT_XP_RATE_WINDOW_15M"] = "Last 15 minutes"
+L["OPT_XP_RATE_WINDOW_1H"] = "Last hour"
+L["OPT_XP_RATE_WINDOW_SESSION"] = "This session"
 L["OPT_LEVEL_TIME"] = "Show level time"
-L["OPT_LEVEL_TIME_DESC"] = "Display time spent on current level as text beneath the XP bar."
+L["OPT_LEVEL_TIME_DESC"] =
+    "Display time spent on current level as text beneath the XP bar. A + after it means at least that long: the exact time is known once you level up with the addon on or type /played."
+L["OPT_REQUEST_PLAYED_TIME"] = "Ask the game for played time at login"
+L["OPT_REQUEST_PLAYED_TIME_DESC"] =
+    "Makes the level time exact straight away instead of counting it from your next level-up. Only asked while the time is not exact yet, and the reply is kept out of chat."
+L["TIME_AT_LEAST_SHORT"] = "%s+"
+L["TIME_AT_LEAST"] = "at least %s"
 L["OPT_SESSION_TIME"] = "Show session time"
 L["OPT_SESSION_TIME_DESC"] = "Display time played this session as text beneath the XP bar."
 L["OPT_RESET_ON_RELOAD"] = "Reset session on /reload"
@@ -132,6 +146,12 @@ L["OPT_RESET_ON_RELOAD_DESC"] = "When enabled, UI reload starts a fresh XP sessi
 L["OPT_TIME_TO_LEVEL"] = "Show time to next level"
 L["OPT_TIME_TO_LEVEL_DESC"] =
     "Display estimated time remaining to reach next level (based on current XP/hour rate) as text beneath the XP bar."
+L["OPT_KILLS_TO_LEVEL"] = "Show kills to next level"
+L["OPT_KILLS_TO_LEVEL_DESC"] =
+    "Add the kills still needed to level to the rate text beneath the XP bar, from the average XP of your last kills (rested XP counted). Quest, gathering and exploration XP are left out."
+L["OPT_FILL_GRADIENT"] = "Gradient fill"
+L["OPT_FILL_GRADIENT_DESC"] =
+    "Paint the XP fill and the rested and quest overlays as one gradient across the bar, from a darker to a lighter shade of their colors."
 L["OPT_ABBREVIATE_NUMBERS"] = "Abbreviate numbers"
 L["OPT_ABBREVIATE_NUMBERS_DESC"] = "Use abbreviated number format (K, M, B) instead of full numbers in all displays."
 
@@ -261,6 +281,7 @@ L["LDB_CALCULATING"] = "XP: calculating..."
 L["LDB_MAX_LEVEL"] = "Max level"
 L["LDB_TT_SESSION_XP"] = "Session XP:"
 L["LDB_TT_RATE"] = "XP per hour:"
+L["LDB_TT_KILLS"] = "Kills to level:"
 L["LDB_TT_CLICK"] = "Click to toggle the stats window"
 
 -- Session chart (Stats window)
@@ -287,6 +308,8 @@ L["STATS_LABEL_XP_TO_LEVEL"] = "XP to Level:"
 L["STATS_LABEL_RESTED_XP"] = "Rested XP:"
 L["STATS_LABEL_QUEST_XP"] = "Quest XP:"
 L["STATS_LABEL_TIME_ON_LEVEL"] = "Time on Level:"
+L["STATS_LABEL_KILLS_TO_LEVEL"] = "Kills to Level:"
+L["STATS_KILLS_FMT"] = "%s (%s XP each)"
 L["STATS_LABEL_STARTED"] = "Started:"
 
 -- Minimap button

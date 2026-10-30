@@ -305,6 +305,7 @@ local FIELD_LABELS = {
     RestedXPLabel = "STATS_LABEL_RESTED_XP",
     QuestXPLabel = "STATS_LABEL_QUEST_XP",
     LevelTimeLabel = "STATS_LABEL_TIME_ON_LEVEL",
+    KillsToLevelLabel = "STATS_LABEL_KILLS_TO_LEVEL",
     SessionStartLabel = "STATS_LABEL_STARTED",
 }
 
@@ -566,7 +567,10 @@ function Stats:UpdateLevelStats(statsFrame)
 
     -- Level time carried forward to now, and the rate every other readout
     -- uses, so this window's ETA matches the bar's.
-    local levelTime = SessionService and SessionService.GetLevelSeconds and SessionService:GetLevelSeconds() or 0
+    local levelTime, levelTimeExact = 0, true
+    if SessionService and SessionService.GetLevelSeconds then
+        levelTime, levelTimeExact = SessionService:GetLevelSeconds()
+    end
     local xpPerHour = SessionService and SessionService.GetXPPerHour and SessionService:GetXPPerHour() or 0
     local timeToLevel = TimeCalc and TimeCalc.CalculateTimeToLevel(remainingXP, xpPerHour) or nil
 
@@ -600,9 +604,27 @@ function Stats:UpdateLevelStats(statsFrame)
     -- Update time on this level
     if content.LevelTimeValue then
         if levelTime > 0 then
-            SetTextSafe(content.LevelTimeValue, Utils.FormatDuration(levelTime))
+            local duration = Utils.FormatDuration(levelTime)
+            if not levelTimeExact then
+                duration = string_format(L["TIME_AT_LEAST"], duration)
+            end
+            SetTextSafe(content.LevelTimeValue, duration)
         else
             SetTextSafe(content.LevelTimeValue, L["TT_NA"])
+        end
+    end
+
+    -- Kills to level at the last kills' average
+    if content.KillsToLevelValue then
+        local kills, average
+        if Addon.KillXP then
+            kills, average = Addon.KillXP:GetKillsToLevel()
+        end
+        if kills then
+            SetTextSafe(content.KillsToLevelValue,
+                string_format(L["STATS_KILLS_FMT"], FormatNumber(kills), FormatNumber(math.floor(average + 0.5))))
+        else
+            SetTextSafe(content.KillsToLevelValue, L["TT_NA"])
         end
     end
 

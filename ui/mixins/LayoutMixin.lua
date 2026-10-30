@@ -167,6 +167,13 @@ end
 -- OVERLAY LAYOUT METHODS
 -------------------------------------------------------------------
 
+-- Each layout records the stretch of the bar its overlay covers (0..1); the
+-- overlay's colour is painted from it when the bar has a fill gradient.
+local function SetSpan(overlay, from, to)
+	overlay._xpbeSpanFrom = from
+	overlay._xpbeSpanTo = to
+end
+
 --- Update rested overlay position/size/visibility (not color)
 ---@param context table Context with restedXP, currentXP, xpMax
 ---@param overlayName string|nil Overlay name (default: "RestedOverlay")
@@ -195,6 +202,7 @@ function XPBarLayoutMixin:UpdateRestedBarLayout(context, overlayName)
 		-- : No offset needed, always starts from BOTTOMLEFT (0,0)
 		-- Width = currentXP + questOffset + restedXP
 		overlay:SetWidth(widthPixels)
+		SetSpan(overlay, 0, widthPixels / barWidth)
 		local referenceBar = self.StatusBar or self
 		if referenceBar and referenceBar.GetHeight and overlay.SetHeight then
 			overlay:SetHeight(referenceBar:GetHeight() or 0)
@@ -233,6 +241,7 @@ function XPBarLayoutMixin:UpdateQuestCompleteBarLayout(context, overlayName)
 			overlay:ClearAllPoints()
 			overlay:SetPoint("BOTTOMLEFT", offsetPixels, 0)
 			overlay:SetWidth(math.max(1, widthPixels))
+			SetSpan(overlay, currentXP / maxXP, (currentXP + questXPClamped) / maxXP)
 			local referenceBar = self.StatusBar or self
 			if referenceBar and referenceBar.GetHeight and overlay.SetHeight then
 				overlay:SetHeight(referenceBar:GetHeight() or 0)
@@ -290,6 +299,7 @@ function XPBarLayoutMixin:UpdateQuestIncompleteBarLayout(context, overlayName)
 			overlay:ClearAllPoints()
 			overlay:SetPoint("BOTTOMLEFT", offsetPixels, 0)
 			overlay:SetWidth(math.max(1, widthPixels))
+			SetSpan(overlay, startXP / maxXP, (startXP + questXPClamped) / maxXP)
 			local referenceBar = self.StatusBar or self
 			if referenceBar and referenceBar.GetHeight and overlay.SetHeight then
 				overlay:SetHeight(referenceBar:GetHeight() or 0)

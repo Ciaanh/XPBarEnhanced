@@ -616,10 +616,9 @@ local function RefreshSecondaryBarLayout()
     end
 end
 
--- Time texts need played time; ask for it only if none has arrived yet.
-local function EnsureTimePlayedForTimeText()
-    if (Config:GetOptionValue("showLevelTimeText") or Config:GetOptionValue("showSessionTimeText"))
-        and Addon.Session and Addon.Session.EnsureTimePlayed then
+-- Turning requestPlayedTime on asks once, if the level time is not exact yet.
+local function EnsureTimePlayed()
+    if Addon.Session and Addon.Session.EnsureTimePlayed then
         Addon.Session:EnsureTimePlayed()
     end
 end
@@ -650,8 +649,7 @@ local SIDE_EFFECTS = {
     minimapArcStartExpanded = EmitReputationAndHousingUpdates,
     minimapArcDisplayAngle = EmitReputationAndHousingUpdates,
     minimapArcIconAngle = EmitReputationAndHousingUpdates,
-    showLevelTimeText = EnsureTimePlayedForTimeText,
-    showSessionTimeText = EnsureTimePlayedForTimeText,
+    requestPlayedTime = EnsureTimePlayed,
     classicWidth = ResizeClassicBars,
     classicSegments = ResizeClassicBars,
     classicBarDraggable = UpdateClassicPositionMode,
@@ -690,6 +688,7 @@ local VISUAL_REAPPLY = {
 
 local STATS_OPTIONS = {
     showXPPerHourText = true,
+    xpRateWindow = true,
     showLevelTimeText = true,
     showSessionTimeText = true,
     showQuestXP = true,
@@ -768,14 +767,37 @@ function Config:ResetActiveProfile()
     self:NotifyProfileChanged()
 end
 
+-- The level and total played times are the game's figures, not statistics:
+-- emptied, the level time read N/A until the next ding or /played.
+local PLAYED_TIME_FIELDS = {
+    "realTotalTime", "realLevelTime", "lastTimePlayedRequest", "levelTimeExact", "levelTimeLevel",
+}
+
+---@param sessionData table|nil The per-character session store
+---@return table store Each character's played times, nothing else
+local function KeepPlayedTimes(sessionData)
+    local kept = {}
+    for characterKey, session in pairs(sessionData or {}) do
+        if type(session) == "table" then
+            local entry = {}
+            for _, field in ipairs(PLAYED_TIME_FIELDS) do
+                entry[field] = session[field]
+            end
+            kept[characterKey] = entry
+        end
+    end
+    return kept
+end
+
 function Config:ResetStats()
     if Addon and Addon.db then
-        Addon.db.sessionData            = {}
+        Addon.db.sessionData            = KeepPlayedTimes(Addon.db.sessionData)
         Addon.db.stats                  = {}
         Addon.db.reputationSessionData  = {}
         Addon.db.housingSessionData     = {}
         Addon.db.honorSessionData       = {}
         Addon.db.professionSessionData  = {}
+        Addon.db.killXPData             = {}
     end
     if Addon.ContextBuilder and Addon.ContextBuilder.ResetSession then
         Addon.ContextBuilder.ResetSession()

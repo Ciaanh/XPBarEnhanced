@@ -8,6 +8,16 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.3.1",
+        notes = {
+            "Kills to level: how many kills you still need, in the bar tooltip, the Stats window and the LibDataBroker tooltip, and optionally under the bar.",
+            "Gradient fill: a new option paints the Flat, Vertical and Classic bars as a gradient, from a darker to a lighter shade of their colors.",
+            "XP/hour follows how fast you are levelling right now, measured over the last 15 minutes, the last hour or the whole session.",
+            "The addon counts your time on the level itself and keeps it across reloads and logouts; asking the game for /played at login is now an option.",
+            "Fixed the options folding the Advanced section away after each change, and an invisible secondary bar catching clicks.",
+        },
+    },
+    {
         version = "1.3.0",
         notes = {
             "Now runs on Retail, Classic Era, the Forever beta, and Burning Crusade, Wrath, Cataclysm and Mists Classic.",

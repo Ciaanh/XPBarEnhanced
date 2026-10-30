@@ -159,10 +159,26 @@ local optionDetails = {
         label = Addon.L["OPT_XP_HOUR"],
         description = Addon.L["OPT_XP_HOUR_DESC"]
     },
+    xpRateWindow = {
+        key = "xpRateWindow",
+        type = "dropdown",
+        label = Addon.L["OPT_XP_RATE_WINDOW"],
+        description = Addon.L["OPT_XP_RATE_WINDOW_DESC"],
+        options = {
+            {value = "15m", label = Addon.L["OPT_XP_RATE_WINDOW_15M"]},
+            {value = "1h", label = Addon.L["OPT_XP_RATE_WINDOW_1H"]},
+            {value = "session", label = Addon.L["OPT_XP_RATE_WINDOW_SESSION"]},
+        }
+    },
     showLevelTimeText = {
         key = "showLevelTimeText",
         label = Addon.L["OPT_LEVEL_TIME"],
         description = Addon.L["OPT_LEVEL_TIME_DESC"]
+    },
+    requestPlayedTime = {
+        key = "requestPlayedTime",
+        label = Addon.L["OPT_REQUEST_PLAYED_TIME"],
+        description = Addon.L["OPT_REQUEST_PLAYED_TIME_DESC"]
     },
     showSessionTimeText = {
         key = "showSessionTimeText",
@@ -178,6 +194,16 @@ local optionDetails = {
         key = "showTimeToLevelText",
         label = Addon.L["OPT_TIME_TO_LEVEL"],
         description = Addon.L["OPT_TIME_TO_LEVEL_DESC"]
+    },
+    showKillsToLevelText = {
+        key = "showKillsToLevelText",
+        label = Addon.L["OPT_KILLS_TO_LEVEL"],
+        description = Addon.L["OPT_KILLS_TO_LEVEL_DESC"]
+    },
+    fillGradient = {
+        key = "fillGradient",
+        label = Addon.L["OPT_FILL_GRADIENT"],
+        description = Addon.L["OPT_FILL_GRADIENT_DESC"]
     },
     abbreviateNumbers = {
         key = "abbreviateNumbers",
@@ -380,6 +406,7 @@ local optionOrder = {
     "barLocked",
     "classicBarDraggable",
     "showMinimapButton",
+    "fillGradient",
     "showRestedOverlay",
     "showQuestXP",
     "showCompleteQuestOverlay",
@@ -392,9 +419,12 @@ local optionOrder = {
     "showRemainingXP",
     "showXPPerHourText",
     "showLevelTimeText",
+    "requestPlayedTime",
     "showSessionTimeText",
     "resetOnReload",
     "showTimeToLevelText",
+    "showKillsToLevelText",
+    "xpRateWindow",
     "abbreviateNumbers",
     "enableAnimations",
     "flashOnGain",

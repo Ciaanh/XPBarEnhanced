@@ -113,6 +113,11 @@ function Feed:Initialize()
                     tooltip:AddDoubleLine(L["LDB_TT_RATE"],
                         formatter:FormatNumber(xpPerHour, false), 0.7, 0.7, 0.7, 1, 1, 1)
                 end
+                local kills = Addon.KillXP and Addon.KillXP:GetKillsToLevel()
+                if kills and formatter.FormatNumber then
+                    tooltip:AddDoubleLine(L["LDB_TT_KILLS"],
+                        formatter:FormatNumber(kills, false), 0.7, 0.7, 0.7, 1, 1, 1)
+                end
             end
             tooltip:AddLine(L["LDB_TT_CLICK"], 0.4, 0.4, 0.4)
         end,

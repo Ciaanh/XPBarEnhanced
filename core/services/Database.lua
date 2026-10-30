@@ -49,6 +49,22 @@ function Database:Initialize()
         XPBarEnhancedDB = {}
     end
 
+    -- Leveller gained showKillsToLevelText in 1.3.1. Settings saved on Leveller
+    -- before that lack the key, would read its default (off) and show as
+    -- Custom from the update on. Before the merge, which fills the key in.
+    local function MigrateLeveller(settings)
+        if type(settings) == "table" and settings.readoutPreset == "leveller"
+            and settings.showKillsToLevelText == nil then
+            settings.showKillsToLevelText = true
+        end
+    end
+    MigrateLeveller(XPBarEnhancedDB)
+    if type(XPBarEnhancedDB.profiles) == "table" then
+        for _, profile in pairs(XPBarEnhancedDB.profiles) do
+            MigrateLeveller(profile)
+        end
+    end
+
     -- Merge defaults if Utils available
     local Utils = Addon.Utils
     local defaults = Addon.defaults
@@ -104,6 +120,7 @@ function Database:Initialize()
     ensureTable("housingSessionData")
     ensureTable("honorSessionData")
     ensureTable("professionSessionData")
+    ensureTable("killXPData")
 
     -- Set player key
     local playerName = GetSafePlayerName()
@@ -176,6 +193,11 @@ end
 ---Return the profession session data table stored in the database
 function Database:GetProfessionSessionData()
     return getPerCharacterTable(self:GetDB(), "professionSessionData")
+end
+
+---Return the kill XP samples table stored in the database
+function Database:GetKillXPData()
+    return getPerCharacterTable(self:GetDB(), "killXPData")
 end
 
 ---Return the cached player/realm key used for per-character storage
