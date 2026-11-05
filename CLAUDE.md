@@ -68,6 +68,9 @@ A version bump touches four places: `XPBarEnhanced.toc` (`## Version:`), the `RE
 - Forever 1.60.1 (2026-11): the Visual tab's style sections work: only the style on screen's is
   open, choosing a style in the gallery opens its section and folds the previous one, and Use
   texture follows Circular / Minimap Ring.
+- Forever 1.60.1 (2026-11): a style chosen again after Reset Settings made under another style
+  shows the defaults at once. Before `SetStyle` laid out a reused frame again, Ring kept its arc,
+  width 25, ticks and rounded ends until a `/reload`.
 
 ## To confirm in game
 

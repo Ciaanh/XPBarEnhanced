@@ -549,6 +549,22 @@ secondary:SetDetachedInteractionEnabled(false)
 shared.OpenReputationPanel, Addon.SecondaryBarManager.GetCurrentFrame = realOpen, realCurrentFrame
 H.CheckNoErrors("no error from the attached secondary's integration")
 
+-- BarManager keeps each style's frame. A setting changed while another style is on screen
+-- (a reset, a profile switch) only reaches that style's frame: choosing Ring again showed its
+-- old layout until a /reload. Seen in game on Forever after Reset Settings. Choosing a style
+-- whose frame already exists now lays it out again.
+local otherStyle = CreateFrame("Frame")
+Addon.BarManager.barFrames = { ring = frame, circular = otherStyle }
+Addon.BarManager.currentStyle = "circular"
+Addon.Config:SetOptionKey("ringWidth", 20)
+H.Check("under another style, the Ring frame keeps its layout", frame.ringSettings.width ~= 20, true)
+Addon.BarManager:SetStyle("ring")
+H.Check("Ring chosen again: the frame reused", Addon.BarManager:GetCurrentFrame(), frame)
+H.Check("and laid out from the current settings", frame.ringSettings.width, 20)
+H.Check("its size follows", frame.width, 2 * (frame.ringSettings.innerRadius + 20))
+Addon.BarManager.barFrames, Addon.BarManager.currentStyle = {}, nil
+H.CheckNoErrors("no error choosing a style whose frame exists")
+
 --------------------------------------------------------------------------------
 H.Section("Retail 12.0: no radial fill, Circular shown")
 --------------------------------------------------------------------------------

@@ -394,6 +394,10 @@ function BarManager:SetStyle(nextStyle)
             nextFrame:SetShown(true)
         end
     end
+    -- A frame built earlier kept the layout of its last time on screen: a reset
+    -- or a profile switch made under another style only reached that style's
+    -- frame. Lay it out again once it is current (below).
+    local reusedFrame = nextFrame ~= nil
 
     self.currentStyle = nextStyle
 
@@ -407,6 +411,12 @@ function BarManager:SetStyle(nextStyle)
 
     if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
         Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+    end
+
+    -- After the secondary refresh, so its current frame is the one laid out too.
+    -- A new frame laid itself out on load from the current settings.
+    if reusedFrame and Addon.Config and Addon.Config.ReapplyVisualOptions then
+        Addon.Config:ReapplyVisualOptions()
     end
 end
 

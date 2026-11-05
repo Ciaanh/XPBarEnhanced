@@ -17,6 +17,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 ### Fixed
 
 - The secondary bar's tooltip and text now show your progress within your current reputation standing, as the bar does. Friendly at 1,745 out of 6,000 used to read "4,745 / 9,000" and "52.7%" over a bar filled to 29%.
+- Going back to a style you had already used in the session now shows it with your current settings. After Reset Settings or a profile switch made under another style, it kept its old size and layout until a `/reload`.
 
 ## [1.3.1] - 2026-10-30
 
