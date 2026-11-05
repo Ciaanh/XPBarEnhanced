@@ -466,9 +466,11 @@ function StyleMixin:OnEnter()
     local context = self._lastContext
     SharedStyleHelpers.ShowSecondaryTooltip(self, context, "ANCHOR_TOP")
 
-    if not context.isMaxed and Addon.TextFormatter then
-        local current = Addon.TextFormatter:FormatNumber(context.current or 0, false)
-        local maxValue = Addon.TextFormatter:FormatNumber(context.max or 0, false)
+    local styleHelpers = Addon.UI and Addon.UI.StyleHelpers
+    if not context.isMaxed and Addon.TextFormatter and styleHelpers and styleHelpers.GetDisplayProgressValues then
+        local displayCurrent, displayMax = styleHelpers.GetDisplayProgressValues(context)
+        local current = Addon.TextFormatter:FormatNumber(displayCurrent, false)
+        local maxValue = Addon.TextFormatter:FormatNumber(displayMax, false)
         GameTooltip:AddLine(string.format("Current: %s / %s", current, maxValue), 0.7, 0.9, 1)
     end
 

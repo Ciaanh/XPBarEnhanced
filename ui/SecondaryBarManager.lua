@@ -28,6 +28,7 @@ local TEMPLATE_MAP = {
     vertical = "VerticalReputationBarTemplate",
     terminal = "TerminalReputationBarTemplate",
     orb      = "OrbReputationBarTemplate",
+    ring     = "RingReputationBarTemplate",
 }
 
 local function DeriveSecondaryStyle()

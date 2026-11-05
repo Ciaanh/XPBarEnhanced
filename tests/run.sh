@@ -27,7 +27,7 @@ run() {
 }
 
 echo "-- tests --"
-for t in load xp_rate played_time kill_xp gradient display options_panel; do
+for t in load xp_rate played_time kill_xp gradient display options_panel ring; do
     run "$t" "tests/$t.lua" .
 done
 

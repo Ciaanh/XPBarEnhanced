@@ -181,10 +181,13 @@ end
 -- A frame records its events, scripts, shown state and anchors. Any other method is accepted and
 -- does nothing (Get* returns 0, Is* / Has* / Can* false): the bars' drawing is not under test
 -- here, the services are. Textures and font strings are the same kind of object.
+-- H.missingMethods[name] = true: widgets lack that method, as an older client's do (set it
+-- before H.Load for a capability probed at load).
 --------------------------------------------------------------------------------
 
 H.frames = {}
 H.unknownEvents = {}
+H.missingMethods = {}
 
 local frameMethods = {}
 
@@ -206,6 +209,7 @@ end
 
 local frameMeta = {
     __index = function(self, key)
+        if H.missingMethods[key] then return nil end
         local method = frameMethods[key]
         if method then return method end
         local verb = MethodVerb(key)

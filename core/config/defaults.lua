@@ -6,6 +6,7 @@ local Addon = XPBarEnhanced
 local styleKey = (Addon.StyleKeys and Addon.StyleKeys.classic) or "classic"
 local flatStyleKey = (Addon.StyleKeys and Addon.StyleKeys.flat) or "flat"
 local circularStyleKey = (Addon.StyleKeys and Addon.StyleKeys.circular) or "circular"
+local ringStyleKey = (Addon.StyleKeys and Addon.StyleKeys.ring) or "ring"
 
 local defaults = {
     barStyle = styleKey,
@@ -37,6 +38,26 @@ local defaults = {
     minimapRingSegmentWidth = 8,
     minimapRingSegmentHeight = 25,
     minimapArcStartExpanded = false,
+    -- Ring (Retail 12.1+, Forever): a complete ring or an arc of ringArcDegrees
+    -- whose opening faces ringGap; sizes in pixels. See ui/styles/ring/RingGeometry.lua.
+    ringShape = "full",
+    ringArcDegrees = 270,
+    ringGap = "bottom",
+    ringInnerRadius = 56,
+    ringWidth = 12,
+    ringClockwise = true,
+    ringFeather = 0.02,
+    ringTrackAlpha = 0.35,
+    ringScaleCenterText = false,
+    -- The secondary ring: in the primary's hole ("inside") or around it.
+    ringSecondaryPlacement = "inside",
+    ringSecondaryWidth = 6,
+    ringSecondarySpacing = 4,
+    -- A glow on the XP fill's tip; ticks splitting the arc into 4 / 10 / 20
+    -- parts (0 = none); round ends on an arc.
+    ringSpark = true,
+    ringTicks = 0,
+    ringRoundCaps = false,
 
     -- Named starting point for the boolean options; see core/config/ReadoutPresets.lua.
     -- "custom" once any owned boolean diverges from every preset.
@@ -89,7 +110,8 @@ local defaults = {
     barPositions = {
         [styleKey] = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
         [flatStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
-        [circularStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
+        [circularStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
+        [ringStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
     },
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,

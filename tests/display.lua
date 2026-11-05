@@ -122,6 +122,27 @@ Shared.BeginSecondaryRender(mouseless, { isAvailable = false })
 Shared.BeginSecondaryRender(mouseless, { isAvailable = true })
 H.Check("a bar its style keeps mouseless stays so", mouseless.mouse, false)
 
+--------------------------------------------------------------------------------
+H.Section("Secondary tooltip: progress within the standing")
+--------------------------------------------------------------------------------
+-- A standard faction carries its cumulative standing and the standing's thresholds: Friendly
+-- runs 3,000..9,000, so 4,745 is 1,745 / 6,000 into it, as the bars draw it. Seen in game on
+-- Forever, where the tooltip read "4,745 / 9,000" and "52.7%" over a bar filled to 29%.
+local StyleHelpers = Addon.UI.StyleHelpers
+local friendly = { isAvailable = true, factionType = "standard", current = 4745, min = 3000, max = 9000, percent = 29.1 }
+local cur, max, left = StyleHelpers.GetDisplayProgressValues(friendly)
+H.Check("current within the standing", cur, 1745)
+H.Check("the standing's size", max, 6000)
+H.Check("left to the next standing", left, 4255)
+H.Check("progress text", StyleHelpers.BuildTooltipProgressText(friendly), "29.1%")
+local honor = { isAvailable = true, factionType = "honor", current = 300, min = 0, max = 800 }
+cur, max = StyleHelpers.GetDisplayProgressValues(honor)
+H.Check("a source counting from 0 unchanged", cur .. " / " .. max, "300 / 800")
+local housing = { isAvailable = true, factionType = "housing", current = 1500, min = 1000, max = 2000,
+    progressCurrent = 120, progressGoal = 400 }
+cur, max = StyleHelpers.GetDisplayProgressValues(housing)
+H.Check("housing keeps its own progress", cur .. " / " .. max, "120 / 400")
+
 H.Section("An update during the level-up hold")
 local held = Mixin({}, XPBarMixinBase)
 held.renders, held.cleanups = 0, 0

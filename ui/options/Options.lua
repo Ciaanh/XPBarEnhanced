@@ -66,7 +66,7 @@ local UNAVAILABLE_BY_STYLE = {
 
 -- Rows that configure exactly one bar style. Under any other style the row is
 -- disabled and labelled "<Style> only" rather than hidden, so the row count and
--- scroll height stay constant across all eight styles and the player learns that
+-- scroll height stay constant across every style and the player learns that
 -- e.g. Segment count belongs to Circular instead of finding it simply absent.
 local ROW_OWNER_STYLE = {
     fillGradient                = {"flat", "vertical", "classic"},
@@ -88,7 +88,36 @@ local ROW_OWNER_STYLE = {
     minimapRingSegmentHeight    = "minimap_ring",
     minimapArcStartExpanded     = "minimap_ring",
     terminalUseCustomColors     = "terminal",
+    ringShape                   = "ring",
+    ringArcDegrees              = "ring",
+    ringGap                     = "ring",
+    ringInnerRadius             = "ring",
+    ringWidth                   = "ring",
+    ringClockwise               = "ring",
+    ringFeather                 = "ring",
+    ringTrackAlpha              = "ring",
+    ringScaleCenterText         = "ring",
+    ringSpark                   = "ring",
+    ringTicks                   = "ring",
+    ringRoundCaps               = "ring",
+    ringSecondaryPlacement      = "ring",
+    ringSecondaryWidth          = "ring",
+    ringSecondarySpacing        = "ring",
 }
+
+-- Ring's rows. Where the client cannot draw a ring, Ring is not offered at
+-- all, so they are hidden rather than labelled "Ring only". This asks the
+-- probed feature, not the flavor: Retail 12.0 lacks the radial fill.
+local RING_ROWS = {}
+for key, owner in pairs(ROW_OWNER_STYLE) do
+    if owner == "ring" then
+        RING_ROWS[key] = true
+    end
+end
+local HAS_NATIVE_RADIAL = Addon:IsFeatureEnabled("nativeRadial")
+
+-- Ring rows that only shape an arc: disabled on a complete ring.
+local RING_ARC_ROWS = {"ringArcDegrees", "ringGap", "ringRoundCaps"}
 
 -- Rows hidden by client feature policy. Reputation is conditional independently
 -- of the broad classic-client behavior flag because flavor profiles can differ.
@@ -401,6 +430,7 @@ function XPBarEnhancedOptionsMixin:SelectTab(tabId)
             local requiredFeature = OPTION_FEATURES[child.configKey]
             local classicHidden = (child.configKey == "hideCompanionOutsideDelve" and Addon:IsFeatureEnabled("classicClientBehavior"))
                 or (requiredFeature and not Addon:IsFeatureSupported(requiredFeature))
+                or (RING_ROWS[child.configKey] and not HAS_NATIVE_RADIAL)
                 or (child.disclosureToggle == SECONDARY_COLOR_GROUP and not self:HasFoldedSecondaryColors())
             child:SetShown(tabMatch and disclosureOk and not classicHidden)
         end
@@ -1605,6 +1635,12 @@ function XPBarEnhancedOptionsMixin:RefreshRowAvailability(barStyle)
             available,
             not available and string.format(ResolveLocale("OPT_UNAVAIL_STYLE_ONLY"), table.concat(labels, " / ")) or nil
         )
+    end
+
+    if barStyle == "ring" and Config:GetOptionValue("ringShape") ~= "arc" then
+        for _, key in ipairs(RING_ARC_ROWS) do
+            self:SetRowAvailability(key, false, ResolveLocale("OPT_UNAVAIL_ARC_ONLY"))
+        end
     end
 end
 

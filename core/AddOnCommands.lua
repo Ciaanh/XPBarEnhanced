@@ -143,6 +143,11 @@ local function handleStyle(style)
         print("Usage: /xpbe style <" .. StyleList("|") .. ">")
         return
     end
+    local manager = Addon.BarManager
+    if manager and manager.IsStyleSubstituted and manager:IsStyleSubstituted(style) then
+        print("|cFFFF0000XP Bar Enhanced:|r " .. string.format(L["MSG_STYLE_UNSUPPORTED"], style))
+        return
+    end
     if IsValidStyle(style) then
         if Addon.Config and Addon.Config.SetOptionKey then
             Addon.Config:SetOptionKey("barStyle", style)

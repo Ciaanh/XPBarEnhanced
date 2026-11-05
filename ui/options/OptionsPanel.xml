@@ -297,6 +297,145 @@
                                         </KeyValues>
                                     </Frame>
 
+                                    <!-- ==================== Ring Bar ==================== -->
+                                    <!-- Hidden where the client has no radial fill (Options.lua RING_ROWS). -->
+
+                                    <Frame parentKey="Row_ringShape" inherits="ConfigDropdownTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringShape" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="topPadding" value="20" type="number"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringArcDegrees" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringArcDegrees" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.1" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringGap" inherits="ConfigDropdownTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringGap" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.2" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringInnerRadius" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringInnerRadius" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.3" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringWidth" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringWidth" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.4" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringClockwise" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringClockwise" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.5" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringFeather" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringFeather" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.6" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringTrackAlpha" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringTrackAlpha" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.7" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringScaleCenterText" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringScaleCenterText" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.8" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringSpark" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringSpark" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.81" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringTicks" inherits="ConfigDropdownTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringTicks" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.82" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringRoundCaps" inherits="ConfigCheckboxTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringRoundCaps" type="string"/>
+                                            <KeyValue key="layoutIndex" value="17.83" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringSecondaryPlacement" inherits="ConfigDropdownTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringSecondaryPlacement" type="string"/>
+                                            <KeyValue key="layoutIndex" value="18" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringSecondaryWidth" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringSecondaryWidth" type="string"/>
+                                            <KeyValue key="layoutIndex" value="18.1" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
+                                    <Frame parentKey="Row_ringSecondarySpacing" inherits="ConfigSliderTemplate">
+                                        <KeyValues>
+                                            <KeyValue key="configKey" value="ringSecondarySpacing" type="string"/>
+                                            <KeyValue key="layoutIndex" value="18.2" type="number"/>
+                                            <KeyValue key="expand" value="true" type="boolean"/>
+                                            <KeyValue key="optionTab" value="visual" type="string"/>
+                                        </KeyValues>
+                                    </Frame>
+
                                     <!-- ==================== Terminal Bar ==================== -->
 
                                     <Frame parentKey="Row_terminalUseCustomColors" inherits="ConfigCheckboxTemplate">

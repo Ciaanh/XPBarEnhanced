@@ -2,6 +2,18 @@
 
 All notable changes to XP Bar Enhanced will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **Ring style** (Retail and Forever): a new bar style drawn with the game's own radial fill, as a complete ring or as an arc that opens at the bottom, top, left or right. You can set the arc's length, the inner radius, the width, the fill direction, how soft the fill's edge is and how visible the empty part is. Options add a spark on the tip of the fill, ticks that split the ring into 4, 10 or 20 parts, and rounded ends on an arc. XP, completed quests, incomplete quests and rested XP follow each other around the ring. The level, percentage and time to level sit in the middle and can grow with the ring; on a small ring that doesn't scale them, the lines that no longer fit are hidden.
+- With Ring, the secondary bar (reputation, housing, honor, profession) is a second ring, in the main ring's hole or around it, with its own width and spacing. When it's attached, hover the main ring to see its progress and right-click to open its panel. Detached, it's a ring of its own that you can move.
+- Ring needs a game version with the radial fill: the Classic versions other than Forever don't offer it, and a profile set to Ring shows the Circular style there.
+
+### Fixed
+
+- The secondary bar's tooltip and text now show your progress within your current reputation standing, as the bar does. Friendly at 1,745 out of 6,000 used to read "4,745 / 9,000" and "52.7%" over a bar filled to 29%.
+
 ## [1.3.1] - 2026-10-30
 
 ### Added
