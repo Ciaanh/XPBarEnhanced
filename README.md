@@ -2,7 +2,7 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail and Classic branches** · Vanilla 1.15 · Forever 1.60 · Burning Crusade 2.xx · Wrath 3.xx · Cataclysm 4.xx · Mists 5.xx · Retail 12.xx · Version 1.3.1
+**Retail and Classic branches** · Vanilla 1.15 · Forever 1.60 · Burning Crusade 2.xx · Wrath 3.xx · Cataclysm 4.xx · Mists 5.xx · Retail 12.xx · Version 1.3.2
 
 XP Bar Enhanced uses one manifest. The client interface build is resolved to a
 product flavor, and that flavor activates the supported feature set.

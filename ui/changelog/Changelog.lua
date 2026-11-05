@@ -8,6 +8,15 @@ local Changelog = Addon.Changelog
 
 Changelog.entries = {
     {
+        version = "1.3.2",
+        notes = {
+            "Ring style (Retail and Forever): a complete ring or an arc drawn with the game's own radial fill, with its own size, width, track color, spark, ticks and rounded ends.",
+            "With Ring, the secondary bar is a second ring inside the main one or around it; hover the main ring for its progress, right-click for its panel.",
+            "In the Visual tab, each style's options now have a section of their own: yours is open, the others are folded away.",
+            "Fixed the secondary bar's tooltip showing your total reputation instead of your progress within your current standing.",
+        },
+    },
+    {
         version = "1.3.1",
         notes = {
             "Kills to level: how many kills you still need, in the bar tooltip, the Stats window and the LibDataBroker tooltip, and optionally under the bar.",
