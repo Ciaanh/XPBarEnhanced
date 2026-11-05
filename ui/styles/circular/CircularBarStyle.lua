@@ -743,8 +743,12 @@ local function GetSecondaryContext()
     return nil
 end
 
+-- Secondary styles whose attached bar leaves the mouse to the primary: Circular's
+-- and Ring's, which borrows this integration (RingBarStyle.lua).
+local MOUSE_PASSTHROUGH_SECONDARY = {circular = true, ring = true}
+
 local function IsAttachedSecondaryActive()
-    if not Addon.SecondaryBarManager or Addon.SecondaryBarManager._currentStyle ~= "circular" then
+    if not Addon.SecondaryBarManager or not MOUSE_PASSTHROUGH_SECONDARY[Addon.SecondaryBarManager._currentStyle] then
         return false
     end
 

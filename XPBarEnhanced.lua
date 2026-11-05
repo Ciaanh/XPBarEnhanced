@@ -35,6 +35,7 @@ Addon.StyleKeys = Addon.StyleKeys or {
     minimap_ring = "minimap_ring",
     terminal = "terminal",
     orb = "orb",
+    ring = "ring",
     none = "none"
 }
 

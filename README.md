@@ -2,14 +2,14 @@
 
 A World of Warcraft addon that replaces and enhances the default experience bar with richer visuals, quest XP overlays, session statistics, and full color customization.
 
-**Retail and Classic branches** · Vanilla 1.15 · Forever 1.60 · Burning Crusade 2.xx · Wrath 3.xx · Cataclysm 4.xx · Mists 5.xx · Retail 12.xx · Version 1.3.1
+**Retail and Classic branches** · Vanilla 1.15 · Forever 1.60 · Burning Crusade 2.xx · Wrath 3.xx · Cataclysm 4.xx · Mists 5.xx · Retail 12.xx · Version 1.3.2
 
 XP Bar Enhanced uses one manifest. The client interface build is resolved to a
 product flavor, and that flavor activates the supported feature set.
 
 ## Features
 
-- **Multiple Bar Styles** — None (Blizzard default), Classic, Flat, Vertical, Circular, Minimap Ring, Terminal, and Orb
+- **Multiple Bar Styles** — None (Blizzard default), Classic, Flat, Vertical, Circular, Minimap Ring, Terminal, Orb, and Ring
 - **Quest XP Overlay** — See pending and completed quest XP directly on the bar
 - **Session Tracking** — Track XP gained, time played, levels gained, and XP/hour rate
 - **Session Breakdown & Rate Window** — Session stats include quest XP vs other XP totals; XP/hour and the time to level are measured over the last 15 minutes, the last hour (default) or the whole session
@@ -21,7 +21,7 @@ product flavor, and that flavor activates the supported feature set.
 - **Reputation, Companion, Housing, Honor, and Profession Tracking** — The secondary bar can track watched faction progress (including Delve companion flavor), Housing Favor, Honor (PvP) levels, or a profession's skill
 - **Secondary Source Selector** — Choose `Reputation`, `Housing Favor`, `Honor`, or `Profession` as the secondary bar source (with a first/second/auto profession selector)
 - **Main Bar at Max Level** — Optionally repurpose the main bar to display the selected secondary source once you reach max level
-- **Style-Aware Secondary Bars** — Secondary progress display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar, companion Orb)
+- **Style-Aware Secondary Bars** — Secondary progress display adapts to the active style (Classic label ticker, Vertical side bar, Circular inner arc, Minimap arc toggle, Terminal single-line phosphor bar, companion Orb, concentric Ring)
 - **Color Customization** — Full control over bar and overlay colors, with an optional gradient fill on the Flat, Vertical and Classic bars
 - **Minimap Button** — Quick access to options and stats
 - **Animations & Celebration** — Smooth fill, flash-on-gain, two-phase level-up animations, and an optional golden-glow level-up celebration
@@ -40,6 +40,7 @@ product flavor, and that flavor activates the supported feature set.
 | **Minimap Ring** | XP ring anchored around the minimap with optional button collection |
 | **Terminal** | ASCII-style retro bar with phosphor-green progress display |
 | **Orb** | Diablo-style filling sphere with glass highlight and metallic rim, plus a companion orb for the secondary source |
+| **Ring** | Complete ring or arc drawn with the game's radial fill (Retail 12.1+, Forever), with a concentric secondary ring |
 
 ## Installation
 
@@ -55,7 +56,7 @@ product flavor, and that flavor activates the supported feature set.
 | `/xpbe options` | Open the options panel |
 | `/xpbe stats` | Toggle the statistics window |
 | `/xpbe changelog` | Show the update changelog |
-| `/xpbe style <none\|classic\|flat\|vertical\|circular\|minimap_ring\|terminal\|orb>` | Set the active bar style |
+| `/xpbe style <none\|classic\|flat\|vertical\|circular\|minimap_ring\|terminal\|orb\|ring>` | Set the active bar style |
 | `/xpbe profile` | Show current profile and list available profiles |
 | `/xpbe profile global` | Switch to the global shared profile |
 | `/xpbe profile use <name>` | Switch to a named profile |
@@ -81,6 +82,7 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 - **Session Behavior** — Optional reset of session tracking on `/reload`
 - **Circular Bar** — Ring size (Small/Medium/Large/Huge), segment count, texture style, optional center text scaling, and optional full-circle secondary arc
 - **Minimap Ring** — Ring padding, segment count, segment dimensions, optional minimap button collection, and optional "start minimap arc expanded" behavior for the reputation arc
+- **Ring** — Complete ring or arc (arc length and which side it opens on), inner radius, width, fill direction, edge softness, track opacity (and its color, in the Colors tab), optional center text scaling, spark, ticks (4/10/20), rounded ends, and the secondary ring's placement (inside or around), width and spacing
 - **Terminal** — Toggle between authentic terminal colors and custom color scheme
 
 ## Requirements
@@ -94,7 +96,8 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 The Classic versions include the main XP bar, quest XP overlays, rested XP, session tracking,
 statistics, profiles, colors, minimap access, notifications, LibDataBroker support,
 and all compatible bar styles: Classic, Flat, Vertical, Circular, Minimap Ring,
-Terminal, and Orb.
+Terminal, and Orb. Ring needs the radial fill of Retail 12.1+ and Forever: the other Classic
+versions don't offer it, and a profile set to Ring shows the Circular style there.
 
 Features that depend on Retail APIs are unavailable on Classic and are hidden from
 the options panel: Housing Favor, Delves and companion tracking, modern renown,

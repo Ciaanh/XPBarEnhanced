@@ -541,6 +541,11 @@ local function RepositionRings()
     CallOn(SecondaryBar(), "QueueReposition")
 end
 
+local function RelayoutRing()
+    CallOn(PrimaryBar(), "RelayoutRing")
+    CallOn(SecondaryBar(), "RelayoutRing")
+end
+
 local function RepositionMinimapRing()
     CallOn(PrimaryBar(), "QueueReposition")
     CallOn(SecondaryBar(), "QueueReposition")
@@ -659,6 +664,21 @@ local SIDE_EFFECTS = {
     circularScaleCenterText = RepositionRings,
     circularSegments = RepositionPrimarySegments,
     circularUseTexture = RepositionPrimarySegments,
+    ringShape = RelayoutRing,
+    ringArcDegrees = RelayoutRing,
+    ringGap = RelayoutRing,
+    ringInnerRadius = RelayoutRing,
+    ringWidth = RelayoutRing,
+    ringClockwise = RelayoutRing,
+    ringFeather = RelayoutRing,
+    ringTrackAlpha = RelayoutRing,
+    ringScaleCenterText = RelayoutRing,
+    ringSecondaryPlacement = RelayoutRing,
+    ringSecondaryWidth = RelayoutRing,
+    ringSecondarySpacing = RelayoutRing,
+    ringSpark = RelayoutRing,
+    ringTicks = RelayoutRing,
+    ringRoundCaps = RelayoutRing,
     minimapRingPadding = RepositionMinimapRing,
     minimapRingSegments = RepositionMinimapRing,
     minimapRingSegmentWidth = RepositionMinimapRing,
@@ -679,6 +699,7 @@ local VISUAL_REAPPLY = {
     ResizeClassicBars,
     ResizeScaledBars,
     RepositionRings,
+    RelayoutRing,
     RepositionMinimapRing,
     UpdateMinimapButtonCollection,
     UpdateMinimapButton,

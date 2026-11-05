@@ -8,7 +8,8 @@
 -- assets/raw/build_style_previews.py. A swatch is at most three textures from
 -- that sheet -- the art under the fill, the fill, and the art over it -- and
 -- only the fill is tinted, so a preview still follows the configured XP color.
--- Re-run the script after changing a style's art.
+-- Re-run the script after changing a style's art. Ring is the exception: its
+-- swatch is drawn live (RING_PREVIEW below).
 --
 -- The grid is derived from Config.optionDetails.barStyle.options: adding a style
 -- to that list adds a swatch here, and only its preview cells have to follow.
@@ -64,6 +65,20 @@ local PREVIEW_LAYERS = {
     {key = "over", drawLayer = "OVERLAY"},
 }
 
+-- Ring has no cell: it is only offered where the client has the radial fill,
+-- so its swatch cuts a small arc live from the style's own textures. About as
+-- wide as Circular's preview, and an arc so it does not read as Circular.
+local RING_PREVIEW = {
+    shape = "arc",
+    arcDegrees = 270,
+    gap = "bottom",
+    clockwise = true,
+    innerRadius = 15,
+    width = 6,
+    fill = 0.6,
+}
+local RING_PREVIEW_TRACK = {r = 0.25, g = 0.25, b = 0.25, a = 1}
+
 -------------------------------------------------------------------
 -- HELPERS
 -------------------------------------------------------------------
@@ -113,13 +128,56 @@ local function RepaintSwatch(swatch)
     end
 end
 
+---One band of the ring preview, cut over fraction 0..`to` of the arc.
+local function AddRingBand(canvas, hole, geometry, arc, drawLayer, to)
+    local _, discSize = geometry.Sizes(RING_PREVIEW)
+    local startOffset, endOffset = geometry.SpanOffsets(arc, 0, to)
+
+    local texture = canvas:CreateTexture(nil, drawLayer)
+    texture:SetTexture(geometry.DISC_TEXTURE)
+    texture:SetSize(discSize, discSize)
+    texture:SetPoint("CENTER", canvas, "CENTER", 0, 0)
+    texture:AddMaskTexture(hole)
+    texture:SetRadialProgressBarPercent(1)
+    texture:SetRadialProgressBarReverse(arc.reverse)
+    texture:SetRadialProgressBarStartOffset(startOffset)
+    texture:SetRadialProgressBarEndOffset(endOffset)
+    return texture
+end
+
+local function BuildRingPreview(swatch)
+    local geometry = Addon.UI and Addon.UI.RingGeometry
+    if not geometry then
+        return
+    end
+    local canvas = swatch.Preview
+    local _, _, holeSize = geometry.Sizes(RING_PREVIEW)
+    local arc = geometry.Arc(RING_PREVIEW)
+
+    local hole = canvas:CreateMaskTexture()
+    hole:SetTexture(geometry.HOLE_TEXTURE, "CLAMPTOWHITE", "CLAMPTOWHITE")
+    hole:SetSize(holeSize, holeSize)
+    hole:SetPoint("CENTER", canvas, "CENTER", 0, 0)
+
+    local track = AddRingBand(canvas, hole, geometry, arc, "BACKGROUND", 1)
+    local color = RING_PREVIEW_TRACK
+    track:SetVertexColor(color.r, color.g, color.b, color.a)
+    swatch.__fills[#swatch.__fills + 1] = AddRingBand(canvas, hole, geometry, arc, "ARTWORK", RING_PREVIEW.fill)
+end
+
 local function BuildPreview(swatch, styleValue)
     local cells = PREVIEW_CELLS[styleValue]
-    if not cells or swatch.__built then
+    local live = styleValue == Addon.StyleKeys.ring
+    if (not cells and not live) or swatch.__built then
         return
     end
     swatch.__built = true
     swatch.__fills = {}
+    if live then
+        BuildRingPreview(swatch)
+        RepaintSwatch(swatch)
+        return
+    end
     for _, layer in ipairs(PREVIEW_LAYERS) do
         local cellIndex = cells[layer.key]
         if cellIndex then

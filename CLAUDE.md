@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 XP Bar Enhanced: replaces the experience bar with styled bars (Classic, Flat, Vertical, Circular,
-Minimap Ring, Terminal, Orb), quest XP overlays, session statistics, kills to level and a
+Minimap Ring, Terminal, Orb, Ring), quest XP overlays, session statistics, kills to level and a
 secondary bar (reputation, housing, honor, profession). The workspace `CLAUDE.md` covers the
 release standard, the dev loop and the harness; `.claude/rules/wow-addon.md` the shared rules.
 
@@ -37,9 +37,48 @@ A version bump touches four places: `XPBarEnhanced.toc` (`## Version:`), the `RE
 - Retail 12.1.5 (2026-10): the gradient fill renders as intended with the option on.
 - Retail 12.1.5 (2026-10): with the fold decided once at login, Text › Advanced stays open across
   several setting changes.
+- Retail 12.1.5 (2026-11): the Ring style draws as `RingGeometry` computes. The full ring starts at
+  the top and fills clockwise. The 270° arc is open at the bottom or the right, and fills in both
+  directions. XP, completed quests and rested XP follow each other along the arc. At inner radius
+  30 the time-to-level line is dropped. A width of 40 draws cleanly. The panel's Ring rows set it
+  live, for example a 180° arc at inner radius 50 and width 15.
+- Retail 12.1.5 (2026-11): Ring's secondary ring draws inside and outside the primary, follows its
+  arc, and attaches and detaches like the other styles' secondary bars.
+- Forever 1.60.1 (2026-11): Ring is offered and draws as on Retail. A 270° arc open at the bottom
+  or the right fills as `RingGeometry` computes at 67.5% and 83.7%, including a fill that runs
+  through the bottom (offset 0). The getters return the offsets as set (Track 0.125 / 0.25, Fill
+  0.125 / 0.3725 for the arc open at the bottom). The radial fill turns with the texture:
+  `SetRotation(math.pi)` on the track and fill moves the arc's opening to the top.
+- Forever 1.60.1 (2026-11): the complete ring starts at the top and fills clockwise (83.7% ends near
+  10 o'clock), with the spark on the tip. The track at opacity 1 is a clear dark band. At width 25,
+  the rounded ends take the XP colour at the start and the track's at the far end. 10 ticks draw 9
+  dividers across the band. The secondary ring inside follows the arc with its own fill, track and
+  ticks, and the centre text still fits. No BugSack error. The ticks (black, 0.6) don't show on the
+  track: only on the fill.
+- Forever 1.60.1 (2026-11): a right-click opens the reputation panel from the main ring while the
+  secondary ring is attached, and from the secondary ring once it is detached. Detached, the
+  secondary ring moves with shift-drag and has its own tooltip (source, progress, click and drag
+  hints).
+- Forever 1.60.1 (2026-11): a standard faction's secondary tooltip reads its progress within the
+  standing, matching the bar: Stormwind Friendly at 4,745 shows 1,745 / 6,000 and 29.1% (it read
+  4,745 / 9,000 and 52.7% before `GetDisplayProgressValues` subtracted the standing's threshold).
+- Forever 1.60.1 (2026-11): the secondary ring draws around the primary. Attached, the main ring's
+  tooltip adds the source's section (Stormwind, 29.1%, 1,745 / 6,000) and the "Right-click: open
+  Reputation" hint.
+- Forever 1.60.1 (2026-11): the Visual tab's style sections work: only the style on screen's is
+  open, choosing a style in the gallery opens its section and folds the previous one, and Use
+  texture follows Circular / Minimap Ring.
+- Forever 1.60.1 (2026-11): a style chosen again after Reset Settings made under another style
+  shows the defaults at once. Before `SetStyle` laid out a reused frame again, Ring kept its arc,
+  width 25, ticks and rounded ends until a `/reload`.
 
 ## To confirm in game
 
+- Ring's track colour (Colors tab, "Ring Track"): the empty part of both rings and the far rounded
+  end change at once, without a `/reload`; the row reads "Ring only" under other styles.
+- Ring's ticks over the empty part: light on the default dark track, dark on a light one, and each
+  one turns as the fill passes it.
+- The style sections on a Classic client: no Ring header.
 - Whether a texture's vertex colour and gradient replace each other or multiply. The painting in
   `ui/styles/SharedStyleHelpers.lua` is right either way; check that turning the gradient off
   brings the flat colour back without a `/reload`, on Retail, Classic Era and Forever.

@@ -53,8 +53,12 @@ local function GetDisplayProgressValues(context)
         return 0, 1, 0
     end
 
-    local current = context.current or 0
-    local maxValue = context.max or 1
+    -- Progress within the current step, as the bars draw it (SetMinMaxValues):
+    -- a standard faction or a friendship counts from its standing's threshold,
+    -- so Friendly at 4,745 (3,000..9,000) reads 1,745 / 6,000, not 4,745 / 9,000.
+    local min = context.min or 0
+    local current = math.max(0, (context.current or 0) - min)
+    local maxValue = (context.max or 1) - min
     local remaining = math.max(0, maxValue - current)
 
     if context.factionType == "housing" then

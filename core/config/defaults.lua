@@ -6,6 +6,7 @@ local Addon = XPBarEnhanced
 local styleKey = (Addon.StyleKeys and Addon.StyleKeys.classic) or "classic"
 local flatStyleKey = (Addon.StyleKeys and Addon.StyleKeys.flat) or "flat"
 local circularStyleKey = (Addon.StyleKeys and Addon.StyleKeys.circular) or "circular"
+local ringStyleKey = (Addon.StyleKeys and Addon.StyleKeys.ring) or "ring"
 
 local defaults = {
     barStyle = styleKey,
@@ -37,6 +38,26 @@ local defaults = {
     minimapRingSegmentWidth = 8,
     minimapRingSegmentHeight = 25,
     minimapArcStartExpanded = false,
+    -- Ring (Retail 12.1+, Forever): a complete ring or an arc of ringArcDegrees
+    -- whose opening faces ringGap; sizes in pixels. See ui/styles/ring/RingGeometry.lua.
+    ringShape = "full",
+    ringArcDegrees = 270,
+    ringGap = "bottom",
+    ringInnerRadius = 56,
+    ringWidth = 12,
+    ringClockwise = true,
+    ringFeather = 0.02,
+    ringTrackAlpha = 0.35,
+    ringScaleCenterText = false,
+    -- The secondary ring: in the primary's hole ("inside") or around it.
+    ringSecondaryPlacement = "inside",
+    ringSecondaryWidth = 6,
+    ringSecondarySpacing = 4,
+    -- A glow on the XP fill's tip; ticks splitting the arc into 4 / 10 / 20
+    -- parts (0 = none); round ends on an arc.
+    ringSpark = true,
+    ringTicks = 0,
+    ringRoundCaps = false,
 
     -- Named starting point for the boolean options; see core/config/ReadoutPresets.lua.
     -- "custom" once any owned boolean diverges from every preset.
@@ -84,12 +105,14 @@ local defaults = {
         secondaryReputation = {r = 0.70, g = 0.30, b = 0.85, a = 1},
         secondaryHousing = {r = 0.85, g = 0.55, b = 0.20, a = 1},
         secondaryHonor = {r = 0.80, g = 0.20, b = 0.20, a = 1},
-        secondaryProfession = {r = 0.30, g = 0.65, b = 0.75, a = 1}
+        secondaryProfession = {r = 0.30, g = 0.65, b = 0.75, a = 1},
+        ringTrack = {r = 0.1, g = 0.1, b = 0.1, a = 1}
     },
     barPositions = {
         [styleKey] = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
         [flatStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
-        [circularStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
+        [circularStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},
+        [ringStyleKey] = {point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0}
     },
     secondaryFadeInSpeed = 0.3,
     secondaryFadeOutSpeed = 0.5,

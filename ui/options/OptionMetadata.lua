@@ -11,6 +11,10 @@ local HAS_REPUTATION = Addon:IsFeatureSupported("reputation")
 local HAS_HOUSING = Addon:IsFeatureSupported("housing")
 local HAS_HONOR = Addon:IsFeatureSupported("honor")
 local HAS_PROFESSION = Addon:IsFeatureSupported("profession")
+-- Ring needs the native radial fill itself, not only the flavor: Retail 12.0
+-- shares Retail's flavor and lacks it. The probe is a texture's methods, ready
+-- at load.
+local HAS_NATIVE_RADIAL = Addon:IsFeatureEnabled("nativeRadial")
 
 local optionDetails = {
     -- Declared as a dropdown so Config:SetOptionKey preserves the string value
@@ -375,8 +379,149 @@ local optionDetails = {
         key = "terminalUseCustomColors",
         label = Addon.L["OPT_TERMINAL_USE_CUSTOM_COLORS"],
         description = Addon.L["OPT_TERMINAL_USE_CUSTOM_COLORS_DESC"]
+    },
+    ringShape = {
+        key = "ringShape",
+        type = "dropdown",
+        label = Addon.L["OPT_RING_SHAPE"],
+        description = Addon.L["OPT_RING_SHAPE_DESC"],
+        options = {
+            {value = "full", label = Addon.L["OPT_RING_SHAPE_FULL"]},
+            {value = "arc", label = Addon.L["OPT_RING_SHAPE_ARC"]},
+        }
+    },
+    ringArcDegrees = {
+        key = "ringArcDegrees",
+        type = "slider",
+        label = Addon.L["OPT_RING_ARC_DEGREES"],
+        description = Addon.L["OPT_RING_ARC_DEGREES_DESC"],
+        min = 90,
+        max = 350,
+        step = 10,
+        format = "%.0f"
+    },
+    ringGap = {
+        key = "ringGap",
+        type = "dropdown",
+        label = Addon.L["OPT_RING_GAP"],
+        description = Addon.L["OPT_RING_GAP_DESC"],
+        options = {
+            {value = "bottom", label = Addon.L["OPT_RING_GAP_BOTTOM"]},
+            {value = "top", label = Addon.L["OPT_RING_GAP_TOP"]},
+            {value = "left", label = Addon.L["OPT_RING_GAP_LEFT"]},
+            {value = "right", label = Addon.L["OPT_RING_GAP_RIGHT"]},
+        }
+    },
+    ringInnerRadius = {
+        key = "ringInnerRadius",
+        type = "slider",
+        label = Addon.L["OPT_RING_INNER_RADIUS"],
+        description = Addon.L["OPT_RING_INNER_RADIUS_DESC"],
+        min = 16,
+        max = 200,
+        step = 1,
+        format = "%.0f"
+    },
+    ringWidth = {
+        key = "ringWidth",
+        type = "slider",
+        label = Addon.L["OPT_RING_WIDTH"],
+        description = Addon.L["OPT_RING_WIDTH_DESC"],
+        min = 2,
+        max = 64,
+        step = 1,
+        format = "%.0f"
+    },
+    ringClockwise = {
+        key = "ringClockwise",
+        label = Addon.L["OPT_RING_CLOCKWISE"],
+        description = Addon.L["OPT_RING_CLOCKWISE_DESC"]
+    },
+    ringFeather = {
+        key = "ringFeather",
+        type = "slider",
+        label = Addon.L["OPT_RING_FEATHER"],
+        description = Addon.L["OPT_RING_FEATHER_DESC"],
+        min = 0,
+        max = 0.1,
+        step = 0.01,
+        format = "%.2f"
+    },
+    ringTrackAlpha = {
+        key = "ringTrackAlpha",
+        type = "slider",
+        label = Addon.L["OPT_RING_TRACK_ALPHA"],
+        description = Addon.L["OPT_RING_TRACK_ALPHA_DESC"],
+        min = 0,
+        max = 1,
+        step = 0.05,
+        format = "%.2f"
+    },
+    ringScaleCenterText = {
+        key = "ringScaleCenterText",
+        label = Addon.L["OPT_RING_SCALE_CENTER_TEXT"],
+        description = Addon.L["OPT_RING_SCALE_CENTER_TEXT_DESC"]
+    },
+    ringSpark = {
+        key = "ringSpark",
+        label = Addon.L["OPT_RING_SPARK"],
+        description = Addon.L["OPT_RING_SPARK_DESC"]
+    },
+    ringTicks = {
+        key = "ringTicks",
+        type = "dropdown",
+        label = Addon.L["OPT_RING_TICKS"],
+        description = Addon.L["OPT_RING_TICKS_DESC"],
+        options = {
+            {value = 0, label = Addon.L["OPT_RING_TICKS_NONE"]},
+            {value = 4, label = "4"},
+            {value = 10, label = "10"},
+            {value = 20, label = "20"},
+        }
+    },
+    ringRoundCaps = {
+        key = "ringRoundCaps",
+        label = Addon.L["OPT_RING_ROUND_CAPS"],
+        description = Addon.L["OPT_RING_ROUND_CAPS_DESC"]
+    },
+    ringSecondaryPlacement = {
+        key = "ringSecondaryPlacement",
+        type = "dropdown",
+        label = Addon.L["OPT_RING_SECONDARY_PLACEMENT"],
+        description = Addon.L["OPT_RING_SECONDARY_PLACEMENT_DESC"],
+        options = {
+            {value = "inside", label = Addon.L["OPT_RING_SECONDARY_INSIDE"]},
+            {value = "outside", label = Addon.L["OPT_RING_SECONDARY_OUTSIDE"]},
+        }
+    },
+    ringSecondaryWidth = {
+        key = "ringSecondaryWidth",
+        type = "slider",
+        label = Addon.L["OPT_RING_SECONDARY_WIDTH"],
+        description = Addon.L["OPT_RING_SECONDARY_WIDTH_DESC"],
+        min = 2,
+        max = 64,
+        step = 1,
+        format = "%.0f"
+    },
+    ringSecondarySpacing = {
+        key = "ringSecondarySpacing",
+        type = "slider",
+        label = Addon.L["OPT_RING_SECONDARY_SPACING"],
+        description = Addon.L["OPT_RING_SECONDARY_SPACING_DESC"],
+        min = 0,
+        max = 32,
+        step = 1,
+        format = "%.0f"
     }
 }
+
+-- Ring is offered only where the client can draw it. Elsewhere a profile that
+-- says "ring" shows Circular (BarManager), and the gallery selects Circular.
+if HAS_NATIVE_RADIAL then
+    table.insert(optionDetails.barStyle.options,
+        {value = "ring", label = Addon.L["OPT_BAR_STYLE_RING"], shortLabel = Addon.L["OPT_BAR_STYLE_SHORT_RING"]})
+end
 
 -- Offer a secondary source only where its backing module can actually run.
 do
@@ -449,6 +594,21 @@ local optionOrder = {
     "minimapRingSegmentWidth",
     "minimapRingSegmentHeight",
     "minimapArcStartExpanded",
+    "ringShape",
+    "ringArcDegrees",
+    "ringGap",
+    "ringInnerRadius",
+    "ringWidth",
+    "ringClockwise",
+    "ringFeather",
+    "ringTrackAlpha",
+    "ringScaleCenterText",
+    "ringSpark",
+    "ringTicks",
+    "ringRoundCaps",
+    "ringSecondaryPlacement",
+    "ringSecondaryWidth",
+    "ringSecondarySpacing",
     "terminalUseCustomColors"
 }
 
@@ -480,6 +640,11 @@ do
         table.insert(colorOptionsList, insertAt, { key = "secondaryHonor", label = Addon.L["COLOR_SECONDARY_HONOR"], description = Addon.L["COLOR_SECONDARY_HONOR_DESC"], preview = "statusbar" })
         insertAt = insertAt + 1
     end
+end
+
+-- Ring's track, where Ring can be drawn (its row is hidden elsewhere: Options.lua RING_ROWS).
+if HAS_NATIVE_RADIAL then
+    table.insert(colorOptionsList, { key = "ringTrack", label = Addon.L["COLOR_RING_TRACK"], description = Addon.L["COLOR_RING_TRACK_DESC"], preview = "texture" })
 end
 
 -- Build lookup map

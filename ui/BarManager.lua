@@ -27,7 +27,30 @@ local StyleTemplateNameMap = {
     [Addon.StyleKeys.minimap_ring] = "MinimapRingBarTemplate",
     [Addon.StyleKeys.terminal] = "TerminalBarTemplate",
     [Addon.StyleKeys.orb] = "OrbBarTemplate",
+    [Addon.StyleKeys.ring] = "RingBarTemplate",
 }
+
+-- Styles that need a client capability, and the style drawn in their place on
+-- a client without it. The saved value is kept, not corrected: profiles travel
+-- between clients, and the same profile opened on Retail must show Ring again.
+local StyleSubstitutes = {
+    [Addon.StyleKeys.ring] = {feature = "nativeRadial", style = Addon.StyleKeys.circular},
+}
+
+local function SubstituteStyle(style)
+    local substitute = StyleSubstitutes[style]
+    if substitute and not Addon:IsFeatureEnabled(substitute.feature) then
+        return substitute.style
+    end
+    return style
+end
+
+--- True when this client cannot draw `style` and shows another in its place.
+---@param style string
+---@return boolean
+function BarManager:IsStyleSubstituted(style)
+    return SubstituteStyle(style) ~= style
+end
 
 -- Helper: true if style key corresponds to a custom addon style (not Blizzard's bar)
 function BarManager:IsCustomStyle(style)
@@ -99,6 +122,7 @@ end
 ---@param style any Candidate key, from saved variables, a profile, or a command
 ---@return string style A key that is safe to hand to SetStyle
 function BarManager:ResolveStyleKey(style)
+    style = SubstituteStyle(style)
     if IsRenderableStyle(style) then
         return style
     end
@@ -130,7 +154,8 @@ function BarManager:Initialize()
     -- Deliberately after SetStyle, not before: SetOptionKey re-enters SetStyle
     -- through ApplyOptionSideEffects, and by this point that call sees its own
     -- style already current and early-returns. Doing it first would recurse.
-    if style ~= configuredStyle then
+    -- A substituted style is not repaired: it is valid, only not on this client.
+    if style ~= SubstituteStyle(configuredStyle) then
         if Addon.Config and Addon.Config.SetOptionKey then
             Addon.Config:SetOptionKey("barStyle", style)
         end
@@ -369,6 +394,10 @@ function BarManager:SetStyle(nextStyle)
             nextFrame:SetShown(true)
         end
     end
+    -- A frame built earlier kept the layout of its last time on screen: a reset
+    -- or a profile switch made under another style only reached that style's
+    -- frame. Lay it out again once it is current (below).
+    local reusedFrame = nextFrame ~= nil
 
     self.currentStyle = nextStyle
 
@@ -382,6 +411,12 @@ function BarManager:SetStyle(nextStyle)
 
     if Addon.SecondaryBarManager and Addon.SecondaryBarManager.RefreshForPrimaryStyleChange then
         Addon.SecondaryBarManager:RefreshForPrimaryStyleChange()
+    end
+
+    -- After the secondary refresh, so its current frame is the one laid out too.
+    -- A new frame laid itself out on load from the current settings.
+    if reusedFrame and Addon.Config and Addon.Config.ReapplyVisualOptions then
+        Addon.Config:ReapplyVisualOptions()
     end
 end
 

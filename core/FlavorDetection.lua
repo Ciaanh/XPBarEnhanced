@@ -56,6 +56,20 @@ local function HousingServiceEnabled()
     return ok and enabled == true
 end
 
+-- The native radial fill (Texture:SetRadialProgressBar*) the Ring style draws
+-- with: Retail 12.1+ and Forever, not Retail 12.0 nor the Classic clients.
+-- Asked of a texture, once: the answer cannot change during a session.
+local nativeRadial
+local function NativeRadialAvailable()
+    if nativeRadial == nil then
+        local parent = rawget(_G, "UIParent")
+        local texture = parent and parent.CreateTexture and parent:CreateTexture()
+        nativeRadial = texture ~= nil and type(texture.SetRadialProgressBarPercent) == "function"
+            and type(texture.SetRadialProgressBarEndOffset) == "function"
+    end
+    return nativeRadial
+end
+
 local interfaceVersion = 0
 if GetBuildInfo then
     interfaceVersion = tonumber((select(4, GetBuildInfo()))) or 0
@@ -74,6 +88,7 @@ local FEATURE_PROFILES = {
         honor = true,
         profession = true,
         reputation = true,
+        nativeRadial = {enabled = true, probe = NativeRadialAvailable},
     },
     [Clients.VANILLA] = {
         classicClientBehavior = true,
@@ -90,6 +105,7 @@ local FEATURE_PROFILES = {
         honor = false,
         profession = true,
         reputation = true,
+        nativeRadial = {enabled = true, probe = NativeRadialAvailable},
     },
     [Clients.BURNING_CRUSADE] = {
         classicClientBehavior = true,
