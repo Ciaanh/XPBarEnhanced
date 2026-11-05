@@ -321,6 +321,33 @@ CheckNear("the fill follows it too", frame.Fill.color and frame.Fill.color[1], 0
 frame:SetArcProgress(0.5, { currentXP = 5000, xpMax = 10000 })
 CheckNear("an animation frame keeps it", frame.StartCap.color and frame.StartCap.color[1], 0x33 / 255)
 
+-- Ticks (an arc in 4 parts: dividers at 1/4, 1/2 and 3/4 of it). Black over the fill; over
+-- the dark default track black vanished, so there they are light, and a tick turns as the
+-- fill's end passes it. Seen in game on Forever: the dividers stopped where the fill did.
+frame:SetArcProgress(0.6, { currentXP = 6000, xpMax = 10000 })
+H.Check("tick over the fill: black", frame.ticks[2].color[1], 0)
+H.Check("tick over the dark track: light", frame.ticks[3].color[1], 1)
+CheckNear("and as faint as the track allows", frame.ticks[3].color[4], 0.4 * (0.5 + 0.5 * 0.35))
+frame:SetArcProgress(0.8, { currentXP = 8000, xpMax = 10000 })
+H.Check("the fill passes a tick: it turns black", frame.ticks[3].color[1], 0)
+frame:SetArcProgress(0.6, { currentXP = 6000, xpMax = 10000 })
+H.Check("the fill falls back: light again", frame.ticks[3].color[1], 1)
+
+-- The track's colour, from the Colors tab. Config:SetColor edits it in place, and RenderBar
+-- rebuilds the render colours: the track, the end cap and the ticks over it follow.
+H.Check("track: the default colour", frame.Track.color and Near(frame.Track.color[1], 0.1), true)
+Addon.Config:SetColor(Addon.Colors.Key.RingTrack, "CCCCCC", true)
+frame._renderColors = nil -- what RenderBar does on entry
+frame:SetArcProgress(0.6, { currentXP = 6000, xpMax = 10000 })
+CheckNear("track follows its swatch", frame.Track.color and frame.Track.color[1], 0xCC / 255)
+CheckNear("end cap: the track's new colour", frame.EndCap.color and frame.EndCap.color[1], 0xCC / 255)
+H.Check("tick over a light track: dark", frame.ticks[3].color[1], 0)
+H.Check("tick over the fill unchanged", frame.ticks[2].color[1], 0)
+Addon.Config:ClearOwnColor(Addon.Colors.Key.RingTrack, true)
+frame._renderColors = nil
+frame:SetArcProgress(0.6, { currentXP = 6000, xpMax = 10000 })
+H.Check("track back to the default", Near(frame.Track.color[1], 0.1) and frame.ticks[3].color[1], 1)
+
 Addon.Config:SetOptionKey("ringTicks", 0)
 Addon.Config:SetOptionKey("ringShape", "full")
 frame:RelayoutRing()
@@ -390,6 +417,18 @@ for _, key in ipairs(Addon.Config.optionOrder) do
 end
 H.Check("every Ring option is in the panel", ringRows, 15)
 
+-- The Ring rows fold under their own header: each one in its group, the header ahead of them.
+local grouped, ringFrames = 0, 0
+for block in panelXML:gmatch("<Frame parentKey=\"Row_ring.-</Frame>") do
+    ringFrames = ringFrames + 1
+    if block:find('key="disclosureGroup" value="ring"', 1, true) then grouped = grouped + 1 end
+end
+H.Check("every Ring row folds with the Ring section", grouped .. " / " .. ringFrames, "15 / 15")
+H.Check("the Ring section's header",
+    panelXML:find('key="disclosureToggle" value="ring"', 1, true) ~= nil, true)
+H.Check("the track's colour row", panelXML:find('parentKey="ColorRow_ringTrack"', 1, true) ~= nil, true)
+H.Check("offered in the Colors tab", Addon.Config:GetColorOptionByKey("ringTrack") ~= nil, true)
+
 local rows = {}
 local panelStub = {}
 function panelStub:SetRowAvailability(key, available, note) rows[key] = { available = available, note = note } end
@@ -405,6 +444,33 @@ XPBarEnhancedOptionsMixin.RefreshRowAvailability(panelStub, "ring")
 H.Check("arc rows open on an arc", rows.ringArcDegrees.available and rows.ringGap.available, true)
 XPBarEnhancedOptionsMixin.RefreshRowAvailability(panelStub, "circular")
 H.Check("Ring rows greyed under another style", rows.ringWidth.available, false)
+H.Check("the track's colour too", rows.ringTrack and rows.ringTrack.available, false)
+
+-- The Ring section's fold (every style's, in tests/options_panel.lua): open on Ring at login,
+-- folded under another style; it follows a change of style to or from Ring, and is otherwise
+-- the player's.
+local fold = setmetatable({ _disclosureExpanded = {} }, { __index = XPBarEnhancedOptionsMixin })
+local realSetStyleForFold = Addon.BarManager.SetStyle
+Addon.BarManager.SetStyle = function() end
+Addon.Config:SetOptionKey("barStyle", "circular")
+fold:ApplyDisclosureDefaults()
+H.Check("folded at login under another style", fold:IsDisclosureExpanded("ring"), false)
+Addon.Config:SetOptionKey("barStyle", "ring")
+fold:ApplyDisclosureDefaults()
+H.Check("open at login under Ring", fold:IsDisclosureExpanded("ring"), true)
+fold:FollowStyleSections("ring")
+fold:SetDisclosureExpanded("ring", false)
+fold:FollowStyleSections("ring")
+H.Check("a fold the player chose stays", fold:IsDisclosureExpanded("ring"), false)
+fold:FollowStyleSections("flat")
+fold:FollowStyleSections("ring")
+H.Check("choosing Ring opens it", fold:IsDisclosureExpanded("ring"), true)
+fold:FollowStyleSections("orb")
+H.Check("leaving Ring folds it", fold:IsDisclosureExpanded("ring"), false)
+fold:SetDisclosureExpanded("ring", true)
+fold:FollowStyleSections("flat")
+H.Check("between two other styles it is left alone", fold:IsDisclosureExpanded("ring"), true)
+Addon.BarManager.SetStyle = realSetStyleForFold
 H.CheckNoErrors("no error refreshing the panel rows")
 
 -- The secondary ring: SecondaryBarManager picks Ring's template under Ring. The harness
@@ -444,6 +510,11 @@ CheckNear("secondary fill: half the arc", secondary.Fill.radial.End, 1 - 0.5 * 0
 H.Check("secondary fill shown", secondary.Fill.shown, true)
 local honor = Addon.UI.StyleHelpers.GetFactionColor({ factionType = "honor" })
 H.Check("secondary fill: the source's colour", secondary.Fill.color and Near(secondary.Fill.color[1], honor.r), true)
+H.Check("secondary track: the Ring track colour", secondary.Track.color and Near(secondary.Track.color[1], 0.1), true)
+Addon.Config:SetColor(Addon.Colors.Key.RingTrack, "CCCCCC", true)
+secondary:Render({ isAvailable = true, percent = 50, factionType = "honor" })
+CheckNear("secondary track follows its swatch on the next render", secondary.Track.color[1], 0xCC / 255)
+Addon.Config:ClearOwnColor(Addon.Colors.Key.RingTrack, true)
 secondary:Render({ isAvailable = true, percent = 0 })
 H.Check("secondary fill: empty hides it", secondary.Fill.shown, false)
 

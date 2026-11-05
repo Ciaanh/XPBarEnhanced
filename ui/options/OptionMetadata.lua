@@ -642,6 +642,11 @@ do
     end
 end
 
+-- Ring's track, where Ring can be drawn (its row is hidden elsewhere: Options.lua RING_ROWS).
+if HAS_NATIVE_RADIAL then
+    table.insert(colorOptionsList, { key = "ringTrack", label = Addon.L["COLOR_RING_TRACK"], description = Addon.L["COLOR_RING_TRACK_DESC"], preview = "texture" })
+end
+
 -- Build lookup map
 local colorOptionByKey = {}
 for index, info in ipairs(colorOptionsList) do

@@ -82,7 +82,7 @@ Access options via `/xpbe options` or the minimap button. Settings include:
 - **Session Behavior** — Optional reset of session tracking on `/reload`
 - **Circular Bar** — Ring size (Small/Medium/Large/Huge), segment count, texture style, optional center text scaling, and optional full-circle secondary arc
 - **Minimap Ring** — Ring padding, segment count, segment dimensions, optional minimap button collection, and optional "start minimap arc expanded" behavior for the reputation arc
-- **Ring** — Complete ring or arc (arc length and which side it opens on), inner radius, width, fill direction, edge softness, track opacity, optional center text scaling, spark, ticks (4/10/20), rounded ends, and the secondary ring's placement (inside or around), width and spacing
+- **Ring** — Complete ring or arc (arc length and which side it opens on), inner radius, width, fill direction, edge softness, track opacity (and its color, in the Colors tab), optional center text scaling, spark, ticks (4/10/20), rounded ends, and the secondary ring's placement (inside or around), width and spacing
 - **Terminal** — Toggle between authentic terminal colors and custom color scheme
 
 ## Requirements

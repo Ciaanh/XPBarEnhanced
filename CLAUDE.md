@@ -65,9 +65,17 @@ A version bump touches four places: `XPBarEnhanced.toc` (`## Version:`), the `RE
 - Forever 1.60.1 (2026-11): the secondary ring draws around the primary. Attached, the main ring's
   tooltip adds the source's section (Stormwind, 29.1%, 1,745 / 6,000) and the "Right-click: open
   Reputation" hint.
+- Forever 1.60.1 (2026-11): the Visual tab's style sections work: only the style on screen's is
+  open, choosing a style in the gallery opens its section and folds the previous one, and Use
+  texture follows Circular / Minimap Ring.
 
 ## To confirm in game
 
+- Ring's track colour (Colors tab, "Ring Track"): the empty part of both rings and the far rounded
+  end change at once, without a `/reload`; the row reads "Ring only" under other styles.
+- Ring's ticks over the empty part: light on the default dark track, dark on a light one, and each
+  one turns as the fill passes it.
+- The style sections on a Classic client: no Ring header.
 - Whether a texture's vertex colour and gradient replace each other or multiply. The painting in
   `ui/styles/SharedStyleHelpers.lua` is right either way; check that turning the gradient off
   brings the flat colour back without a `/reload`, on Retail, Classic Era and Forever.

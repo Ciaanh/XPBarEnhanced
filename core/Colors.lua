@@ -29,7 +29,9 @@ Colors.Key = {
     SecondaryReputation = "secondaryReputation",
     SecondaryHousing = "secondaryHousing",
     SecondaryHonor = "secondaryHonor",
-    SecondaryProfession = "secondaryProfession"
+    SecondaryProfession = "secondaryProfession",
+    -- The empty part of the Ring style's rings (ui/styles/ring).
+    RingTrack = "ringTrack"
 }
 
 -------------------------------------------------------------------

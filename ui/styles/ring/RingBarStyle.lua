@@ -61,6 +61,33 @@ local RingBand = Addon.UI.RingBand
 
 RingBand.TRACK_COLOR = TRACK_COLOR
 
+--- The track's colour: the Colors tab's Ring track swatch (TRACK_COLOR when
+--- unset). Its alpha multiplies the Track opacity option.
+function RingBand.TrackColor()
+    local Colors = Addon.Colors
+    local color = Colors and Colors.Key and Colors.Key.RingTrack and Colors:Get(Colors.Key.RingTrack)
+    return (color and color.r) and color or TRACK_COLOR
+end
+
+--- Paint the track, and note its colour for the caps and ticks over it. A
+--- colour edited in place (Config:SetColor) is the same table with new
+--- values, so the values are compared, not the table.
+function RingBand.PaintTrack(frame, color)
+    local r, g, b, a = color.r, color.g, color.b, color.a or 1
+    local painted = frame.trackPainted
+    if painted and painted[1] == r and painted[2] == g and painted[3] == b and painted[4] == a then
+        return
+    end
+    frame.trackPainted = {r, g, b, a}
+    frame.trackColor = {r = r, g = g, b = b, a = a}
+    frame.Track:SetVertexColor(r, g, b, a)
+    -- The caps and the ticks over the track take this colour: repaint them.
+    frame.capPaintKey = nil
+    for _, tick in ipairs(frame.ticks or {}) do
+        tick.onFill = nil
+    end
+end
+
 --- The hole mask every texture of `frame`'s band is cut by.
 function RingBand.CreateHole(frame)
     local hole = frame:CreateMaskTexture()
@@ -135,6 +162,44 @@ local TICK_TEXTURE = "Interface\\Buttons\\WHITE8X8"
 local TICK_COLOR = {r = 0, g = 0, b = 0, a = 0.6}
 local TICK_THICKNESS = 2
 
+--- A tick over the track: black would vanish on the dark default track, so it
+--- contrasts with the track's colour instead, and fades with the track's
+--- opacity without disappearing at 0.
+---@return number r, number g, number b, number a
+function RingBand.TrackTickColor(trackColor, trackAlpha)
+    local color = trackColor or TRACK_COLOR
+    local luminance = 0.299 * color.r + 0.587 * color.g + 0.114 * color.b
+    local a = 0.4 * (0.5 + 0.5 * (trackAlpha or 1))
+    if luminance < 0.5 then
+        return 1, 1, 1, a
+    end
+    return 0, 0, 0, TICK_COLOR.a
+end
+
+--- Colour each tick for what lies under it: the fill up to fraction
+--- `filledTo`, the track beyond. Runs every animation frame: a tick is only
+--- repainted when the fill's end crosses it.
+function RingBand.PaintTicks(frame, filledTo)
+    local count = frame.tickCount or 0
+    if count == 0 then
+        return
+    end
+    local fractions = frame.tickFractions
+    for index = 1, count do
+        local tick = frame.ticks[index]
+        local onFill = fractions[index] < filledTo
+        if tick.onFill ~= onFill then
+            tick.onFill = onFill
+            if onFill then
+                tick:SetVertexColor(TICK_COLOR.r, TICK_COLOR.g, TICK_COLOR.b, TICK_COLOR.a)
+            else
+                local trackAlpha = frame.ringSettings and frame.ringSettings.trackAlpha
+                tick:SetVertexColor(RingBand.TrackTickColor(frame.trackColor, trackAlpha))
+            end
+        end
+    end
+end
+
 local function CreateCap(frame)
     local cap = frame:CreateTexture(nil, "ARTWORK", nil, 5)
     cap:SetTexture(Geometry.CAP_TEXTURE)
@@ -174,9 +239,10 @@ function RingBand.LayoutExtras(frame, settings, band, arc)
         if not tick then
             tick = frame:CreateTexture(nil, "OVERLAY", nil, 0)
             tick:SetTexture(TICK_TEXTURE)
-            tick:SetVertexColor(TICK_COLOR.r, TICK_COLOR.g, TICK_COLOR.b, TICK_COLOR.a)
             frame.ticks[index] = tick
         end
+        -- Moved, or the track opacity changed: PaintTicks repaints it.
+        tick.onFill = nil
         local x, y, angle = Geometry.PointOnArc(arc, frame.tickFractions[index], mid)
         tick:SetSize(TICK_THICKNESS, band.width)
         tick:ClearAllPoints()
@@ -187,6 +253,7 @@ function RingBand.LayoutExtras(frame, settings, band, arc)
     for index = count + 1, #frame.ticks do
         frame.ticks[index]:Hide()
     end
+    frame.tickCount = count
 
     local caps = Geometry.HasCaps(settings)
     local capSize = band.width * Geometry.CAP_TEXTURE_RATIO
@@ -227,11 +294,12 @@ function RingBand.UpdateSpark(frame, enabled, p, color)
 end
 
 --- Paint one cap: a fill colour (with the overlay alpha), or the track's.
-local function PaintCap(cap, color, alpha, trackAlpha)
+local function PaintCap(cap, color, alpha, trackColor, trackAlpha)
     if color and color.r then
         cap:SetVertexColor(color.r, color.g, color.b, (color.a or 1) * alpha)
     else
-        cap:SetVertexColor(TRACK_COLOR.r, TRACK_COLOR.g, TRACK_COLOR.b, trackAlpha)
+        local track = trackColor or TRACK_COLOR
+        cap:SetVertexColor(track.r, track.g, track.b, (track.a or 1) * trackAlpha)
     end
 end
 
@@ -254,8 +322,8 @@ function RingBand.PaintCaps(frame, startColor, endColor, alpha, paintKey)
     end
     frame.capPaintKey = paintKey
     frame.capStartColor, frame.capEndColor, frame.capAlpha = startKey, endKey, alpha
-    PaintCap(frame.StartCap, startColor, alpha, trackAlpha)
-    PaintCap(frame.EndCap, endColor, alpha, trackAlpha)
+    PaintCap(frame.StartCap, startColor, alpha, frame.trackColor, trackAlpha)
+    PaintCap(frame.EndCap, endColor, alpha, frame.trackColor, trackAlpha)
 end
 
 -------------------------------------------------------------------
@@ -307,7 +375,7 @@ function RingBarStyleTemplate:OnLoad()
     RingBand.CreateHole(self)
 
     self.Track = RingBand.CreateTexture(self, "BACKGROUND", 0)
-    self.Track:SetVertexColor(TRACK_COLOR.r, TRACK_COLOR.g, TRACK_COLOR.b)
+    RingBand.PaintTrack(self, RingBand.TrackColor())
 
     self.fillLayers = {}
     for index, layer in ipairs(FILL_LAYERS) do
@@ -431,6 +499,7 @@ function RingBarStyleTemplate:SetArcProgress(progress, context, overlayAlpha)
     local colors = self:UpdateLayerColors(context.hasRestedXP == true, alpha, context._secondaryColor)
 
     RingBand.UpdateSpark(self, self.ringSettings.spark, xpEnd, colors.currentXP)
+    RingBand.PaintTicks(self, restedEnd)
     local first, last = Geometry.CapLayers(xpEnd, completeEnd, incompleteEnd, restedEnd)
     RingBand.PaintCaps(self, first and colors[ARC_COLOR_KEYS[first]], last and colors[ARC_COLOR_KEYS[last]], alpha, colors)
 end
@@ -443,6 +512,10 @@ function RingBarStyleTemplate:UpdateLayerColors(hasRestedXP, overlayAlpha, secon
         return colors
     end
     self.paintedColors, self.paintedAlpha = colors, overlayAlpha
+
+    -- The colours are rebuilt on every render, a colour change included: the
+    -- track's swatch reaches the ring here, before the caps read it.
+    RingBand.PaintTrack(self, RingBand.TrackColor())
 
     for index, layer in ipairs(FILL_LAYERS) do
         local color = colors[layer.color]

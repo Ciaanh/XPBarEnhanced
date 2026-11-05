@@ -99,6 +99,14 @@ L["OPT_READOUT_PRESET_RESET"] = "Reset to Standard"
 L["OPT_SECTION_ADVANCED"] = "Advanced"
 -- Collapsible section holding the colours of the secondary sources not in use
 L["OPT_SECTION_OTHERSOURCES"] = "Other secondary sources"
+-- Collapsible sections holding each style's own options (Visual tab), keyed by style
+L["OPT_SECTION_CLASSIC"] = "Classic style"
+L["OPT_SECTION_FLAT"] = "Flat style"
+L["OPT_SECTION_VERTICAL"] = "Vertical style"
+L["OPT_SECTION_CIRCULAR"] = "Circular style"
+L["OPT_SECTION_MINIMAP_RING"] = "Minimap Ring style"
+L["OPT_SECTION_RING"] = "Ring style"
+L["OPT_SECTION_TERMINAL"] = "Terminal style"
 
 -- Current options in OptionsMetadata
 L["OPT_SHOW_RESTED_OVERLAY"] = "Show rested overlay"
@@ -418,6 +426,8 @@ L["COLOR_QUEST_INCOMPLETE"] = "Incomplete Quest Overlay"
 L["COLOR_QUEST_INCOMPLETE_DESC"] = "Color of XP from quests still in progress."
 L["COLOR_RESTED"] = "Rested XP Overlay"
 L["COLOR_RESTED_DESC"] = "Color of the rested XP segment of the bar."
+L["COLOR_RING_TRACK"] = "Ring Track"
+L["COLOR_RING_TRACK_DESC"] = "Color of the empty part of the Ring style's rings. Its opacity combines with Track opacity in the Visual tab."
 L["COLOR_SECONDARY_REPUTATION"] = "Secondary Bar: Reputation"
 L["COLOR_SECONDARY_REPUTATION_DESC"] = "Color of the secondary bar when Reputation is selected as the source."
 L["COLOR_SECONDARY_HOUSING"] = "Secondary Bar: Housing Favor"

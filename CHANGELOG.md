@@ -6,9 +6,13 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Added
 
-- **Ring style** (Retail and Forever): a new bar style drawn with the game's own radial fill, as a complete ring or as an arc that opens at the bottom, top, left or right. You can set the arc's length, the inner radius, the width, the fill direction, how soft the fill's edge is and how visible the empty part is. Options add a spark on the tip of the fill, ticks that split the ring into 4, 10 or 20 parts, and rounded ends on an arc. XP, completed quests, incomplete quests and rested XP follow each other around the ring. The level, percentage and time to level sit in the middle and can grow with the ring; on a small ring that doesn't scale them, the lines that no longer fit are hidden.
+- **Ring style** (Retail and Forever): a new bar style drawn with the game's own radial fill, as a complete ring or as an arc that opens at the bottom, top, left or right. You can set the arc's length, the inner radius, the width, the fill direction, how soft the fill's edge is, and the color and opacity of the empty part (its color is in the Colors tab). Options add a spark on the tip of the fill, ticks that split the ring into 4, 10 or 20 parts (dark over the fill, light over the empty part, so they show all the way round), and rounded ends on an arc. XP, completed quests, incomplete quests and rested XP follow each other around the ring. The level, percentage and time to level sit in the middle and can grow with the ring; on a small ring that doesn't scale them, the lines that no longer fit are hidden.
 - With Ring, the secondary bar (reputation, housing, honor, profession) is a second ring, in the main ring's hole or around it, with its own width and spacing. When it's attached, hover the main ring to see its progress and right-click to open its panel. Detached, it's a ring of its own that you can move.
 - Ring needs a game version with the radial fill: the Classic versions other than Forever don't offer it, and a profile set to Ring shows the Circular style there.
+
+### Changed
+
+- In the Visual tab, each style's own options (Classic, Flat, Vertical, Circular, Minimap Ring, Ring, Terminal) now sit in a section of their own. Your style's section is open and the others are folded away, so the tab no longer lists every style's options at once. Choosing another style in the gallery opens its section and folds the previous one; you can still open any section by hand. Use texture, shared by Circular and Minimap Ring, sits in whichever of the two is your style.
 
 ### Fixed
 

@@ -105,7 +105,8 @@ local defaults = {
         secondaryReputation = {r = 0.70, g = 0.30, b = 0.85, a = 1},
         secondaryHousing = {r = 0.85, g = 0.55, b = 0.20, a = 1},
         secondaryHonor = {r = 0.80, g = 0.20, b = 0.20, a = 1},
-        secondaryProfession = {r = 0.30, g = 0.65, b = 0.75, a = 1}
+        secondaryProfession = {r = 0.30, g = 0.65, b = 0.75, a = 1},
+        ringTrack = {r = 0.1, g = 0.1, b = 0.1, a = 1}
     },
     barPositions = {
         [styleKey] = {point = "BOTTOM", relativeTo = "UIParent", relativePoint = "CENTER", x = 0, y = 0},

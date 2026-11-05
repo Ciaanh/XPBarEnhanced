@@ -20,8 +20,6 @@ local StyleHelpers = Addon.UI.StyleHelpers
 XPBarRingReputationMixin = {}
 local StyleMixin = {}
 
-local TRACK_COLOR = RingBand.TRACK_COLOR
-
 local function ReadOption(key)
     return Config and Config.GetOptionValue and Config:GetOptionValue(key)
 end
@@ -140,7 +138,7 @@ function StyleMixin:OnSecondaryLoad()
     RingBand.CreateHole(self)
 
     self.Track = RingBand.CreateTexture(self, "BACKGROUND", 0)
-    self.Track:SetVertexColor(TRACK_COLOR.r, TRACK_COLOR.g, TRACK_COLOR.b)
+    RingBand.PaintTrack(self, RingBand.TrackColor())
 
     self.Fill = RingBand.CreateTexture(self, "ARTWORK", 1)
     self.Fill:Hide()
@@ -192,9 +190,14 @@ function StyleMixin:Render(context)
         self.Fill:SetVertexColor(color.r, color.g, color.b, color.a or 1)
     end
 
+    -- A colour change re-renders every secondary source: the track's swatch
+    -- reaches this ring here.
+    RingBand.PaintTrack(self, RingBand.TrackColor())
+
     -- Spark, ticks and caps follow the primary's settings; one layer here. No
     -- paint key: a render is an update, not an animation frame, so repaint.
     RingBand.UpdateSpark(self, self.ringSettings.spark, ratio, color)
+    RingBand.PaintTicks(self, ratio)
     RingBand.PaintCaps(self, ratio > 0 and color or nil, ratio >= 1 and color or nil, 1)
 end
 
