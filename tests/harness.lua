@@ -305,6 +305,11 @@ UIParent = CreateFrame("Frame", "UIParent")
 Minimap = CreateFrame("Frame", "Minimap")
 GameTooltip = CreateFrame("GameTooltip", "GameTooltip", UIParent)
 UISpecialFrames = {}
+tinsert = tinsert or table.insert
+function tContains(t, value)
+    for _, v in pairs(t) do if v == value then return true end end
+    return false
+end
 
 --------------------------------------------------------------------------------
 -- Chat

@@ -121,6 +121,7 @@ function Database:Initialize()
     ensureTable("honorSessionData")
     ensureTable("professionSessionData")
     ensureTable("killXPData")
+    ensureTable("historyData")
 
     -- Set player key
     local playerName = GetSafePlayerName()
@@ -198,6 +199,11 @@ end
 ---Return the kill XP samples table stored in the database
 function Database:GetKillXPData()
     return getPerCharacterTable(self:GetDB(), "killXPData")
+end
+
+---Return the lifetime history table (played time, XP, quests) of this character
+function Database:GetHistoryData()
+    return getPerCharacterTable(self:GetDB(), "historyData")
 end
 
 ---Return the cached player/realm key used for per-character storage

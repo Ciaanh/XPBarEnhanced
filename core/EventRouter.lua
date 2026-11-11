@@ -373,8 +373,21 @@ local ROUTER_DISPATCH = {
             DispatchQuestEvent("UNIT_QUEST_LOG_CHANGED")
         end
     end,
-    QUEST_TURNED_IN = function(questID)
+    QUEST_TURNED_IN = function(questID, xpReward, moneyReward)
         DispatchSessionQuestTurnedIn(questID)
+        if Addon.History and Addon.History.OnQuestTurnedIn then
+            Addon.History:OnQuestTurnedIn(questID, xpReward, moneyReward)
+        end
+    end,
+    QUEST_ACCEPTED = function(...)
+        if Addon.History and Addon.History.OnQuestAccepted then
+            Addon.History:OnQuestAccepted(...)
+        end
+    end,
+    QUEST_REMOVED = function(questID)
+        if Addon.History and Addon.History.OnQuestRemoved then
+            Addon.History:OnQuestRemoved(questID)
+        end
     end,
     CHAT_MSG_COMBAT_XP_GAIN = function(text)
         DispatchKillXP(text)
