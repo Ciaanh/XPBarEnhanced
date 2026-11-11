@@ -154,6 +154,7 @@ end
 ---@param text string
 ---@return number|nil base The kill's XP without the rested bonus or tired penalty; nil when the line is no kill
 ---@return number|nil total The XP the line reports
+---@return number|nil bonus The rested bonus the line reports (0 for a plain or tired kill)
 function KillXP.Parse(text)
     if IsSecret(text) or type(text) ~= "string" or text == "" then
         return nil
@@ -170,14 +171,18 @@ function KillXP.Parse(text)
                 return nil
             end
             local base = total
+            local bonus = 0
             if entry.kind ~= "plain" then
                 local amount = tonumber((values[3] or ""):match("%d+")) or 0
                 base = (entry.kind == "bonus") and (total - amount) or (total + amount)
+                if entry.kind == "bonus" then
+                    bonus = amount
+                end
             end
             if base <= 0 then
                 return nil
             end
-            return base, total
+            return base, total, bonus
         end
     end
     return nil
@@ -221,9 +226,12 @@ end
 ---Record a kill line. Secret lines and lines that are no kill change nothing.
 ---@param text string
 function KillXP:OnCombatXPGain(text)
-    local base = KillXP.Parse(text)
+    local base, _, bonus = KillXP.Parse(text)
     if not base then
         return
+    end
+    if bonus and bonus > 0 and Addon.History and Addon.History.OnRestedBonus then
+        Addon.History:OnRestedBonus(bonus)
     end
     local samples = GetSamples()
     if not samples then

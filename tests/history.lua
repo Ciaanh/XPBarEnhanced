@@ -34,6 +34,19 @@ H.Fire("PLAYER_XP_UPDATE", "player")
 H.Check("a gain is added", data.xp.quest + data.xp.other, 400)
 H.Check("a rate needs 5 minutes recorded", History:GetXPPerHour() ~= nil, true)
 
+H.Section("Rested bonus")
+COMBATLOG_XPGAIN_FIRSTPERSON = "%s dies, you gain %d experience."
+COMBATLOG_XPGAIN_EXHAUSTION1 = "%s dies, you gain %d experience. (%s exp %s bonus)"
+Addon.KillXP.ResetPatterns()
+History:OnRestedBonus(150)
+History:OnRestedBonus(-5)
+H.Check("the bonus of a rested kill is added", data.xp.rested, 150)
+local base, total, bonus = Addon.KillXP.Parse("Boar dies, you gain 300 experience. (+150 exp Rested bonus)")
+H.Check("a rested kill line reports its bonus", bonus, 150)
+H.Check("a plain kill line reports none", select(3, Addon.KillXP.Parse("Boar dies, you gain 100 experience.")), 0)
+H.Fire("CHAT_MSG_COMBAT_XP_GAIN", "Boar dies, you gain 300 experience. (+150 exp Rested bonus)")
+H.Check("a rested kill adds its bonus through the event", data.xp.rested, 300)
+
 H.Section("Quests")
 C_QuestLog.GetQuestDifficultyLevel = function(id) return id == 1 and 23 or 20 end
 H.Fire("QUEST_ACCEPTED", 1)

@@ -34,6 +34,7 @@ local function Ensure(store)
     store.xp = store.xp or {}
     store.xp.quest = store.xp.quest or 0
     store.xp.other = store.xp.other or 0
+    store.xp.rested = store.xp.rested or 0
     store.quests = store.quests or {}
     local q = store.quests
     q.accepted = q.accepted or 0
@@ -116,6 +117,16 @@ function History:OnXPGain(amount, source)
     if not store or type(amount) ~= "number" or amount <= 0 then return end
     local key = source == "quest" and "quest" or "other"
     store.xp[key] = store.xp[key] + amount
+end
+
+---Called by KillXP for a kill line that reports a rested bonus: the bonus is
+---the rested XP that kill used. Only kills are counted: that is the one line
+---that names the bonus.
+---@param amount number
+function History:OnRestedBonus(amount)
+    local store = self:Get()
+    if not store or type(amount) ~= "number" or amount <= 0 then return end
+    store.xp.rested = store.xp.rested + amount
 end
 
 ---QUEST_ACCEPTED: Retail passes the quest id alone, the Classic clients the
