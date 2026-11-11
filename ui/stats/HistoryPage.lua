@@ -26,6 +26,10 @@ local CONTENT_W = 460 - 2 * PAD - 12
 local HISTORY_HEIGHT = 488
 local REFRESH_SECONDS = 5
 
+-- 424 px, the width of the Session tab's two hero cards (207 + 8 + 207 = 422,
+-- also 12 px in from the inset), so both tabs share their margins.
+local HOURS_W = 232
+
 local LABEL_W, VALUE_W = 130, 90
 local TRACK_W = CONTENT_W - LABEL_W - 6 - VALUE_W - 8
 
@@ -198,8 +202,9 @@ local function BuildPage(stats)
     page:SetPoint("BOTTOMRIGHT", inset, "BOTTOMRIGHT", 0, 0)
     page:Hide()
 
-    page.Hours = Histogram(page, L["HISTORY_HOURS_PLAYED"], 24, PAD, -10, 250, 52)
-    page.Days = Histogram(page, L["HISTORY_DAYS_OF_WEEK"], 7, PAD + 268, -10, CONTENT_W - 268, 52)
+    -- 24 hour bars get ~9.7 px each, the 7 days ~24.9 px: room for a "Wed" caption.
+    page.Hours = Histogram(page, L["HISTORY_HOURS_PLAYED"], 24, PAD, -10, HOURS_W, 52)
+    page.Days = Histogram(page, L["HISTORY_DAYS_OF_WEEK"], 7, PAD + HOURS_W + 18, -10, CONTENT_W - HOURS_W - 18, 52)
     for i = 1, 24 do
         page.Hours.captions[i]:SetText((i - 1) % 3 == 0 and string.format(L["HISTORY_HOUR_FMT"], i - 1) or "")
     end
