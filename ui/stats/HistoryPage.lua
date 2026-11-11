@@ -19,8 +19,11 @@ local SESSION_KEYS = {"HeroXPPerHour", "HeroTimeToLevel", "ChartPanel", "Summary
 -- The Stats window is 460 wide; the page sits in its inset.
 local PAD = 12
 local CONTENT_W = 460 - 2 * PAD - 12
--- Window height on the History tab (the Session tab sets its own).
-local HISTORY_HEIGHT = 530
+-- Window height on the History tab: the content ends near y = -442 in the
+-- inset (the note's two lines), the inset starts ~24 px under the window's top,
+-- plus a bottom margin. It matches the Session tab with Details open (488 in
+-- Stats.lua), so switching tabs there does not resize the window.
+local HISTORY_HEIGHT = 488
 local REFRESH_SECONDS = 5
 
 local LABEL_W, VALUE_W = 130, 90
