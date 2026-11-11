@@ -211,6 +211,10 @@ local function creditGain(session, amount, source, level)
         session.otherXP = (session.otherXP or 0) + amount
     end
 
+    if Addon.History and Addon.History.OnXPGain then
+        Addon.History:OnXPGain(amount, source)
+    end
+
     local now = time()
     level = level or UnitLevel("player") or 1
     session.gainsHistory = session.gainsHistory or {}

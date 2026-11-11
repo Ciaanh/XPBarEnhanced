@@ -58,6 +58,7 @@ core\services\Database.lua
 core\services\ProfileManager.lua
 core\services\Session.lua
 core\services\KillXP.lua
+core\services\History.lua
 core\services\ReputationSession.lua
 core\services\HousingSession.lua
 core\services\HonorSession.lua
@@ -103,6 +104,7 @@ ui\options\StyleGallery.lua
 ui\options\OptionsPanel.xml
 
 ui\stats\StatsFrame.xml
+ui\stats\HistoryFrame.lua
 
 #  Styles
 ui\templates\XPBarBaseTemplate.xml

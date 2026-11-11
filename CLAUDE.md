@@ -20,6 +20,7 @@ Retail only. A Blizzard symbol is checked in every targeted client before use.
   `core/EventBus.lua`. `ContextBuilder` builds the immutable context every bar renders from (one
   per frame, cached until the next).
 - `core/config/`: defaults, `Config` (every setting goes through it), presets, profiles.
+- `core/services/History.lua`: lifetime figures per character (played hours and weekdays, XP by source, quests accepted / turned in). `ui/stats/HistoryFrame.lua` draws them in the History window, built in code.
 - `ui/`: `BarManager` / `SecondaryBarManager`, the mixins every style composes, `ui/styles/<style>/`
   (an XML template plus the Lua it lists), options, Stats, minimap button, LibDataBroker feed.
 - `tests/`: the Lua 5.1 suite (`tests/README.md`).

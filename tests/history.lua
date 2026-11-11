@@ -1,0 +1,66 @@
+-- History: played time by hour and weekday, XP credited by Session, quests accepted and turned in
+-- (time taken, gold, colour), the Retail / Classic QUEST_ACCEPTED argument shapes, reset, and the window.
+local H = dofile((arg[1] or ".") .. "/tests/harness.lua")
+
+H.player.level = 20
+H.player.max = 10000
+local Addon = H.Load(nil)
+H.Login()
+local History = Addon.History
+
+H.Section("Quest colour")
+H.Check("3 above is orange", History.QuestColor(23, 20), "orange")
+H.Check("2 above is yellow", History.QuestColor(22, 20), "yellow")
+H.Check("2 below is yellow", History.QuestColor(18, 20), "yellow")
+H.Check("3 below is green", History.QuestColor(17, 20), "green")
+H.Check("an unknown level is no colour", History.QuestColor(nil, 20), nil)
+
+H.Section("Played time")
+local data = History:Get()
+H.Check("starts empty", data.seconds, 0)
+local at = os.time({year = 2026, month = 11, day = 11, hour = 22, min = 5}) -- a Wednesday
+History:AddPlayed(600, at)
+H.Check("hour counted", data.hours[22], 600)
+H.Check("weekday counted (Wednesday = 4)", data.days[4], 600)
+H.Check("total counted", data.seconds, 600)
+local before = data.seconds
+H.Advance(65)
+H.Check("the ticker counts played time", data.seconds > before, true)
+H.CheckNoErrors("no error")
+
+H.Section("XP")
+H.player.xp = 400
+H.Fire("PLAYER_XP_UPDATE", "player")
+H.Check("a gain is added", data.xp.quest + data.xp.other, 400)
+H.Check("a rate needs 5 minutes recorded", History:GetXPPerHour() ~= nil, true)
+
+H.Section("Quests")
+C_QuestLog.GetQuestDifficultyLevel = function(id) return id == 1 and 23 or 20 end
+H.Fire("QUEST_ACCEPTED", 1)
+H.Fire("QUEST_ACCEPTED", 7, 2) -- the Classic shape: log index, then id
+H.Check("two accepted", data.quests.accepted, 2)
+H.Fire("QUEST_ACCEPTED", 1)
+H.Check("accepting the same id again is not counted twice", data.quests.accepted, 2)
+H.Advance(120)
+H.Fire("QUEST_TURNED_IN", 1, 900, 12345)
+H.Check("turned in", data.quests.turnedIn, 1)
+H.Check("gold counted", data.quests.money, 12345)
+H.Check("colour counted", data.quests.orange, 1)
+H.CheckNear("time taken", History:GetAverageQuestSeconds(), 120, 5)
+H.Fire("QUEST_TURNED_IN", 99, 100, 0)
+H.Check("a quest taken before the addon counts, untimed", data.quests.turnedIn, 2)
+H.CheckNear("and leaves the average alone", History:GetAverageQuestSeconds(), 120, 5)
+
+H.Section("Window")
+local Frame = Addon.HistoryFrame
+Frame:Toggle()
+Frame:Refresh()
+H.CheckNoErrors("builds and refreshes")
+
+H.Section("Reset")
+History:Reset()
+data = History:Get()
+H.Check("quests cleared", data.quests.turnedIn, 0)
+H.Check("time cleared", data.seconds, 0)
+H.CheckNoErrors("no error after reset")
+H.Done()
