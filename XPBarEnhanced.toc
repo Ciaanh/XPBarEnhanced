@@ -104,7 +104,7 @@ ui\options\StyleGallery.lua
 ui\options\OptionsPanel.xml
 
 ui\stats\StatsFrame.xml
-ui\stats\HistoryFrame.lua
+ui\stats\HistoryPage.lua
 
 #  Styles
 ui\templates\XPBarBaseTemplate.xml

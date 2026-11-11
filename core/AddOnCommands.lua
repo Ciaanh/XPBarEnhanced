@@ -66,7 +66,7 @@ local function showHelp()
     print("  /xpbe |cFFFFFFFFprofile rename <new name>|r - Rename the active profile")
     print("  /xpbe |cFFFFFFFFprofile delete [name]|r - Delete a profile")
     print("  /xpbe |cFFFFFFFFreset|r - Reset the active profile to its defaults")
-    print("  /xpbe |cFFFFFFFFhistory|r - Toggle the history window")
+    print("  /xpbe |cFFFFFFFFhistory|r - Open the Stats window on its History tab")
     print("  /xpbe |cFFFFFFFFresetstats|r - Reset statistics")
     print("  /xpbe |cFFFFFFFFresethistory|r - Clear the history of this character")
     print("  /xpbe |cFFFFFFFFresetcolors|r - Reset colors to defaults")
@@ -124,7 +124,7 @@ local function handleResetStats()
 end
 
 local function handleHistory()
-    local frame = Addon.HistoryFrame
+    local frame = Addon.HistoryPage
     if frame and frame.Toggle then
         frame:Toggle()
     end

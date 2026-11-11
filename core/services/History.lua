@@ -235,8 +235,8 @@ function History:Reset()
         db.historyData[Addon.Database:GetPlayerKey()] = nil
     end
     self:Get()
-    if Addon.HistoryFrame and Addon.HistoryFrame.Refresh then
-        Addon.HistoryFrame:Refresh()
+    if Addon.HistoryPage and Addon.HistoryPage.Refresh then
+        Addon.HistoryPage:Refresh()
     end
 end
 

@@ -6,7 +6,7 @@ All notable changes to XP Bar Enhanced will be documented in this file.
 
 ### Added
 
-- **History window** (`/xpbe history`, or the History button in the Stats window's title bar): lifetime figures for the character, kept between sessions. Two histograms show the hours of the day and the days of the week you play; cards show the XP gained, the XP per hour over the time recorded, the rested bonus used (from the bonus your kills report) and that time; bars split the XP between quests and the rest. For quests it shows how many you accepted and turned in, the average time from accepting to turning in, the gold they paid and the colour of the quests you turned in (green, yellow, orange or red, from their level against yours). Counting starts when you install this version; `/xpbe resethistory` clears it. `/xpbe resetstats` leaves it alone.
+- **History tab** in the Stats window (or `/xpbe history`): the window now has two tabs, Session (what it showed before) and History, with lifetime figures for the character, kept between sessions. Two histograms show the hours of the day and the days of the week you play; cards show the XP gained, the XP per hour over the time recorded, the rested bonus used (from the bonus your kills report) and that time; bars split the XP between quests and the rest. For quests it shows how many you accepted and turned in, the average time from accepting to turning in, the gold they paid and the colour of the quests you turned in (green, yellow, orange or red, from their level against yours). World quests and bonus objectives are not counted as accepted. Counting starts when you install this version; `/xpbe resethistory` clears it. `/xpbe resetstats` leaves it alone.
 
 ## [1.3.2] - 2026-11-05
 

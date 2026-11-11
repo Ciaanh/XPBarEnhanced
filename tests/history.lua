@@ -88,11 +88,36 @@ H.Fire("QUEST_ACCEPTED", 3, 70)
 H.Check("the level comes from the Classic quest log", data.pending[70] and data.pending[70].level, 25)
 C_QuestLog.GetQuestDifficultyLevel = saved
 
-H.Section("Window")
-local Frame = Addon.HistoryFrame
-Frame:Toggle()
-Frame:Refresh()
-H.CheckNoErrors("builds and refreshes")
+H.Section("History tab")
+-- A stand-in for the XML Stats window: its inset, the Session tab's children
+-- and the two methods the tab switch calls.
+local stats = CreateFrame("Frame", "XPBarEnhancedStatsFrame", UIParent)
+stats.InsetBg = CreateFrame("Frame", nil, stats)
+local session = {}
+for _, key in ipairs({"HeroXPPerHour", "HeroTimeToLevel", "ChartPanel", "SummaryStrip", "DetailHeader", "LevelDetail"}) do
+    local child = CreateFrame("Frame", nil, stats)
+    local shown = true
+    child.Show = function() shown = true end
+    child.Hide = function() shown = false end
+    child.IsShown = function() return shown end
+    stats[key], session[key] = child, child
+end
+local restored = 0
+stats.IsDetailExpanded = function() return false end
+stats.SetDetailExpanded = function() restored = restored + 1 end
+local Page = Addon.HistoryPage
+Page:Initialize()
+H.Check("opens on the Session tab", Page:GetTab(), "session")
+H.Check("the page starts hidden", Page.page:IsShown(), false)
+Page:SelectTab("history")
+H.Check("the History tab is remembered", Addon.db.statsTab, "history")
+H.Check("it hides the Session children", session.ChartPanel:IsShown(), false)
+Page.page.IsShown = function() return true end
+Page:Refresh()
+H.CheckNoErrors("the page builds and refreshes")
+Page:SelectTab("session")
+H.Check("back on Session, its children show", session.ChartPanel:IsShown(), true)
+H.Check("and the Details layout is put back", restored > 0, true)
 
 H.Section("Reset")
 History:Reset()
