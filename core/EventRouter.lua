@@ -384,6 +384,11 @@ local ROUTER_DISPATCH = {
             Addon.History:OnQuestAccepted(...)
         end
     end,
+    QUEST_REMOVED = function(questID)
+        if Addon.History and Addon.History.OnQuestRemoved then
+            Addon.History:OnQuestRemoved(questID)
+        end
+    end,
     CHAT_MSG_COMBAT_XP_GAIN = function(text)
         DispatchKillXP(text)
     end,

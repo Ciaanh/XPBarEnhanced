@@ -64,6 +64,30 @@ H.Fire("QUEST_TURNED_IN", 99, 100, 0)
 H.Check("a quest taken before the addon counts, untimed", data.quests.turnedIn, 2)
 H.CheckNear("and leaves the average alone", History:GetAverageQuestSeconds(), 120, 5)
 
+H.Section("Removed and task quests")
+H.Fire("QUEST_ACCEPTED", 50)
+H.Fire("QUEST_REMOVED", 50)
+H.Advance(10)
+H.Check("an abandoned quest leaves pending", data.pending[50], nil)
+H.Fire("QUEST_ACCEPTED", 51)
+H.Fire("QUEST_REMOVED", 51)
+H.Fire("QUEST_TURNED_IN", 51, 100, 0)
+H.Advance(10)
+H.Check("a removal before the turn-in keeps the timing", data.quests.timedCount, 2)
+local accepted = data.quests.accepted
+C_QuestLog.IsWorldQuest = function(id) return id == 60 end
+H.Fire("QUEST_ACCEPTED", 60)
+H.Check("a world quest is not counted as accepted", data.quests.accepted, accepted)
+C_QuestLog.IsWorldQuest = nil
+
+H.Section("Classic quest level")
+local saved = C_QuestLog.GetQuestDifficultyLevel
+C_QuestLog.GetQuestDifficultyLevel = nil
+GetQuestLogTitle = function(index) return "Quest", index == 3 and 25 or 1 end
+H.Fire("QUEST_ACCEPTED", 3, 70)
+H.Check("the level comes from the Classic quest log", data.pending[70] and data.pending[70].level, 25)
+C_QuestLog.GetQuestDifficultyLevel = saved
+
 H.Section("Window")
 local Frame = Addon.HistoryFrame
 Frame:Toggle()

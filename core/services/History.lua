@@ -19,6 +19,8 @@ local PENDING_MAX_AGE = 30 * 24 * 3600
 -- A turn-in slower than this is not a quest worked on in one go; it counts as
 -- a quest but not towards the average time.
 local MAX_QUEST_SECONDS = 7 * 24 * 3600
+-- Seconds QUEST_REMOVED waits for the QUEST_TURNED_IN of the same quest.
+local REMOVED_DELAY = 5
 
 local function Store()
     return Addon.Database and Addon.Database.GetHistoryData and Addon.Database:GetHistoryData() or nil
@@ -72,7 +74,18 @@ function History.QuestColor(questLevel, playerLevel)
     return "green"
 end
 
-local function QuestLevel(questID)
+local function IsSecret(value)
+    return (issecretvalue and issecretvalue(value)) and true or false
+end
+
+local function Plain(value)
+    if IsSecret(value) or type(value) ~= "number" then return nil end
+    return value
+end
+
+---The quest's level: C_QuestLog.GetQuestDifficultyLevel where the client has
+---it, else the level the Classic quest log lists at `logIndex`.
+local function QuestLevel(questID, logIndex)
     local log = C_QuestLog
     if log and log.GetQuestDifficultyLevel and questID then
         local ok, level = pcall(log.GetQuestDifficultyLevel, questID)
@@ -80,6 +93,24 @@ local function QuestLevel(questID)
             return level
         end
     end
+    local LegacyGetQuestLogTitle = rawget(_G, "GetQuestLogTitle")
+    if LegacyGetQuestLogTitle and type(logIndex) == "number" and logIndex > 0 then
+        local ok, _, level = pcall(LegacyGetQuestLogTitle, logIndex)
+        if ok and type(level) == "number" and level > 0 then
+            return level
+        end
+    end
+end
+
+---World quests and bonus objectives are "accepted" by entering their area, so
+---they are left out of Accepted and of the timing.
+local function IsTaskQuest(questID)
+    local log, task = C_QuestLog, C_TaskQuest
+    for _, fn in ipairs({log and log.IsWorldQuest, task and task.IsActive}) do
+        local ok, yes = pcall(fn, questID)
+        if ok and yes then return true end
+    end
+    return false
 end
 
 -------------------------------------------------------------------
@@ -133,17 +164,37 @@ end
 ---log index then the quest id.
 function History:OnQuestAccepted(a, b)
     local store = self:Get()
-    local questID = b or a
-    if not store or type(questID) ~= "number" then return end
-    if store.pending[questID] then return end
+    a, b = Plain(a), Plain(b)
+    local questID = (b and b > 0) and b or a
+    local logIndex = (b and b > 0) and a or nil
+    if not store or not questID or questID <= 0 then return end
+    if store.pending[questID] or IsTaskQuest(questID) then return end
     store.quests.accepted = store.quests.accepted + 1
-    store.pending[questID] = { at = time(), level = QuestLevel(questID) }
+    store.pending[questID] = { at = time(), level = QuestLevel(questID, logIndex) }
+end
+
+---QUEST_REMOVED: an abandoned quest leaves `pending`. A turn-in removes the
+---quest too, maybe before QUEST_TURNED_IN, so the entry is dropped a little
+---later, and only if that turn-in has not already taken it.
+function History:OnQuestRemoved(questID)
+    questID = Plain(questID)
+    local store = self:Get()
+    if not store or not questID then return end
+    local entry = store.pending[questID]
+    if not entry then return end
+    C_Timer.After(REMOVED_DELAY, function()
+        local now = History:Get()
+        if now and now.pending[questID] == entry then
+            now.pending[questID] = nil
+        end
+    end)
 end
 
 ---QUEST_TURNED_IN(questID, xpReward, moneyReward)
 function History:OnQuestTurnedIn(questID, _, money)
     local store = self:Get()
-    if not store or type(questID) ~= "number" then return end
+    questID, money = Plain(questID), Plain(money)
+    if not store or not questID then return end
     local q = store.quests
     q.turnedIn = q.turnedIn + 1
     if type(money) == "number" and money > 0 then
